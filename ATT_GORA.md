@@ -35,20 +35,25 @@
 
 **Tips:** Logga in i projektet minst en gång i veckan så pausas det inte. Eller acceptera att det pausas – det räcker att klicka *Restore project* om så händer.
 
----## 🟡 Medium prioritet – domänkartläggning
+---
+
+## 🟡 Medium prioritet – domänkartläggning
 
 - [ ] **Specificera AI-abstraktionslagret** i `02_system/ai_abstraktion.md` – utvärdera LiteLLM/OpenRouter vs egen wrapper, definiera gränssnitt
 - [ ] **Kartlägga processer** i `01_domän/processer_översikt.md` (kundärenden, premiehantering, rapportering, etc.)
 - [ ] **Skriva ut försäkringsvillkor** för ITP1 ålderspension i `01_domän/försäkringsvillkor.md`
 - [ ] **Dokumentera aktuariell grund** – antaganden, tabeller, beräkningsmodeller
 - [ ] **Beslut om databas** – välja konkret databas (PostgreSQL föreslaget)
+- [ ] **Designa regelförändringsflöde** – multi-agent-flöde som triggas när ett regelverk ändras: compliance-agent gör tolkning och konsekvensanalys, utvecklaragent identifierar kodpåverkan, kommunikationsagent förbereder ev. kundkommunikation. Dokumenteras i `02_system/regelförändringsflöde.md`. Ett av undantagen från B-008 (kräver olika mandat).
 
 ## 🟢 Lägre prioritet – när grunden står
 
 - [ ] **Sätta upp md→PDF-pipeline** – välja verktyg (Pandoc eller WeasyPrint), definiera mallar för formella dokument (rapporter, kundbrev, styrelseprotokoll)
 - [ ] **Standardmall för officiella dokument** – logga, sidhuvud/sidfot, signaturplats, sidnumrering, dokument-ID, versionsinfo. Tas i samband med PDF-pipelinen
 - [ ] **Bygga första agent: Handläggaragent** (ärendehantering)
+- [ ] **Bygga kommunikationsagent** – äger bred utgående kommunikation (kundutskick, mailbesvarande, standardiserade meddelanden). Separerad från handläggaragenten för att skilja ärendelogik från kommunikationsarbete. Mandat motiveras i BESLUTSLOGG när agenten byggs (avsteg från B-008).
 - [ ] **Bygga första skills:** `hämta-kunddata`, `skriv-kundmail`, `tolka-itp1-fråga`
+- [ ] **Skill: complianceöversyn** (på compliance-agenten) – proaktiv genomgång av regelverkskartan mot styrdokument och processer. Rapporterar gap och misstänkta diskrepanser. Triggas manuellt eller schemalagt. Skapas som `03_skills/regelverk/complianceöversyn.md` + `src/skills/regulatory/compliance_review.py`.
 - [ ] **Sätta upp koppling Cowork ↔ Gmail** (MCP)
 - [ ] **Generera testdata** – fiktiva kunder, policys, transaktioner
 

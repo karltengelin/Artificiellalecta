@@ -8,6 +8,35 @@
 
 ## Beslut
 
+### B-016 | 2026-05-15 | Hybrid orchestration som agentarkitektur
+
+**Beslut:** Agentsamverkan i systemet struktureras som en hybrid mellan två mönster:
+
+- **Dynamisk samverkan** – agenter känner till varandras gränssnitt och kan anlita varandra ad hoc för ostrukturerade, oförutsägbara uppgifter i vardagsarbetet.
+- **Orkestrerade flöden** – fördefinierade, sekventiella workflows för kända processer med tydliga triggers. Dokumenteras i `02_system/Agentsystem/`, en MD-fil per flöde.
+
+Orkestrerade flöden används när processen (a) involverar flera agenter i en känd ordning, (b) är compliance-kritisk och måste vara granskningsbar, eller (c) kräver manuellt godkännande vid varje etapp.
+
+**Motivering:**
+- Regelverksförändringar, ORSA-processen och rapporteringscykler måste vara deterministiska och fullt spårbara – en tillsynsmyndighet ska kunna följa exakt vad som hände i vilken ordning. Det utesluter ren dynamisk samverkan för dessa processer.
+- Dynamisk samverkan är tillräcklig och mer flexibel för ad hoc-uppgifter där utfallet inte är förutsägbart i förväg.
+- Hybrid-modellen är etablerad best practice i multi-agent-system (jfr LangGraph, Autogen, CrewAI) och kombinerar spårbarhet med flexibilitet.
+
+**Övervägda alternativ:**
+
+*Alternativ 1: Ren dynamisk samverkan*
+Agenter har kopplingar och avgör själva när och hur de anlitar varandra. Fördelar: flexibelt, hanterar oförutsedda situationer bra. Nackdelar: svårt att granska i efterhand, oförutsägbart beteende i compliance-kritiska processer, svårare att felsöka.
+
+*Alternativ 2: Ren orkestrering*
+Alla agentinteraktioner definieras i förväg som strukturerade flöden. Fördelar: maximalt spårbart och deterministiskt. Nackdelar: orimlig overhead för vardagsarbete, skalerar dåligt – varje ny interaktionstyp kräver ett nytt dokumenterat flöde.
+
+**Konsekvenser:**
+- `02_system/Agentsystem/` skapas för orkestrerade flöden (en MD-fil per flöde)
+- Kända kandidater för orkestrerade flöden: regelförändringsflödet, ORSA-processen, rapporteringscykeln
+- Varje orkestrerat flöde dokumenterar trigger, inblandade agenter, godkännandesteg och spårbarhetskrav
+
+---
+
 ### B-015 | 2026-05-14 | Mappstruktur: dokumentation och kod separerade
 
 **Beslut:** Projektets mappstruktur separerar dokumentation (svenska namn, numrerade mappar i roten) från Python-kod (i `src/`, engelska namn).
