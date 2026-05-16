@@ -18,7 +18,9 @@ Ansvarar för systemutveckling, teknisk infrastruktur och dataplattform. Rollen 
 
 ## Skills
 
-*(Inga skills definierade ännu)*
+*(Inga skills definierade ännu. Bryts ut allteftersom konkreta, repeterbara operationer
+kristalliserar sig – t.ex. lägg-till-tabellvy, bumpa-dependency, skapa-databasmigration.
+Större engångsarbeten som "bygg admin-UI" hör hemma som projekt i ATT_GORA, inte som skills.)*
 
 ## Behörigheter
 

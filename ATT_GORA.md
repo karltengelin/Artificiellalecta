@@ -8,11 +8,25 @@
 
 ## 🔴 Hög prioritet – grunden
 
+- [ ] **Byt `DATABASE_URL` till Supabase Connection Pooler och kör seed** – direktanslutningen `db.<projref>.supabase.co:5432` är IPv6-only på free-tier och faller på vanliga svenska hemnät. Tabellerna är definierade, SQLAlchemy-modellerna finns, mockdatan är genererad – allt som saknas är en fungerande anslutning så `scripts/seed_supabase.py` kan ladda upp.
+
+  **Steg:**
+  1. Logga in på Supabase och öppna projektet
+  2. **Project Settings → Database → Connection string → flik "Transaction"**
+  3. Kopiera URI:n. Format: `postgresql://postgres.<projref>:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:6543/postgres`
+  4. Ersätt `[YOUR-PASSWORD]` med ditt databaslösenord (det du satte vid projektskapandet). Om bortglömt: **Reset database password** på samma sida och uppdatera överallt det används.
+  5. Öppna `C:\Claude\Artificiellalecta\.env` och ersätt hela `DATABASE_URL=...`-raden med den nya URI:n
+  6. Snabbtest: `nslookup aws-0-<region>.pooler.supabase.com` – ska ge IPv4-adresser
+  7. Kör: `.venv\Scripts\activate.bat` och sen `python scripts\seed_supabase.py`
+  8. Verifiera i Supabase Table editor att `employers` har 20 rader och `insured_persons` har ~500
+
+  **När det är gjort:** uppdatera även `.env.example` så pooler-formatet står som default-mall (utan värden).
+
 - [ ] **Skriva `02_system/agentkarta.md`** – översikt över alla planerade agenter, deras mandat och vilka skills de har tillgång till
 - [ ] **Skriva `03_skills/skillkatalog.md`** – översikt över alla skills, syfte, kategori och behörighetslista
 - [ ] **Bygga ut `04_regulatoriskt/`** – bryta ner regelverkskartan i underdokument per regelverk (LTF, FFFS:er, DORA, GDPR, IDD, SFDR, AI-förordningen, skatt)
 - [ ] **Skapa styrdokumentsstruktur** i `05_styrdokument/` – skriva `styrdokumentshierarki.md` som definierar struktur, ägarskap, revisionscykel och standardmetadata för alla styrdokument
-- [ ] **Definiera databasschema** – tabellstruktur för kunddata (`02_system/databasschema.md`). Skrivs som SQLAlchemy-modeller (se B-014)
+- [x] **2026-05-16** Definiera databasschema – `02_system/databasschema.md` + SQLAlchemy-modeller för `employers` och `insured_persons`. Övriga tabeller (policies, premium_transactions, portfolio_holdings, cases) skjuts upp till de behövs.
 - [x] **2026-05-16** Sätta upp Google-konto för det fiktiva bolaget – Artificiellalecta@gmail.com
 - [x] **2026-05-16** Skapa Supabase-konto och projekt – Artificiellalecta-projektet, region Europe
 
@@ -131,6 +145,7 @@
 - [x] **2026-05-14** Lägga upp grunddokumenten i repot (MASTER_CONTEXT, BESLUTSLOGG, ATT_GORA, regelverkskarta) som första commit
 - [x] **2026-05-14** Skriva `.gitignore` – exkludera API-nycklar, `.env`, databasfiler, cache, virtuella miljöer m.m.
 - [x] **2026-05-14** Beslut om databas – PostgreSQL via Supabase (B-014)
+- [x] **2026-05-16** Databasschema, SQLAlchemy-modeller (`employers`, `insured_persons`), mockdatagenerator och seed-script
 
 ---
 
