@@ -55,6 +55,12 @@ htmlcov/
 *.sqlite3
 *.db-journal
 
+# Mockdata-CSV är ett reproducerbart mellansteg (genereras av
+# scripts/generate_mock_data.py), slutdestinationen är Supabase.
+data/*.csv
+data/*.json
+!data/.gitkeep
+
 # --- Loggar ---
 *.log
 logs/

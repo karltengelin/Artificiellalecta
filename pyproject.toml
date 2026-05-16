@@ -4,10 +4,10 @@ version = "0.1.0"
 description = "Simulerat tjänstepensionsbolag för ITP1 ålderspension"
 requires-python = ">=3.11"
 dependencies = [
-    # Beslutas efterhand. Förslag att komma:
-    # "sqlalchemy>=2.0",
-    # "psycopg2-binary",
-    # "python-dotenv",
+    "sqlalchemy>=2.0",
+    "psycopg2-binary>=2.9",
+    "python-dotenv>=1.0",
+    # AI-leverantörer beslutas/aktiveras i samband med AI-abstraktionslagret
     # "anthropic",
     # "openai",
     # "litellm",
@@ -15,9 +15,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    # "pytest",
-    # "ruff",
-    # "mypy",
+    "pytest>=7",
+    "ruff",
 ]
 
 [build-system]
