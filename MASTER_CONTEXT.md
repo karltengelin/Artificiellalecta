@@ -60,6 +60,9 @@ All information i projektet sparas i första hand som **Markdown-filer** (.md). 
 - En md→PDF-pipeline sätts upp (t.ex. Pandoc) för formell dokumentgenerering
 - Skäl: Markdown är textbaserat (LLM-vänligt), versionskontrollerbart, mänskligt läsbart i råform, och konverterbart till andra format
 
+### 3.7 Människa som fullständig operatör
+Systemet ska alltid kunna styras manuellt av en människa, på samma nivå som en agent. Varje åtgärd en agent kan utföra – lägga till en kund, uppdatera en policy, trigga ett flöde – ska också kunna utföras direkt av operatören via Cowork eller annat gränssnitt. Agenter kör på autopilot; operatören kan alltid ta manuell kontroll.
+
 ---
 
 ## 4. Bolagets funktionsområden

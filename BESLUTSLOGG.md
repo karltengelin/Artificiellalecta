@@ -8,6 +8,23 @@
 
 ## Beslut
 
+### B-017 | 2026-05-16 | Människa som fullständig operatör
+
+**Beslut:** Systemet designas för dual-mode: agenter kör normalt på autopilot, men operatören kan när som helst ta manuell kontroll och utföra samma åtgärder direkt – via Cowork, MCP-kopplingar eller annat gränssnitt. Ingen åtgärd ska vara agentexklusiv.
+
+**Motivering:**
+- Sänker tröskeln för att komma igång – operatören kan agera manuellt tidigt medan automatiseringen byggs upp stegvis
+- Möjliggör undantag och krissituationer utan att behöva vänta på att en agent triggas
+- Cowork + Supabase MCP ger operatören ett naturligt gränssnitt för direkta databasoperationer, utan att skriva kod
+- Speglar hur verkliga bolag fungerar: system och människor agerar parallellt, inte i serie
+
+**Konsekvenser:**
+- MCP-koppling till Supabase prioriteras även för operatörens direkta bruk, inte bara för agentdrift
+- Gränssnitt och behörigheter designas så att manuella och automatiserade åtgärder lämnar samma spår i databasen (samma tabeller, samma loggning)
+- Dokumenterat i MASTER_CONTEXT §3.7 som stående designprincip
+
+---
+
 ### B-016 | 2026-05-15 | Hybrid orchestration som agentarkitektur
 
 **Beslut:** Agentsamverkan i systemet struktureras som en hybrid mellan två mönster:
