@@ -21,7 +21,7 @@
 
   **Om Free Edition inte klarar extern anslutning (steg 5 fallerar):** flagga det som ny beslutspunkt – kan kräva betald Databricks-nivå, vilket bryter mot kostnadsresonemanget i B-018.
 
-- [ ] **Skriva `02_system/agentkarta.md`** – översikt över alla planerade agenter, deras mandat och vilka skills de har tillgång till
+- [x] **2026-05-15** Skriva `02_system/agentkarta.md` – tio agentskelett i `02_system/agenter/` plus agentkarta (commit `b88da94`)
 - [ ] **Skriva `03_skills/skillkatalog.md`** – översikt över alla skills, syfte, kategori och behörighetslista
 - [ ] **Bygga ut `04_regulatoriskt/`** – bryta ner regelverkskartan i underdokument per regelverk (LTF, FFFS:er, DORA, GDPR, IDD, SFDR, AI-förordningen, skatt)
 - [ ] **Skapa styrdokumentsstruktur** i `05_styrdokument/` – skriva `styrdokumentshierarki.md` som definierar struktur, ägarskap, revisionscykel och standardmetadata för alla styrdokument
