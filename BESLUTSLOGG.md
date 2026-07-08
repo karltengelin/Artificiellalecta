@@ -8,6 +8,34 @@
 
 ## Beslut
 
+### B-018 | 2026-07-08 | Databricks Lakebase ersätter Supabase som databas
+
+**Beslut:** Som databas används **Databricks Lakebase** (serverless Postgres, Free Edition) istället för Supabase. All databasåtkomst i Python sker fortfarande via **SQLAlchemy** – ingen ändring av ORM-lagret eftersom Lakebase är Postgres-kompatibel över standardprotokollet.
+
+**Motivering:**
+- Projektet är ett PoC för en "AI-first"-strategi i tjänstepensionsbranschen – Databricks ekosystem (BI, analys, framtida ML/aktuariella modeller) passar den ambitionen bättre än Supabase, som bara är en databas
+- Karl har befintlig vana vid Databricks, vilket sänker tröskeln för att bygga vidare på analys-/rapporteringssidan
+- Lakebase är Postgres-kompatibel "under huven" – SQLAlchemy-modellerna som redan är skrivna (`employers`, `insured_persons`) kräver ingen omskrivning, till skillnad från klassiska Databricks Delta-tabeller (som saknar riktig auto-increment, CHECK-constraints, Enum-stöd)
+- Free Edition är gratis (icke-kommersiellt bruk), i linje med B-003 (sandbox/simulering) och B-014:s ursprungliga kostnadsresonemang
+
+**Övervägda alternativ:**
+
+*Alternativ 1: Behåll Supabase (B-014 oförändrat)*
+Fördelar: redan uppsatt, väldokumenterat, inga öppna frågor kvar. Nackdelar: inget naturligt BI/analyslager, mindre i linje med AI-first-ambitionen.
+
+*Alternativ 2: Klassiskt Databricks (Delta Lake + SQL Warehouse)*
+Fördelar: helt Databricks-nativt. Nackdelar: SQLAlchemy-dialekten saknar stöd för centrala OLTP-mönster (auto-increment, constraints) – dåligt pass för transaktionella tabeller som `premium_transactions` och `cases`.
+
+**Konsekvenser:**
+- `DATABASE_URL` i `.env` byts från Supabase pooler-URI till Lakebase-instansens Postgres-anslutningssträng (`postgresql://...@ep-....databricks.com/databricks_postgres?sslmode=require`)
+- ATT_GÖRA:s hög-prioritetspunkt om Supabase connection pooler görs om till motsvarande Lakebase-uppgift (skapa instans, hämta connection string, kör `seed_supabase.py` – döps eventuellt om)
+- **Öppen riskpunkt att verifiera praktiskt innan seed körs:** (1) om extern SQLAlchemy-anslutning med enkel användarnamn/lösenord fungerar i Free Edition utan kontonivå-service principal, (2) om fair-use-kvoten i Free Edition kan stänga av en aktiv databasinstans mitt i drift
+- MASTER_CONTEXT §5 (teknisk stack) uppdateras: raden "Databas" ändras från "Supabase (managed PostgreSQL)" till "Databricks Lakebase (serverless Postgres, Free Edition)"
+
+**Ersätter:** B-014
+
+---
+
 ### B-017 | 2026-05-16 | Människa som fullständig operatör
 
 **Beslut:** Systemet designas för dual-mode: agenter kör normalt på autopilot, men operatören kan när som helst ta manuell kontroll och utföra samma åtgärder direkt – via Cowork, MCP-kopplingar eller annat gränssnitt. Ingen åtgärd ska vara agentexklusiv.

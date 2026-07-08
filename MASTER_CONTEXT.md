@@ -86,7 +86,7 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 | Komponent | Val | Kommentar |
 |-----------|-----|-----------|
 | Programspråk | Python | Primärt för all logik och agenter |
-| Databas | Supabase (managed PostgreSQL) | Free-tier räcker för sandbox. Åtkomst via SQLAlchemy ORM. |
+| Databas | Databricks Lakebase (serverless Postgres, Free Edition) | Postgres-kompatibel, gratis för icke-kommersiellt bruk. Åtkomst via SQLAlchemy ORM. Se B-018 (ersätter B-014/Supabase). |
 | Dokumentlager | Markdown/textfiler | Regler, processer, villkor |
 | AI-leverantörer | OpenAI + Anthropic (modellagnostiskt) | Via abstraktionslager, se 3.1 |
 | AI-arbetsmiljö | Claude API + Claude Cowork | Utveckling och agentkörning |

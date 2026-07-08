@@ -8,19 +8,18 @@
 
 ## 🔴 Hög prioritet – grunden
 
-- [ ] **Byt `DATABASE_URL` till Supabase Connection Pooler och kör seed** – direktanslutningen `db.<projref>.supabase.co:5432` är IPv6-only på free-tier och faller på vanliga svenska hemnät. Tabellerna är definierade, SQLAlchemy-modellerna finns, mockdatan är genererad – allt som saknas är en fungerande anslutning så `scripts/seed_supabase.py` kan ladda upp.
+- [ ] **Skapa Databricks Free Edition-konto + Lakebase-instans, uppdatera `DATABASE_URL` och kör seed** *(ersätter Supabase-uppgiften nedan, se B-018)* – tabellerna är definierade, SQLAlchemy-modellerna finns, mockdatan är genererad. Kvar: sätta upp Lakebase och peka om anslutningen.
 
   **Steg:**
-  1. Logga in på Supabase och öppna projektet
-  2. **Project Settings → Database → Connection string → flik "Transaction"**
-  3. Kopiera URI:n. Format: `postgresql://postgres.<projref>:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:6543/postgres`
-  4. Ersätt `[YOUR-PASSWORD]` med ditt databaslösenord (det du satte vid projektskapandet). Om bortglömt: **Reset database password** på samma sida och uppdatera överallt det används.
-  5. Öppna `C:\Claude\Artificiellalecta\.env` och ersätt hela `DATABASE_URL=...`-raden med den nya URI:n
-  6. Snabbtest: `nslookup aws-0-<region>.pooler.supabase.com` – ska ge IPv4-adresser
-  7. Kör: `.venv\Scripts\activate.bat` och sen `python scripts\seed_supabase.py`
-  8. Verifiera i Supabase Table editor att `employers` har 20 rader och `insured_persons` har ~500
+  1. Skapa konto på Databricks Free Edition (icke-kommersiellt bruk, se docs.databricks.com/getting-started/free-edition)
+  2. Skapa en Lakebase-databasinstans i workspacet (se `docs.databricks.com/oltp/instances`)
+  3. Hämta anslutningssträngen (role, host, databasnamn) enligt `docs.databricks.com/oltp/projects/connection-strings` – format `postgresql://<role>:<password>@<host>.databricks.com/databricks_postgres?sslmode=require`
+  4. Öppna `C:\Claude\Artificiellalecta\.env` och sätt `DATABASE_URL` till den nya strängen (samt `DATABRICKS_HOST`/`DATABRICKS_TOKEN` om ni går OAuth-vägen istället för användarnamn/lösenord)
+  5. **Verifiera praktiskt innan ni går vidare** (öppen riskpunkt från B-018): fungerar extern SQLAlchemy-anslutning med enkel användarnamn/lösenord i Free Edition, eller krävs kontonivå-funktioner (service principal) som Free Edition saknar? Testa med ett minimalt skript innan hela seed körs
+  6. Kör: `.venv\Scripts\activate.bat` och sen `python scripts\seed_supabase.py` (döp om skriptet till `seed_lakebase.py` när ni ändå är inne och redigerar – valfritt, ren döpning)
+  7. Verifiera att `employers` har 20 rader och `insured_persons` har ~500 (via Databricks notebook-query eller annat Postgres-klientverktyg)
 
-  **När det är gjort:** uppdatera även `.env.example` så pooler-formatet står som default-mall (utan värden).
+  **Om Free Edition inte klarar extern anslutning (steg 5 fallerar):** flagga det som ny beslutspunkt – kan kräva betald Databricks-nivå, vilket bryter mot kostnadsresonemanget i B-018.
 
 - [ ] **Skriva `02_system/agentkarta.md`** – översikt över alla planerade agenter, deras mandat och vilka skills de har tillgång till
 - [ ] **Skriva `03_skills/skillkatalog.md`** – översikt över alla skills, syfte, kategori och behörighetslista
@@ -28,26 +27,7 @@
 - [ ] **Skapa styrdokumentsstruktur** i `05_styrdokument/` – skriva `styrdokumentshierarki.md` som definierar struktur, ägarskap, revisionscykel och standardmetadata för alla styrdokument
 - [x] **2026-05-16** Definiera databasschema – `02_system/databasschema.md` + SQLAlchemy-modeller för `employers` och `insured_persons`. Övriga tabeller (policies, premium_transactions, portfolio_holdings, cases) skjuts upp till de behövs.
 - [x] **2026-05-16** Sätta upp Google-konto för det fiktiva bolaget – Artificiellalecta@gmail.com
-- [x] **2026-05-16** Skapa Supabase-konto och projekt – Artificiellalecta-projektet, region Europe
-
-### Guide: Skapa Supabase-projekt
-
-1. Gå till **supabase.com** och klicka på *Start your project* (eller *Sign in* om du redan har konto)
-2. Logga in – enklast via GitHub-kontot du redan har (då hänger projekten ihop) eller via e-post
-3. Klicka på *New project*. Välj vilken organisation det ska tillhöra (din egen personliga räcker)
-4. Fyll i:
-   - **Project name:** `Artificiellalecta` (eller liknande)
-   - **Database password:** Generera ett starkt lösenord. **Spara det säkert** (lösenordshanterare) – det går inte att se igen efteråt
-   - **Region:** Välj `Europe (Stockholm)` eller `Europe (Frankfurt)` – närmast = snabbast
-   - **Pricing plan:** Free
-5. Vänta ~2 minuter medan projektet sätts upp
-6. När det är klart, gå till **Project Settings → API**. Spara följande (men lägg dem ALDRIG i Git):
-   - **Project URL** (ser ut som `https://xxxxx.supabase.co`)
-   - **anon public key** (för läsåtkomst)
-   - **service_role key** (för full åtkomst – behandlas som lösenord)
-7. Gå till **Project Settings → Database** och spara **connection string** (för SQLAlchemy)
-
-**Tips:** Logga in i projektet minst en gång i veckan så pausas det inte. Eller acceptera att det pausas – det räcker att klicka *Restore project* om så händer.
+- [x] **2026-05-16** Skapa Supabase-konto och projekt – Artificiellalecta-projektet, region Europe *(databasval ersatt av B-018, se Arkiv)*
 
 ---
 
@@ -100,9 +80,9 @@
      och dess undermappar. Definieras server-side med rot-sökväg från `.env`.
      Scopat till bolagsmappen – Claude kan inte nå filer utanför.
 
-  4. **Supabase-verktyg** – CRUD-operationer mot databasen (hämta kunder,
+  4. **Lakebase-verktyg** *(B-018)* – CRUD-operationer mot databasen (hämta kunder,
      lägg till kund, uppdatera policy etc.). Definieras som Claude-tools i
-     backenden med Supabase-credentials från `.env`.
+     backenden med Lakebase-anslutningen från `.env`.
 
   5. **Frontend-chatyta** – enkel React- eller HTML-komponent inbyggd i
      admin-fliken. Skickar meddelanden till Python-backenden, visar svar.
@@ -111,17 +91,17 @@
   6. **Tabell-vyer** – enkla datavyer i admin-UI:n för att bläddra i
      databasens tabeller (kunder, policys, transaktioner etc.). Hämtas
      via Python-backenden, visas som filtrerbara tabeller i frontenden.
-     Supabase webb-UI används som debuggingverktyg under utveckling;
+     Databricks-webbgränssnittet används som debuggingverktyg under utveckling;
      tabell-vyerna i admin-UI:n är den långsiktiga lösningen.
 
   **Utestående designfrågor att besluta:**
-  - Ska sessionshistorik sparas (och i så fall var – Supabase)?
+  - Ska sessionshistorik sparas (och i så fall var – Lakebase?)?
   - Vilka fil-operationer ska vara tillåtna (enbart läsa, eller även skriva)?
   - Autentisering till admin-fliken – enkel lösenordsskydd räcker för sandbox?
   - Ska samma backend användas av både agenter och mänsklig operatör,
     eller separata ingångar?
 
-  **Beroenden:** Supabase-projekt måste vara uppsatt (se hög-prioritet).
+  **Beroenden:** Databricks Lakebase-instans måste vara uppsatt (se hög-prioritet).
   Bolagsmappens slutliga sökväg måste vara bestämd.
 
 ---
@@ -151,4 +131,25 @@
 
 ## 🗄️ Arkiv
 
-*(Inga arkiverade poster ännu)*
+### Guide: Skapa Supabase-projekt *(arkiverad 2026-07-08 – databasval ersatt av B-018/Databricks Lakebase)*
+
+1. Gå till **supabase.com** och klicka på *Start your project* (eller *Sign in* om du redan har konto)
+2. Logga in – enklast via GitHub-kontot du redan har (då hänger projekten ihop) eller via e-post
+3. Klicka på *New project*. Välj vilken organisation det ska tillhöra (din egen personliga räcker)
+4. Fyll i:
+   - **Project name:** `Artificiellalecta` (eller liknande)
+   - **Database password:** Generera ett starkt lösenord. **Spara det säkert** (lösenordshanterare) – det går inte att se igen efteråt
+   - **Region:** Välj `Europe (Stockholm)` eller `Europe (Frankfurt)` – närmast = snabbast
+   - **Pricing plan:** Free
+5. Vänta ~2 minuter medan projektet sätts upp
+6. När det är klart, gå till **Project Settings → API**. Spara följande (men lägg dem ALDRIG i Git):
+   - **Project URL** (ser ut som `https://xxxxx.supabase.co`)
+   - **anon public key** (för läsåtkomst)
+   - **service_role key** (för full åtkomst – behandlas som lösenord)
+7. Gå till **Project Settings → Database** och spara **connection string** (för SQLAlchemy)
+
+**Tips:** Logga in i projektet minst en gång i veckan så pausas det inte. Eller acceptera att det pausas – det räcker att klicka *Restore project* om så händer.
+
+### Byt DATABASE_URL till Supabase Connection Pooler *(arkiverad 2026-07-08 – ersatt av Lakebase-uppgiften under Hög prioritet)*
+
+Direktanslutningen `db.<projref>.supabase.co:5432` var IPv6-only på free-tier och föll på vanliga svenska hemnät. Lösningen hade varit att byta till Connection Pooler-URI:n (`aws-0-<region>.pooler.supabase.com:6543`) via Transaction-fliken i Supabase. Blev inaktuell när B-018 ersatte Supabase med Databricks Lakebase innan uppgiften hanns slutföras.
