@@ -8,18 +8,7 @@
 
 ## 🔴 Hög prioritet – grunden
 
-- [ ] **Skapa Databricks Free Edition-konto + Lakebase-instans, uppdatera `DATABASE_URL` och kör seed** *(ersätter Supabase-uppgiften nedan, se B-018)* – tabellerna är definierade, SQLAlchemy-modellerna finns, mockdatan är genererad. Kvar: sätta upp Lakebase och peka om anslutningen.
-
-  **Steg:**
-  1. Skapa konto på Databricks Free Edition (icke-kommersiellt bruk, se docs.databricks.com/getting-started/free-edition)
-  2. Skapa en Lakebase-databasinstans i workspacet (se `docs.databricks.com/oltp/instances`)
-  3. Hämta anslutningssträngen (role, host, databasnamn) enligt `docs.databricks.com/oltp/projects/connection-strings` – format `postgresql://<role>:<password>@<host>.databricks.com/databricks_postgres?sslmode=require`
-  4. Öppna `C:\Claude\Artificiellalecta\.env` och sätt `DATABASE_URL` till den nya strängen (samt `DATABRICKS_HOST`/`DATABRICKS_TOKEN` om ni går OAuth-vägen istället för användarnamn/lösenord)
-  5. **Verifiera praktiskt innan ni går vidare** (öppen riskpunkt från B-018): fungerar extern SQLAlchemy-anslutning med enkel användarnamn/lösenord i Free Edition, eller krävs kontonivå-funktioner (service principal) som Free Edition saknar? Testa med ett minimalt skript innan hela seed körs
-  6. Kör: `.venv\Scripts\activate.bat` och sen `python scripts\seed_supabase.py` (döp om skriptet till `seed_lakebase.py` när ni ändå är inne och redigerar – valfritt, ren döpning)
-  7. Verifiera att `employers` har 20 rader och `insured_persons` har ~500 (via Databricks notebook-query eller annat Postgres-klientverktyg)
-
-  **Om Free Edition inte klarar extern anslutning (steg 5 fallerar):** flagga det som ny beslutspunkt – kan kräva betald Databricks-nivå, vilket bryter mot kostnadsresonemanget i B-018.
+- [x] **2026-07-08** Skapa Databricks Free Edition-konto + Lakebase-instans, uppdatera `DATABASE_URL` och kör seed *(ersatte Supabase-uppgiften, se B-018)* – projekt `artificiellalecta` skapat på `artificiellalecta@gmail.com`, Postgres 18, region AWS (us-east-2). Password-auth aktiverad, native roll `app_backend` skapad. Öppen riskpunkt från B-018 löst: extern SQLAlchemy-anslutning med enkel användarnamn/lösenord fungerar utan problem i Free Edition. Seed kört: 20 arbetsgivare, 500 försäkrade.
 
 - [x] **2026-05-15** Skriva `02_system/agentkarta.md` – tio agentskelett i `02_system/agenter/` plus agentkarta (commit `b88da94`)
 - [ ] **Skriva `03_skills/skillkatalog.md`** – översikt över alla skills, syfte, kategori och behörighetslista
