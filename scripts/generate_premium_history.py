@@ -126,11 +126,22 @@ def main() -> None:
         n_new_tx = 0
         n_skipped_no_itp = 0
         n_skipped_no_salary = 0
+        n_skipped_no_coverage = 0
         total_premium = Decimal("0")
 
         for person in persons:
             if person.itp1_start_date is None:
                 n_skipped_no_itp += 1
+                continue
+
+            # Personer vars anställning upphörde innan ITP1-täckningen skulle
+            # börja hann aldrig tjäna in något - inget avtal ska skapas.
+            if (
+                person.employment_end_date is not None
+                and month_of(person.employment_end_date)
+                < month_of(person.itp1_start_date)
+            ):
+                n_skipped_no_coverage += 1
                 continue
 
             policy = existing_policies.get(person.id)
@@ -216,6 +227,7 @@ def main() -> None:
         print(f"Summa premier:            {total_premium:,.2f} kr")
         print(f"Hoppade (ej ITP1-start):  {n_skipped_no_itp}")
         print(f"Hoppade (lön saknas):     {n_skipped_no_salary}")
+        print(f"Hoppade (slutade före ITP1-start): {n_skipped_no_coverage}")
 
         if args.dry_run:
             session.rollback()
