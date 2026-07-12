@@ -12,9 +12,13 @@
 |--------|--------------|--------|
 | `employers` | Försäkringstagare (arbetsgivare med ITP-avtal) | 🟢 I drift (seedad) |
 | `insured_persons` | Försäkrade (anställda som omfattas av ITP1) | 🟢 I drift (seedad) |
-| `policies` | Försäkringsavtal (ålderspension ITP1 per försäkrad) | 🟡 Skiss (Fas 1b) |
-| `premium_transactions` | Premietransaktioner (en rad per policy och månad) | 🟡 Skiss (Fas 1b) |
-| `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟡 Skiss (Fas 1c) |
+| `policies` | Försäkringar (flera per försäkrad möjliga) | 🟡 Omdesignad (Fas 1e) |
+| `policy_states` | Försäkringslägen – tillståndshistorik per försäkring | 🟡 Skiss (Fas 1e) |
+| `policy_benefits` | Försäkringsförmåner – förmåner inom en försäkring | 🟡 Skiss (Fas 1e) |
+| `premium_transactions` | Premietransaktioner (en rad per förmån och månad) | 🟡 Omdesignad (Fas 1e) |
+| `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟢 I drift (seedad 2023–2026) |
+
+**Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för försäkringens läge. Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
 **Planerade tabeller (ej i denna omgång):** `portfolios`/`portfolio_holdings`/`trades` (Fas 2, B-019), `cases` (ärenden, Fas 5).
 
@@ -90,72 +94,101 @@
 
 **Relationer:**
 - `insured_persons.employer_id` → `employers.id` (en försäkrad → en arbetsgivare, en arbetsgivare → många försäkrade)
-- `insured_persons.id` ← `policies.insured_person_id` (1:1, se §5)
+- `insured_persons.id` ← `policies.insured_person_id` (1:N – en person kan ha flera försäkringar, se §5/B-022)
 
 ---
 
-## 5. Tabell: `policies` – Försäkringsavtal
+## 5. Tabell: `policies` – Försäkringar
 
-**Domän:** Ett försäkringsavtal om ålderspension ITP1 för en försäkrad. Enligt B-021 (endast traditionell förvaltning, ingen valcentral) har varje försäkrad **exakt ett** avtal hos bolaget – därav UNIQUE på `insured_person_id`. Pensionskapitalet lagras inte här utan härleds ur transaktioner (single source of truth); en cachad saldokolumn kan införas senare om prestanda kräver.
+**Domän:** En försäkring tecknad för en försäkrad. En person kan ha **flera** försäkringar (B-022, ersätter B-021:s ett-avtal-regel) – t.ex. en aktiv och ett äldre fribrev. Försäkringens innehåll ligger i `policy_benefits`; dess läge över tid i `policy_states`. **Ingen statuskolumn här** – nuläget är alltid den öppna raden i `policy_states` (en sanning, ingen drift).
 
 | Kolumn | Datatyp | Constraints | Beskrivning |
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
-| `policy_number` | `VARCHAR(20)` | NOT NULL, UNIQUE | Läsbart avtalsnummer, format `AL-NNNNNN` (löpnummer). Affärsnyckel för kommunikation med kund |
-| `insured_person_id` | `UUID` | NOT NULL, UNIQUE, FK → `insured_persons(id)` ON DELETE RESTRICT | Den försäkrade. UNIQUE pga B-021 (ett avtal per person) |
-| `start_date` | `DATE` | NOT NULL | Ikraftträdande – första dagen i första premiemånaden (villkor §2.2) |
-| `end_date` | `DATE` | NULL | Avslutsdatum, NULL = löpande |
-| `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`'active'`, `'paid_up'`, `'in_payout'`, `'payout_paused'`, `'terminated'`), default `'active'` | Livscykel, se nedan |
-| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standard­tidsstämplar |
+| `policy_number` | `VARCHAR(20)` | NOT NULL, UNIQUE | Läsbart försäkringsnummer, format `AL-NNNNNN`. Affärsnyckel mot kund |
+| `insured_person_id` | `UUID` | NOT NULL, FK → `insured_persons(id)` ON DELETE RESTRICT, index | Den försäkrade |
+| `product_code` | `VARCHAR(20)` | NOT NULL, default `'ITP1'` | Produkt. Endast `'ITP1'` i nuläget (B-002) |
+| `signed_date` | `DATE` | NOT NULL | Datum försäkringen tecknades |
+| `start_date` | `DATE` | NOT NULL, CHECK ≥ `signed_date` | Ikraftträdande (villkor §2.2) |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
 
-**Statuslivscykel** (speglar villkoren i `01_domän/försäkringsvillkor.md`):
+**Relationer:** `insured_persons` 1→N `policies` 1→N `policy_states` / `policy_benefits`.
 
-- `active` – premiebetalande (villkor §3)
-- `paid_up` – fribrev: anställning upphörd, kapital kvar i förvaltning (villkor §2.4)
+---
+
+## 6. Tabell: `policy_states` – Försäkringslägen
+
+**Domän:** Tillståndshistorik per försäkring som **tidsperioder**: varje rad säger "försäkringen var i läge X från `valid_from` till `valid_to`". Öppen rad (`valid_to IS NULL`) = nuvarande läge. Frågan "vilket läge hade försäkringen 2024-03-15?" = raden där datumet ligger i intervallet.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
+| `policy_id` | `UUID` | NOT NULL, FK → `policies(id)` ON DELETE RESTRICT | Försäkringen |
+| `state` | `VARCHAR(20)` | NOT NULL, CHECK in (`'premium_paying'`, `'paid_up'`, `'in_payout'`, `'payout_paused'`, `'terminated'`) | Läge, speglar villkoren (se nedan) |
+| `valid_from` | `DATE` | NOT NULL | Lägets första giltighetsdag |
+| `valid_to` | `DATE` | NULL, CHECK (NULL eller ≥ `valid_from`) | Sista giltighetsdag. NULL = pågående |
+| `note` | `VARCHAR(255)` | NULL | Orsak/kommentar, t.ex. "Anställning upphörde" |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
+
+**Lägen** (mappning mot `01_domän/försäkringsvillkor.md`):
+
+- `premium_paying` – premiebetalande (villkor §3)
+- `paid_up` – fribrev (villkor §2.4)
 - `in_payout` – uttag pågår (villkor §7)
-- `payout_paused` – uttag pausat, kapital åter i förvaltning (villkor §7.3)
-- `terminated` – avslutat (kapital slututbetalt eller avtal annullerat)
+- `payout_paused` – uttag pausat (villkor §7.3)
+- `terminated` – avslutad
 
-**Index:** `policy_number` och `insured_person_id` (implicita via UNIQUE), `status`.
-
-**Relationer:**
-- `policies.insured_person_id` → `insured_persons.id` (1:1 enligt B-021)
-- `policies.id` ← `premium_transactions.policy_id` (ett avtal har många transaktioner)
+**Integritet:** Partiellt unikt index på `policy_id` där `valid_to IS NULL` – max ett öppet läge per försäkring. Att perioder inte överlappar valideras på applikationsnivå (Postgres EXCLUDE-constraint kräver btree_gist-extension – utvärderas senare). Index på `(policy_id, valid_from)`.
 
 ---
 
-## 6. Tabell: `premium_transactions` – Premietransaktioner
+## 7. Tabell: `policy_benefits` – Försäkringsförmåner
 
-**Domän:** En rad per policy, kalendermånad och transaktionstyp. Ordinarie premie beräknas enligt premietrappan i `01_domän/ITP1_regelverk.md` §2/§8. Tabellen är **spårbarhetens kärna**: varje krona i pensionskapitalet ska kunna följas hit, och varje rad ska kunna räknas om från sitt löneunderlag och sina beräkningsparametrar.
+**Domän:** En förmån inom en försäkring. I nuläget finns bara premiebestämd ålderspension (`retirement_dc`), men modellen är byggd för att TGL, familjeskydd m.fl. ska kunna läggas till som ytterligare rader på samma försäkring – med sina egna premier och parametrar, utan schemaändring.
 
 | Kolumn | Datatyp | Constraints | Beskrivning |
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
-| `policy_id` | `UUID` | NOT NULL, FK → `policies(id)` ON DELETE RESTRICT | Försäkringsavtalet |
-| `period_month` | `DATE` | NOT NULL, CHECK (dag = 1) | Premiemånaden, alltid månadens första dag (t.ex. `2026-06-01`) |
-| `transaction_type` | `VARCHAR(20)` | NOT NULL, CHECK in (`'premium'`, `'adjustment'`, `'fee'`), default `'premium'` | `premium` = ordinarie månadspremie, `adjustment` = korrigering (±), `fee` = kapitalavgift enligt B-021 (införs med kapitalberäkningen) |
-| `pensionable_salary_sek` | `NUMERIC(10,2)` | NULL, CHECK ≥ 0 | Pensionsmedförande lön som premien beräknats på. NULL för typer utan löneunderlag (`fee`) |
-| `amount_sek` | `NUMERIC(12,2)` | NOT NULL | Belopp. Positivt = tillförs kapitalet, negativt = dras (avgifter, korrigeringar nedåt) |
-| `calculation_basis` | `JSONB` | NULL | Beräkningsunderlag för revision: `{"ibb": 83400, "breakpoint_low": 52125, "breakpoint_high": 208500, "rate_low": 0.045, "rate_high": 0.30, "amount_low": ..., "amount_high": ...}` |
-| `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`'pending'`, `'invoiced'`, `'paid'`, `'cancelled'`), default `'pending'` | Faktureringsflöde enligt villkor §4. Kapital tillgodoförs vid `paid` |
-| `paid_date` | `DATE` | NULL | Datum betalning mottogs (sätts vid status `paid`) |
-| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standard­tidsstämplar |
+| `policy_id` | `UUID` | NOT NULL, FK → `policies(id)` ON DELETE RESTRICT | Försäkringen |
+| `benefit_type` | `VARCHAR(30)` | NOT NULL, CHECK in (`'retirement_dc'`, `'tgl'`, `'family_protection'`) | Förmånstyp. Nya typer läggs till i CHECK vid behov |
+| `start_date` | `DATE` | NOT NULL | Förmånens ikraftträdande |
+| `end_date` | `DATE` | NULL | Förmånens upphörande, NULL = löpande |
+| `parameters` | `JSONB` | NULL | Förmånsspecifika parametrar (t.ex. TGL-belopp, förmånstagare) – olika per typ, därav JSONB |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
 
-**Unikhet:** Partiellt unikt index på `(policy_id, period_month)` där `transaction_type = 'premium'` – max en ordinarie premie per avtal och månad. Korrigeringar och avgifter kan förekomma flera gånger samma månad.
+**Integritet:** Unikt index på `(policy_id, benefit_type)` där `end_date IS NULL` – max en pågående förmån av varje typ per försäkring. Historiska (avslutade) förmåner av samma typ tillåts.
 
-**Index:** `(policy_id, period_month)` för kontoutdrag per avtal, `status` för faktureringsflödet.
+**Relationer:** `policy_benefits.id` ← `premium_transactions.benefit_id` (förmånens premier).
 
-**Relationer:**
-- `premium_transactions.policy_id` → `policies.id`
+---
+
+## 8. Tabell: `premium_transactions` – Premietransaktioner
+
+**Domän:** En rad per **förmån**, kalendermånad och transaktionstyp (B-022: premien hör till förmånen, inte försäkringen – TGL-premier ska inte blandas med pensionspremier). Ordinarie ålderspensionspremie beräknas enligt `01_domän/ITP1_regelverk.md` §2/§8. Tabellen är **spårbarhetens kärna**: varje krona i pensionskapitalet ska kunna följas hit och räknas om ur sitt underlag.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
+| `benefit_id` | `UUID` | NOT NULL, FK → `policy_benefits(id)` ON DELETE RESTRICT | Förmånen premien avser |
+| `period_month` | `DATE` | NOT NULL, CHECK (dag = 1) | Premiemånaden, alltid månadens första dag |
+| `transaction_type` | `VARCHAR(20)` | NOT NULL, CHECK in (`'premium'`, `'adjustment'`, `'fee'`), default `'premium'` | `premium` = ordinarie månadspremie, `adjustment` = korrigering (±), `fee` = kapitalavgift (B-021) |
+| `pensionable_salary_sek` | `NUMERIC(10,2)` | NULL, CHECK ≥ 0 | Löneunderlag. NULL för typer utan löneunderlag |
+| `amount_sek` | `NUMERIC(12,2)` | NOT NULL | Belopp. Positivt = tillförs, negativt = dras |
+| `calculation_basis` | `JSONB` | NULL | Beräkningsunderlag för revision (IBB, brytpunkter, satser, delbelopp) |
+| `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`'pending'`, `'invoiced'`, `'paid'`, `'cancelled'`), default `'pending'` | Faktureringsflöde (villkor §4). Kapital tillgodoförs vid `paid` |
+| `paid_date` | `DATE` | NULL | Datum betalning mottogs |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
+
+**Unikhet:** Partiellt unikt index på `(benefit_id, period_month)` där `transaction_type = 'premium'`. **Index:** `(benefit_id, period_month)`, `status`.
 
 **Designnoter:**
-- `amount_sek` är signerad och `NUMERIC(12,2)` (rymmer stora korrigeringar); saldo = `SUM(amount_sek) WHERE status = 'paid'`
-- `calculation_basis` som JSONB i stället för egna kolumner: parametrarna varierar per typ och år, och används för revision/felsökning snarare än relationella frågor (jfr hybridprincipen B-005)
-- Avrundning: premier avrundas till hela ören vid beräkning (regelverket §8.5)
+- Förmånens kapital = `SUM(amount_sek) WHERE status = 'paid'`; försäkringens kapital = summan över dess förmåner; personens totala = summan över försäkringarna
+- `calculation_basis` som JSONB: parametrar varierar per typ och år, används för revision snarare än relationella frågor (B-005)
+- Avrundning till hela ören (regelverket §8.5)
 
 ---
 
-## 7. Tabell: `base_amounts` – Basbelopp per år
+## 9. Tabell: `base_amounts` – Basbelopp per år
 
 **Domän:** Parametertabell med de basbelopp beräkningar behöver, ett värde per år. Premiemotorn läser härifrån – basbelopp får aldrig hårdkodas i beräkningskod (`01_domän/ITP1_regelverk.md` §6). Uppdateras årligen av operatören när regeringen fastställt nya belopp (november året innan).
 
@@ -174,7 +207,7 @@
 
 ---
 
-## 8. Datakvalitet och valideringar
+## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**
 - `org_number` – Luhn-kontroll (10 siffror, sista siffran är kontrollsiffra)
@@ -183,7 +216,8 @@
 - `employment_start_date` ≤ `employment_end_date` (om båda satta)
 - `itp1_start_date` ≥ datum när personen fyllde 25 (ITP-avtalets §4)
 - `policies.start_date` ≥ den försäkrades `itp1_start_date` (om satt)
-- `premium_transactions.period_month` inom policyns aktiva period
+- `policy_states`: perioder för samma försäkring får inte överlappa (appnivå, se §6)
+- `premium_transactions.period_month` inom förmånens aktiva period
 - `premium`-transaktioner: `amount_sek` ska vara reproducerbar ur `pensionable_salary_sek` + `calculation_basis`
 
 **På databasnivå (CHECK):**
@@ -193,7 +227,7 @@
 
 ---
 
-## 9. Säkerhet och behörigheter
+## 11. Säkerhet och behörigheter
 
 - **Tabellen `insured_persons` är PII-bärande** (B-006). Skills som läser/skriver mot den ska deklareras med behörighetslista.
 - **Maskning vid analys:** Data scientist-agenten arbetar mot anonymiserade vyer eller aggregat, inte rå PII.
@@ -201,7 +235,7 @@
 
 ---
 
-## 10. Migrationer och versionering
+## 12. Migrationer och versionering
 
 - **Alembic** används för schemamigrationer (planerat, ej uppsatt än).
 - `employers` och `insured_persons` är skapade direkt via `Base.metadata.create_all` (före Alembic). `policies` och `premium_transactions` skapas på samma sätt i Fas 1b; Alembic införs senast när första ändringen av en befintlig tabell behövs.
@@ -209,15 +243,16 @@
 
 ---
 
-## 11. Hänvisningar
+## 13. Hänvisningar
 
 - **B-018** – Databricks Lakebase som databas (ersätter B-014/Supabase); SQLAlchemy som ORM kvarstår
 - **B-005** – hybrid dataarkitektur (varför struktur i DB och inte i text)
 - **B-006** – behörighetsmodell för PII
 - **B-015** – mappstruktur och namnkonvention (engelska i kod, svenska i dokumentation)
-- **B-021** – produktförenklingar (ett avtal per försäkrad, kapitalavgift som `fee`-transaktion)
+- **B-021** – produktförenklingar (kapitalavgift som `fee`-transaktion m.m.)
+- **B-022** – försäkringsmodell: flera försäkringar per person, förmåner och tillståndsperioder (ersätter B-021:s ett-avtal-regel)
 - **MASTER_CONTEXT §6** – dataarki­tektur (övergripande)
 - Domänregler: `01_domän/ITP1_regelverk.md` (premietrappa, åldersfönster), `01_domän/försäkringsvillkor.md` (livscykel, fakturering)
-- SQLAlchemy-modeller: `src/models/employer.py`, `src/models/insured_person.py`, `src/models/policy.py`, `src/models/premium_transaction.py`
+- SQLAlchemy-modeller: `src/models/employer.py`, `insured_person.py`, `policy.py`, `policy_state.py`, `policy_benefit.py`, `premium_transaction.py`, `base_amount.py`
 - Mockdatagenerering: `scripts/generate_mock_data.py`
 - Databas-seed: `scripts/seed_supabase.py` *(namnet är historiskt – seedar Lakebase via `DATABASE_URL`)*

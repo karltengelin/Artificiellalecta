@@ -82,7 +82,10 @@ class InsuredPerson(Base):
     )
 
     employer: Mapped["Employer"] = relationship(back_populates="insured_persons")
-    policy: Mapped["Policy | None"] = relationship(back_populates="insured_person")
+    policies: Mapped[list["Policy"]] = relationship(
+        back_populates="insured_person",
+        order_by="Policy.start_date",
+    )
 
     def __repr__(self) -> str:
         # PNR redigeras i repr för att inte slumpa ut PII i loggar

@@ -15,7 +15,7 @@
 |---|---|
 | **Försäkringstagare** | Arbetsgivare som tecknat pensioneringsavtal med Artificiellalecta (tabell `employers`) |
 | **Försäkrad** | Anställd hos försäkringstagaren som omfattas av ITP1 (tabell `insured_persons`) |
-| **Försäkringsavtal** | Avtalet per försäkrad om ålderspension (tabell `policies`, Fas 1b) |
+| **Försäkringsavtal** | En försäkring tecknad för en försäkrad; kan innehålla en eller flera förmåner (tabeller `policies`/`policy_benefits`, B-022). Försäkringens läge över tid: `policy_states` |
 | **Pensionsmedförande lön** | Kontant utbetald bruttolön per kalendermånad, enligt `ITP1_regelverk.md` §3 |
 | **Pensionskapital** | Summan av inbetalda premier och tillgodoförd avkastning, minus avgifter och uttag |
 | **IBB** | Inkomstbasbelopp, fastställs årligen av regeringen |

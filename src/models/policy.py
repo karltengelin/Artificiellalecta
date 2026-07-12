@@ -1,8 +1,8 @@
-"""SQLAlchemy-modell för försäkringsavtal (ålderspension ITP1).
+"""SQLAlchemy-modell för försäkringar.
 
-Se 02_system/databasschema.md §5 för fullständig dokumentation av tabellen.
-Enligt B-021 har varje försäkrad exakt ett avtal (UNIQUE på insured_person_id).
-Pensionskapital lagras inte här – det härleds ur premium_transactions.
+Se 02_system/databasschema.md §5. En person kan ha flera försäkringar (B-022).
+Ingen statuskolumn – försäkringens läge över tid ligger i policy_states,
+dess innehåll i policy_benefits. Kapital härleds ur premium_transactions.
 """
 
 from __future__ import annotations
@@ -19,24 +19,18 @@ from .base import Base
 
 if TYPE_CHECKING:
     from .insured_person import InsuredPerson
-    from .premium_transaction import PremiumTransaction
-
-#: Tillåtna livscykelstatusar, speglar villkoren i 01_domän/försäkringsvillkor.md
-POLICY_STATUSES = ("active", "paid_up", "in_payout", "payout_paused", "terminated")
+    from .policy_benefit import PolicyBenefit
+    from .policy_state import PolicyState
 
 
 class Policy(Base):
-    """Försäkringsavtal – ålderspension ITP1 för en försäkrad."""
+    """Försäkring – tecknad för en försäkrad, med förmåner och lägeshistorik."""
 
     __tablename__ = "policies"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('active', 'paid_up', 'in_payout', 'payout_paused', 'terminated')",
-            name="ck_policies_status",
-        ),
-        CheckConstraint(
-            "end_date IS NULL OR end_date >= start_date",
-            name="ck_policies_dates",
+            "start_date >= signed_date",
+            name="ck_policies_start_after_signed",
         ),
     )
 
@@ -51,25 +45,26 @@ class Policy(Base):
         UUID(as_uuid=True),
         ForeignKey("insured_persons.id", ondelete="RESTRICT"),
         nullable=False,
-        unique=True,  # Ett avtal per försäkrad (B-021)
-    )
-
-    start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-
-    status: Mapped[str] = mapped_column(
-        String(20),
-        nullable=False,
-        default="active",
-        server_default="active",
         index=True,
     )
 
-    insured_person: Mapped["InsuredPerson"] = relationship(back_populates="policy")
-    premium_transactions: Mapped[list["PremiumTransaction"]] = relationship(
+    product_code: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="ITP1", server_default="ITP1"
+    )
+    signed_date: Mapped[date] = mapped_column(Date, nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+
+    insured_person: Mapped["InsuredPerson"] = relationship(
+        back_populates="policies"
+    )
+    states: Mapped[list["PolicyState"]] = relationship(
         back_populates="policy",
-        order_by="PremiumTransaction.period_month",
+        order_by="PolicyState.valid_from",
+    )
+    benefits: Mapped[list["PolicyBenefit"]] = relationship(
+        back_populates="policy",
+        order_by="PolicyBenefit.start_date",
     )
 
     def __repr__(self) -> str:
-        return f"<Policy {self.policy_number} [{self.status}]>"
+        return f"<Policy {self.policy_number} ({self.product_code})>"

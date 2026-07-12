@@ -9,6 +9,8 @@ from .base_amount import BaseAmount
 from .employer import Employer
 from .insured_person import InsuredPerson
 from .policy import Policy
+from .policy_benefit import PolicyBenefit
+from .policy_state import PolicyState
 from .premium_transaction import PremiumTransaction
 
 __all__ = [
@@ -17,5 +19,7 @@ __all__ = [
     "Employer",
     "InsuredPerson",
     "Policy",
+    "PolicyBenefit",
+    "PolicyState",
     "PremiumTransaction",
 ]

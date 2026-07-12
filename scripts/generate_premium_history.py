@@ -1,33 +1,33 @@
-"""Fas 1d: Skapar försäkringsavtal och genererar retroaktiv premiehistorik.
+"""Fas 1d/1e: Skapar försäkringar med förmåner, lägen och premiehistorik.
 
-För varje försäkrad med ITP1-startdatum:
-  1. Skapar ett försäkringsavtal i `policies` (ett per person, B-021).
-     Status: 'active' om personen är aktiv, annars 'paid_up' (fribrev).
-  2. Genererar en `premium`-transaktion per kalendermånad från
+För varje försäkrad med ITP1-startdatum (som inte slutade före ITP1-start):
+  1. Försäkring i `policies` (produktkod ITP1, tecknad = ikraftträdande)
+  2. Förmån `retirement_dc` i `policy_benefits`
+  3. Lägeshistorik i `policy_states`:
+       - `premium_paying` från start; öppen om personen är aktiv
+       - annars stängd vid anställningens slut, följd av öppet `paid_up` (fribrev)
+  4. En `premium`-transaktion per kalendermånad på förmånen, från
      max(ITP1-start, anställningsstart, HISTORY_START) t.o.m. HISTORY_END,
-     begränsat av anställningens slut och åldersfönstret 25–66
-     (01_domän/ITP1_regelverk.md §4). Premien beräknas med premiemotorn
-     (03_skills/beräkning/beräkna-itp1-premie.md) och årets IBB ur
-     `base_amounts`. Status 'paid' med paid_date den 15:e månaden efter.
+     begränsad av anställningens slut och åldersfönstret 25–66.
+     Premie via premiemotorn med årets IBB ur `base_amounts`.
 
-Lönehistorik: aktuell månadslön antas ha ökat med LÖNEDEFLATOR per år –
-lönen för år Y = dagens lön / (1 + LÖNEDEFLATOR)^(2026 − Y), avrundad till
-hela kronor. Förenklad men deterministisk modell; verklig lön per månad
-lagras i transaktionen så varje premie är reproducerbar oavsett modell.
+Lönehistorik: dagens lön deflaterad med SALARY_DEFLATOR per år bakåt
+(hela kronor). Verklig lön lagras per transaktion, så varje premie är
+reproducerbar oavsett lönemodell.
 
-Idempotent: personer som redan har avtal får inga dubbletter, och månader
-som redan har en premium-transaktion hoppas över.
+Idempotent: personer med befintlig försäkring får inga dubbletter, och
+månader som redan har premium-transaktion på förmånen hoppas över.
 
 Användning (från repo-roten, i .venv):
-    python scripts/generate_premium_history.py --dry-run   # visa vad som skulle skapas
-    python scripts/generate_premium_history.py             # skriv till databasen
+    python scripts/generate_premium_history.py --dry-run
+    python scripts/generate_premium_history.py
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -36,7 +36,14 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from sqlalchemy import select  # noqa: E402
 
-from models import BaseAmount, InsuredPerson, Policy, PremiumTransaction  # noqa: E402
+from models import (  # noqa: E402
+    BaseAmount,
+    InsuredPerson,
+    Policy,
+    PolicyBenefit,
+    PolicyState,
+    PremiumTransaction,
+)
 from skills.calculation.calculate_itp1_premium import (  # noqa: E402
     calculate_itp1_premium,
 )
@@ -115,12 +122,10 @@ def main() -> None:
             )
 
         persons = session.scalars(select(InsuredPerson)).all()
-        existing_policies = {
-            p.insured_person_id: p for p in session.scalars(select(Policy))
-        }
-
-        # Löpnummer för policy_number AL-NNNNNN
-        seq = len(existing_policies)
+        persons_with_policy = set(
+            session.scalars(select(Policy.insured_person_id))
+        )
+        seq = len(persons_with_policy)
 
         n_new_policies = 0
         n_new_tx = 0
@@ -134,8 +139,7 @@ def main() -> None:
                 n_skipped_no_itp += 1
                 continue
 
-            # Personer vars anställning upphörde innan ITP1-täckningen skulle
-            # börja hann aldrig tjäna in något - inget avtal ska skapas.
+            # Slutade innan ITP1-täckningen började → ingen försäkring alls
             if (
                 person.employment_end_date is not None
                 and month_of(person.employment_end_date)
@@ -144,22 +148,67 @@ def main() -> None:
                 n_skipped_no_coverage += 1
                 continue
 
-            policy = existing_policies.get(person.id)
-            if policy is None:
-                seq += 1
-                policy_status = (
-                    "active" if person.status == "active" else "paid_up"
+            policy_start = month_of(person.itp1_start_date)
+
+            if person.id in persons_with_policy:
+                # Befintlig försäkring – hämta dess ålderspensionsförmån
+                policy = session.scalars(
+                    select(Policy).where(Policy.insured_person_id == person.id)
+                ).first()
+                benefit = next(
+                    (b for b in policy.benefits if b.benefit_type == "retirement_dc"),
+                    None,
                 )
+                if benefit is None:
+                    continue  # försäkring utan pensionsförmån – rör ej
+            else:
+                seq += 1
                 policy = Policy(
                     policy_number=f"AL-{seq:06d}",
                     insured_person_id=person.id,
-                    start_date=month_of(person.itp1_start_date),
-                    end_date=person.employment_end_date,
-                    status=policy_status,
+                    product_code="ITP1",
+                    signed_date=policy_start,
+                    start_date=policy_start,
                 )
+                benefit = PolicyBenefit(
+                    policy=policy,
+                    benefit_type="retirement_dc",
+                    start_date=policy_start,
+                )
+
+                # Lägeshistorik
+                if person.employment_end_date is None or person.status == "active":
+                    states = [
+                        PolicyState(
+                            policy=policy,
+                            state="premium_paying",
+                            valid_from=policy_start,
+                            valid_to=None,
+                        )
+                    ]
+                else:
+                    end = person.employment_end_date
+                    states = [
+                        PolicyState(
+                            policy=policy,
+                            state="premium_paying",
+                            valid_from=policy_start,
+                            valid_to=end,
+                        ),
+                        PolicyState(
+                            policy=policy,
+                            state="paid_up",
+                            valid_from=end + timedelta(days=1),
+                            valid_to=None,
+                            note="Anställning upphörde (fribrev)",
+                        ),
+                    ]
+
                 if not args.dry_run:
                     session.add(policy)
-                    session.flush()  # ger policy.id
+                    session.add(benefit)
+                    session.add_all(states)
+                    session.flush()  # ger policy.id och benefit.id
                 n_new_policies += 1
 
             if person.monthly_salary_sek is None:
@@ -169,21 +218,20 @@ def main() -> None:
             birth = parse_birth_date(person.personal_id_number)
 
             first = max(
-                month_of(person.itp1_start_date),
+                policy_start,
                 month_of(person.employment_start_date),
                 HISTORY_START,
             )
             last = HISTORY_END
             if person.employment_end_date is not None:
-                # Sista premiemånaden = anställningens sista månad
                 last = min(last, month_of(person.employment_end_date))
 
             existing_periods: set[date] = set()
-            if not args.dry_run and policy.id is not None:
+            if not args.dry_run and benefit.id is not None:
                 existing_periods = set(
                     session.scalars(
                         select(PremiumTransaction.period_month).where(
-                            PremiumTransaction.policy_id == policy.id,
+                            PremiumTransaction.benefit_id == benefit.id,
                             PremiumTransaction.transaction_type == "premium",
                         )
                     )
@@ -206,7 +254,7 @@ def main() -> None:
                 if not args.dry_run:
                     session.add(
                         PremiumTransaction(
-                            policy_id=policy.id,
+                            benefit_id=benefit.id,
                             period_month=period,
                             transaction_type="premium",
                             pensionable_salary_sek=salary,
@@ -222,7 +270,7 @@ def main() -> None:
         mode = "DRY-RUN (inget skrivet)" if args.dry_run else "SKRIVET till databasen"
         print(f"--- {mode} ---")
         print(f"Försäkrade totalt:        {len(persons)}")
-        print(f"Nya försäkringsavtal:     {n_new_policies}")
+        print(f"Nya försäkringar:         {n_new_policies}")
         print(f"Nya premietransaktioner:  {n_new_tx}")
         print(f"Summa premier:            {total_premium:,.2f} kr")
         print(f"Hoppade (ej ITP1-start):  {n_skipped_no_itp}")

@@ -8,6 +8,35 @@
 
 ## Beslut
 
+### B-022 | 2026-07-12 | Försäkringsmodell med förmåner och tillståndsperioder
+
+**Beslut:** Försäkringsdatamodellen struktureras i tre nivåer med en parallell tidslinje:
+
+1. **`policies` (försäkringar):** en person kan ha **flera** försäkringar. Tabellen bär identitet (försäkringsnummer, produktkod, tecknings- och ikraftträdandedatum) – **ingen statuskolumn**.
+2. **`policy_benefits` (förmåner):** försäkringens innehåll modelleras som förmåner med egna start-/slutdatum, typspecifika parametrar (JSONB) och **egna premietransaktioner** (`premium_transactions.benefit_id`). I nuläget endast premiebestämd ålderspension (`retirement_dc`); TGL och familjeskydd är förberedda som typer.
+3. **`policy_states` (lägen):** försäkringens läge över tid som tillståndsperioder (`premium_paying`, `paid_up`, `in_payout`, `payout_paused`, `terminated`) med `valid_from`/`valid_to`. Öppen rad = nuläge.
+
+**Motivering:**
+- Speglar hur verkliga försäkringssystem modellerar: försäkring → förmåner → tillstånd. När TGL/familjeskydd läggs till krävs ingen schemaändring, och deras premier blandas inte med pensionspremier
+- Tillståndsperioder svarar direkt på "vilket läge hade försäkringen vid tidpunkt T?" – krav för handläggning, revision och kundhistorik
+- Ingen statuskolumn på `policies` eliminerar risken för dubbla sanningar (status som motsäger lägeshistoriken)
+- Uppslagskedjan person → försäkringar → förmåner → premier är rena FK-joins – handläggar-UI:t (B-020) kan bygga vyer utan specialfall
+
+**Övervägda alternativ:**
+
+*Händelselogg i stället för tillståndsperioder* – mer granulär revision, men läget vid en tidpunkt måste härledas ur händelsekedjan. Kan införas senare som komplement (t.ex. i samband med `cases`).
+
+*Premier kvar på försäkringsnivå* – enklare nu, men skulle kräva ombyggnad när fler förmånstyper tillkommer.
+
+**Konsekvenser:**
+- Tabellerna byggdes om via `scripts/rebuild_insurance_tables.py`; genererad data återskapas med `scripts/generate_premium_history.py`
+- Integritetsregler: max ett öppet läge per försäkring, max en pågående förmån per typ och försäkring, max en ordinarie premie per förmån och månad (partiella unika index). Överlappande lägesperioder valideras på applikationsnivå
+- Förmånens kapital = summan av dess betalda transaktioner; försäkringens = summan över förmåner; personens = summan över försäkringar
+
+**Ersätter:** B-021:s regel om ett avtal per försäkrad (UNIQUE på `insured_person_id`). Övriga delar av B-021 (endast traditionell förvaltning, kapitalavgift 0,20 %, ingen flytträtt/efterlevandeskydd i v1.0) kvarstår oförändrade.
+
+---
+
 ### B-021 | 2026-07-12 | Produktförenklingar i försäkringsvillkor version 1.0
 
 **Beslut:** Bolagets försäkringsvillkor för ålderspension ITP1 (`01_domän/försäkringsvillkor.md` v1.0) gör tre medvetna förenklingar gentemot det verkliga ITP1-systemet:
