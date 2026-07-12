@@ -8,6 +8,55 @@
 
 ## Beslut
 
+### B-020 | 2026-07-12 | Handläggar-UI byggs före kundportalen
+
+**Beslut:** Av de två planerade webbgränssnitten byggs **handläggargränssnittet först** (admin-UI enligt utredningen i ATT_GORA: FastAPI-backend, tabellvyer mot Lakebase, inbyggd Claude-agent). Kundportalen (se pensionssaldo, pausa uttag m.m.) byggs senare, ovanpå samma FastAPI-backend.
+
+**Motivering:**
+- Utredningen för admin-UI:t är redan gjord (ATT_GORA 🔵) – arkitektur, komponenter och designfrågor är kartlagda
+- Handläggar-UI:t kräver ingen kundautentisering – för en sandbox räcker enkelt skydd, medan en kundportal väcker autentiserings- och behörighetsfrågor som inte behöver lösas nu
+- Kundportalens kärnfunktioner (t.ex. pausa uttag) kräver uttags-/utbetalningslogik som inte finns än – handläggar-UI:t behöver bara läsa och redigera data som redan finns i databasen
+- Operatörsprincipen (B-017) gynnas direkt: handläggar-UI:t blir operatörens gränssnitt mot bolaget
+- Gemensam backend gör att kundportalen sedan blir ett frontend-tillägg, inte ett nytt systembygge
+
+**Övervägda alternativ:**
+
+*Alternativ 1: Kundportalen först* – mer synligt demoresultat, men blockeras av saknad uttagslogik och autentiseringsfrågor.
+
+*Alternativ 2: Båda parallellt* – enhetlig arkitektur från start men mest arbete och delad fokus; avvisat i detta skede.
+
+**Konsekvenser:**
+- Fas 4 i ATT_GORA:s fasplan avser handläggar-UI:t; kundportalen läggs som senare fas
+- Backenden designas från start för två klienter (handläggare, kund) – API:t ska inte anta att anroparen är intern
+- Utestående designfrågor i ATT_GORA-utredningen (sessionshistorik, filrättigheter, autentisering) beslutas när Fas 4 påbörjas
+
+---
+
+### B-019 | 2026-07-12 | Kapitalförvaltning som paper trading – inget riktigt kapital
+
+**Beslut:** Kapitalförvaltningen byggs som **paper trading**: en simulerad wallet/portfölj i databasen (startkassa t.ex. 1 000 kr, simulerade), riktiga marknadsdata via gratis-API (t.ex. yfinance), och förvaltningslogik som placerar enligt en intern placeringsriktlinje i `05_styrdokument/` – skriven som om ett verkligt tjänstepensionsbolag investerade. Inget riktigt kapital används.
+
+**Motivering:**
+- Bekräftar B-003 (sandbox, inget riktigt kapital) – helautomatisk AI-handel med riktiga pengar hade rivit upp den principen
+- §3.5 (människa-i-loopen) kräver ändå manuellt godkännande av transaktioner – helautomatisk exekvering med riktiga pengar vore dubbelt oförenlig med befintliga principer
+- Läroeffekten är nästan identisk: portföljlogik, riktlinjeefterlevnad, rebalansering och beslutsloggning byggs och testas lika väl mot simulerad kassa med riktiga kurser
+- Slipper mäklar-API, depåavtal och regulatorisk gråzon kring automatiserad handel
+- Premieinflödet från försäkringssystemet (Fas 1) kan kopplas som insättningar till portföljen – bolaget hänger ihop end-to-end utan externa beroenden
+
+**Övervägda alternativ:**
+
+*Alternativ 1: Riktiga 1 000 kr, operatören exekverar* – agenten föreslår ordrar, operatören lägger dem manuellt hos mäklare. Förenligt med §3.5 men manuellt arbete per order och kräver depå; ger marginellt mervärde över paper trading. Kan omprövas senare när förvaltningslogiken är beprövad.
+
+*Alternativ 2: Helautomatisk handel med riktigt kapital* – avvisat: bryter B-003 och §3.5.
+
+**Konsekvenser:**
+- Fasplanens Fas 2 i ATT_GORA: styrdokumentshierarki (minimal) + placeringsriktlinje, tabellerna `portfolios`/`portfolio_holdings`/`trades`, marknadsdata-skill, regelstyrd förvaltningslogik
+- Första versionen av förvaltningslogiken är regelstyrd kod (ingen LLM) – agentautonomi införs efter att AI-abstraktionslagret (B-009, Fas 3) är byggt
+- Varje förvaltningsbeslut loggas med motivering (spårbarhetskrav, jfr B-016)
+- Om riktigt kapital någonsin införs krävs ett nytt beslut som uttryckligen ersätter både detta och B-003
+
+---
+
 ### B-018 | 2026-07-08 | Databricks Lakebase ersätter Supabase som databas
 
 **Beslut:** Som databas används **Databricks Lakebase** (serverless Postgres, Free Edition) istället för Supabase. All databasåtkomst i Python sker fortfarande via **SQLAlchemy** – ingen ändring av ORM-lagret eftersom Lakebase är Postgres-kompatibel över standardprotokollet.

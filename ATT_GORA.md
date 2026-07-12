@@ -11,9 +11,9 @@
 Övergripande ordning för de kommande byggfaserna. Detaljuppgifter ligger under respektive prioritetsrubrik nedan.
 
 1. **Fas 1 – Försäkringssystemet (premiemotorn):** ITP1-domändokument, tabellerna `policies` + `premium_transactions`, premieberäkning som skill, genererad premiehistorik
-2. **Fas 2 – Kapitalförvaltning (paper trading):** placeringsriktlinje i `05_styrdokument/`, tabellerna `portfolios`/`portfolio_holdings`/`trades`, marknadsdata via gratis-API, regelstyrd förvaltningslogik med beslutslogg. Simulerad wallet – inget riktigt kapital (B-003)
+2. **Fas 2 – Kapitalförvaltning (paper trading, B-019):** placeringsriktlinje i `05_styrdokument/`, tabellerna `portfolios`/`portfolio_holdings`/`trades`, marknadsdata via gratis-API, regelstyrd förvaltningslogik med beslutslogg. Simulerad wallet – inget riktigt kapital (B-003)
 3. **Fas 3 – AI-abstraktionslagret (B-009):** blockerar all agentkod – byggs före agenterna
-4. **Fas 4 – Handläggar-UI:** FastAPI-backend + tabellvyer + inbyggd Claude (se utredningen under 🔵 nedan). Kundportal byggs senare på samma backend
+4. **Fas 4 – Handläggar-UI (B-020):** FastAPI-backend + tabellvyer + inbyggd Claude (se utredningen under 🔵 nedan). Kundportal byggs senare på samma backend
 5. **Fas 5 – Handläggaragent + `cases`-tabell + första skills**
 
 ---
