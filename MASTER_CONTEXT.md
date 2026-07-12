@@ -129,9 +129,10 @@ Artificiellalecta/
 ├── DEMO_ANTECKNINGAR.md            ← Demoanteckningar (uppdateras bara på begäran)
 │
 ├── 01_domän/                       ← Domänkunskap (text)
-│   ├── ITP1_regelverk.md           (kommer)
+│   ├── ITP1_regelverk.md           ← Kollektivavtalets regler (premietrappa, åldrar, basbelopp)
 │   ├── aktuariell_grund.md         (kommer)
-│   ├── försäkringsvillkor.md       (kommer)
+│   ├── försäkringsvillkor.md       ← Bolagets villkor för ålderspension ITP1
+
 │   └── processer_översikt.md       (kommer)
 │
 ├── 02_system/                      ← Systemdokumentation

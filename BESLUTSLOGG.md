@@ -8,6 +8,28 @@
 
 ## Beslut
 
+### B-021 | 2026-07-12 | Produktförenklingar i försäkringsvillkor version 1.0
+
+**Beslut:** Bolagets försäkringsvillkor för ålderspension ITP1 (`01_domän/försäkringsvillkor.md` v1.0) gör tre medvetna förenklingar gentemot det verkliga ITP1-systemet:
+
+1. **Endast traditionell förvaltning** – inget fondval, ingen valcentral. Allt pensionskapital förvaltas kollektivt enligt bolagets placeringsriktlinje.
+2. **Kapitalavgift 0,20 % per år** (debiteras månadsvis med 1/12), ingen fast avgift.
+3. **Ingen flytträtt och inget efterlevandeskydd** i version 1.0.
+
+**Motivering:**
+- Kollektiv traditionell förvaltning gör Fas 2 (paper trading, B-019) till *en* portfölj att förvalta i stället för individuella val – premieinflödet kan kopplas direkt till portföljen utan valcentralslogik
+- I verkligheten ligger dessa roller dessutom hos skilda aktörer (Collectum som valcentral, flera valbara bolag) – att simulera hela den strukturen tillför komplexitet utan motsvarande lärvärde i detta skede
+- En kapitalavgift ger bolaget en intäktsström, vilket behövs för att ekonomiagenten (framtida fas) ska ha något att bokföra; 0,20 % ligger i paritet med verkliga ITP1-upphandlade bolag
+- Efterlevandeskydd är redan utanför scope (B-002); flytträtt kräver motpartslogik som saknar mening i en simulering med ett enda bolag
+
+**Konsekvenser:**
+- `policies`-tabellen (Fas 1b) behöver inte kolumner för sparform eller fondval i första versionen
+- Avgiftsuttag ska implementeras när kapitalberäkning byggs (kapitalavgift som månatlig transaktion)
+- Fondval, valcentralsroll och flytträtt är kandidater för senare versioner – återinförs i så fall genom nytt beslut och ny villkorsversion
+- Villkorens ändringslogg och detta beslut ska hållas i synk vid framtida versioner
+
+---
+
 ### B-020 | 2026-07-12 | Handläggar-UI byggs före kundportalen
 
 **Beslut:** Av de två planerade webbgränssnitten byggs **handläggargränssnittet först** (admin-UI enligt utredningen i ATT_GORA: FastAPI-backend, tabellvyer mot Lakebase, inbyggd Claude-agent). Kundportalen (se pensionssaldo, pausa uttag m.m.) byggs senare, ovanpå samma FastAPI-backend.

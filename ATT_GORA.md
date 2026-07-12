@@ -20,7 +20,7 @@
 
 ## 🔴 Hög prioritet – grunden
 
-- [ ] **Fas 1a: Skriva `01_domän/ITP1_regelverk.md` och `01_domän/försäkringsvillkor.md`** – premietrappan (4,5 % / 30 %, brytpunkt 7,5 IBB), åldersregler, aktuella basbelopp. Förutsättning för premiemotorn
+- [x] **2026-07-12** Fas 1a: `01_domän/ITP1_regelverk.md` och `01_domän/försäkringsvillkor.md` skrivna – premietrappan med 2026-belopp (IBB 83 400 kr, brytpunkter 52 125/208 500 kr/mån) verifierade mot Avtalat/Collectum/Regeringen, åldersfönster 25–66 (månadsbaserat), IBB-historik 2023–2026 för retroaktiv mockdata, implementationsregler för premiemotorn i regelverkets §8
 - [ ] **Fas 1b: Utöka databasschemat med `policies` och `premium_transactions`** – dokumentera i `02_system/databasschema.md` först, sedan SQLAlchemy-modeller
 - [ ] **Fas 1c: Premiemotor som skill** – `03_skills/beräkning/beräkna-itp1-premie.md` + `src/skills/calculation/calculate_itp1_premium.py`. Första skarpa skillen – sätter mönstret för skillbiblioteket
 - [ ] **Fas 1d: Generera premiehistorik** för de 500 försäkrade och seed:a Lakebase. Tester mot handräknade exempel
@@ -51,7 +51,7 @@
 
 - [ ] **Specificera AI-abstraktionslagret** i `02_system/ai_abstraktion.md` – utvärdera LiteLLM/OpenRouter vs egen wrapper, definiera gränssnitt
 - [ ] **Kartlägga processer** i `01_domän/processer_översikt.md` (kundärenden, premiehantering, rapportering, etc.)
-- [ ] **Skriva ut försäkringsvillkor** för ITP1 ålderspension i `01_domän/försäkringsvillkor.md`
+- [x] **2026-07-12** Skriva ut försäkringsvillkor för ITP1 ålderspension i `01_domän/försäkringsvillkor.md` *(gjordes i Fas 1a)*
 - [ ] **Dokumentera aktuariell grund** – antaganden, tabeller, beräkningsmodeller
 - [ ] **Designa regelförändringsflöde** – multi-agent-flöde som triggas när ett regelverk ändras: compliance-agent gör tolkning och konsekvensanalys, utvecklaragent identifierar kodpåverkan, kommunikationsagent förbereder ev. kundkommunikation. Dokumenteras i `02_system/regelförändringsflöde.md`. Ett av undantagen från B-008 (kräver olika mandat).
 
