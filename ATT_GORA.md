@@ -6,7 +6,24 @@
 
 ---
 
+## 📋 Fasplan (beslutad 2026-07-12)
+
+Övergripande ordning för de kommande byggfaserna. Detaljuppgifter ligger under respektive prioritetsrubrik nedan.
+
+1. **Fas 1 – Försäkringssystemet (premiemotorn):** ITP1-domändokument, tabellerna `policies` + `premium_transactions`, premieberäkning som skill, genererad premiehistorik
+2. **Fas 2 – Kapitalförvaltning (paper trading):** placeringsriktlinje i `05_styrdokument/`, tabellerna `portfolios`/`portfolio_holdings`/`trades`, marknadsdata via gratis-API, regelstyrd förvaltningslogik med beslutslogg. Simulerad wallet – inget riktigt kapital (B-003)
+3. **Fas 3 – AI-abstraktionslagret (B-009):** blockerar all agentkod – byggs före agenterna
+4. **Fas 4 – Handläggar-UI:** FastAPI-backend + tabellvyer + inbyggd Claude (se utredningen under 🔵 nedan). Kundportal byggs senare på samma backend
+5. **Fas 5 – Handläggaragent + `cases`-tabell + första skills**
+
+---
+
 ## 🔴 Hög prioritet – grunden
+
+- [ ] **Fas 1a: Skriva `01_domän/ITP1_regelverk.md` och `01_domän/försäkringsvillkor.md`** – premietrappan (4,5 % / 30 %, brytpunkt 7,5 IBB), åldersregler, aktuella basbelopp. Förutsättning för premiemotorn
+- [ ] **Fas 1b: Utöka databasschemat med `policies` och `premium_transactions`** – dokumentera i `02_system/databasschema.md` först, sedan SQLAlchemy-modeller
+- [ ] **Fas 1c: Premiemotor som skill** – `03_skills/beräkning/beräkna-itp1-premie.md` + `src/skills/calculation/calculate_itp1_premium.py`. Första skarpa skillen – sätter mönstret för skillbiblioteket
+- [ ] **Fas 1d: Generera premiehistorik** för de 500 försäkrade och seed:a Lakebase. Tester mot handräknade exempel
 
 - [x] **2026-07-08** Skapa Databricks Free Edition-konto + Lakebase-instans, uppdatera `DATABASE_URL` och kör seed *(ersatte Supabase-uppgiften, se B-018)* – projekt `artificiellalecta` skapat på `artificiellalecta@gmail.com`, Postgres 18, region AWS (us-east-2). Password-auth aktiverad, native roll `app_backend` skapad. Öppen riskpunkt från B-018 löst: extern SQLAlchemy-anslutning med enkel användarnamn/lösenord fungerar utan problem i Free Edition. Seed kört: 20 arbetsgivare, 500 försäkrade.
 
@@ -17,6 +34,16 @@
 - [x] **2026-05-16** Definiera databasschema – `02_system/databasschema.md` + SQLAlchemy-modeller för `employers` och `insured_persons`. Övriga tabeller (policies, premium_transactions, portfolio_holdings, cases) skjuts upp till de behövs.
 - [x] **2026-05-16** Sätta upp Google-konto för det fiktiva bolaget – Artificiellalecta@gmail.com
 - [x] **2026-05-16** Skapa Supabase-konto och projekt – Artificiellalecta-projektet, region Europe *(databasval ersatt av B-018, se Arkiv)*
+
+---
+
+## 🟠 Fas 2 – Kapitalförvaltning (paper trading)
+
+- [ ] **Fas 2a: Minimal `05_styrdokument/styrdokumentshierarki.md`** – bara det som krävs för att kunna anta placeringsriktlinjen (fullständig version kvarstår under Hög prioritet)
+- [ ] **Fas 2b: Placeringsriktlinje** i `05_styrdokument/03_riktlinjer/` – tillgångsslag, allokeringslimiter, rebalanseringsregler; skriven som om ett verkligt tjänstepensionsbolag (LTF/Solvens II-anda, aktsamhetsprincipen)
+- [ ] **Fas 2c: Tabeller `portfolios`, `portfolio_holdings`, `trades`** – wallet = portfölj med startkassa (t.ex. 1 000 kr simulerade)
+- [ ] **Fas 2d: Marknadsdata-skill** – gratis-API (t.ex. yfinance), hämta kurser för riktlinjens tillgångsslag
+- [ ] **Fas 2e: Förvaltningslogik** – regelstyrd i första versionen (ingen LLM förrän Fas 3): allokera enligt riktlinjen, rebalansera vid avvikelse, logga varje beslut med motivering. Koppla premieinflödet från Fas 1 till portföljen
 
 ---
 

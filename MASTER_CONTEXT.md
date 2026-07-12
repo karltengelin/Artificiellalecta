@@ -73,7 +73,7 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 |--------|-------------|--------|
 | Kapitalförvaltning | Placering av premiereserver, portföljövervakning | 🔲 Ej påbörjat |
 | Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🔲 Ej påbörjat |
-| Kundadministration | Policys, premiehantering, förmånstagare | 🔲 Ej påbörjat |
+| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell (`employers`, `insured_persons`) och seedad databas |
 | Ärende­hantering | Inkommande ärenden, handläggning, svar | 🔲 Ej påbörjat |
 | Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🔲 Ej påbörjat |
 | Rapportering | FI-rapporter, intern rapportering, revisionsunderlag | 🔲 Ej påbörjat |
@@ -104,7 +104,7 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 - Portfölj­innehav
 - Ärenden
 
-*(Detaljerad tabellstruktur dokumenteras separat när den är fastlagd)*
+*(Detaljerad tabellstruktur: se `02_system/databasschema.md`)*
 
 **Dokumentbibliotek** – textbaserade filer för:
 - Produktregler och försäkringsvillkor
@@ -118,13 +118,15 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 
 ```
 Artificiellalecta/
-├── README.md                       ← Projektintro (skrivs senare)
+├── README.md                       ← Projektintro
 ├── pyproject.toml                  ← Python-projektmetadata
-├── .gitignore                      ← Skrivs separat
-├── .env.example                    ← Mall för miljövariabler
+├── .gitignore                      ← Exkluderar hemligheter, cache m.m.
+├── .env.example                    ← Mall för miljövariabler (aldrig värden)
+├── CLAUDE.md                       ← Stående arbetsregler för Claude/Cowork
 ├── MASTER_CONTEXT.md               ← Detta dokument
 ├── BESLUTSLOGG.md                  ← Alla beslut med motivering
 ├── ATT_GORA.md                     ← Backlog
+├── DEMO_ANTECKNINGAR.md            ← Demoanteckningar (uppdateras bara på begäran)
 │
 ├── 01_domän/                       ← Domänkunskap (text)
 │   ├── ITP1_regelverk.md           (kommer)
@@ -136,15 +138,17 @@ Artificiellalecta/
 │   ├── arkitektur.md               (kommer)
 │   ├── databasschema.md            (kommer)
 │   ├── ai_abstraktion.md           (kommer)
-│   ├── agentkarta.md               (kommer)
-│   └── agenter/                    ← En MD-fil per agent
+│   ├── agentkarta.md               ← Översikt över alla agenter
+│   ├── agenter/                    ← En MD-fil per agent (10 st)
+│   └── Agentsystem/                ← Orkestrerade flöden, en MD-fil per flöde (B-016)
 │
 ├── 03_skills/                      ← Skill-beskrivningar (MD)
 │   ├── skillkatalog.md             (kommer)
 │   ├── data/
 │   ├── beräkning/
 │   ├── kommunikation/
-│   └── regelverk/
+│   ├── regelverk/
+│   └── utveckling/
 │
 ├── 04_regulatoriskt/               ← Lager 1: regelverkskällor
 │   ├── regelverkskarta.md
@@ -165,7 +169,8 @@ Artificiellalecta/
 │   │   ├── data/                   ← (= 03_skills/data/)
 │   │   ├── calculation/            ← (= 03_skills/beräkning/)
 │   │   ├── communication/          ← (= 03_skills/kommunikation/)
-│   │   └── regulatory/             ← (= 03_skills/regelverk/)
+│   │   ├── regulatory/             ← (= 03_skills/regelverk/)
+│   │   └── development/            ← (= 03_skills/utveckling/)
 │   ├── models/                     ← SQLAlchemy-modeller
 │   ├── ai/                         ← Modellagnostiskt abstraktionslager
 │   └── utils/                      ← Gemensam kod

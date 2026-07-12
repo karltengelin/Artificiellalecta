@@ -88,7 +88,7 @@ Ekonomiagent ◄─────────────────► Portfölj
 
 ### Regelförändringsflöde (multi-agent)
 
-Ett dedikerat flöde triggas när ett regelverk ändras. Dokumenteras separat i `02_system/regelförändringsflöde.md` (ej skrivet ännu).
+Ett dedikerat flöde triggas när ett regelverk ändras. Dokumenteras separat i `02_system/Agentsystem/regelförändringsflöde.md`.
 
 ```
 1. Compliance-agent      → tolkning och konsekvensanalys
@@ -111,6 +111,6 @@ Ett dedikerat flöde triggas när ett regelverk ändras. Dokumenteras separat i 
 
 - Detaljerade agentbeskrivningar: `02_system/agenter/`
 - Skillkatalog: `03_skills/skillkatalog.md` *(ej skriven ännu)*
-- Regelförändringsflöde: `02_system/regelförändringsflöde.md` *(ej skrivet ännu)*
+- Regelförändringsflöde: `02_system/Agentsystem/regelförändringsflöde.md`
 - Arkitekturprinciper: `MASTER_CONTEXT.md §3`
 - Beslut om agentarkitektur: B-006, B-007, B-008, B-011

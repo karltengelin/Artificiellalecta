@@ -27,7 +27,7 @@ Se MASTER_CONTEXT §7 för fullständig översikt.
 ## Teknisk stack
 
 - Python ≥ 3.11
-- Supabase (PostgreSQL) via SQLAlchemy
+- Databricks Lakebase (serverless Postgres) via SQLAlchemy (B-018)
 - Modellagnostisk AI-arkitektur (OpenAI + Anthropic)
 - Markdown som primärt informationsformat
 - Git + GitHub för versionskontroll

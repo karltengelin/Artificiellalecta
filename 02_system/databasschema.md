@@ -1,6 +1,6 @@
 # Databasschema – ITP1 Administrationsplattform
 
-> Operativ databas för det simulerade tjänstepensionsbolaget. Tabeller definieras som SQLAlchemy-modeller (B-014) och deployas till Supabase. Schemat utvecklas iterativt – denna fil dokumenterar det aktuella tillståndet.
+> Operativ databas för det simulerade tjänstepensionsbolaget. Tabeller definieras som SQLAlchemy-modeller och deployas till Databricks Lakebase (serverless Postgres, B-018 – ersatte Supabase/B-014). Schemat utvecklas iterativt – denna fil dokumenterar det aktuella tillståndet.
 >
 > **Konvention:** Tabell- och kolumnnamn på engelska (snake_case). Beskrivningar på svenska. Domänbegrepp i texten använder svenska termer (försäkringstagare, försäkrad, premie) och engelska används bara som tekniska identifierare.
 
@@ -111,7 +111,7 @@
 
 - **Tabellen `insured_persons` är PII-bärande** (B-006). Skills som läser/skriver mot den ska deklareras med behörighetslista.
 - **Maskning vid analys:** Data scientist-agenten arbetar mot anonymiserade vyer eller aggregat, inte rå PII.
-- **Row Level Security (RLS) i Supabase:** Sätts upp i senare iteration när agentidentiteter och roller är definierade. Initialt körs all åtkomst som `service_role`-nyckel via backend.
+- **Databasroller och radnivåsäkerhet:** Sätts upp i senare iteration när agentidentiteter och roller är definierade. Initialt körs all åtkomst via den native Postgres-rollen `app_backend` (Lakebase, B-018).
 
 ---
 
@@ -125,11 +125,11 @@
 
 ## 8. Hänvisningar
 
-- **B-014** – val av Supabase + SQLAlchemy
+- **B-018** – Databricks Lakebase som databas (ersätter B-014/Supabase); SQLAlchemy som ORM kvarstår
 - **B-005** – hybrid dataarkitektur (varför struktur i DB och inte i text)
 - **B-006** – behörighetsmodell för PII
 - **B-015** – mappstruktur och namnkonvention (engelska i kod, svenska i dokumentation)
 - **MASTER_CONTEXT §6** – dataarki­tektur (övergripande)
 - SQLAlchemy-modeller: `src/models/employer.py`, `src/models/insured_person.py`
 - Mockdatagenerering: `scripts/generate_mock_data.py`
-- Supabase-seed: `scripts/seed_supabase.py`
+- Databas-seed: `scripts/seed_supabase.py` *(namnet är historiskt – seedar Lakebase via `DATABASE_URL`)*
