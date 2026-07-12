@@ -1,7 +1,7 @@
 """Declarative base för alla SQLAlchemy-modeller.
 
 All ORM-kod i projektet utgår från `Base` definierad här. Se 02_system/databasschema.md
-för schemats dokumentation och BESLUTSLOGG B-014 för val av SQLAlchemy.
+för schemats dokumentation och BESLUTSLOGG B-018 (databas) samt B-014 (SQLAlchemy som ORM).
 """
 
 from __future__ import annotations

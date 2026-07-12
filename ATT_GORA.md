@@ -21,7 +21,7 @@
 ## 🔴 Hög prioritet – grunden
 
 - [x] **2026-07-12** Fas 1a: `01_domän/ITP1_regelverk.md` och `01_domän/försäkringsvillkor.md` skrivna – premietrappan med 2026-belopp (IBB 83 400 kr, brytpunkter 52 125/208 500 kr/mån) verifierade mot Avtalat/Collectum/Regeringen, åldersfönster 25–66 (månadsbaserat), IBB-historik 2023–2026 för retroaktiv mockdata, implementationsregler för premiemotorn i regelverkets §8
-- [ ] **Fas 1b: Utöka databasschemat med `policies` och `premium_transactions`** – dokumentera i `02_system/databasschema.md` först, sedan SQLAlchemy-modeller
+- [x] **2026-07-12** Fas 1b: `policies` och `premium_transactions` – dokumenterade i `databasschema.md` (§5–6) och implementerade som SQLAlchemy-modeller. Ett avtal per försäkrad (B-021), kapital härleds ur transaktioner, `calculation_basis` (JSONB) ger revisionsspårbarhet, partiellt unikt index säkrar en ordinarie premie per avtal/månad. DDL Postgres-validerad. `scripts/create_tables.py` skapar tabellerna (körs av operatören)
 - [ ] **Fas 1c: Premiemotor som skill** – `03_skills/beräkning/beräkna-itp1-premie.md` + `src/skills/calculation/calculate_itp1_premium.py`. Första skarpa skillen – sätter mönstret för skillbiblioteket
 - [ ] **Fas 1d: Generera premiehistorik** för de 500 försäkrade och seed:a Lakebase. Tester mot handräknade exempel
 

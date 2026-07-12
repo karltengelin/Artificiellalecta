@@ -21,6 +21,7 @@ from .base import Base
 
 if TYPE_CHECKING:
     from .employer import Employer
+    from .policy import Policy
 
 
 class InsuredPerson(Base):
@@ -81,6 +82,7 @@ class InsuredPerson(Base):
     )
 
     employer: Mapped["Employer"] = relationship(back_populates="insured_persons")
+    policy: Mapped["Policy | None"] = relationship(back_populates="insured_person")
 
     def __repr__(self) -> str:
         # PNR redigeras i repr för att inte slumpa ut PII i loggar
