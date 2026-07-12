@@ -14,6 +14,7 @@
 | `insured_persons` | Försäkrade (anställda som omfattas av ITP1) | 🟢 I drift (seedad) |
 | `policies` | Försäkringsavtal (ålderspension ITP1 per försäkrad) | 🟡 Skiss (Fas 1b) |
 | `premium_transactions` | Premietransaktioner (en rad per policy och månad) | 🟡 Skiss (Fas 1b) |
+| `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟡 Skiss (Fas 1c) |
 
 **Planerade tabeller (ej i denna omgång):** `portfolios`/`portfolio_holdings`/`trades` (Fas 2, B-019), `cases` (ärenden, Fas 5).
 
@@ -154,7 +155,26 @@
 
 ---
 
-## 7. Datakvalitet och valideringar
+## 7. Tabell: `base_amounts` – Basbelopp per år
+
+**Domän:** Parametertabell med de basbelopp beräkningar behöver, ett värde per år. Premiemotorn läser härifrån – basbelopp får aldrig hårdkodas i beräkningskod (`01_domän/ITP1_regelverk.md` §6). Uppdateras årligen av operatören när regeringen fastställt nya belopp (november året innan).
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `year` | `INTEGER` | PK | Kalenderår |
+| `income_base_amount_sek` | `NUMERIC(10,2)` | NOT NULL, CHECK > 0 | Inkomstbasbelopp (IBB) för året |
+| `price_base_amount_sek` | `NUMERIC(10,2)` | NULL, CHECK > 0 | Prisbasbelopp (PBB). NULL tills det behövs (används inte av ålderspensionspremien) |
+| `source` | `VARCHAR(255)` | NULL | Källa, t.ex. "Förordning (2025:1002)" |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
+
+**Designnoter:**
+- Naturlig nyckel (`year`) som PK – parametertabell, inget behov av surrogatnyckel
+- Brytpunkterna (7,5 IBB/12 och 30 IBB/12) lagras **inte** utan härleds i kod – en enda sanning, ingen risk för inkonsekvent avrundning i data
+- Seedas med IBB 2023–2026 ur `01_domän/ITP1_regelverk.md` §6
+
+---
+
+## 8. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**
 - `org_number` – Luhn-kontroll (10 siffror, sista siffran är kontrollsiffra)
@@ -173,7 +193,7 @@
 
 ---
 
-## 8. Säkerhet och behörigheter
+## 9. Säkerhet och behörigheter
 
 - **Tabellen `insured_persons` är PII-bärande** (B-006). Skills som läser/skriver mot den ska deklareras med behörighetslista.
 - **Maskning vid analys:** Data scientist-agenten arbetar mot anonymiserade vyer eller aggregat, inte rå PII.
@@ -181,7 +201,7 @@
 
 ---
 
-## 9. Migrationer och versionering
+## 10. Migrationer och versionering
 
 - **Alembic** används för schemamigrationer (planerat, ej uppsatt än).
 - `employers` och `insured_persons` är skapade direkt via `Base.metadata.create_all` (före Alembic). `policies` och `premium_transactions` skapas på samma sätt i Fas 1b; Alembic införs senast när första ändringen av en befintlig tabell behövs.
@@ -189,7 +209,7 @@
 
 ---
 
-## 10. Hänvisningar
+## 11. Hänvisningar
 
 - **B-018** – Databricks Lakebase som databas (ersätter B-014/Supabase); SQLAlchemy som ORM kvarstår
 - **B-005** – hybrid dataarkitektur (varför struktur i DB och inte i text)

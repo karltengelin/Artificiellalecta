@@ -22,13 +22,13 @@
 
 - [x] **2026-07-12** Fas 1a: `01_domän/ITP1_regelverk.md` och `01_domän/försäkringsvillkor.md` skrivna – premietrappan med 2026-belopp (IBB 83 400 kr, brytpunkter 52 125/208 500 kr/mån) verifierade mot Avtalat/Collectum/Regeringen, åldersfönster 25–66 (månadsbaserat), IBB-historik 2023–2026 för retroaktiv mockdata, implementationsregler för premiemotorn i regelverkets §8
 - [x] **2026-07-12** Fas 1b: `policies` och `premium_transactions` – dokumenterade i `databasschema.md` (§5–6) och implementerade som SQLAlchemy-modeller. Ett avtal per försäkrad (B-021), kapital härleds ur transaktioner, `calculation_basis` (JSONB) ger revisionsspårbarhet, partiellt unikt index säkrar en ordinarie premie per avtal/månad. DDL Postgres-validerad. `scripts/create_tables.py` skapar tabellerna (körs av operatören)
-- [ ] **Fas 1c: Premiemotor som skill** – `03_skills/beräkning/beräkna-itp1-premie.md` + `src/skills/calculation/calculate_itp1_premium.py`. Första skarpa skillen – sätter mönstret för skillbiblioteket
+- [x] **2026-07-12** Fas 1c: Premiemotor som skill – `03_skills/beräkning/beräkna-itp1-premie.md` + `src/skills/calculation/calculate_itp1_premium.py`. Ren beräkningsfunktion (trappa, åldersfönster på månadsnivå, calculation_basis för spårbarhet), 17 tester gröna mot handräknade exempel. Dessutom: `base_amounts`-tabell (schema §7 + modell + seed-skript) och första versionen av `03_skills/skillkatalog.md`
 - [ ] **Fas 1d: Generera premiehistorik** för de 500 försäkrade och seed:a Lakebase. Tester mot handräknade exempel
 
 - [x] **2026-07-08** Skapa Databricks Free Edition-konto + Lakebase-instans, uppdatera `DATABASE_URL` och kör seed *(ersatte Supabase-uppgiften, se B-018)* – projekt `artificiellalecta` skapat på `artificiellalecta@gmail.com`, Postgres 18, region AWS (us-east-2). Password-auth aktiverad, native roll `app_backend` skapad. Öppen riskpunkt från B-018 löst: extern SQLAlchemy-anslutning med enkel användarnamn/lösenord fungerar utan problem i Free Edition. Seed kört: 20 arbetsgivare, 500 försäkrade.
 
 - [x] **2026-05-15** Skriva `02_system/agentkarta.md` – tio agentskelett i `02_system/agenter/` plus agentkarta (commit `b88da94`)
-- [ ] **Skriva `03_skills/skillkatalog.md`** – översikt över alla skills, syfte, kategori och behörighetslista
+- [x] **2026-07-12** Skriva `03_skills/skillkatalog.md` – första versionen skapad i Fas 1c med premiemotorn + planerade skills. Underhålls löpande
 - [ ] **Bygga ut `04_regulatoriskt/`** – bryta ner regelverkskartan i underdokument per regelverk (LTF, FFFS:er, DORA, GDPR, IDD, SFDR, AI-förordningen, skatt)
 - [ ] **Skapa styrdokumentsstruktur** i `05_styrdokument/` – skriva `styrdokumentshierarki.md` som definierar struktur, ägarskap, revisionscykel och standardmetadata för alla styrdokument
 - [x] **2026-05-16** Definiera databasschema – `02_system/databasschema.md` + SQLAlchemy-modeller för `employers` och `insured_persons`. Övriga tabeller (policies, premium_transactions, portfolio_holdings, cases) skjuts upp till de behövs.

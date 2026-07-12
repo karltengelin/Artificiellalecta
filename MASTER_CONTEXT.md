@@ -144,7 +144,7 @@ Artificiellalecta/
 │   └── Agentsystem/                ← Orkestrerade flöden, en MD-fil per flöde (B-016)
 │
 ├── 03_skills/                      ← Skill-beskrivningar (MD)
-│   ├── skillkatalog.md             (kommer)
+│   ├── skillkatalog.md             ← Index över alla skills med behörigheter
 │   ├── data/
 │   ├── beräkning/
 │   ├── kommunikation/
