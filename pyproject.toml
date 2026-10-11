@@ -7,10 +7,13 @@ dependencies = [
     "sqlalchemy>=2.0",
     "psycopg2-binary>=2.9",
     "python-dotenv>=1.0",
-    # AI-leverantörer beslutas/aktiveras i samband med AI-abstraktionslagret
-    # "anthropic",
-    # "openai",
-    # "litellm",
+    # AI-abstraktionslagret (src/ai/, förslag B-025): bara leverantörernas
+    # officiella SDK:er. Övre gräns på major-version – uppgraderas medvetet
+    # och verifieras med scripts/smoke_test_ai.py.
+    "anthropic>=1.13,<2",
+    "openai>=3.28,<4",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -25,3 +28,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+ai = ["*.yaml"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

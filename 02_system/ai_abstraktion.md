@@ -1,6 +1,6 @@
 # AI-abstraktionslagret
 
-> **Status:** 🟡 Specificerat (Fas 3) – implementation i `src/ai/` pågår. Valet av lösning är föreslaget som **B-025** och inväntar beslut.
+> **Status:** 🟢 Specificerat och implementerat i `src/ai/` (Fas 3). Valet av lösning är föreslaget som **B-025** och inväntar beslut.
 > **Beslut:** B-009 (modellagnostisk arkitektur), B-025 (förslag: egen tunn wrapper)
 > **Relaterat:** `02_system/agentekosystem.md` (hur team, agenter och skill-poddar använder lagret), MASTER_CONTEXT §3.1
 > **Senast verifierat mot leverantörernas dokumentation:** 2026-10-11

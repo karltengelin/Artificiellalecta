@@ -1,7 +1,7 @@
 # Agentekosystem
 
 > **Typ:** Tvärgående arkitekturramverk (MASTER_CONTEXT §4b, B-024) – inte ett delprojekt utan det sätt alla delprojekt bygger agenter på
-> **Status:** 🟡 Designförslag (förslag **B-026**). AI-lagret som ekosystemet vilar på byggs i Fas 3 (`src/ai/`, se `ai_abstraktion.md`). Agent-runtime, skill-poddar och flödesmotor är ännu inte byggda – se byggordningen i §12.
+> **Status:** 🟡 Designförslag (förslag **B-026**). AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Agent-runtime, skill-poddar och flödesmotor är ännu inte byggda – se byggordningen i §12.
 > **Vidareutvecklar:** B-006, B-007, B-008, B-009, B-011, B-016, B-017
 
 ---
@@ -325,7 +325,7 @@ Byggs efter agent-runtime (§12).
 
 | Fas | Innehåll | Möjliggör |
 |-----|----------|-----------|
-| **3** 🟡 | AI-lagret (`src/ai/`) med roller, team-nycklar, verktygsgränssnitt, anropslogg, fejkleverantör | Allt nedan |
+| **3** ✅ | AI-lagret (`src/ai/`) med roller, team-nycklar, verktygsgränssnitt, anropslogg, fejkleverantör | Allt nedan |
 | **3b** | Agent-runtime v1: `ecosystem.yaml`, skill-register med kontrakt och behörighetsfilter, agentloop, körjournal (JSONL), godkännandekö (fil), första podden (`berakning`) | Fas 5 – handläggaragenten |
 | **3c** | Delegering mellan team, flödesmotor med persisterat tillstånd (Lakebase-tabeller), regelförändringsflödet | Flaggskeppsscenariot |
 | Senare | MCP-exponering av poddar, databas-sink för anropsloggen, kostnadsindikatorer, egen Lakebase-roll för PII-poddar | B-017/B-024 fullt ut, BI |
