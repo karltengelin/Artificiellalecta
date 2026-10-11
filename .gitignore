@@ -65,6 +65,9 @@ data/*.json
 *.log
 logs/
 
+# --- Databasbackuper (scripts/backup_database.py) – innehåller personuppgifter ---
+backups/
+
 # --- Editorer och OS ---
 .vscode/
 .idea/
