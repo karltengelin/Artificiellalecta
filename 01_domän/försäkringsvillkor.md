@@ -57,6 +57,13 @@ Avgiftsnivåerna är bolagets beslut (B-021) och kan ändras genom ny version av
 
 ## §7 Uttag av ålderspension
 
+> **Granskningsanmärkning 2026-10-11:** Åldersuppgifterna 63/70 nedan är äldre,
+> overifierade antaganden och får inte användas som gällande externa regler.
+> ITP-avtalet anger 55 år och ordinarie start vid 66 år. Kapitalet fortsätter
+> förvaltas även under uttag. Version 1.0 bevaras i väntan på beslut om ny
+> villkorsversion; se [föreslagen ersättning av §7](../projekt/04_produktregelverk/VILLKORSANDRING_UTTAG.md)
+> och [källgrundade uttagsutkast](produktregler/UTTAG_GEMENSAMT.md).
+
 1. Uttag kan påbörjas tidigast från 63 års ålder och senast från 70 års ålder *(åldersgränser verifieras mot gällande regler när uttagslogik implementeras, se `ITP1_regelverk.md` §5)*.
 2. Utbetalning sker som standard **livsvarigt**; den försäkrade kan välja tidsbegränsad utbetalning, dock kortast 5 år.
 3. Den försäkrade kan **pausa ett påbörjat uttag**; kapitalet återgår då till förvaltning. Paus och återupptag hanteras som ärende och ska kunna utföras av den försäkrade själv i kundportalen (framtida fas) samt av handläggare i handläggargränssnittet (Fas 4).
