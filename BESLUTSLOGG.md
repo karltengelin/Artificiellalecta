@@ -8,6 +8,45 @@
 
 ## Beslut
 
+### B-030 | 2026-10-11 | Tjänstelagrets första skrivoperationer: löneunderlag, fribrev och premierättelse (Fas 1f T3)
+
+**Beslut:** Operatören valde modell och avgränsning för de första skrivoperationerna i tjänstelagret (B-028) i chatten 2026-10-11 och bad att beslutet loggas.
+
+1. **Löneunderlag.** `register_salary_report` ersätter den planerade `register_salary_change` och skriver till en ny tabell `salary_reports`. Tabellen innehåller pensionsmedförande lön (PR-ITP1-014) per person, arbetsgivare och utbetalningsmånad. Den är append-only och versionerad: en rättelse är en ny version som pekar på den den ersätter. En uttryckligen rapporterad noll skiljs från en saknad rapport. Underlaget hålls isär från aktuell lön på personen och från premien. Registreringen skapar ingen premie och räknar inte om gamla premier.
+2. **Fribrev.** `set_policy_paid_up` registrerar arbetsgivarens avanmälan (anställningens sista dag) och fribrev från dagen efter, i samma transaktion och i befintlig `policy_states`. Operationen gäller bara försäkringar vars pension inte har startat, och den tillåter ingen framtidsdatering.
+3. **Premierättelse.** `correct_premium_transaction` bevarar ursprungsraden och skapar en länkad `adjustment`-rad via den nya kolumnen `premium_transactions.corrects_transaction_id`. Premien räknas om med premiemånadens IBB. Operationen stöder ej mottagen premie och tillägg på mottagen premie. Minskning av redan mottagen premie blockeras tills kapitalandel och historisk garantidel spåras. Operationen är *endast handläggare* (`HUMAN_ONLY`).
+4. **`terminate_policy` skjuts upp.** Slutavräkning (PR-ITP1-027) och dödsfallsavräkning (PR-ITP1-010) byggs med pensions- och betalningsmotorn, inte som en lägesändring.
+5. **Verifiering.** Postgres-specifika tester körs mot en isolerad testdatabas, `svc_test`, i Lakebase-projektet. Migrationen mot Lakebase körs efter granskning. Inget skrivprov görs mot beståndet.
+
+I åtkomstregistret är `register_salary_report` och `set_policy_paid_up` `APPROVAL`. Genom B-028:s golv är de ändå `HUMAN_ONLY` för agenter tills PR-ITP1 v1.0 är infört.
+
+**Motivering:**
+- PR-ITP1-014 avser faktiskt utbetald lön per månad. En avtalad lön från ett visst datum är inte pensionsmedförande underlag, och PR-ITP1-014/017 kräver versioner och uttrycklig noll.
+- Fribrev utan registrerat anställningsslut skulle ge motsägande data. Ett läge per försäkring kan inte uttrycka fribrev under pågående pension (UTTAG_GEMENSAMT), så avgränsningen hindrar att pensionsrätten skrivs över.
+- En kolumn ger en uttrycklig länk mellan rättelse och ursprung som databasen kan säkra, och den skyddar mot dubbel rättelse. Återtag av mottagen premie kräver underlag som modellen saknar (PR-ITP1-019 p.3, PR-ITP1-020). Det är bättre att blockera än att gissa en andel av dagens kapital.
+- Ett avslut genom att sätta läget `terminated` skulle kunna dölja kapital och uppkomna anspråk.
+
+**Övervägda alternativ:**
+
+*Bara aktuell lön på personen* – det är inte underlag enligt PR-ITP1-014, och utan produktregel hade operationen blivit `HUMAN_ONLY`. Avvisat.
+
+*Bara lägesändring för fribrev* – anställningen hade sett ut att fortsätta. Avvisat.
+
+*Separat premieläge nu* – korrekt, men hör ihop med uttagsmodellen och tas där.
+
+*Länk bara i `calculation_basis`* – ingen schemaändring, men länken kan inte säkras i databasen. Avvisat.
+
+**Konsekvenser:**
+- `databasschema.md` §8 och §8b och `tjänstelager.md` §6.1 och §9.1 (stödda och blockerade fall) är uppdaterade. Den genererade förteckningen `tjänstelager_operationer.md` visar effektiv agentnivå per operation.
+- Migrerat i Lakebase 2026-10-11 efter backup `20261011T151353Z`. Det gjordes med det kontrollerade skriptet `scripts/migrate_t3_schema.py` och inte med Alembic, som `databasschema.md` §12 planerade. Alembic föreslås som ett eget steg.
+- Godkännandets transaktionsgräns rättades i samma leverans: en transaktion per anrop, utan schemaändring.
+- ATT_GORA följer upp separat premieläge, premie ur löneunderlag, `terminate_policy` och ett godkännandegränssnitt för handläggaren.
+- Genomfört i commits `a17a174`–`4419bb4` på branch `claude/service-layer-write-ops-7c7602` och mergat till main.
+
+**Preciserar:** B-028 (T3:s operationer). B-022:s försäkringsmodell kvarstår.
+
+---
+
 ### B-029 | 2026-10-11 | Databricks AI/BI-dashboard med gemensamma mått och Genie för insikter
 
 **Beslut:** Operatören godkände inriktningen i chatten 2026-10-11 och bad att den sparas i beslutsloggen.

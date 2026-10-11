@@ -202,7 +202,7 @@ Denna hänvisningsuppdatering ändrar inget schema eller någon kod.
 
 ## 8b. Tabell: `salary_reports` – Löneunderlag
 
-> **Status:** Beslutad av operatören 2026-10-11 (Fas 1f T3). Skapad i Lakebase samma dag med migrationsskriptet (§12) efter backup och avstämning enligt AGENTS.md §4.5.
+> **Status:** Beslutad av operatören 2026-10-11 (Fas 1f T3, **B-030**). Skapad i Lakebase samma dag med migrationsskriptet (§12) efter backup och avstämning enligt AGENTS.md §4.5.
 
 **Domän:** Pensionsmedförande lön (PR-ITP1-014) för en försäkrad hos en arbetsgivare under en kalendermånad – faktiskt utbetald kontant bruttolön efter löneväxling, i utbetalningsmånaden. Underlaget för premietrappan, som räknas en gång per person, arbetsgivare och månad (PR-ITP1-001). Skiljs från **aktuell lön** som uppgift på personen (`insured_persons.monthly_salary_sek`), som inte är pensionsmedförande underlag, och från **premien** (`premium_transactions`), som är en fordran eller ett mottaget belopp.
 
