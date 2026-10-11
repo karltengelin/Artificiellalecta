@@ -20,6 +20,7 @@ scheman och tar bort dem efteråt.
 
 from __future__ import annotations
 
+import json
 import os
 import threading
 import uuid
@@ -50,6 +51,7 @@ from tests.test_services_write_ops import (  # noqa: F401  (fixed_today är en a
     report,
     seed_active,
 )
+from utils.backup import backup_database
 from utils.migration_t3 import migrate_t3, schema_state
 
 try:
@@ -194,7 +196,7 @@ def _signature(engine, schema: str) -> dict[str, set]:
     return {"columns": set(columns), "constraints": set(constraints), "indexes": set(indexes)}
 
 
-def test_migrering_fran_gammalt_schema_blir_identisk_med_create_all():
+def test_migrering_fran_gammalt_schema_blir_identisk_med_create_all(tmp_path):
     with isolated_schema() as old, isolated_schema() as fresh:
         Base.metadata.create_all(fresh.engine)
 
@@ -212,6 +214,10 @@ def test_migrering_fran_gammalt_schema_blir_identisk_med_create_all():
                 {"s": old.name},
             ).all()
             assert constraints == []
+
+        # Backup med den nya koden fungerar mot det gamla schemat (som inför migrationen av Lakebase)
+        manifest = json.loads((backup_database(old.engine, tmp_path) / "manifest.json").read_text(encoding="utf-8"))
+        assert "salary_reports" not in manifest["tables"] and manifest["row_counts"]["premium_transactions"] == 5
 
         dry = migrate_t3(old.engine, dry_run=True)
         assert (dry.applied, dry.row_counts["premium_transactions"]) == (False, 5)
