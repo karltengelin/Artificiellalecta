@@ -1,6 +1,6 @@
 # Tjänstelagret
 
-> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1, T2 och T4 klara**. T3 är byggt och testat lokalt: transaktionsgräns, `register_salary_report`, `set_policy_paid_up` och `correct_premium_transaction`, medan `terminate_policy` är uppskjuten (§9.1). Migrationen mot Lakebase och Postgres-verifieringen återstår. Kod: `src/services/`, register: `src/services/access_register.yaml`, förteckning: [tjänstelager_operationer.md](tjänstelager_operationer.md).
+> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1, T2 och T4 klara**. **T3 klart** för den överenskomna omfattningen: transaktionsgräns, `register_salary_report`, `set_policy_paid_up` och `correct_premium_transaction`, medan `terminate_policy` är uppskjuten (§9.1). Verifierat mot isolerad Postgres och migrerat i Lakebase 2026-10-11. Kod: `src/services/`, register: `src/services/access_register.yaml`, förteckning: [tjänstelager_operationer.md](tjänstelager_operationer.md).
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (backend för två klienter), B-022 (försäkringsmodellen), B-026 (agentekosystem)
 > **Relaterat:** `02_system/agentekosystem.md` (harness, skill-poddar), `01_domän/produktregler/` (reglerna operationerna implementerar), `02_system/databasschema.md`
 
