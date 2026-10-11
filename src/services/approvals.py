@@ -1,13 +1,16 @@
 """Godkännandekön (tjänstelager.md §6).
 
 En agent som anropar en APPROVAL-operation får ett godkännandeärende i
-stället för att operationen körs. I T1 ligger kön i minnet; databastabellen
-`approval_requests` kommer i T3.
+stället för att operationen körs. Med databas ligger kön i tabellen
+`approval_requests` (DatabaseApprovalStore) och överlever omstarter; utan
+databas i minnet.
 """
 
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
+from contextlib import AbstractContextManager
 from datetime import UTC, datetime
 from typing import Any, Literal, Protocol
 
@@ -63,4 +66,60 @@ class MemoryApprovalStore:
 def decided(request: ApprovalRequest, status: ApprovalStatus, by: str, note: str | None) -> ApprovalRequest:
     return request.model_copy(
         update={"status": status, "decided_by": by, "decided_at": _now(), "decision_note": note}
+    )
+
+
+class DatabaseApprovalStore:
+    """Tabellen approval_requests."""
+
+    def __init__(self, session_factory: Callable[[], AbstractContextManager[Any]]) -> None:
+        self._session_factory = session_factory
+
+    def add(self, request: ApprovalRequest) -> None:
+        from models import ApprovalRequestRecord
+
+        with self._session_factory() as session:
+            session.add(ApprovalRequestRecord(**_to_record(request)))
+
+    def get(self, approval_id: str) -> ApprovalRequest | None:
+        from models import ApprovalRequestRecord
+
+        with self._session_factory() as session:
+            record = session.get(ApprovalRequestRecord, approval_id)
+            return _from_record(record) if record else None
+
+    def update(self, request: ApprovalRequest) -> None:
+        from models import ApprovalRequestRecord
+
+        with self._session_factory() as session:
+            record = session.get(ApprovalRequestRecord, request.id)
+            for key, value in _to_record(request).items():
+                setattr(record, key, value)
+
+    def list(self, status: ApprovalStatus | None = None) -> list[ApprovalRequest]:
+        from sqlalchemy import select
+
+        from models import ApprovalRequestRecord
+
+        query = select(ApprovalRequestRecord).order_by(ApprovalRequestRecord.created_at)
+        if status is not None:
+            query = query.where(ApprovalRequestRecord.status == status)
+        with self._session_factory() as session:
+            return [_from_record(r) for r in session.scalars(query).all()]
+
+
+def _to_record(request: ApprovalRequest) -> dict[str, Any]:
+    data = request.model_dump()
+    data["created_at"] = datetime.fromisoformat(data["created_at"])
+    data["decided_at"] = datetime.fromisoformat(data["decided_at"]) if data["decided_at"] else None
+    return data
+
+
+def _from_record(r: Any) -> ApprovalRequest:
+    return ApprovalRequest(
+        id=r.id, created_at=r.created_at.isoformat(timespec="milliseconds"), operation=r.operation,
+        input=r.input, reason=r.reason, proposed_by=r.proposed_by, proposed_by_team=r.proposed_by_team,
+        run_id=r.run_id, case_id=r.case_id, status=r.status, decided_by=r.decided_by,
+        decided_at=r.decided_at.isoformat(timespec="milliseconds") if r.decided_at else None,
+        decision_note=r.decision_note,
     )

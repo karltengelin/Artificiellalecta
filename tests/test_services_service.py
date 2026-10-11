@@ -242,9 +242,10 @@ class TestSession:
             state["open"] = False
 
         class OpenCheckingLog(MemoryEventLog):
-            def record(self, event):
+            def record(self, event, session=None):
                 seen["open_when_logged"] = state["open"]
-                super().record(event)
+                seen["log_session"] = session
+                super().record(event, session)
 
         @operation(name="touch", description="t", kind=OperationKind.READ, pii=True, registry=reg)
         def touch(ctx: OperationContext, data: PolicyRef) -> Done:
@@ -256,4 +257,4 @@ class TestSession:
             events=OpenCheckingLog(), session_factory=session_scope,
         )
         service.execute("touch", HUMAN, {"policy_number": "X"})
-        assert seen == {"session": "session-1", "open_when_logged": True}
+        assert seen == {"session": "session-1", "open_when_logged": True, "log_session": "session-1"}

@@ -213,6 +213,61 @@ Denna hänvisningsuppdatering ändrar inget schema eller någon kod.
 
 ---
 
+## 9b. Tabell: `operation_events` – Händelselogg för tjänstelagret
+
+**Domän:** Append-only logg över allt som görs via tjänstelagret (B-028, `02_system/tjänstelager.md` §7): utförda ändringar, läsningar av personuppgifter, agentförslag, avslag och nekade agentförsök. Samma spår för handläggare, agenter och skript (B-017). Rader uppdateras eller tas aldrig bort.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `VARCHAR(32)` | PK | Händelse-id (UUID hex) |
+| `occurred_at` | `TIMESTAMPTZ` | NOT NULL | När händelsen inträffade |
+| `operation` | `VARCHAR(64)` | NOT NULL | Operationens namn, t.ex. `register_salary_change` |
+| `kind` | `VARCHAR(20)` | NOT NULL | `read` / `compute` / `write` / `external` |
+| `outcome` | `VARCHAR(20)` | NOT NULL, CHECK in (`executed`, `proposed`, `rejected`, `denied`) | Vad som hände |
+| `actor_type` | `VARCHAR(10)` | NOT NULL, CHECK in (`human`, `agent`, `system`) | Vem som agerade |
+| `actor_id` | `VARCHAR(100)` | NOT NULL | Handläggare, agent eller skript |
+| `actor_team` | `VARCHAR(50)` | NULL | Agentens team (B-026) |
+| `proposed_by` | `VARCHAR(100)` | NULL | Agent som föreslog (när en handläggare utfört ett godkänt förslag) |
+| `approval_id` | `VARCHAR(32)` | NULL | Godkännandeärendet, om något |
+| `run_id` / `case_id` | `VARCHAR(100)` | NULL | Agentkörning respektive ärende |
+| `reason` | `TEXT` | NULL | Motivering (obligatorisk för ändringar) |
+| `rules` | `JSONB` | NULL | Produktregler operationen implementerar |
+| `pii` | `BOOLEAN` | NOT NULL | Om operationen rör personuppgifter |
+| `input` / `output` | `JSONB` | NULL | Indata och, för ändringar, resultat |
+| `detail` | `TEXT` | NULL | T.ex. skäl till nekad åtkomst eller avslag |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
+
+**Index:** `(operation, occurred_at)`, `(actor_id, occurred_at)`, `run_id`.
+
+**Designnoter:**
+- Skrivs i **samma transaktion** som operationen – en ändring utan loggrad kan inte uppstå
+- Läsresultat loggas inte (kan vara stora och fulla av personuppgifter) – bara vem som läste vad
+- Data här kan inte genereras fram igen – omfattas av backup (`scripts/backup_database.py`)
+
+---
+
+## 9c. Tabell: `approval_requests` – Godkännandekö
+
+**Domän:** Agentförslag som väntar på eller har fått beslut av en handläggare (B-028, `02_system/tjänstelager.md` §6). När ett förslag godkänns körs operationen på nytt mot aktuellt läge, utförd av handläggaren.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `VARCHAR(32)` | PK | Ärende-id (UUID hex) |
+| `operation` | `VARCHAR(64)` | NOT NULL | Föreslagen operation |
+| `input` | `JSONB` | NOT NULL | Föreslagen indata (validerad när förslaget lades) |
+| `reason` | `TEXT` | NULL | Agentens motivering |
+| `proposed_by` / `proposed_by_team` | `VARCHAR(100)` / `VARCHAR(50)` | NOT NULL / NULL | Agent och team |
+| `run_id` / `case_id` | `VARCHAR(100)` | NULL | Agentkörning respektive ärende |
+| `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`pending`, `approved`, `rejected`), default `pending` | Läge |
+| `decided_by` | `VARCHAR(100)` | NULL | Handläggaren som beslutade |
+| `decided_at` | `TIMESTAMPTZ` | NULL | När beslutet togs |
+| `decision_note` | `TEXT` | NULL | Handläggarens kommentar |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | `created_at` = när förslaget lades |
+
+**Index:** `status`.
+
+---
+
 ## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**

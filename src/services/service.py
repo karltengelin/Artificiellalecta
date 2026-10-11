@@ -16,7 +16,13 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from services.access import AccessDecision, AccessRegister, effective_access
-from services.approvals import ApprovalRequest, ApprovalStore, MemoryApprovalStore, decided
+from services.approvals import (
+    ApprovalRequest,
+    ApprovalStore,
+    DatabaseApprovalStore,
+    MemoryApprovalStore,
+    decided,
+)
 from services.contract import (
     AgentAccess,
     Operation,
@@ -30,7 +36,7 @@ from services.errors import (
     InvalidInputError,
     MissingReasonError,
 )
-from services.events import EventLog, OperationEvent, default_event_log
+from services.events import DatabaseEventLog, EventLog, OperationEvent, default_event_log
 from services.rules import ProductRuleCatalog
 
 SessionFactory = Callable[[], AbstractContextManager[Any]]  # se services.db
@@ -64,15 +70,20 @@ class ServiceLayer:
         session_factory: SessionFactory | None = None,
     ) -> None:
         """
-        session_factory: öppnar en databastransaktion per operation, t.ex. utils.db.session_scope.
-        Utan den körs operationerna utan session (T1 och tester).
+        session_factory: öppnar en databastransaktion per operation (services.db). Med den
+        hamnar händelselogg och godkännandekö i databasen om inget annat anges; utan den
+        körs operationerna utan session och loggen hamnar i fil/minne.
         """
         self.registry = registry if registry is not None else default_registry
         self.register = register if register is not None else AccessRegister.load()
         self.register.validate_against(self.registry)
         self.rules = rules if rules is not None else ProductRuleCatalog()
-        self.events = events if events is not None else default_event_log()
-        self.approvals = approvals if approvals is not None else MemoryApprovalStore()
+        if events is None:
+            events = DatabaseEventLog(session_factory) if session_factory else default_event_log()
+        if approvals is None:
+            approvals = DatabaseApprovalStore(session_factory) if session_factory else MemoryApprovalStore()
+        self.events = events
+        self.approvals = approvals
         self._session_factory = session_factory
 
     # --- insyn -------------------------------------------------------------
@@ -201,7 +212,7 @@ class ServiceLayer:
                 # I samma transaktion som operationen när loggen ligger i databasen (T3)
                 self._record(
                     op, ctx, data, outcome="executed", output=output,
-                    proposed_by=proposed_by, approval_id=approval_id,
+                    proposed_by=proposed_by, approval_id=approval_id, session=session,
                 )
         return output
 
@@ -216,6 +227,7 @@ class ServiceLayer:
         proposed_by: str | None = None,
         approval_id: str | None = None,
         detail: str | None = None,
+        session: Any = None,
     ) -> None:
         self.events.record(
             OperationEvent(
@@ -236,5 +248,6 @@ class ServiceLayer:
                 # Läsresultat loggas inte (kan vara stora och fulla av personuppgifter)
                 output=output.model_dump(mode="json") if output is not None and op.kind.changes_state else None,
                 detail=detail,
-            )
+            ),
+            session=session,
         )

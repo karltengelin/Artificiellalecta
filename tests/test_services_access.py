@@ -134,6 +134,32 @@ class TestProduktregler:
         catalog.refresh()
         assert catalog.status("PR-T-001") == RuleStatus.GODKAND
 
+    def test_regelpaket_specificerat_men_inte_infort(self, tmp_path):
+        (tmp_path / "README.md").write_text("> **Paket:** PR-X v1.0\n", encoding="utf-8")
+        (tmp_path / "PR-X-001-a.md").write_text(
+            "> **Status:** Specificerad tillämpning för simuleringen; införande separat.\n", encoding="utf-8"
+        )
+        catalog = ProductRuleCatalog(tmp_path)
+        assert catalog.status("PR-X-001") == RuleStatus.SPECIFICERAD
+        assert catalog.adoption_decision is None
+
+    def test_infort_paket_gor_reglerna_godkanda_utom_ersatta(self, tmp_path):
+        (tmp_path / "README.md").write_text(
+            "> **Paket:** PR-X v1.0 | **Införandebeslut:** B-031 | **Gäller från:** 2026-11-01\n", encoding="utf-8"
+        )
+        (tmp_path / "PR-X-001-a.md").write_text("> **Status:** Specificerad tillämpning.\n", encoding="utf-8")
+        (tmp_path / "PR-X-002-b.md").write_text("> **Status:** Ersatt av PR-X-001.\n", encoding="utf-8")
+        catalog = ProductRuleCatalog(tmp_path)
+        assert catalog.adoption_decision == "B-031"
+        assert catalog.status("PR-X-001") == RuleStatus.GODKAND
+        assert catalog.status("PR-X-002") == RuleStatus.ERSATT
+
+    def test_specificerad_regel_stanger_skrivning_for_agenter(self, tmp_path):
+        (tmp_path / "PR-X-001-a.md").write_text("> **Status:** Specificerad.\n", encoding="utf-8")
+        d = decide(OperationKind.WRITE, "AGENT", ("PR-X-001",), ProductRuleCatalog(tmp_path))
+        assert d.effective == AgentAccess.HUMAN_ONLY
+        assert any("PR-X-001 (specificerad)" in r for r in d.reasons)
+
     def test_reglerna_i_repot_har_kanda_statusvarden(self):
         # Formatet ägs av delprojekt 4 – testet larmar om det ändras så att tjänstelagret inte kan läsa det
         catalog = ProductRuleCatalog()

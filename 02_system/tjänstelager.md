@@ -1,6 +1,6 @@
 # Tjänstelagret
 
-> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1 och T2 klara** (grunden + läsoperationerna). Kod: `src/services/`, register: `src/services/access_register.yaml`.
+> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1 och T2 klara**, T3 påbörjad (händelselogg och godkännandekö i databasen). Kod: `src/services/`, register: `src/services/access_register.yaml`.
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (backend för två klienter), B-022 (försäkringsmodellen), B-026 (agentekosystem)
 > **Relaterat:** `02_system/agentekosystem.md` (harness, skill-poddar), `01_domän/produktregler/` (reglerna operationerna implementerar), `02_system/databasschema.md`
 
@@ -105,7 +105,7 @@ Varje operation har en av tre nivåer:
 | Operationen är `external` (påverkar omvärlden, §3.5) | Minst `APPROVAL` |
 | Operationen är `write`/`external` och någon av dess produktregler har inte granskningsstatus `godkänd` (eller saknar regel) | `HUMAN_ONLY` – agenter rör bara det som vilar på en godkänd produktregel |
 
-Registret kan alltså öppna för agenter, men aldrig förbi ett golv. Statusen läses ur produktregelns rubrik i `01_domän/produktregler/` (`**Granskningsstatus:** utkast/godkänd/ersatt`); allt annat än `godkänd` räknas som ej godkänt. En registerrad för en operation som inte finns ger fel vid start, så att stavfel inte tyst lämnar en operation stängd.
+Registret kan alltså öppna för agenter, men aldrig förbi ett golv. Statusen läses ur `01_domän/produktregler/` (`services/rules.py`). Regelpaketet PR-ITP1 v1.0 antas **som helhet** genom ett samlat införandebeslut; till dess har varje regel status *specificerad* och räknas som ej godkänd. Paketet räknas som infört när paketets `README.md` har raden `**Införandebeslut:** B-nnn` (överenskommelse med delprojekt 4). En regel märkt *ersatt* är alltid ej godkänd, och det äldre formatet `**Granskningsstatus:** utkast/godkänd/ersatt` stöds fortfarande. Allt som inte går att läsa räknas som ej godkänt. En registerrad för en operation som inte finns ger fel vid start, så att stavfel inte tyst lämnar en operation stängd.
 
 **Regler:**
 
@@ -182,7 +182,7 @@ Läsningar av personuppgifter (`pii=True`) loggas också – vem tittade på vem
 
 Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelopp) byggs när motsvarande produktregler i delprojekt 4 är antagna. Därefter byggs handläggar-UI:t (Fas 4) ovanpå tjänstelagret, och sist agentlagret (harness, Fas 3b, och handläggaragenten, Fas 5).
 
-**Nya tabeller** (`operation_events`, `approval_requests`) dokumenteras i `databasschema.md` innan de skapas, och körningen mot Lakebase koordineras enligt AGENTS.md §4.5.
+**Tabellerna** `operation_events` och `approval_requests` (`databasschema.md` §9b–9c) används automatiskt när tjänstelagret har en databasanslutning: händelsen skrivs i samma transaktion som ändringen, och godkännandekön överlever omstarter. Utan databas hamnar loggen i fil och kön i minnet.
 
 **Tester:** tjänstelagret testas mot en SQLite-databas i minnet med samma modeller som Lakebase (`tests/conftest.py`, fixturen `insurance_db`). Modellerna är portabla utan att Postgres-DDL:en ändrats (`databasschema.md` §12). I produktion används `services.db.database_session_factory()` mot Lakebase via `DATABASE_URL`.
 
