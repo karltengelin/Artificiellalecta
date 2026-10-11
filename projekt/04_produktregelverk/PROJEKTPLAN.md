@@ -15,6 +15,11 @@ systemändring.
 🟡 Pågår. Fas 1a (ITP1-regelverk, försäkringsvillkor v1.0) är klar. Utbyggnad av
 `04_regulatoriskt/` per regelverk är hög prioritet i `ATT_GORA.md`.
 
+Första arbetsutkastet till placering, skrivsätt och spårbarhet finns i
+[ARBETSSATT.md](ARBETSSATT.md) (2026-10-11). Det innehåller en provregel för
+premietrappan, källregister och öppna tolkningsfrågor. Dokumenten är utkast;
+ingen ny villkorsversion eller produktregel är antagen genom detta arbete.
+
 ## Beroenden
 
 - Produktregler som tas fram här styr direkt vad premiemotorn (Fas 1c) och framtida
