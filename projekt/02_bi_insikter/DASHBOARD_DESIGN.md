@@ -1,6 +1,7 @@
 # Dashboard, insikter och rapportering – första designförslag
 
-> 2026-10-11. Förslag att diskutera, inga nya mått eller Databricks-integrationer är driftsatta.
+> 2026-10-11. Arkitekturinriktning beslutad i B-029; konkreta mått och integrationsdetaljer är förslag.
+> Inga nya mått eller Databricks-integrationer är driftsatta.
 > Utgår från ett simulerat tjänstepensionsbolag med traditionell ITP1 ålderspension.
 > Kapital-, aktuariella och regulatoriska beräkningar är beroenden till andra delprojekt.
 
@@ -81,7 +82,12 @@ att föreslå SQL, vyer och dashboards. Gemensamma definitioner granskas och ver
 innan publicering. Återanvändbara Unity Catalog metric views är en kandidat till måttlagret.
 Värderingar och kapitalkrav kommer från separata, verifierbara beräkningar.
 
-Genie-API:t kan anropas via en framtida behörighetsstyrd skill/tjänsteintegration som sparar
+Dashboarden byggs först och används direkt i Databricks AI/BI, därefter kan den bäddas in
+i operatörsgränssnittet (B-029). Datasetfrågor körs via SQL Warehouse; uppdatering av
+dashboarden innebär läsning av tillgängliga resultat, inte automatisk omräkning av FTA.
+Val av historiska ögonblicksbilder, schemaläggning och inbäddningslösning återstår.
+
+Genie-API:t ska kopplas genom en behörighetsstyrd skill/tjänsteintegration som sparar
 fråga, SQL, resultat och källreferenser. Leverantörsberoendet och relationen till B-009/B-025
 behöver utredas innan implementation; egen agentkod får inte introducera fria modellgenvägar.
 Genie får inte genom denna integration ändra operativa försäkringar eller lämna rapporter.
@@ -131,4 +137,5 @@ Det tidigare IBB-verktyget är ett avgränsat exempel på ett scenario, beskrive
 
 Vid integration föreslås att MASTER_CONTEXT §4b och ATT_GORA får uppdaterad status för
 projekt 2, samt hänvisning till projekt 9. Dessa gemensamma filer redigeras inte parallellt
-med Claude. Detta dokument ändrar inte beslutsloggen eller fastställer nya regulatoriska grunder.
+med Claude. B-029 sparar den av operatören godkända BI-inriktningen; regulatoriska grunder
+fastställs separat.

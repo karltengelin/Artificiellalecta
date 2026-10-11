@@ -8,6 +8,34 @@
 
 ## Beslut
 
+### B-029 | 2026-10-11 | Databricks AI/BI-dashboard med gemensamma mått och Genie för insikter
+
+**Beslut:** Operatören godkände inriktningen i chatten 2026-10-11 och bad att den sparas i beslutsloggen.
+
+1. Bolagets dashboard byggs i Databricks AI/BI. Den används först direkt i Databricks och kan senare bäddas in som en flik i operatörsgränssnittet.
+2. Ett gemensamt, granskat analysunderlag med definierade vyer och mått försörjer dashboarden, Genie/agentfrågor och kontrollerade rapporteringsunderlag. Definitionerna ska versionshanteras och vara spårbara till källa, datum/period och beräkningsgrund.
+3. Försäkringssystemet levererar bestånd och betalningar, kapitalförvaltningen levererar kapitalvärden och aktuariella beräkningar levererar bland annat FTA, åtaganden och riskmått. Dashboardens frågor och uppdateringar läser dessa underlag; de ersätter inte beräkningsmotorerna.
+4. Genie används för följdfrågor, undersökning och förklaring över det definierade underlaget. Bolagets agenter använder en behörighetsstyrd integration enligt tjänste-/skillarkitekturen. Genie Code kan hjälpa att föreslå vyer och dashboards; gemensamma definitioner granskas före publicering.
+5. Scenarioverktyg beräknar och sparar resultat med antaganden och version, varefter dashboarden kan jämföra bas och scenario och Genie hjälpa till att förklara effekten. Regeländring är ett av flera användningsfall för denna förmåga.
+6. Formell rapportering använder kontrollerat underlag för en bestämd period och mottagare. Granskning och operatörens godkännande krävs före extern inlämning enligt befintliga regler.
+
+**Motivering:**
+- En gemensam grund ger samma betydelse åt nyckeltal i dashboard, agentsvar och rapporter.
+- Databricks kan hantera analysfrågor och visualiseringar, så projektet kan fokusera på datakvalitet, beräkningar och användbara insikter.
+- Genie ger möjlighet att undersöka förändringar och ställa följdfrågor utöver fördefinierade diagram.
+- Återanvändbar analys och rapportering stödjer bolagsvisionen bättre än fristående verktyg för enskilda regelscenarier.
+
+**Konsekvenser och kvarstående frågor:**
+- Projekt 2 äger BI-inriktningen; detaljerade dashboardmått beskrivs som förslag i `projekt/02_bi_insikter/DASHBOARD_DESIGN.md`.
+- Funktioner, behörigheter, kostnader, SQL Warehouse och Genie-stöd verifieras i den faktiska Databricks-miljön före implementation. Beslutet skapar inga konton eller resurser.
+- Direkt läsning kontra historiska ögonblicksbilder, datamodell, metric views, uppdateringsfrekvens, agentintegration och inbäddningslösning preciseras i fortsatt design. B-009/B-025 och B-028 kvarstår; teknisk Genie-integration ska hantera relationen till dessa principer.
+- FTA-/riskgrunder, tillämpliga kapitalkrav, konsolideringsmodell, rapportmottagare och leveransformat beslutas separat. Saknade beräkningar visas som ej beräknade, inte som noll.
+- Det befintliga IBB-verktyget är ett avgränsat scenarioexempel, inte hela BI-arkitekturen. Ingen Databricks-dashboard eller Genie-integration är driftsatt genom detta beslut.
+
+**Preciserar:** Den öppna BI-arkitekturfrågan i B-024. Produktscope och byggordning ändras inte.
+
+---
+
 ### B-028 | 2026-10-11 | Byggordning och tjänstelager: försäkringssystem före agentlager, en väg in för människor och agenter
 
 **Beslut:**
