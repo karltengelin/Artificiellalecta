@@ -1,106 +1,61 @@
-# Gemensamma förutsättningar för uttagsreglerna
+# Gemensamma uttagsförutsättningar
 
-> **Version:** 0.3 | **Status:** Utkast, ej godkänt | **Implementation:** Saknas
-> **Ägare:** Operatören | **Upprättad:** 2026-10-11
-> **Gäller för:** PR-ITP1-002–009, endast ITP1 ålderspension; garantiregeln omfattas när uttagsplanen ändras.
+> **Version:** 1.0 | **Paket:** PR-ITP1 v1.0 | **Dokumentdatum:** 2026-10-11
+> Ingår i det fullständiga dokumentunderlaget. Införande och implementation är separata.
 
-| Regel | Fråga |
+## Begäran, beslut och rättighet
+
+Kunden eller verifierat ombud väljer en identifierad uttagsdel.
+Begäran om ny start, paus, återstart eller förlängning ska ha kommit in
+senast sista kalenderdagen i månaden före önskad ändringsmånad, i
+Europe/Stockholm. Det är ett eget servicevillkor. Mottagning registreras
+även om handläggningen sker senare. En fullständig behörig begäran i tid
+förlorar inte önskad dag enbart genom bolagets dröjsmål.
+
+Sena/otillräckliga begäranden ger konkret komplettering eller förslag
+på nästa möjliga månad; kundens bekräftelse behövs om datum ändras.
+Ingen vanlig retroaktiv paus eller radering av redan uppkommen rätt.
+Bolagets handläggningsfel rättas enligt PR-019 med prövning av den
+ursprungliga giltiga begäran. Godkänd framtida plan ändrar inte dagens
+läge före giltighetsdagen. Motstridiga planer ska uttryckligen ersättas.
+
+Fullständigt kundval innehåller startmånad, livsvarig/tidsbegränsad form,
+antal betalningsmånader om ändlig, delningsandel om deluttag och eventuell
+paus/återstart. Alltid identitet, behörighet och levandestatus.
+Tidigt uttag behöver PR-002/024:s pensioneringsunderlag. Beslut sparar
+regel-/villkorsversion, tariff/faktorer, belopp, skattestatus, motivering
+och beslutsfattare. Belopp, månadsanspråk och banköverföring är olika händelser.
+
+## Tre oberoende förlopp
+
+| Förlopp | Lägen som ska kunna uttryckas |
 |---|---|
-| [PR-ITP1-002](PR-ITP1-002-tidigarelagt-uttag.md) | Första start före ordinarie pensionsålder |
-| [PR-ITP1-003](PR-ITP1-003-uppskjutet-uttag.md) | Första start efter ordinarie pensionsålder |
-| [PR-ITP1-004](PR-ITP1-004-paus.md) | Pausa redan påbörjad utbetalning |
-| [PR-ITP1-005](PR-ITP1-005-aterupptagande.md) | Återuppta efter paus |
-| [PR-ITP1-006](PR-ITP1-006-tidsbegransad-utbetalning.md) | Välja och hantera tidsbegränsad utbetalning |
-| [PR-ITP1-007](PR-ITP1-007-forlangd-utbetalning.md) | Förlänga pågående utbetalningstid |
-| [PR-ITP1-008](PR-ITP1-008-garanti.md) | Intjänad garanti och historiska garantidelar |
-| [PR-ITP1-009](PR-ITP1-009-pensionsbelopp.md) | Pensionsbelopp och rörligt tillägg |
+| Premie/intjänande | Giltigt premieintervall, premiefri, avslutad tillhörighet; sena poster separat |
+| Uttagsdelens pension | Ej startad, framtida plan, pågående, pausad, rättighetsavslutad |
+| Betalningsanspråk | Uppkommen, finansierad/ej finansierad, bankförberedd, skickad/okänd, betald, avvisad/återkommen |
 
-## Externa krav och egna val
+Verifierat dödsfall har företräde utan att radera tidigare betalningsanspråk.
+Fribrev är upphörd premie, inte paus. En person kan samtidigt ha olika lägen
+på olika delar. Ett enda försäkringstillstånd räcker därför inte.
 
-[T-ITP1-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md)
-och [T-ITP1-003](../../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md)
-redovisar källor och tillämplighet. Enligt ITP-avtalet avdelning 1 punkt 7.5
-är ordinarie start 66-årsmånaden, tidigaste ålder 55 år och standardformen
-livsvarig; tidsbegränsat uttag är minst fem år. Här föreslås hela
-utbetalningsmånader, minst 60 vid tidsbegränsat uttag. Dödsfall och eventuell
-tidigare avslutning har företräde framför ett planerat uttag; efter dödsfall
-ska ingen framtida ålderspension planeras. Slutavräkning för dödsmånaden
-hanteras separat. Produkten har inget efterlevandeskydd.
+## Konceptuellt dataunderlag för byggsessionen
 
-ITP-parternas flexibilitetsöverenskommelse innebär paus och förlängning utan
-särskild ändringsavgift eller hälsoprövning, även för tidigare påbörjade uttag
-och vid upprepade ändringar. Den löpande kapitalavgiften enligt B-021 är en
-annan avgift och föreslås fortsätta som vanligt under paus.
+- Person, arbetsgivare, ITP-anslutning, anställningsperiod och behörighet.
+- Avtal/förmån och uttagsdel med ursprunglig försäkring, delningshistorik,
+  öppningsbas och premieallokering. Varje ekonomisk post tillhör exakt en del.
+- Planversion: originalstart, form, totalt/förbrukat/kvarvarande antal
+  rättigheter, kundval, pausintervall, återstart och härledd slutmånad.
+- Garantidel per nettopremie: premie-/mottagningsperiod, historisk tariff,
+  referens-/aktuell plan, garanterat belopp, rättelser och ursprung.
+- Kapitaljournal samt separata konton för premiefordran, avstämning,
+  kundkapital, betalnings-/skatteskuld, arvsvinstpool och bolagskapital.
+- Månadsanspråk: rättighetsmånad, brutto, finansiering, faktiska
+  betalningsförsök/-dagar, avdrag, netto och rapporteringsversion.
+- Verifierat dödsdatum och rapportdatum, avräkning och obetalda rättigheter.
+- Besked/ärende/beslut med käll-, regel-, villkors- och parameterreferenser.
 
-**Föreslagen gemensam frist:** En komplett, behörig begäran ska vara mottagen
-senast sista kalenderdagen i månaden före ändringsmånaden, enligt
-Europe/Stockholm. Sena begäranden ger utredning och förslag på nästa möjliga
-månad, inte retroaktiv ändring eller tyst flytt av kundens val. Bekräftelse
-krävs om den önskade månaden ändras. Begäran, prövning och verkställighet
-är olika händelser; en godkänd framtida ändring ändrar inte dagens tillstånd.
-
-Flera begäranden för samma försäkring måste ordnas och en tidigare plan
-uttryckligen ersättas. Upprepad leverans av samma begäran får inte skapa
-dubbla tillståndsperioder eller betalningar. En försäkring kan ha flera
-pauser i historiken men en aktiv pausplan åt gången.
-
-## Gemensam indata och utfall
-
-Indata: försäkrings-ID, förmånstyp, födelsedatum, livs-/avslutsstatus,
-aktuellt tillstånd och historik, faktisk första utbetalningsmånad,
-begärans-ID/behörig avsändare, mottagningstid, önskad start/paus/återstart,
-utbetalningsform och redan förbrukade utbetalningsmånader.
-Beloppsbeslut behöver dessutom kapitalunderlag och godkänd aktuariell grund.
-
-Utfall: godkänd framtida plan, begäran om komplettering, manuell prövning
-eller motiverat avslag. Spara regel-ID/version, underlag, beslutsfattare,
-beslutstid, giltighetsmånad och ersatt plan. Saknad beräkningsgrund eller
-oklar tillämplighet får inte döljas med ett uppskattat belopp.
-
-## Tillstånd och dataförslag
-
-| Händelse | Föreslagen hantering |
-|---|---|
-| Tidigt/ordinarie/uppskjutet första uttag verkställs | Övergång till `in_payout` |
-| Uppskjuten start registreras | Ändra framtida uttagsplan; ingen automatisk ändring till `paid_up` |
-| Paus verkställs | `in_payout` → `payout_paused` |
-| Återstart verkställs | `payout_paused` → `in_payout` |
-| Dödsfall/avslut under paus | Ingen återstart; avslutshanteringen har företräde |
-
-Tillstånden finns i [policy_state.py](../../src/models/policy_state.py).
-De implementerar inte reglerna i sig. `paid_up` beskriver upphörd premie,
-inte uppskjuten start eller paus. Paus får inte automatiskt stoppa premie.
-Samtidig premie och uttag samt partiellt uttag kräver en modell som kan
-skilja premie- och utbetalningsförlopp; dagens enda tillstånd per försäkring
-räcker inte för alla sådana kombinationer.
-
-**Dataförslag, ingen migration:** Separat versionshanterad uttagsplan med
-första faktiska start, planerad start/återstart, pausperioder, utbetalningsform,
-avtalad total/återstående utbetalningstid och beslutskoppling. Total tid avser
-antal utbetalningsmånader från första start, inklusive förbrukade månader och
-exklusive paus. Ändringar av total tid och enbart förskjutet slut vid paus
-ska kunna skiljas åt. Livsvarig form har inget ändligt totalantal eller slutdatum.
-Betalningsjournalen
-måste skilja en rätt till månadsbelopp från banköverföring: ett misslyckat
-betalningsförsök är inte en avtalad paus och ska inte förbruka två månader
-vid ett nytt försök.
-
-## Godkännande, giltighet och villkor
-
-Reglerna är inte kundvillkor eller tekniskt driftsatta. Förslaget gäller
-framtida händelser på nya och befintliga simulerade försäkringar efter ett
-ännu inte bestämt ikraftträdandedatum. Ingen historisk utbetalning räknas om
-genom dokumentändringen. [Villkorsversion 1.0](../försäkringsvillkor.md) §7
-innehåller äldre, felaktiga åldersantaganden och får inte användas som
-verifierat implementationsunderlag; ersättning föreslås separat.
-
-Modellutkast till [aktuariell grund](../aktuariell_grund.md), garantiregel
-och beloppsregel finns nu. Tariffer, finansiering, skatterättslig gren och
-tillståndsmodell behöver granskas före kodarbete. Tidsbegränsad utbetalning och förlängning beskrivs nu
-i PR-ITP1-006/007; slutavräkning och partiella uttag behöver kompletteras.
-
-| Version | Datum | Ändring |
-|---|---|---|
-| 0.1 | 2026-10-11 | Gemensamma förutsättningar och dataförslag |
-| 0.2 | 2026-10-11 | Tidsbegränsad utbetalning, förlängning och tydlig definition av total tid |
-| 0.3 | 2026-10-11 | Modellutkast för garanti och pensionsbelopp |
+Det är informationskrav, ingen ändring av databas eller kod.
+Kapital bevaras vid delning/poolöverföring. Inga dubbla premier eller
+månadsrätter. Paus förbrukar inte betalningsmånader och nytt bankförsök
+skapar ingen rätt. Livsvarigt har inget faktiskt slutdatum.
+Se [katalogen](README.md) och [leveranskontrollen](../../projekt/04_produktregelverk/LEVERANSKONTROLL.md).

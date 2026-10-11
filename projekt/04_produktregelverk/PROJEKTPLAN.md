@@ -1,62 +1,67 @@
-# Projekt 4: Produktregelverk & försäkringsvillkor
+# Projekt 4 – produktregelverk och försäkringsvillkor
 
-> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, B-024).
+> **Leverans:** 2026-10-11 | **Status:** Dokumentunderlag färdigställt enligt sessionens utökade uppdrag.
+> Del av programmet i MASTER_CONTEXT §4b, B-024. Samlat införande är separat.
 
-## Scope
+## Uppdrag och resultat
 
-Göra efterforskning för att förstå och tolka gällande regelverk (LTF, FFFS:er, DORA, GDPR, IDD,
-SFDR, AI-förordningen, skatt m.fl.), och omsätta tolkningen i en komplett uppsättning produktregler
-som det egenbyggda försäkringssystemet speglar. Detta delprojekt är också hemmaplan för
-flaggskeppsscenariot (MASTER_CONTEXT §1): regelverksändring → produktregel → produktionssatt
-systemändring.
+Färdigställa en sammanhängande uppsättning produktregler och villkor för
+**traditionell ITP1 ålderspension utan efterlevandeskydd** som försäkringssystemet
+sedan kan byggas efter. Operatören har gett mandat att göra efterforskningar,
+egna tolkningar och produktval för hela dokumentpaketet i samma session.
 
-## Status
+[Produktpaket PR-ITP1 v1.0](../../01_domän/produktregler/README.md) innehåller
+34 regler och ett gemensamt regelkontrakt. [Villkor v2.0](../../01_domän/försäkringsvillkor.md)
+täcker hela livscykeln. [Aktuariell grund](../../01_domän/aktuariell_grund.md)
+och [parameterregister](../../01_domän/parametrar/PARAMETERREGISTER.md)
+anger valda SIM-grunder, faktisk sparad SCB-tabell och exakta årsparametrar.
 
-🟡 Pågår. Fas 1a (ITP1-regelverk, försäkringsvillkor v1.0) är klar. Utbyggnad av
-`04_regulatoriskt/` per regelverk är hög prioritet i `ATT_GORA.md`.
+[Regelverkskartan](../../04_regulatoriskt/regelverkskarta.md), källregistret,
+underlag per regelverk och tio tolkningar visar externa krav och egna val.
+[Leveranskontrollen](LEVERANSKONTROLL.md) visar täckning, räkneexempel,
+dokumentkontroller och gränssnitt till andra projekt.
+[Paketförslaget](PAKET_BESLUTSFORSLAG.md) samlar det formella införandet.
 
-Första arbetsutkastet till placering, skrivsätt och spårbarhet finns i
-[ARBETSSATT.md](ARBETSSATT.md) (2026-10-11). Det innehåller en provregel för
-premietrappan, källregister och öppna tolkningsfrågor. Dokumenten är utkast;
-ingen ny villkorsversion eller produktregel är antagen genom detta arbete.
+## Färdiga områden
 
-Uttagsområdet har nu sex separata utkast (tidigarelagt, uppskjutet, paus,
-återupptagande, tidsbegränsad utbetalning och förlängning), se
-[gemensam ingång](../../01_domän/produktregler/UTTAG_GEMENSAMT.md),
-[källtolkning](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md)
-och [föreslagen villkorsändring](VILLKORSANDRING_UTTAG.md).
-Utredningen om tidsbegränsad utbetalning finns i
-[T-ITP1-003](../../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md).
-Domänens felaktiga 63-årsgräns är rättad. Villkorsversion 1.0 är markerad
-med granskningsanmärkning i väntan på beslut; uttagslogik är inte byggd.
+| Område | Regler |
+|---|---|
+| Tillhörighet, premieålder, anställning, lön och premietrappa | 001, 012–014 |
+| Fördelning, komplettering, fakturering, mottagning och rättelse | 015–019 |
+| Kapital, avkastning, avgift och avkastningsskatt | 020–023 |
+| Garanti, pensionsbelopp och bolagsfinansiering | 008–009, 028 |
+| Ordinarie/tidig/sen start, deluttag och tidsbegränsad/livsvarig plan | 002–003, 006, 024–025 |
+| Paus, återstart och förlängning | 004–005, 007 |
+| Bank, inkomstskatt, sista rätt, dödsfall och arvsvinst | 010–011, 026–027 |
+| Information, ändring, klagomål, data och förfoganden | 029–031, 033 |
+| Giltighet/historik och tvärgående produktkrav | 032, 034 |
 
-Garanti och pensionsbelopp har två nya regelutkast, PR-ITP1-008/009,
-med [aktuariell grund](../../01_domän/aktuariell_grund.md),
-[källtolkning T-ITP1-004](../../04_regulatoriskt/tolkningar/T-ITP1-004-garanti-och-aktuariell-grund.md)
-och [besluts-/villkorsförslag](GARANTI_BESLUTSFORSLAG.md).
-Grunden är en specificerad modell, inte en kalibrerad eller antagen tariff.
-Produktinriktningen är godkänd i B-027: hela mottagna nettopremien är
-garantigrundande med 0 % nettoränta, utan automatisk garantiförstärkning.
-§2.3 i villkorsversion 1.0 är markerad för ändring vid införandet.
-Dödlighet, ekonomisk validering, underskottsfinansiering och godkännande
-av fullständig tariff och villkorsversion återstår.
+Tidigare frågor F-001–008 är dokumentmässigt lösta; slutsatser och
+hänvisningar finns i [arbetssättet](ARBETSSATT.md). Äldre delförslag om
+uttag, garanti och dödsfall pekar nu till det samlade paketet.
+B-027:s beslutade garantiinriktning behålls.
 
-## Beroenden
+## Avgränsning och överlämning
 
-- Produktregler som tas fram här styr direkt vad premiemotorn (Fas 1c) och framtida
-  försäkringssystem ska implementera
+Operatören har uttryckligen flyttat **bygga regler i systemet och koppla
+källa → tolkning → regel → kod → test** till en senare session.
+Ingen regelkod, DB-migration, datagenerering, agentimplementation eller
+automatisk bank-/myndighetsanslutning har utförts här.
 
-## Befintlig grund i repot
+Byggsessionen ska använda paketet som ett helt kontrakt, framför allt
+premie/pensions-/betalningsstatus, månadsordning, historiska garantidelar,
+separat betalningsskuld, faktiska poolmedel och bolagsfinansiering.
+Den ska pröva befintlig kod/datamodell mot hela paketet; dokumentationen
+innebär inte att nuvarande tabeller redan stöder det.
 
-- `01_domän/ITP1_regelverk.md`, `01_domän/försäkringsvillkor.md`
-- `04_regulatoriskt/regelverkskarta.md`
-- B-010 (fyrlagermodell: regelverkskällor → tolkningar → styrdokument → operativt arbete)
-- B-011 (compliance-agenten äger regelverk + styrdokument)
-- B-021/B-022 (försäkringsvillkor v1.0, förenklingar)
+Verkligt bolagstillstånd, professionell tariff-/beståndsvalidering, solvens,
+bokslut, DORA-/GDPR-policies och faktisk hållbarhetsinformation är
+verksamhetsprocesser i andra delprojekt. Det är inte öppna produktval
+som lämnas till en språkmodell i byggsessionen.
 
-## Öppna designfrågor
+## Flaggskeppsscenario
 
-- Vilket regelverk används som demo-case för flaggskeppsscenariot (pensionsålder nämndes som
-  exempel, inte nödvändigt bästa valet)?
-- Hur dokumenteras kopplingen regelverk → produktregel → kodändring så att den är granskningsbar
-  (jfr B-016 om orkestrerade flöden för compliance-kritiska processer)?
+Dokumenterat första scenario: ny IBB-årsparameter → tolkning och berörd
+premietrappa → ändringsbesked/konsekvens för bestånd → byggsessionens
+kod-/testkoppling. Scenariot har en verklig återkommande regelkälla och
+behöver ingen uppfunnen ändring av pensionsåldern.

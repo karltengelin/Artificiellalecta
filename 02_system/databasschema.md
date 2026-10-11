@@ -130,13 +130,19 @@
 | `note` | `VARCHAR(255)` | NULL | Orsak/kommentar, t.ex. "Anställning upphörde" |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
 
-**Lägen** (mappning mot `01_domän/försäkringsvillkor.md`):
+**Lägen** (befintlig implementation; hänvisningar till `01_domän/försäkringsvillkor.md` v2.0):
 
 - `premium_paying` – premiebetalande (villkor §3)
-- `paid_up` – fribrev (villkor §2.4)
-- `in_payout` – uttag pågår (villkor §7)
-- `payout_paused` – uttag pausat (villkor §7.3)
+- `paid_up` – fribrev (villkor §7)
+- `in_payout` – uttag pågår (villkor §8–11)
+- `payout_paused` – uttag pausat (villkor §10)
 - `terminated` – avslutad
+
+Produktpaket PR-ITP1 v1.0 skiljer premie-, pensions- och betalningsförlopp
+och medger flera uttagsdelar. Tabellen ovan beskriver fortfarande den
+befintliga modellen, som inte redan implementerar hela paketet. Kraven
+för nästa byggsession finns i [UTTAG_GEMENSAMT](../01_domän/produktregler/UTTAG_GEMENSAMT.md).
+Denna hänvisningsuppdatering ändrar inget schema eller någon kod.
 
 **Integritet:** Partiellt unikt index på `policy_id` där `valid_to IS NULL` – max ett öppet läge per försäkring. Att perioder inte överlappar valideras på applikationsnivå (Postgres EXCLUDE-constraint kräver btree_gist-extension – utvärderas senare). Index på `(policy_id, valid_from)`.
 
@@ -164,7 +170,7 @@
 
 ## 8. Tabell: `premium_transactions` – Premietransaktioner
 
-**Domän:** En rad per **förmån**, kalendermånad och transaktionstyp (B-022: premien hör till förmånen, inte försäkringen). I nuvarande produktscope hanteras bara ålderspensionspremier. Om andra förmånstyper senare godkänns genom ett nytt scopebeslut ska deras premier hållas åtskilda från pensionspremier. Ordinarie ålderspensionspremie beräknas enligt `01_domän/ITP1_regelverk.md` §2/§8. Tabellen är **spårbarhetens kärna**: varje krona i pensionskapitalet ska kunna följas hit och räknas om ur sitt underlag.
+**Domän:** En rad per **förmån**, kalendermånad och transaktionstyp (B-022: premien hör till förmånen, inte försäkringen). I nuvarande produktscope hanteras bara ålderspensionspremier. Om andra förmånstyper senare godkänns genom ett nytt scopebeslut ska deras premier hållas åtskilda från pensionspremier. Ordinarie ålderspensionspremie beräknas enligt `01_domän/ITP1_regelverk.md` §2/§6. Tabellen är **spårbarhetens kärna**: varje krona i pensionskapitalet ska kunna följas hit och räknas om ur sitt underlag.
 
 | Kolumn | Datatyp | Constraints | Beskrivning |
 |--------|---------|-------------|-------------|

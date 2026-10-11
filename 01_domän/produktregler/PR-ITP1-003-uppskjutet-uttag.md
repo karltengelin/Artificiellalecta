@@ -1,51 +1,37 @@
-# PR-ITP1-003 – uppskjutet uttag
+# PR-ITP1-003 – uppskjuten första start
+> **Filversion:** 1.0 | **Paket:** PR-ITP1 v1.0 | **Dokumentdatum:** 2026-10-11
+> **Status:** Specificerad tillämpning för simuleringen; införande separat. Implementation ingår inte i uppdraget.
+> Gemensam giltighet, behörighet, avrundning och felhantering: [regelpaketets ingång](README.md).
 
-> **Version:** 0.1 | **Granskningsstatus:** Utkast | **Implementation:** Saknas
-> **Ägare:** Operatören | **Upprättad:** 2026-10-11 | **Godkänd av/datum:** Ej godkänd
-> **Ursprung:** ITP-avtalets rätt att begära annan start; egna administrativa val.
 
-## Källor, giltighet och indata
+## Spårbarhet
 
-K-ITP-AVTAL-2026 punkt 7.5 och jämförelse K-ALECTA-UTTAG-2026 §8,
-se [T-ITP1-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md).
-[Gemensamma förutsättningar](UTTAG_GEMENSAMT.md) gäller. Indata omfattar
-befintlig planerad start, önskad ny start och utbetalningsform.
+**Ursprung:** Avtalsram; egen frist/månadsmodell.
+**Källor:** K-ITP-AVTAL-2026 i [källregistret](../../04_regulatoriskt/kallregister.md).
+**Tolkning:** [T-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md).
+**Villkor:** [§8 i v2.0](../försäkringsvillkor.md).
 
-## Regel och utfall
+## Regel och grund
 
-1. Uttag får ännu inte ha påbörjats. Normal start är 66-årsmånaden om inget
-   annat har begärts. Uppskjutet uttag avser första start efter denna månad.
-   Att flytta en tidigare plan till en annan månad före 66 är i stället en
-   ändring av tidigarelagt uttag enligt PR-ITP1-002.
-2. Begäran ska vara komplett senast månaden före den start som annars skulle
-   verkställas. En senare ändring av en uppskjuten plan följer samma frist.
-   Redan verkställd start får inte göras ogjord; pröva paus i stället.
-3. Registrera ny första startmånad och behåll förvaltningen. Ingen generell
-   slutålder på 70 år införs: de kontrollerade källorna ger inte stöd för den.
-   Hög ålder får inte ensam utlösa tvångsuttag eller automatiskt avslag.
-4. Premieplikt prövas separat. Uppskjutet uttag gör inte försäkringen till
-   fribrev och förlänger inte automatiskt arbetsgivarens premieplikt.
-5. Vid start beräknas pensionen med då tillämplig godkänd grund. Ett senare
-   uttag är inte en garanti för större månadsbelopp. Vald tidsbegränsad
-   utbetalning ska vara minst 60 utbetalningsmånader.
+ITP 7.5 medger annan start än den ordinarie. Kunden kan före en uttagsdels
+första rätt välja vilken senare hel månad som helst. Ingen maxålder 70
+eller annan övre startålder används. Fristen följer UTTAG_GEMENSAMT.
 
-## Acceptansfall
+En ännu inte startad del är sparande även om premie upphört (fribrev).
+Kapitalet förvaltas med avgift, skatt och arvsvinst; uppskov är ingen
+utbetalningspaus och stoppar inte arbetsgivarens premie automatiskt.
+Garantin omräknas värdebevarande med delarnas historiska grunder.
+Livs-/dödsstatus kontrolleras före start.
 
-| Fall | Förväntat utfall |
-|---|---|
-| Född 1960-10-15, inget annat val | Normal planerad start oktober 2026 |
-| Begäran i september 2026 om start oktober 2028 | Planen ändras före normal start; inget uttag i oktober 2026 |
-| Ännu inget uttag, önskad start vid 72 | Ingen avvisning på grund av repots gamla 70-årsgräns |
-| Första utbetalning redan verkställd | Inte uppskjutande; pröva paus enligt PR-ITP1-004 |
-| Uppskjuten start men premiebetalningen har upphört | Fribrev enligt premiereglerna, oberoende av uppskjutandet |
+Det går att ändra en framtida start igen, tidigare eller senare, under
+samma frist och ålders-/pensioneringsregler. Efter första månadsrätt
+används paus/förlängning, inte uppskjuten första start. För flera delar
+kan start skilja sig. Normal informationsrutin återupptas inför nya
+startdatumet enligt PR-025/029.
 
-## Återstår och versionshistorik
+## Kontrollfall
 
-Informationsrutinen inför ordinarie start behöver specificeras. Externa
-ersättningssituationer som kan påverka startvillkor behöver separat prövning;
-Alectas särregel för rätt till ITP sjukpension införs inte automatiskt i vår
-produkt. Inget nytt sjukpensionsåtagande skapas. Ingen kod finns för regeln.
-
-| Version | Datum | Ändring |
-|---|---|---|
-| 0.1 | 2026-10-11 | Första utkast |
+Start 66 ändras i tid till 72: godkänns utan maxålder; ingen pension för
+mellanliggande månader. En redan betald del kan inte få sin originalstart
+raderad. Saknad bankuppgift vid 66 är betalningshinder enligt PR-026 och
+är i sig inte ett kundvalt uppskov.

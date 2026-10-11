@@ -1,61 +1,37 @@
 # PR-ITP1-005 – återupptagande efter paus
+> **Filversion:** 1.0 | **Paket:** PR-ITP1 v1.0 | **Dokumentdatum:** 2026-10-11
+> **Status:** Specificerad tillämpning för simuleringen; införande separat. Implementation ingår inte i uppdraget.
+> Gemensam giltighet, behörighet, avrundning och felhantering: [regelpaketets ingång](README.md).
 
-> **Version:** 0.2 | **Granskningsstatus:** Utkast | **Implementation:** Saknas
-> **Ägare:** Operatören | **Upprättad:** 2026-10-11 | **Godkänd av/datum:** Ej godkänd
-> **Ursprung:** ITP:s flexibilitetsöverenskommelse; egna verkställighets- och beräkningskrav.
 
-## Källor, giltighet och indata
+## Spårbarhet
 
-K-ITP-FLEX, K-IL-UTTAG-2026 58 kap. 11–11 b §§ och jämförelse
-K-ALECTA-UTTAG-2026 §8, se [T-ITP1-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md).
-[Gemensamma förutsättningar](UTTAG_GEMENSAMT.md) gäller. Indata omfattar
-aktiv pausplan, faktisk tidigare start, återstående tid, kapital,
-aktuariell grund/version och tillämplig skatterättslig gren.
+**Ursprung:** Egen sammanhängande tillämpning av avtals-/skatteramen.
+**Källor:** K-ITP-FLEX, K-IL-UTTAG-2026 i [källregistret](../../04_regulatoriskt/kallregister.md).
+**Tolkning:** [T-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md).
+**Villkor:** [§10 i v2.0](../försäkringsvillkor.md).
 
-## Regel och utfall
+## Regel
 
-1. Försäkringen ska vara `payout_paused` med återstående rätt till pension.
-   Avtalad återstart verkställs utan ny ansökan. Önskad ändring ska vara
-   komplett enligt gemensam frist före ändringsmånaden. Framtida ändring
-   får inte skapa en överlappande pausplan eller en andra första start.
-2. Kontrollera livs-/avslutsstatus före verkställighet. Ingen återstart efter
-   dödsfall eller avslut, och inget nytt efterlevandeskydd genom återstart.
-3. Räkna om månadsbeloppet med kapital, aktuell ålder, återstående tid och
-   godkänd aktuariell grund. Kontrollera tillämpliga beloppskrav enligt
-   58 kap. 11–11 b §§ och avtal; samma eller högre belopp får inte
-   förutsättas utan denna prövning. Saknad grund ger manuell prövning och
-   blockerad automatisk betalning, inte nollbelopp eller uppskattat belopp.
-4. Bekräfta nytt belopp, återstart och planerat slut. Övergå till `in_payout`
-   först vid faktisk verkställighet. Första ursprungliga startdatumet och
-   tidigare utbetalningshistorik ska behållas.
-5. Inga retroaktiva belopp skapas för avtalade pausmånader. Återstart är
-   inte en ny 60-månadersperiod: tidigare förbrukade månader räknas av.
-   En förlängning utöver pausens effekt kräver eget beslut enligt
-   [PR-ITP1-007](PR-ITP1-007-forlangd-utbetalning.md).
-   Förkortning efter första start tillåts inte i föreslaget villkor.
-6. Ingen särskild ändringsavgift eller hälsoprövning införs för återstarten.
-   Ny förtida pensioneringsprövning vid återstart införs inte automatiskt;
-   ursprungliga villkor och ändrade förhållanden behöver separat utredning.
+Återstart sker vid början av den godkända återstartsmånaden om delen är
+levande, pausad och har kvar rättigheter. Ingen ny ansökan krävs för
+redan beslutat datum. Ändring av datum kräver samma frist/bekräftelse som
+en annan ändring. Dödsfall eller avslut har företräde.
 
-## Acceptansfall
+Behåll första faktiska start och förbrukade rättigheter. Återstående
+period är avtalat totalt antal minus förbrukade månadsrätter, exklusive
+paus. Ingen ny 60-månadersperiod krävs efter en paus. Livsvarig rätt har
+ingen sista månad. Beräkna garanti och pension enligt PR-008/009 på
+värderingen månaden före återstart, med PR-009:s beloppsgolv.
 
-| Fall | Förväntat utfall |
-|---|---|
-| Paus november–januari, avtalad återstart februari | Återstart februari utan ny ansökan efter kontroller |
-| 12 av 60 månader förbrukade före paus | 48 utbetalningsmånader återstår, inte 60 nya |
-| Återstart flyttas från februari till mars med komplett begäran i januari | Ersatt plan; ytterligare en pausmånad och motsvarande förskjutet slut |
-| Dödsfall i januari före avtalad februariåterstart | Ingen februariutbetalning eller återstart |
-| Beräknat belopp lägre än före paus | Pröva skatte-/avtalsgrund; varken generellt avslag eller automatiskt godkännande |
-| Aktuariell grund saknas | Automatisk betalning blockeras och manuell prövning skapas |
+Bank- eller skattehinder stoppar verkställighet av betalning men är inte
+ytterligare kundvald paus; månadsanspråk uppkommer enligt PR-026.
+Efter ny paus måste nytt datum vara beslutat, inte härlett från en
+utebliven överföring.
 
-## Återstår och versionshistorik
+## Kontrollfall
 
-Aktuariell grund, garanti och tillämplig skatte-/avtalsgren är nödvändiga före
-beloppsimplementation. Regler för misslyckad teknisk verkställighet behöver
-säkerställa att en avtalad återstart inte felaktigt registreras som fortsatt
-frivillig paus. Ingen kod finns för denna regel.
-
-| Version | Datum | Ändring |
-|---|---|---|
-| 0.1 | 2026-10-11 | Första utkast |
-| 0.2 | 2026-10-11 | Koppling till separat förlängningsregel |
+12 av 60 förbrukade: återstart använder 48, inte 60. En ren paus i den
+livsvariga planens första 60 rättigheter får enligt vår försiktiga
+skattetillämpning inte sänka återstartens brutto under senaste belopp;
+en verklig förlängning kan ge ny nivå enligt PR-007/009.

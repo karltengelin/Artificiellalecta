@@ -1,127 +1,95 @@
-# ITP1-regelverk – ålderspension
+# ITP1 – avtalsram för vår ålderspension
 
-> Domändokument: beskriver kollektivavtalets regler för ITP1 ålderspension så som de gäller i verkligheten. Detta är **lager 1-kunskap** (vad avtalet säger) – bolagets egna villkor och tillämpningar finns i `försäkringsvillkor.md`.
->
-> **Siffror verifierade 2026-07-12** mot Avtalat, Collectum och Regeringskansliet. Basbelopp och brytpunkter ändras årligen – se §6 för uppdateringsrutin.
+> **Version:** 2.0 | **Källkontroll:** 2026-10-11
+> Detta är extern domänkunskap. Bolagets exakta tillämpning finns i [produktpaketet](produktregler/README.md).
 
----
+## 1. Tillhörighet och avgränsning
 
-## 1. Bakgrund och parter
+ITP-planen avdelning 1 gäller verifierad ITP1-tillhörighet. Huvudregeln
+avser födda 1979 eller senare, men företag kan ha ITP1 för fler årskullar.
+Födelseår ensamt är därför inte anslutningsbeslut. Planens undantag och
+utlands-/företagarfall kräver det faktiska anslutningsunderlaget.
 
-ITP (Industrins och handelns tilläggspension) är kollektivavtalad tjänstepension för privatanställda tjänstemän, avtalad mellan **Svenskt Näringsliv** och **PTK**. ITP1 är den premiebestämda avdelningen och gäller tjänstemän **födda 1979 eller senare** (företag som tecknat ITP-avtal efter 2007 kan tillämpa ITP1 för alla anställda oavsett ålder).
+Vår produkt är enbart traditionell ITP1 ålderspension, utan återbetalnings-
+eller familjeskydd, enligt B-002/B-021. ITP2, ITPK, sjukpension, TGL och
+premiebefrielseförsäkring ingår inte. En verifierad premie finansierad av
+extern premiebefrielse kan vara indata; bolaget försäkrar inte den risken.
 
-**Collectum** är valcentral och administratör i det verkliga systemet: tar emot löneanmälningar, fakturerar arbetsgivare månadsvis och förmedlar premier till det pensionsbolag den försäkrade valt. I vår simulering axlar Artificiellalecta både rollen som valbart pensionsbolag och (förenklat) administratörsrollen – se avgränsning i `försäkringsvillkor.md`.
+## 2. Ordinarie premie
 
-## 2. Premietrappan
+[ITP-planen 2026](https://www.ptk.se/wp-content/uploads/2025/12/Avtal_ITP_och_TGL_2026.pdf),
+avdelning 1 punkt 6 och 7.1: faktisk pensionsmedförande månadslön,
+4,5 % upp till 7,5 IBB/12 och 30 % däröver upp till 30 IBB/12.
+Ingen ordinarie ålderspensionspremie på lön över taket.
+Trappan räknas per person/arbetsgivare/månad före bolagets fördelning.
 
-Arbetsgivaren betalar varje månad en premie för ålderspension beräknad på den anställdes **pensionsmedförande lön** (se §3):
+Ordinarie premie från 25-årsmånaden till månaden före 66.
+Anställning under del av månad ger beräkning på faktiskt utbetald lön,
+inte en ytterligare dagproratering. Slutlön/bonus efter anställning kan
+fortfarande vara pensionsmedförande i utbetalningsmånaden inom rätt
+premieålder. Collectums gräns för tre efterföljande löner är en
+administrativ filgräns, inte en universell tre månaders preskription.
+Saknad lön är inte noll; negativ rapport kräver rättelsehantering.
 
-| Lönedel (per månad) | Premiesats |
-|---|---|
-| Upp till 7,5 IBB/12 (**52 125 kr/mån 2026**) | **4,5 %** |
-| Över 7,5 IBB/12 upp till 30 IBB/12 (**52 125–208 500 kr/mån 2026**) | **30 %** |
-| Över 30 IBB/12 | Ingen premie |
+## 3. Pensionsmedförande lön och komplettering
 
-Formel (månadspremie, `L` = pensionsmedförande månadslön, `B1` = 7,5 × IBB/12, `B2` = 30 × IBB/12):
+[Collectums löneslagslista](https://collectum.se/administration/sa-rapporterar-du-ratt/pensionsmedforande-lon)
+styr klassificeringen i ITP1-kolumnen. Kontant lön efter löneväxling,
+bonus/provision/övertid och semesterersättning ingår normalt.
+Naturaförmån och kostnadsersättning ingår inte. Lagstadgad sjuklön
+och extra sjuk-/föräldralön måste skiljas åt. Detaljer och okända
+löneslag hanteras i PR-014; ingen okänd ersättning döps automatiskt till lön.
 
-```
-premie = 0,045 × min(L, B1) + 0,30 × max(0, min(L, B2) − B1)
-```
+Kompletterande premie enligt punkt 7.2 är separat från ordinarie trappa.
+Fast belopp, procent/flex eller engångspremie kräver det verkliga avtalet.
+Ingen generell branschflexsats antas. [Collectums fortsättning 66–67](https://collectum.se/administration/sa-rapporterar-du-ratt/lopande-premier)
+gäller från 2026 med minst ordinarie trappa när den grenen valts.
+Bolagets erbjudande efter 67 är avgränsat, inte ett påstått lagförbud.
 
-Skälet till den höga satsen över brytpunkten: allmän pension tjänas bara in på inkomster upp till 7,5 IBB – de 30 procenten kompenserar för det.
+## 4. Sparform, garanti och uttag
 
-## 3. Pensionsmedförande lön
+ITP-valet medger olika bolag/sparformer; minst hälften av premien ska
+placeras traditionellt. Vårt bolag erbjuder bara traditionell försäkring.
+Den interna administratörsrollen enligt B-021 ersätter verklig valcentral
+i simuleringen och får inte påstås vara faktisk Collectumanslutning.
 
-- **Kontant utbetald bruttolön varje månad** – inklusive rörliga delar som provision, bonus och övertidsersättning den månad de betalas ut
-- Kostnadsersättningar (traktamenten, bilersättning etc.) ingår **inte**
-- Premien beräknas **per kalendermånad på faktiskt utbetald lön** – ingen årsutjämning i efterhand. Hög lön en enskild månad (t.ex. bonusutbetalning) ger hög premie just den månaden, vilket kan slå över brytpunkten
-- Arbetsgivaren rapporterar lönen månadsvis till valcentralen
+ITP punkt 7.5: ordinarie pension från 66-årsmånaden, livsvarigt som
+utgångspunkt och tidsbegränsat minst fem år. Tidigaste avtalsålder 55;
+vårt månadserbjudande börjar månaden efter 55-årsmånaden. Annan start kan
+begäras; ingen generell maxålder 70 i den kontrollerade bestämmelsen.
+Unisex används och pågående pension omfattar dödsmånaden.
 
-## 4. Åldersgränser
+[ITP-parternas flexibilitet](https://www.avtalat.se/arbetsgivare/nyheter-for-arbetsgivare/nu-blir-det-mojligt-att-pausa-uttaget-av-tjanstepension/)
+omfattar paus och förlängning även efter start, utan särskild avgift eller
+hälsoprövning. Bolagets frister, delutbud och beräkningsval finns i PR-002–009/024–027.
+IL 58 kap. är skatteramen; en planetikett ensam ger inte rätt till ett undantag.
 
-| Händelse | Regel |
-|---|---|
-| Premiebetalning börjar | Fr.o.m. **månaden den anställde fyller 25 år** |
-| Premiebetalning slutar | T.o.m. **månaden innan den anställde fyller 66 år** |
-| Frivillig fortsättning | Arbetsgivare kan betala kompletterande premie 66–67 år (minst ordinarie satser) |
+Traditionell försäkring kan ha garanti även när premien är premiebestämd.
+B-027 väljer hela mottagna nettopremien och 0 % nettoränta som vår
+garantigrund. Historiska garantidelar bevaras. Det är bolagets val,
+inte en universell ITP-garantiprocent.
 
-Notera för datamodellen: gränserna är **månadsbaserade**, inte dagbaserade. En person född 1998-08-15 får sin första premie för augusti 2023 (månaden 25-årsdagen infaller).
-
-## 5. Placering och uttag
-
-**Placering:** Den försäkrade väljer pensionsbolag och sparform via valcentralen. Minst **50 % av premien måste placeras i traditionell försäkring**; resten får placeras i fondförsäkring. Den som inte väljer (ickevalsalternativet) får hela premien i traditionell försäkring hos default-bolaget.
-
-Traditionell försäkring har en garantidel och möjlighet till överskott enligt
-Avtalats information. Premiebestämdhet betyder inte att garantier saknas.
-Bolagets konstruktion behöver egna villkor; se
-[T-ITP1-004](../04_regulatoriskt/tolkningar/T-ITP1-004-garanti-och-aktuariell-grund.md)
-och [aktuariell grund](aktuariell_grund.md). Ingen allmän garantiprocent
-fastställs genom denna domänsammanställning.
-
-**Uttag – källkontrollerat 2026-10-11:**
-
-- ITP-planen avdelning 1 punkt 7.5 anger tidigaste ålder **55 år**, ordinarie start **66-årsmånaden** och möjlighet att begära annan start.
-- Standard är **livsvarig utbetalning**; tidsbegränsat uttag är minst fem år. Någon generell senaste start vid 70 år framgår inte av den kontrollerade bestämmelsen.
-- ITP-parternas överenskommelse medger paus och förlängning, även för redan påbörjade uttag, utan särskild ändringsavgift eller hälsoprövning.
-
-Se [källregistret](../04_regulatoriskt/kallregister.md),
-[tolkning T-ITP1-002](../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md)
-och [uttagsreglernas gemensamma förutsättningar](produktregler/UTTAG_GEMENSAMT.md).
-Tidsbegränsad utbetalning och förlängning preciseras i utkasten
-[PR-ITP1-006](produktregler/PR-ITP1-006-tidsbegransad-utbetalning.md) och
-[PR-ITP1-007](produktregler/PR-ITP1-007-forlangd-utbetalning.md), med
-[T-ITP1-003](../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md)
-som underlag. Bolagens tidsutbud och ändringsfrister är inte generella avtalsgränser.
-Ansökningsfrister och detaljer för förtida uttag behöver bolagsvillkor och
-ytterligare avtalskontroll. Den tidigare uppgiften om 63 år var felaktig.
-Detta rättar domänkunskapen; förslag till ändring av villkorsversion 1.0 ligger
-separat i [villkorsändringen](../projekt/04_produktregelverk/VILLKORSANDRING_UTTAG.md).
-
-## 6. Basbelopp och årlig uppdatering
-
-| Parameter | Värde 2026 | Källa |
-|---|---|---|
-| Inkomstbasbelopp (IBB) | **83 400 kr** | Förordning (2025:1002) |
-| Brytpunkt 7,5 IBB/12 | **52 125 kr/mån** (625 500 kr/år) | Avtalat/Collectum |
-| Tak 30 IBB/12 | **208 500 kr/mån** (2 502 000 kr/år) | Avtalat/Collectum |
-
-**Uppdateringsrutin:** IBB fastställs av regeringen i november året innan. Vid årsskifte ska denna tabell uppdateras och nya brytpunkter läggas in i systemets parametertabell (premiemotorn ska läsa basbelopp per år ur data, aldrig ha dem hårdkodade).
-
-Historik (för beräkning av retroaktiv premiehistorik i mockdata):
+## 5. Årsparametrar och historik
 
 | År | IBB | 7,5 IBB/12 | 30 IBB/12 |
-|---|---|---|---|
-| 2026 | 83 400 | 52 125 | 208 500 |
-| 2025 | 80 600 | 50 375 | 201 500 |
+|---|---:|---:|---:|
+| 2023 | 74 300 | **46 437,50** | 185 750 |
 | 2024 | 76 200 | 47 625 | 190 500 |
-| 2023 | 74 300 | 46 438 | 185 750 |
+| 2025 | 80 600 | 50 375 | 201 500 |
+| 2026 | 83 400 | 52 125 | 208 500 |
 
-## 7. Angränsande delar – utanför scope (B-002)
+Exakta gränser används före öresavrundning av delpremier.
+Årsbelopp ska inte ersättas av senaste års värde vid historisk beräkning.
+[Parameterregistret](parametrar/PARAMETERREGISTER.md) och
+[källregistret](../04_regulatoriskt/kallregister.md) anger förordningar och
+övriga årsvärden. PR-032 skiljer verklig importerad rätt från uttryckligt
+omgenererad syntetisk mockhistorik. För 2027 används inte en gissad IBB.
 
-ITP1-paketet innehåller mer än ålderspension. Dessa administreras i verkligheten parallellt men ingår **inte** i vår produkt:
+## 6. Byggunderlag
 
-- **Premiebefrielseförsäkring (PBF)** – betalar premien vid sjukdom/föräldraledighet (0,125 % / 1,415 % 2026)
-- **ITP sjukpension** – åldersgräns höjd till 67 år fr.o.m. 2026
-- **TGL, TFA, TRR-omställningsstöd** – liv-, arbetsskade- och omställningsskydd
-
-Att de listas här är medvetet: handläggaragenten ska kunna svara "det ingår inte i vår produkt, men så här fungerar det" på kundfrågor.
-
-**Arbetsgivarens totalkostnad** (kontext): utöver premierna betalar arbetsgivaren särskild löneskatt **24,26 %** på pensionspremien.
-
-## 8. Konsekvenser för systemet
-
-Regler premiemotorn (Fas 1c) ska implementera:
-
-1. Premie beräknas **per person och kalendermånad** på inrapporterad utbetald lön
-2. Trappan enligt §2 med **årsspecifika brytpunkter ur parametertabell**
-3. Ålderfönster enligt §4: `månad(25-årsdag) ≤ premiemånad ≤ månad(66-årsdag) − 1`, månadsupplösning
-4. Ingen premie under månader utan anställning (kontrollera `employment_start_date`/`employment_end_date`)
-5. Premie ≥ 0, avrundas till hela ören
-
-## 9. Källor
-
-- [Avtalat – Premier tjänstemän ITP1](https://www.avtalat.se/arbetsgivare/kostnader-och-premier/premier-tjansteman-itp1/) (premiesatser, brytpunkter, åldersgränser 2026)
-- [Regeringen – Inkomstbasbelopp för 2026 fastställt](https://www.regeringen.se/artiklar/2025/11/inkomstbasbelopp-och-inkomstindex-for-ar-2026-faststallt/) (IBB 83 400 kr)
-- [Förordning (2025:1002) om inkomstbasbelopp för år 2026](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/forordning-20251002-om-inkomstbasbelopp-for-ar_sfs-2025-1002/)
-- [Collectum – Aktuella premier och basbelopp](https://collectum.se/avtal-och-faktura/faktura-och-premier/aktuella-premier-och-basbelopp)
-- [PTK – Höjd åldersgräns för ITP sjukpension 2026](https://www.ptk.se/sakfragor/pension-och-forsakring/tjanstepension-itp/hojd-aldersgrans-2026/)
+[Regelkatalogen med PR-ITP1-001–034](produktregler/README.md) är den fullständiga
+produktpreciseringen. [Villkor v2.0](försäkringsvillkor.md) beskriver rättigheter,
+[aktuariell grund](aktuariell_grund.md) beräkningar och
+[tolkningarna](../04_regulatoriskt/tolkningar/T-ITP1-006-premie-lon-och-anslutning.md)
+avvägningarna. Befintlig kod täcker bara delar; någon ny implementation
+påstås inte av denna sammanställning.

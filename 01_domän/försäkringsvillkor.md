@@ -1,96 +1,290 @@
-# Försäkringsvillkor – Ålderspension ITP1
+# Försäkringsvillkor – traditionell ålderspension ITP1
 
-> **Dokumenttyp:** Försäkringsvillkor (bolagets egna villkor, lager 3 i fyrlagermodellen B-010)
-> **Produkt:** Ålderspension ITP1
-> **Försäkringsgivare:** Artificiellalecta (simulerat bolag, B-003 – villkoren har ingen rättslig verkan)
-> **Version:** 1.0 | **Gäller från:** 2026-07-12
-> **Refererade regelverk:** ITP-avtalet (Svenskt Näringsliv–PTK), se `ITP1_regelverk.md`; LTF; FFFS 2019:21 (se `04_regulatoriskt/regelverkskarta.md`)
-> **Ägare:** Operatören | **Ändras genom:** nytt beslut i BESLUTSLOGG + ny version av detta dokument
+> **Version:** 2.0 | **Dokumentdatum:** 2026-10-11
+> **Status:** Fullständigt villkorsförslag för produktpaket PR-ITP1 v1.0.
+> **Föreslagen tillämpning i simuleringen:** 2026-11-01 efter samlat införandebeslut.
+> **Försäkringsgivare:** Artificiellalecta, simulerat bolag enligt B-003. Ingen rättslig verkan för verkliga försäkringar.
+> Tidigare v1.0 finns i [historik](historik/forsakringsvillkor_v1_0.md). Dokumentet ändrar inga transaktioner.
 
----
+## §1 Produkt, parter och definitioner
 
-## §1 Definitioner
+Endast ITP1 ålderspension i svenska kronor med traditionell förvaltning
+och utan efterlevande- eller återbetalningsskydd. ITP2, ITPK, sjukpension,
+premiebefrielseförsäkring, TGL och familjeskydd ingår inte.
+En externt finansierad pensionspremie kan tas emot utan att bolaget
+försäkrar den risk som finansierat premien.
 
-| Term | Betydelse |
+Arbetsgivaren är försäkringstagare. Den anställde är försäkrad och
+berättigad till ålderspensionen och bestämmer tillåtna uttagsval.
+Ombud behöver verifierad fullmakt. Vid förfoganden och rätten till
+försäkringsersättning gäller försäkringsavtalslagens ordning.
+
+| Begrepp | Betydelse |
 |---|---|
-| **Försäkringstagare** | Arbetsgivare som tecknat pensioneringsavtal med Artificiellalecta (tabell `employers`) |
-| **Försäkrad** | Anställd hos försäkringstagaren som omfattas av ITP1 (tabell `insured_persons`) |
-| **Försäkringsavtal** | En försäkring tecknad för en försäkrad; kan innehålla en eller flera förmåner (tabeller `policies`/`policy_benefits`, B-022). Försäkringens läge över tid: `policy_states` |
-| **Pensionsmedförande lön** | Kontant utbetald bruttolön per kalendermånad, enligt `ITP1_regelverk.md` §3 |
-| **Pensionskapital** | Summan av inbetalda premier och tillgodoförd avkastning, minus avgifter och uttag |
-| **IBB** | Inkomstbasbelopp, fastställs årligen av regeringen |
+| Försäkring/förmån | Avtal och dess ålderspensionsrätt; flera försäkringar kan tillhöra samma person |
+| Uttagsdel | Separat del av pensionsrätten med eget kapital och plan |
+| Pensionskapital | Individuellt värde av mottagna premier och kapitalförändringar |
+| Garanterad pension | Livsberoende bruttoförmån för en bestämd plan, intjänad för mottagna nettopremier |
+| Rörligt tillägg | Pension utöver garantin; kan förändras enligt §9 |
+| Fribrev | Intjänad rätt när ny löpande premie upphört |
+| Månadsrätt | Rätt till månadens bruttopension, även om beloppet ännu inte betalats |
+| Betalningsmånad | Månad med rätt; paus och nytt bankförsök ger ingen ytterligare rätt |
+| IBB | Årets inkomstbasbelopp enligt förordning |
 
-## §2 Försäkringsavtalet
+## §2 Avtal och tillhörighet
 
-> **Granskningsanmärkning 2026-10-11:** §2.3:s formulering om avsaknad av
-> garanti är inte ett verifierat krav för premiebestämd traditionell försäkring.
-> Se [garanti- och villkorsförslag](../projekt/04_produktregelverk/GARANTI_BESLUTSFORSLAG.md).
-> Produktinriktningen är beslutad i B-027. Version 1.0 bevaras tills ny
-> villkorsversion och giltighetsdag fastställs; ingen garanti driftsätts här.
+Avtalsstart följer dokumenterad ITP1-tillhörighet och kollektivavtals-/
+anslutningsdag. Premieålder är en separat fråga. Födelseår avgör inte
+ensamt tillhörighet. Undantag, utlandstjänstgöring och företagarställning
+kräver verifierat avtalsbeslut. Ingen hälsoprövning för vår produkt.
 
-1. Försäkringsavtal tecknas av arbetsgivaren till förmån för den anställde. Den anställde är försäkrad och förmånstagare till ålderspensionen.
-2. Försäkringen träder i kraft den första dagen i månaden då den anställde uppfyller villkoren i §3.1.
-3. Försäkringen är **premiebestämd**: bolaget garanterar inte en viss pensionsnivå, utan pensionens storlek bestäms av inbetalda premier, avkastning och avgifter.
-4. Vid anställningens upphörande upphör premiebetalningen; intjänat pensionskapital kvarstår som **fribrev** och fortsätter förvaltas enligt §5.
+ITP-planen mellan Svenskt Näringsliv och PTK, tillämplig svensk lag och
+dessa villkor är grunden. Tvingande rätt och kollektivavtal har företräde
+framför egna produktval. Bolaget har även administratörsrollen i simuleringen;
+någon verklig upphandling eller Collectumanslutning påstås inte.
 
-## §3 Premier
+Försäkringen är premiebestämd: premien bestäms av avtalet och pensionen
+beror på intjänande och plan. Den har samtidigt garanti enligt §6.
 
-1. Premie betalas för försäkrad från och med månaden hen fyller 25 år, till och med månaden innan hen fyller 66 år, under pågående anställning.
-2. Premien beräknas per kalendermånad enligt premietrappan i `ITP1_regelverk.md` §2: 4,5 % av pensionsmedförande lön upp till 7,5 IBB/12 och 30 % av lönedelen mellan 7,5 och 30 IBB/12.
-3. Arbetsgivaren rapporterar pensionsmedförande lön månadsvis. Utebliven rapportering hanteras som ärende (Fas 5).
-4. Premien tillgodoförs den försäkrades pensionskapital när betalning mottagits.
+## §3 Premier och lön
 
-## §4 Fakturering och betalning
+Ordinarie intjänande sker från 25-årsmånaden till månaden före 66 år vid
+giltig tillhörighet. Arbetsgivaren rapporterar faktiskt utbetald
+pensionsmedförande kontant bruttolön efter löneväxling varje månad,
+även noll. Saknad rapport behandlas inte som noll.
 
-1. Bolaget fakturerar försäkringstagaren månadsvis i efterskott.
-2. Betalningsvillkor: 30 dagar. Vid utebliven betalning skapas ett ärende; försäkringsskyddet påverkas inte retroaktivt i simuleringen.
-3. Varje premietransaktion registreras i `premium_transactions` med koppling till försäkringsavtal och löneunderlag – full spårbarhet från lönerapport till kapital.
+Premien är 4,5 % på lön upp till 7,5 IBB/12 och 30 % mellan 7,5 och
+30 IBB/12. Överskjutande lön ger inte ordinarie premie. Delpremierna
+avrundas var för sig till ören och summeras. Trappan räknas en gång per
+person, arbetsgivare och månad innan fördelning mellan försäkringar.
 
-## §5 Förvaltning av pensionskapital
+Kontant bonus, provision, övertid och semesterersättning ingår i
+utbetalningsmånaden. Kostnadsersättning/naturaförmån ingår inte.
+Löneslagen preciseras i produktreglerna. Slutlön/bonus efter anställning
+prövas i sin utbetalningsmånad. Okänt/negativt underlag utreds.
 
-1. Pensionskapitalet förvaltas kollektivt enligt bolagets **placeringsriktlinje** (`05_styrdokument/03_riktlinjer/`, Fas 2b).
-2. Förenkling mot verkligheten (B-021): bolaget erbjuder i denna version **endast traditionell förvaltning** – inget fondval, ingen valcentral. Individuella val kan införas i senare version.
-3. Avkastning tillgodoförs pensionskapitalet enligt den metod som fastställs i placeringsriktlinjen (Fas 2).
+Kompletterande premie för exempelvis löneväxling/flexpension kräver
+dokumenterad belopps-/procentinstruktion. Ingen generell branschsats antas.
+Från 2026 erbjuds frivillig premie 66–67 enligt beslut och minst
+ordinarie trappnivå, längst till månaden före 67. Andra 67+-lösningar
+ingår inte i erbjudandet. Extern verifierad premiebefrielsepremie tas
+emot separat; bolaget utfäster inte rätt till sådan riskersättning.
 
-## §6 Avgifter
+## §4 Fakturering, mottagning och fördelning
 
-| Avgift | Nivå | Kommentar |
-|---|---|---|
-| Kapitalavgift | **0,20 % per år** av pensionskapitalet | Bolagets intäkt; debiteras månadsvis (1/12) |
-| Fast avgift | **0 kr** | Ingen fast avgift i version 1.0 |
+Fakturering månadsvis i efterskott med 30 kalenderdagars betalningsvillkor,
+flyttat till nästa svenska bankdag vid behov. Inga särskilda påminnelse-
+avgifter eller arbetsgivardröjsmålsräntor i simuleringen. Dröjsmål utreds;
+tidigare intjänad rätt raderas inte.
 
-Avgiftsnivåerna är bolagets beslut (B-021) och kan ändras genom ny version av detta dokument. *(Nivån 0,20 % är vald i paritet med verkliga ITP1-upphandlade bolag.)*
+Kapital och garanti tillförs för faktiskt mottagen matchad nettopremie.
+Intern simulering har ingen valcentralsavgift. Extern import använder
+faktiskt förmedlat netto med avdrag särredovisat. Delbetalning ger endast
+mottagen andel. Fördelning följer giltig instruktion eller angiven primär
+mottagare. Oklar betalare/mottagare utreds före tilldelning.
 
-## §7 Uttag av ålderspension
+Mottagningsdagen sparas. Månadsmodellen värderar premie vid månadsslut
+med avkastning från nästa månad. Sen betalning ger ingen konstruerad
+retroaktiv marknadsavkastning.
 
-> **Granskningsanmärkning 2026-10-11:** Åldersuppgifterna 63/70 nedan är äldre,
-> overifierade antaganden och får inte användas som gällande externa regler.
-> ITP-avtalet anger 55 år och ordinarie start vid 66 år. Kapitalet fortsätter
-> förvaltas även under uttag. Version 1.0 bevaras i väntan på beslut om ny
-> villkorsversion; se [föreslagen ersättning av §7](../projekt/04_produktregelverk/VILLKORSANDRING_UTTAG.md)
-> och [källgrundade uttagsutkast](produktregler/UTTAG_GEMENSAMT.md).
+## §5 Förvaltning, avgift och avkastningsskatt
 
-1. Uttag kan påbörjas tidigast från 63 års ålder och senast från 70 års ålder *(åldersgränser verifieras mot gällande regler när uttagslogik implementeras, se `ITP1_regelverk.md` §5)*.
-2. Utbetalning sker som standard **livsvarigt**; den försäkrade kan välja tidsbegränsad utbetalning, dock kortast 5 år.
-3. Den försäkrade kan **pausa ett påbörjat uttag**; kapitalet återgår då till förvaltning. Paus och återupptag hanteras som ärende och ska kunna utföras av den försäkrade själv i kundportalen (framtida fas) samt av handläggare i handläggargränssnittet (Fas 4).
-4. Utbetalningarnas storlek beräknas enligt aktuariella antaganden i [aktuariell grund](aktuariell_grund.md) *(modellutkast finns; kalibrering och godkännande krävs innan uttagslogik byggs)*.
+Traditionell kollektiv förvaltning, utan individuellt fondval. Faktisk
+avkastning efter direkta placeringskostnader fördelas månadsvis på
+öppningskapitalet. Ingen bestämd avkastning eller utjämnad återbäringsränta
+utfästs. Kapitalet förvaltas även under fribrev, uppskov, paus och pension.
 
-## §8 Efterlevandeskydd
+Kapitalavgift 0,20 % per år, månadsvis med 1/12 på öppningskapitalet,
+avrundad till ören. Fast avgift, premieavgift och särskild uttags-, paus-
+eller förlängningsavgift är noll. Direkta placeringskostnader ingår redan
+i avkastningen och debiteras inte igen.
 
-Ingår inte (B-002). Kunder som frågar hänvisas till information om att produkten endast omfattar ålderspension utan återbetalningsskydd eller familjeskydd.
+Avkastningsskattebelastningen är månadsvis en tolftedel av 15 % av
+föregående års genomsnittliga statslåneränta, lägst schablonränta 0,5 %,
+på öppningskapitalet. För 2026 är årssatsen 0,354 %. Bolagets faktiska
+skatteunderlag beräknas separat; skillnad bärs av bolaget och blir ingen
+automatisk retroaktiv kunddebitering. Avgift/skattebelastning begränsas
+till tillgängligt kapital; ingen negativ kundskuld. Garantin minskas inte.
 
-## §9 Flytträtt
+## §6 Garanti
 
-Flytt av pensionskapital till eller från annan försäkringsgivare stödjs inte i version 1.0 av simuleringen (B-021). *(I verkligheten gäller flytträtt för ITP1 – kandidat för senare fas.)*
+Hela mottagna nettopremien är garantigrundande. Den omvandlas till
+pension med då gällande garantitariff och 0 % effektiv nettoränta.
+Unisexantaganden används; individens kön påverkar inte beloppet.
+Vald simuleringsdödlighet/livslängdsmarginal finns i aktuariella bilagan.
 
-## §10 Personuppgifter
+Varje intjänad del behåller sin historiska grund. En ny tariff gäller
+framtida premie. Avkastning/arvsvinst ger ingen automatisk förstärkning.
+Referensplan är livsvarig från 66, eller framtida månad efter mottagning
+om 66 redan passerats.
 
-Behandling av de försäkrades personuppgifter följer bolagets behörighetsmodell (B-006): endast behöriga agenter och operatören har åtkomst till PII i `insured_persons`. Se `02_system/databasschema.md` §6.
+Ändrad start, paus eller tid medför värdebevarande omräkning av kvarvarande
+garanterade rättigheter med ursprunglig grund. Månadsbelopp kan då ändras
+genom planen. Marknadsfall ensamt skriver inte ned garanti för samma plan.
+Garantin är pension under livet enligt planen, inte återbetalning av premie
+till kunden/dödsboet. Bolaget finansierar underskott med egna tillgångar.
 
----
+## §7 Fribrev och nya premier under uttag
 
-## Ändringslogg
+Vid upphörd löpande premie kvarstår intjänad rätt som fribrev. Nytt
+giltigt premieintervall kan ge nytt intjänande. Fribrev kan samtidigt
+ha pågående/pausad pension. Uttag stoppar inte automatiskt premie.
+
+Nya premier går till ännu inte startad del. Saknas sådan skapas ny
+försäkring med besked. Pågående tidsbegränsad plan får inte ge nytt
+intjänande en kortare ursprunglig plan än fem år. Nya delar startar
+enligt egen plan, normalt månaden efter mottagning om 66 passerats.
+
+## §8 Första uttag och deluttag
+
+Ordinarie start 66-årsmånaden, livsvarigt om annat val saknas. Information
+sex månader före, påminnelser tre/en månad före. Kunden kan välja annan
+start/form. Saknat konto ändrar inte start; förfallen pension blir skuld.
+
+Tidigaste erbjudna start är månaden efter 55-årsmånaden. Före 66 krävs
+dokumenterad pensionering. Helt uttag kräver att arbete, avsikt att
+arbeta och tillgänglighet för arbete vardera understiger 8 timmar/vecka,
+samt att konkurrerande sjuk-/aktivitets-/arbetsskadeersättning eller
+ITP-sjukpension inte söks/mottas för helt uttag.
+
+Deluttag före 66 får högst motsvara arbetsminskningen från referensen
+före första uttaget och förenlig andel efter verifierad extern ersättning.
+Från 66 krävs ingen arbetsminskning. Giltigt startad del upphävs inte
+automatiskt av att kunden senare börjar arbeta igen.
+
+En ursprunglig försäkring kan delas i högst tre uttagsdelar. Varje ny
+del minst 10 % av kapitalet vid delning; kvarvarande del minst 10 %
+om inte allt tas. Kapital och garantidelar delas proportionellt.
+Varje del har egen plan. Flera försäkringar per person är tillåtna.
+
+Uppskjuten första start till valfri senare hel månad utan maxålder 70.
+Kapital/garanti fortsätter förvaltas. Ändringsbegäran ska komma senast
+sista kalenderdagen månaden före önskad ändring. Sen begäran ger prövning
+av nytt datum och kundbekräftelse, inte tyst flytt av kundens val.
+
+## §9 Utbetalningstid och belopp
+
+Livsvarig pension fortsätter under livet enligt §12, utan faktisk slutålder.
+Tidsbegränsad första plan minst 60 hela betalningsmånader; valfritt längre
+helt antal. Dödsfall kan avsluta tidigare.
+
+Belopp omräknas vid start, återstart, planändring och varje januari.
+Brutto är garanti plus rörligt tillägg från kapitalet. Garantin är golv,
+inte en ytterligare betalning ovanpå totalbeloppet.
+
+Utbetalningsbart garantigolv avrundas uppåt till närmaste öre på delens
+samlade garanti. En positiv pensionsrätt ger minst ett öre i månadsbrutto.
+De intjänade garantidelarna behåller hög precision vid senare omräkning.
+
+Tidsbegränsad verifierad ITP-plan följer planens särskilda skatteram;
+rörligt tillägg kan ändras vid omräkning. Livsvarig pension håller i vårt
+utbud minst senaste brutto under första 60 betalningsmånaderna för
+oförändrad plan. Ren paus återställer inte golvet. Verklig förlängning
+kan ge ny nivå. Därefter kan tillägget öka/minska men aldrig under garantin.
+Prognos är osäkert scenario med angivna antaganden, inte betalningslöfte.
+
+## §10 Paus, återstart och förlängning
+
+Upprepade pauser av hel påbörjad uttagsdel, minst en hel månad och
+bestämd återstart. Ingen rätt under paus, ingen hälsoprövning/ändringsavgift.
+Del av månadsbelopp kan inte pausas; skilda delar kan ha olika paus.
+
+Paus förbrukar inte betalningsmånader. Ändlig plans kalender slut flyttas
+fram. Återstart bevarar originalstart och förbrukade rättigheter;
+ingen ny femårsperiod. Beslutad återstart sker om kunden lever.
+
+Påbörjad tidsbegränsad pension kan upprepade gånger förlängas till fler
+månader eller livsvarig, även efter fem utbetalningsår, inom fristen
+och före sista förbrukade rätt. Kvar är nytt totalantal minus förbrukat.
+Förkortning efter start och livsvarigt till tidsbegränsat erbjuds inte.
+
+## §11 Betalning, preliminär skatt och sista månad
+
+Månadsvis i efterskott på första svenska bankdagen efter pensionsmånaden
+till verifierat konto. Månadens kapitalavräkning är då färdig.
+Brutto avrundas till ören. Preliminär skatt följer årets myndighetsbeslut,
+tabell eller sido-/SINK-regel. Utlandsadress ensam ger inte SINK.
+Besked visar brutto, avdrag och netto.
+
+Bankfel/kontoproblem är ingen pensionspaus. Giltig rätt kvarstår som
+skuld och debiterar kapital endast en gång. Skatt följer faktisk
+betalning. Laglig dröjsmålsränta vid bolagets betalningsdröjsmål prövas
+separat och belastar inte kundens pensionskapital.
+
+Tidsbegränsad plans sista månadsrätt slutavräknar delens kapital efter
+avkastning/kostnader inom den ordinarie planbetalningen. Slutbeloppet är
+minst beslutat månadsbelopp och kan vara högre för kvarvarande kapital.
+Inget separat återköp efteråt. Bolaget täcker brist. Delen saknar sedan
+framtida rätt, men obetalda anspråk och andra försäkringar kvarstår.
+
+## §12 Dödsfall och arvsvinst
+
+Pågående ej pausad del ger hela dödsmånadens rätt, därefter ingen pension.
+Pausad del ger ingen dödsmånadsrätt. Vid beslutad första start/återstart
+i dödsmånaden ger även dödsfall på startdagen en hel månadsrätt enligt
+vår datumkonvention. Dödsfall före startdagen ger ingen pension på den delen.
+
+Uppkomna obetalda anspråk kan betalas till behörig mottagare/dödsbo efter
+avräkning/skatteprövning. Återstående pensionskapital betalas inte till
+efterlevande utan går efter avräkning till arvsvinstkollektivet.
+
+Faktiskt frigjort kapital fördelas månadsvis med kapital-/dödlighetsvikt
+till levande kvarvarande medlemmar med hel månads exponering.
+Fribrev, uppskov, paus och pension deltar på samma princip.
+Arvsvinst är inte garanterad och ger ingen ny garanti eller extra schablon.
+
+## §13 Rättelser och förfoganden
+
+Felrapportering kan ge spårbar rättelse med besked, ekonomisk konsekvens
+och möjlighet till granskning. Historiska regler/garantigrunder bevaras.
+Betald pension återkrävs/kvittas inte automatiskt. Marknadsförlust är
+inte grund för att kalla korrekt mottagen premie felaktig.
+
+Återköp, pantsättning, belåning, valfri överlåtelse och privata insättningar
+erbjuds inte. Giltig dom/dispens/särskilt förfogande prövas rättsligt.
+Flytt till/från annat bolag stöds inte i simuleringen; det ändrar inte
+att verklig ITP1 har flyttmöjligheter enligt sina regler.
+
+## §14 Information och personuppgifter
+
+Försäkringsbesked vid anslutning/väsentlig ändring, årligt pensionsbesked
+senast 31 mars och besked vid uttags-/beloppsändring. Kapitalrörelser,
+garanti och prognos särredovisas, liksom avsaknad av efterlevandeskydd.
+
+Personuppgifter används för identifierad administration/rättslig skyldighet
+med begränsad behörighet och lagrings-/gallringsplan. Kunden informeras
+om ändamål, grund, mottagare och rättigheter och kan begära tillgång/rättelse.
+Ombud får endast fullmaktens åtkomst. Känsliga uppgifter begränsas.
+Kunden kan begära mänsklig beslutsgranskning.
+
+## §15 Villkorsändring, klagomål och tvist
+
+Identifierat beslut och information om giltighet krävs. Ny framtida
+tariff ändrar inte historiska garantidelar. Försämring av kollektivavtals-
+grundade eller individuellt överenskomna rättigheter kräver tillämpliga
+godkännanden enligt lag/avtal.
+
+Klagomål via autentiserad kund-/operatörskanal, bekräftelse inom 5 svenska
+arbetsdagar och normalt svar inom 14 kalenderdagar. Behövs mer tid anges
+orsak/ny beskedstid. Intern omprövning och tillämplig extern prövning
+beskrivs i beslutet tillsammans med rättsliga tidsfrister.
+
+FAL:s tillämpliga preskriptionsregel är normalt tio år från rättighets-
+grundande förhållande och efter framställt anspråk minst sex månader
+från slutligt ställningstagande för talan. Särskilda situationer prövas.
+Egna servicefrister förkortar inte lag-/avtalsfrister.
+
+## §16 Bilagor och övergång
+
+[Produktregler 001–034](produktregler/README.md), [aktuariell grund](aktuariell_grund.md)
+och [parametrar](parametrar/PARAMETERREGISTER.md) preciserar paketet.
+[Källregister/tolkningar](../04_regulatoriskt/kallregister.md) skiljer
+extern grund från egna val. V2.0 ersätter v1.0 vid samlat införande.
+Importerad historisk rätt bevaras; omgenererad demo märks syntetisk, PR-032.
+Verkligt tillstånd, anslutning, solvens och professionell tariffvalidering
+följer egna verksamhetsprocesser före verklig drift.
 
 | Version | Datum | Ändring |
 |---|---|---|
-| 1.0 | 2026-07-12 | Första versionen (Fas 1a) |
+| 1.0 | 2026-07-12 | Första simulerade villkor; arkiverade |
+| 2.0 | 2026-10-11 | Fullständig livscykel, garanti, kapital, skatt och övergång |

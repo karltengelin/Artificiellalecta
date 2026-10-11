@@ -1,76 +1,37 @@
 # PR-ITP1-006 – tidsbegränsad utbetalning
+> **Filversion:** 1.0 | **Paket:** PR-ITP1 v1.0 | **Dokumentdatum:** 2026-10-11
+> **Status:** Specificerad tillämpning för simuleringen; införande separat. Implementation ingår inte i uppdraget.
+> Gemensam giltighet, behörighet, avrundning och felhantering: [regelpaketets ingång](README.md).
 
-> **Version:** 0.1 | **Granskningsstatus:** Utkast | **Implementation:** Saknas
-> **Ägare:** Operatören | **Upprättad:** 2026-10-11 | **Godkänd av/datum:** Ej godkänd
-> **Ursprung:** ITP1:s minimitid; föreslagna bolagsval för månadsplan och administration.
 
-## Källor, giltighet och förutsättningar
+## Spårbarhet
 
-K-ITP-AVTAL-2026 punkt 7.5 och K-IL-UTTAG-2026 58 kap. 11–11 b och 20 §§,
-med bolagsjämförelser enligt
-[T-ITP1-003](../../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md).
-[Gemensamma förutsättningar](UTTAG_GEMENSAMT.md) gäller, inklusive frist,
-godkännande och ännu inte bestämt ikraftträdande.
-Startålder prövas separat enligt PR-ITP1-002/003; tidsval ändrar inte åldersrätten.
+**Ursprung:** Avtalets minimitid; eget tidsutbud.
+**Källor:** K-ITP-AVTAL-2026, K-IL-UTTAG-2026 i [källregistret](../../04_regulatoriskt/kallregister.md).
+**Tolkning:** [T-003](../../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md).
+**Villkor:** [§9 i v2.0](../försäkringsvillkor.md).
 
-Regeln avser hela uttaget från en vald ITP1-försäkring. Partiell eller blandad
-utbetalningsform inom samma försäkring går till manuell utredning.
+## Regel och grund
 
-## Indata och regel
+ITP 7.5 ger minst fem års utbetalning. I produkten väljs ett helt antal
+betalningsmånader N ≥ 60 före första start. Ingen egen övre gräns eller
+lista av femårsintervall. N avser rättigheter, inte antalet lyckade
+banköverföringar. Dödsfall kan avsluta tidigare.
 
-Utöver gemensam indata behövs valt totalt antal utbetalningsmånader `N`,
-första startmånad `S`, redan förbrukade månadsrätter `D`, planerade
-pausperioder och godkänd aktuariell grund med garantihantering.
+Delen klassificeras som tidsbegränsad ålderspension enligt allmän
+pensionsplan, IL 58 kap. 11 b/20 §§, efter verifierad ITP-anslutning.
+Denna gren kan ha rörligt omräknat belopp inom ITP-planen enligt PR-009.
+En avtalad ny kortare period kan väljas före första start om den fortsatt
+är minst 60; efter start är endast förlängning tillåten i vårt utbud.
 
-1. Utan aktivt annat val används livsvarig form. För tidsbegränsad form
-   ska den försäkrade välja ett helt antal månader `N ≥ 60` före första
-   start enligt gemensam frist. Förslaget inför ingen fast maxlängd.
-   Negativt, saknat eller icke-helt antal kompletteras eller avvisas.
-2. Före första start kan valt antal månader ändras, även förkortas, så
-   länge den nya planen uppfyller minimitiden och fristen. Efter start
-   används PR-ITP1-007 för förlängning; förkortning tillåts inte i förslaget.
-3. Visa form, start, planerad sista utbetalningsmånad, beräknat brutto-
-   månadsbelopp och att pensionen upphör efter vald tid. Markera prognos
-   respektive beslutat belopp; nettobelopp kräver separat skatteavdrag.
-4. Utan paus är sista utbetalningsmånad `S + (N − 1)` månader.
-   Förbrukad tid ökar en gång per månadsrätt enligt planen, inte per
-   bankförsök. Återstående tid är `N − D`. Pausmånader förbrukar ingen tid.
-   Avtalad slutmånad flyttas med pausmånaderna enligt PR-ITP1-004/005.
-5. Beräkna månadsbelopp enligt godkänd aktuariell grund, kapital och
-   återstående tid. Spåra regel- och grundversion samt garanti/överskott.
-   Förutbestämd period innebär inte ett oföränderligt belopp. En formel
-   `kapital / N` får inte ersätta den godkända beräkningsgrunden.
-   Se [modellutkast till aktuariell grund](../aktuariell_grund.md) och
-   [PR-ITP1-009](PR-ITP1-009-pensionsbelopp.md); tariffer är ännu inte godkända.
-6. Efter sista avtalade månadsrätten ska inga nya månadsbelopp skapas från
-   planen. Obetalda äldre belopp ligger kvar för avräkning. Automatisk
-   försäkringsavslutning kräver att inga skyldigheter eller andra relevanta
-   flöden återstår. Kapital får inte automatiskt sättas till noll eller
-   betalas ut som en extra klumpsumma; slutavräkning behöver egen grund.
-7. Vid dödsfall har dödsfallsregeln företräde. Återstående utbetalningstid
-   är inget löfte om betalning till efterlevande. Dödsmånadens slutavräkning
-   och kapitalbehandling hanteras separat inom ålderspensionsprodukten.
+Skapa plan med originalstart, N, förbrukade/kvarvarande rättigheter,
+pausperioder och härledd slutmånad. Varje månad med rätt förbrukas en gång
+även om betalning senare misslyckas. Efter sista rätt sker PR-027:s
+slutavräkning; tidigare obetalda anspråk bevaras. Ingen extra utbetalning
+utanför planen skapas för att kapital råkar finnas kvar.
 
-## Acceptansfall
+## Kontrollfall
 
-| Fall | Förväntat utfall |
-|---|---|
-| Val 59 månader | Avslag för ordinarie ITP1 |
-| Val 60, 61 eller 120 månader | Tidsvalet kan godkännas; övriga förutsättningar prövas separat |
-| Val 300 månader | Ingen automatisk avvisning enligt en generell 20-årsgräns; föreslaget erbjudande har ingen sådan gräns |
-| Start november 2026, 60 månader, ingen paus | Sista planerade månad oktober 2031 |
-| Samma plan, paus november 2027–januari 2028 | Återstart februari 2028; 48 månader återstår, sista månad januari 2032 |
-| 120 månader ändras till 60 före start i rätt tid | Kan prövas; ändringen är före start |
-| Samma förkortning efter start | Avslag enligt föreslaget bolagsvillkor |
-| Sista månadsrättens banköverföring misslyckas | Betalningen kvarstår som skuld; ingen ny månadsrätt skapas vid nytt försök |
-
-## Utfall, implementation och öppna frågor
-
-Utfall är en versionshanterad plan, komplettering, manuell prövning eller
-motiverat avslag enligt gemensamt dokument. Datamodell, garanti,
-aktuariell grund, informationsrutiner och slutavräkning återstår.
-Ingen kod är byggd och ingen beslutsloggpost eller villkorsversion antas här.
-
-| Version | Datum | Ändring |
-|---|---|---|
-| 0.1 | 2026-10-11 | Första regel för tidsbegränsad utbetalning |
+Start november 2026, N=60: sista månad oktober 2031.
+Paus november 2027–januari 2028 efter 12 rättigheter: återstart februari
+2028 och sista månad januari 2032. N=59 avslås före start. N=61 tillåts.

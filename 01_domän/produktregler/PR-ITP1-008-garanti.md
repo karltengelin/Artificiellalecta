@@ -1,61 +1,42 @@
-# PR-ITP1-008 – intjänad pensionsgaranti
+# PR-ITP1-008 – intjänad garanti
+> **Filversion:** 1.0 | **Paket:** PR-ITP1 v1.0 | **Dokumentdatum:** 2026-10-11
+> **Status:** Specificerad tillämpning för simuleringen; införande separat. Implementation ingår inte i uppdraget.
+> Gemensam giltighet, behörighet, avrundning och felhantering: [regelpaketets ingång](README.md).
 
-> **Version:** 0.1 | **Granskningsstatus:** Utkast | **Implementation:** Saknas
-> **Ägare:** Operatören | **Datum:** 2026-10-11 | **Godkänd av/datum:** Ej godkänd
-> **Ursprung:** Bolagsgaranti beslutad i B-027; regel och tariff kräver fortsatt granskning före införande.
 
-## Källor, scope och giltighet
+## Spårbarhet
 
-[T-ITP1-004](../../04_regulatoriskt/tolkningar/T-ITP1-004-garanti-och-aktuariell-grund.md)
-skiljer avtal, föreskrifter och bolagsexempel. Den beräkningsmässiga
-preciseringen finns i [aktuariell grund](../aktuariell_grund.md) §3–5.
-Giltighetsdag och historiska försäkringar behöver separat godkännande.
-Ingen retroaktiv garanti skapas för redan genererad premiehistorik här.
+**Ursprung:** B-027; egen specificerad SIM-tariff.
+**Källor:** K-LTF, K-FFFS-AKTUARIE, K-SCB-LIVSLANGD i [källregistret](../../04_regulatoriskt/kallregister.md).
+**Tolkning:** [T-004](../../04_regulatoriskt/tolkningar/T-ITP1-004-garanti-och-aktuariell-grund.md).
+**Villkor:** [§6 i v2.0](../försäkringsvillkor.md).
 
-## Indata, regel och utfall
+## Regel och grund
 
-Indata: försäkring/förmån, faktiskt tillförd nettopremie och transaktions-ID,
-värderingsdag, referensplan, tariff-ID/version samt tidigare garantidelar.
+B-027: 100 % av mottagen nettopremie, 0 % effektiv nettoränta och ingen
+automatisk garantiförstärkning. [Aktuariell grund](../aktuariell_grund.md)
+specificerar vald SIM-tariff. Den är vår modell, inte en allmän ITP-tariff.
 
-1. Endast mottagen, tillförd och inte redan garantibehandlad premie ger en
-   ny garantidel. Fakturerad eller enbart beräknad premie ger ingen del.
-2. Beslutat produktval enligt B-027 är 100 % av mottagen nettopremie som garantigrund,
-   med 0 % nettoränta i garantitariffen. Det är ingen garanti om ett visst
-   kontosaldo eller betalning till dödsboet.
-3. Beräkna delens pensionsbelopp med godkänd tariff och referensplan.
-   Spara grund, premie, plan och belopp oföränderligt tillsammans med
-   regelversion. Samma transaktion får inte skapa dubbel garanti.
-4. Ny grund gäller nya delar från beslutad giltighetsdag. Marknadsfall,
-   avgiftsuttag eller en ny tariff får inte automatiskt reducera redan
-   intjänade garantidelar för oförändrad plan.
-5. Ändrad start, paus eller utbetalningstid ger en dokumenterad omräkning
-   enligt §5 i grunden, med varje dels ursprungliga antaganden. Det
-   garanterade månadsbeloppet kan då ändras; ursprungligt produkttekniskt
-   värde för kvarvarande rätt skyddas enligt föreslagen metod.
-6. Premiekorrigering/återtag ska kopplas till den korrigerade transaktionen
-   och garantidelen. Undantaget får inte användas som allmän nedskrivning.
-   Full rättelsemodell återstår före automatiska återtag.
-7. Ingen automatisk garantiförstärkning eller nytt efterlevandeskydd skapas
-   av denna regel. Dödsfallsbehandling och arvsvinster kräver egna regler.
+Varje nettopremie skapar en identifierad garantidel med P_j, värdedatum,
+referensplan, grundversion och G_j = P_j/A_gj. Premiefordran före mottagning
+skapar ingen garantidel. Mottagen extern premiebefrielsepremie behandlas
+som pensionspremie utan att bolaget meddelar en premiebefrielseförsäkring.
 
-Utfall: spårbar garantidel, planomräkning eller manuell utredning vid saknad
-grund/underlag. Ingen preliminär tariff får utfärda ett garanterat kundbelopp.
+Aktuell garanti är summan av delarnas belopp för samma uttagsplan.
+En ändrad grund gäller framtida premie, inte redan intjänade delar.
+Deluttag delar proportionellt varje garantidel. Annan planändring
+använder V_j = G_j × A_gj(gammal kvarvarande plan), sedan
+G_j_ny = V_j/A_gj(ny kvarvarande plan) på **samma** historiska grund.
 
-## Acceptansfall och återstående arbete
+Paus/uppskov/förlängning kan ändra månadsbelopp genom planen. Marknadsfall,
+avgift, skatt eller utebliven senare arbetsgivarpremie får inte radera
+garantin för mottagen premie. En garanti är ett livsberoende pensionslöfte,
+inte återbetalning av premie till kunden eller dödsboet.
+Rättelse av felaktig premie följer PR-019; dödsfall PR-010.
 
-| Fall | Utfall |
-|---|---|
-| Premie 1 000 kr fakturerad men inte mottagen | Ingen ny garantidel |
-| Samma mottagna transaktion behandlas två gånger | En del, ingen dubblering |
-| Kapital faller efter marknadsförlust, oförändrad plan | Garantidelens belopp ändras inte automatiskt |
-| Ny framtida tariff har lägre garanti | Tidigare delar behåller sina grundversioner |
-| Förlängning av utbetalning | Omräkning per del; inte ett löfte om samma månadsbelopp |
-| Historisk premie utan tariffversion | Manuell utredning, ingen tyst tilldelning av dagens tariff |
+## Kontrollfall
 
-Produktinriktningen är godkänd i B-027. Granska tariffkalibrering,
-beräkningsmetod och övergångsregler innan kod byggs.
-Garantin behöver finansiering och kan inte valideras enbart på kundkontot.
-
-| Version | Datum | Ändring |
-|---|---|---|
-| 0.1 | 2026-10-11 | Första garantiregel |
+Syntetiskt A=60, P=1 000: G=16,666666…; det är inte den verkliga SIM-faktorn.
+Ny tariff påverkar inte detta intjänande. Arvsvinst/avkastning skapar
+rörligt kapital men ingen ytterligare garanti. Saknad historisk grund
+ger rekonstrueringsärende, aldrig tyst ersättning med aktuell grund.

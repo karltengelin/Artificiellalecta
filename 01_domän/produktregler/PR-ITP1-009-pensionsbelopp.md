@@ -1,65 +1,51 @@
 # PR-ITP1-009 – pensionsbelopp och rörligt tillägg
+> **Filversion:** 1.0 | **Paket:** PR-ITP1 v1.0 | **Dokumentdatum:** 2026-10-11
+> **Status:** Specificerad tillämpning för simuleringen; införande separat. Implementation ingår inte i uppdraget.
+> Gemensam giltighet, behörighet, avrundning och felhantering: [regelpaketets ingång](README.md).
 
-> **Version:** 0.1 | **Granskningsstatus:** Utkast | **Implementation:** Saknas
-> **Ägare:** Operatören | **Datum:** 2026-10-11 | **Godkänd av/datum:** Ej godkänd
-> **Ursprung:** Föreslagen utbetalningsmodell inom produktinriktning B-027, inte extern enhetlig tariff.
 
-## Källor, scope och indata
+## Spårbarhet
 
-[T-ITP1-004](../../04_regulatoriskt/tolkningar/T-ITP1-004-garanti-och-aktuariell-grund.md),
-[aktuariell grund](../aktuariell_grund.md) och
-[gemensamma uttagsförutsättningar](UTTAG_GEMENSAMT.md).
-Endast ITP1 ålderspension; ingen automatisk ändring av premie eller produktscope.
-Ingen giltighetsdag eller teknisk implementation är fastställd.
+**Ursprung:** Egen pensionsmodell; verifierad skatteram.
+**Källor:** K-IL-UTTAG-2026, K-SCB-LIVSLANGD i [källregistret](../../04_regulatoriskt/kallregister.md).
+**Tolkning:** [T-004](../../04_regulatoriskt/tolkningar/T-ITP1-004-garanti-och-aktuariell-grund.md).
+**Villkor:** [§9 i v2.0](../försäkringsvillkor.md).
 
-Indata: godkänd uttagsplan och dess kvarvarande månadsrätter, kapital vid
-angiven värderingsdag, garantidelar med grundversioner, godkänd
-utbetalningsgrund samt livs-/avslutsstatus och skatte-/avtalsklassificering.
+## Regel
 
-## Regel och utfall
+Vid start, varje januari, återstart och planändring räknas:
+B = C/A_b, kandidat = max(G,B). Garantin är golv, inte en extra betalning
+ovanpå kandidaten. Brutto, preliminär skatt och nettobetalning skiljs åt.
 
-1. Räkna vid första start, återstart, ändrad utbetalningsplan och enligt
-   föreslaget bolagsval årligen inför januari. Mellan beslutstillfällena
-   gäller senast godkänt belopp om ingen annan giltig ändring inträffar.
-2. Fastställ `G` genom att summera garantidelarnas belopp för samma plan.
-   Använd inte aktuell utbetalningsgrund för att skriva om garantin.
-3. Beräkna kapitalbaserat belopp `B` enligt grunden §6. Föreslaget rörligt
-   tillägg är `max(0, B − G)` och brutto-månadsbelopp `max(G, B)`.
-   Garantin betalas inte en andra gång ovanpå detta belopp.
-4. Pröva tillämpliga skatte-/avtalskrav på beloppsförlopp. Ett tillägg får
-   inte sänkas fritt bara för att det kallas rörligt. Prognos, beslutat
-   bruttobelopp, skatteavdrag och banköverföring är olika uppgifter.
-5. Paus ger inget nytt månadsbelopp för pausmånader. Återstart använder
-   återstående rätt, inte en ny full utbetalningsperiod. Originalstart
-   och tidigare intjänade delar bevaras.
-6. Visa kapital, garantibelopp, tillägg, brutto, grundversioner och planerad
-   slutmånad eller livsvarig form. Spara faktorer och underlag med hög
-   precision; betald summa avrundas enligt grunden §7.
-7. Saknad godkänd grund eller otillräckligt finansierat garantiunderskott
-   ger manuell prövning före automatisk verkställighet. Ingen kundgaranti
-   skrivs ned och inget kapital skapas utan finansieringstransaktion.
-   Ett ogiltigt förslag upphäver inte ett redan giltigt betalningsbeslut.
+**Tidsbegränsad verifierad ITP-del:** IL 58 kap. 11 b/20 och ITP-planens
+betalningsram används. Vårt rörliga tillägg får öka/minska vid de angivna
+omräkningarna, aldrig under aktuell garanti. PR-027 styr sista rätt.
 
-## Acceptansfall
+**Livsvarig del:** IL 58 kap. 11/11 a. Under de första 60 månadsrätterna
+väljer bolaget försiktigt ett brutto som minst motsvarar senaste beslutade
+brutto för oförändrad plan. Paus förbrukar inte perioden och får ensam
+inte återställa golvet. En verklig förlängning enligt PR-007 kan ge ny
+utgångsnivå. Vi använder inte automatiska sänkningsundantag i 11 a,
+trots att lagen kan medge dem. Efter 60 rättigheter gäller max(G,B)
+vid ordinarie omräkning. Golvet kan kräva bolagsfinansiering enligt PR-028.
 
-Syntetiska beloppsfall med angivna faktorer, inte godkända kundtariffer:
+Besluta total M i ören med ROUND_HALF_UP, men aldrig lägre än summan G
+avrundad **uppåt** till närmaste öre eller tidigare bindande golv.
+En positiv pensionsrätt har därmed minst 0,01 kr i månadsbrutto.
+Detta är vårt uttryckliga avrundningsskydd, inte en ytterligare premie.
+G_j behåller hög precision för framtida planomräkning; garantibeskedet
+visar både grundens belopp och utbetalningsbart öresgolv.
 
-| Indata/fall | Utfall |
-|---|---|
-| `G = 100`, `B = 130` | Tillägg 30, brutto 130, inte 230 |
-| `G = 100`, `B = 80` | Tillägg 0, bruttoförslag 100; finansieringen ska kontrolleras |
-| Individens kön ändras, övriga indata lika | Samma beräknade pensionsbelopp |
-| 48 månadsrätter kvar efter paus | Faktor för 48 rättigheter, inte 60 nya |
-| Livsvarig grund saknar hantering av höga åldrar | Blockerad automatisk beräkning, inget uppskattat belopp |
-| Rörligt tillägg minskar vid årlig omräkning | Skatte-/avtalsprövning före nytt beslut |
+Verifierad allmän pensionsplan betyder identifierat ITP-avtal/anslutning,
+inte enbart texten ITP i produktnamnet. Oklar anslutning ger utredning,
+inte automatisk tillämpning av den friare skattebestämmelsen.
+Beloppet ligger fast mellan omräkningar. Ny premie går till en separat
+ännu inte startad del och ökar inte automatiskt en pågående tidsbegränsad plans sista
+månader. Arvsvinst påverkar kapitalet och nästa ordinarie beloppsbeslut.
 
-## Återstår
+## Kontrollfall
 
-Kalibrering, kostnad/skatt, överskottsfördelning, underskottsfinansiering,
-tariffregister och transaktionsmodell. Ordinarie utbetalning, dödsmånad och
-slutavräkning behöver kompletterande processregler. B-027 godkänner
-produktinriktningen, inte samtliga beräknings- och omräkningsparametrar här.
-
-| Version | Datum | Ändring |
-|---|---|---|
-| 0.1 | 2026-10-11 | Första beloppsregel |
+G=100, B=130 ger M=130, inte 230. G=100, B=80 ger minst 100.
+Livsvarig, tidigare M=130, rätt nr 20, ny B=120: behåll minst 130.
+Tidsbegränsad verifierad ITP-del med samma siffror kan ge 120.
+Förbrukade rättigheter och livsstatus får inte ändras av omräkningen.

@@ -1,196 +1,171 @@
 # Aktuariell grund – ITP1 ålderspension
 
-> **Version:** 0.1 | **Status:** Modellutkast; produktinriktning beslutad i B-027, tariff ej antagen eller driftsatt
-> **Ägare:** Operatören | **Upprättad:** 2026-10-11
-> **Teknisk implementation:** Saknas | **Kalibrerade tariffer:** Saknas
+> **Version:** 1.0 | **Dokumentdatum:** 2026-10-11
+> **Status:** Fullständigt specificerad simuleringsmodell, med valda antaganden.
+> **Införande:** Föreslaget 2026-11-01 enligt produktpaketet. Ingen kod eller myndighetsvaliderad tariff ingår.
 
-## 1. Syfte och avgränsning
+## 1. Värden och grunder
 
-Beskriva en reproducerbar modell för intjänad garanti och pensionsbelopp
-inom ITP1 ålderspension. Källgrund och bolagsval finns i
-[T-ITP1-004](../04_regulatoriskt/tolkningar/T-ITP1-004-garanti-och-aktuariell-grund.md).
-Dokumentet är underlag för framtida försäkringstekniska riktlinjer och
-beräkningsunderlag; det ersätter inte dessa styrdokument.
+`C` är individuellt pensionskapital, `G` garanterad bruttopension per månad
+för en viss uttagsplan och `V_g` återstående produkttekniskt garantivärde.
+`V_g` är varken kundkapital eller en regulatorisk försäkringsteknisk avsättning.
+Premietrappan styr tillförd premie; denna grund bestämmer pension för premien.
 
-Ordinarie ITP1-premie bestäms av avtalet enligt PR-ITP1-001. Denna grund
-bestämmer hur tillförda premier översätts till pensionsförmåner; den ändrar
-inte avtalets premiesatser. Sjukpension, familjeskydd, flytt och
-återbetalningsskydd ingår inte.
+Garantigrund SIM-G-2026-01, utbetalningsgrund SIM-B-2026-01 och riskgrund
+SIM-R-2026-01 är låsta genom [parameterregistret](parametrar/PARAMETERREGISTER.md).
+Historiska garantidelar sparar sin grund och byts inte vid tariffändring.
+Skuldvärdering enligt LTF/redovisning kräver en separat grund i ekonomi-/riskprojektet.
 
-## 2. Fyra beräkningar och tre värden
+## 2. Unisexdödlighet och oändlig svans
 
-| Beräkning | Antaganden och resultat |
-|---|---|
-| Garantitariff | Versionslåsta antaganden per intjänad del; garanterad pension `G` för vald plan |
-| Utbetalningsgrund | Beslutade aktuella antaganden; kapitalbaserad pension `B` och rörligt tillägg |
-| Kundprognos | Tydliga scenariosatser; ingen utfästelse eller bokförd tillgång |
-| Skuldvärdering | Separat grund enligt tillämpliga solvens-/redovisningsregler; ingår inte i formlerna här |
+Låt `Q_x = (SCB_män_x + SCB_kvinnor_x) / 2000`, där tabellvärdena är
+dödsrisker i promille. Källan är [SCB 2025](parametrar/DODLIGHET_SCB_2025.md),
+**BE0101A¤**; BE0101AW avser risktid och får inte användas som dödsrisk.
+Ålder `x` är fyllda år vid månadens första dag. Kön är inte individuell
+beräkningsindata. Ålder, kalenderår och födelseår påverkar samma modell för alla.
 
-`C` är pensionskapital från transaktioner. `G` är garanterat brutto-
-månadsbelopp för den aktuella utbetalningsplanen. `V_g` är garantins
-produkttekniska värde vid en beräkningsdag med den egna garantitariffen.
-De tre är inte utbytbara: `C` kan vara lägre än `V_g` och garantin kan då
-kräva finansiering från bolaget. `V_g` är inte regulatorisk avsättning.
-
-## 3. Tariffregister och parametrar
-
-Varje grund ska ha ID/version, syfte, giltighet från/till, beslutsreferens,
-källversion, full parameteruppsättning, beräkningsmetod och kontrollsumma.
-Grund som saknas, inte är godkänd eller inte täcker beräkningsdagen får
-inte ersättas med dagens grund eller ett standardvärde.
-
-| Parameter | Arbetsförslag/status |
-|---|---|
-| Garantigrundande premieandel `alpha` | 1,00, beslutat produktval enligt B-027 |
-| Årlig effektiv nettoränta garanti `i_g` | 0,00, beslutat produktval enligt B-027 efter tariffens kostnads-/skatteantaganden |
-| Kapitalavgift | B-021: 0,20 % per år, månadsvis; transaktionsbas och ordningsföljd ska preciseras |
-| Dödlighet `q` | Unisexmodell med ålder och eventuellt födelsekohort; ej kalibrerad |
-| Livslängdsmarginal/förbättring | Kräver kalibrering och godkännande; inte antagen som noll |
-| Utbetalningsränta `i_b` | Ej fastställd; håll isär från garanti- och prognosränta |
-| Avkastningsskatt/kostnader | Kräver separata årsparametrar och kontroll mot netto-/bruttoantaganden |
-| Utbetalning | Månadsvis i efterskott; månadsrätt inklusive dödsmånaden behöver egen avräkningsrutin |
-| Referensplan för ny garanti | Livsvarigt från 66-årsmånaden, om inte annan godkänd plan gäller |
-| Garantiförstärkning | Ingen automatisk förstärkning i första modellen enligt B-027; eget framtida regelområde |
-
-Kandidat för statistik är SCB BE0101AW, dödsrisker per ålder i promille.
-Statistik ska konverteras till sannolikhet genom division med 1 000.
-En periodtabell är inte en prognos för en födelsekohort eller färdig tariff.
-Unisexviktning, urvalseffekter och livslängdsförbättring ska dokumenteras.
-Individens kön får inte styra pensionsbeloppet i denna ITP1-modell.
-
-För konstant dödsintensitet inom ett åldersår föreslås månadsomräkningen
-`q_m = 1 − (1 − q_år)^(1/12)`; andra interpolationsmetoder kräver egen
-grundversion. Överlevnad över flera månader är produkten av deras
-överlevnadssannolikheter. Detta är ett metodförslag, inte en SCB-regel.
-
-En livsvarig beräkning måste hantera den återstående svansen vid höga
-åldrar. Ingen faktisk kundutbetalning får avslutas bara för att
-statistikens sista ålder eller ett beräkningsindex nås. Saknad svansmodell
-blockerar livsvariga automatiska beräkningar.
-
-## 4. Annuitetsfaktor och intjänande
-
-Låt `t` vara värderingstidpunkten och `D` den fullständiga listan av framtida
-utbetalningsmånader. Listan styrs av start, form, återstående tid och paus.
-För en godkänd grund `b` definieras:
+För ålder 0–100 och kalenderår `y`:
 
 ```text
-A_b(t, D) = summa över d i D av w_b(t, d) × v_b(t, d)
-v_b(t, d) = (1 + i_b)^(-antal månader till betalningen / 12)
+q_r(x,y) = Q_x × 0,985^max(0,y−2025)
+q_g(x,y) = q_b(x,y) = 0,80 × q_r(x,y)
+q_m = 1 − (1 − q_år)^(1/12)
 ```
 
-`w_b(t,d)` är sannolikheten vid `t` för att månadsrätt föreligger i `d`.
-För förslaget med pension även för dödsmånaden används överlevnad till
-utbetalningsmånadens början, medan betalningen diskonteras till månadens
-slut. Exakt intramånadsmetod och ordningsföljd för premie/dödsfall måste
-kalibreras. För livsvarig form summeras även den modellerade svansen.
-För tidsbegränsad form används de återstående avtalade månadsrätterna.
-
-Varje mottagen nettopremie `P_j` skapar en garantidel vid `t_j`:
+För ålder över 100 låses förbättringen vid kalenderåret då personen fyller
+100. Denna gräns är eget modellval: SCB har också åldersrader 101–110,
+men SIM använder 0–100 och en explicit jämn svans i stället för dessa rader.
+För svansen används
+`y100 = födelseår + 100`. För respektive grund räknas ankaret
+`q100` enligt formeln ovan och `mu100 = −ln(1−q100)`. Svansen är:
 
 ```text
-G_j = alpha_j × P_j / A_gj(t_j, D_j)
-G   = summa G_j för den aktuella planen
+mu(x) = mu100 × 1,10^(x−100)
+q(x) = min(0,995, 1 − exp(−mu(x)))
 ```
 
-Faktorn omfattar vid uppskjuten start också tiden från premie till
-utbetalning. Varje del sparar sin premie, referensplan, belopp och grund.
-Alla månader i en ny garantidels plan ska ligga efter värderingstidpunkten.
-Premie mottagen efter ordinarie pensionsålder eller under pågående uttag
-kräver en uttrycklig plan för tillkommande förmån; en passerad 66-årsstart
-får inte användas. Den kombinationen går till manuell utredning tills
-premie-/uttagsmodellen är specificerad.
-Ränta/dödlighet för en ny premie får ändras för framtida intjänande, men
-en ny version ersätter inte historiska delars grund automatiskt.
-Premieåtertag kräver en spårbar korrigering av just den del som återtas;
-det får inte behandlas som vanligt marknadsfall.
+Detta är egna försiktiga simuleringsantaganden. 50/50, 1,5 %, 0,80 och
+svansens 10 % är inte statistiskt kalibrerade branschvärden. Svansen gör
+förväntad livslängd ändlig även med noll diskonteringsränta. Taket är en
+modell för dödsrisk, aldrig en faktisk slutålder. En levande försäkrad får
+livsvarig pension oavsett sin ålder.
 
-## 5. Ändrad plan och garanti
+När årsrisken nått 0,995 för samtliga efterföljande åldrar blir månads-
+överlevnaden konstant `p = (1−0,995)^(1/12)`. Återstående oändlig summa
+beräknas exakt som en geometrisk serie. Annars kan numerisk summering
+användas om en bevisad övre gräns för bortklippt svans ger högst 0,000001 kr
+effekt på månadsbeloppet. En godtycklig slutålder är inte tillåten.
 
-Föreslagen värdebevarande omräkning, del för del vid ändringstid `t`:
+## 3. Månadsmodell och annuitetsfaktor
+
+Premie värderas vid mottagningsmånadens slut och får avkastning från nästa
+månad. Planändring och pensionsbelopp värderas vid föregående månadsslut.
+Månadsrätt uppkommer vid månadens början och betalas första svenska bankdagen
+efter månaden, när värderingen är stängd. För en
+redan påbörjad pension omfattar månadsrätten dödsmånaden.
+
+Låt `D` vara framtida **betalningsmånader**, exklusive pausmånader och
+redan förbrukade månadsrätter. Överlevnad under en paus ingår ändå i
+vikten för senare rätt. `t` är värdering vid månadsslut:
 
 ```text
-V_j(t) = G_j_gammal × A_gj(t, D_gammal_kvar)
-G_j_ny = V_j(t) / A_gj(t, D_ny_kvar)
+A_b(t,D) = summa(d i D) w_b(t,d) × (1+i_b)^(-n_d/12)
+w_b(t,d) = produkt av månadsöverlevnad fram till början av d
 ```
 
-Samma ursprungliga tariff används på båda sidor. Redan förbrukade
-månadsrätter ingår inte i någon av listorna; pausmånader är inte
-förbrukade. Första faktiska start behålls. Omräkning kan ge annat
-månadsbelopp men får inte skriva över det gamla beslutets underlag.
-Metoden är ett bolagsförslag att aktuariellt granska, inte en avskriven
-formel från Alecta. Faktorer ska vara ändliga och positiva.
+För första månad omedelbart efter `t` är `w = 1`. Senare månader viktas
+med överlevnad för mellanliggande månader. `n_d` är antal månader från
+`t` till rättighetsmånadens slut. Betalningen sker närmast följande bankdag.
+För SIM-G och SIM-B är `i = 0` netto; bankdagarnas förskjutning ändrar
+därför ingen diskonteringsfaktor. En framtida grund med annan ränta måste
+uttryckligen värdera kassaflödets verkliga tidpunkt.
+Skatt och avgift dras faktiskt från kapitalet; de dras inte en andra gång
+från denna nollränta. Vid ny premie under en redan pågående månad skapas
+ingen retroaktiv månadsrätt. Dödsfall före första rätt bedöms enligt PR-010.
 
-Paus ger inga månadsbelopp under pausperioden. Garantin kvarstår som
-ett åtagande enligt ändrad plan, inte som retroaktiv rätt till pausbelopp.
-Marknadsförlust utan ändrad plan sänker inte garantidelarna. Varje ändring
-prövas också mot skatte-/avtalskrav enligt uttagsreglerna.
+För tidsbegränsad plan summeras alla återstående månadsrätter; livsvarig
+plan använder hela svansen. Faktoren måste vara positiv och ändlig.
+Tidsbegränsad livsberoende faktor är normalt lägre än antalet månader,
+eftersom senare rätt förutsätter överlevnad. `A = 60` är därför endast
+ett förenklat exempel med dödsrisk noll, inte den valda tariffen.
 
-## 6. Kapitalbaserad pension och garantiunderskott
+## 4. Intjänad garanti och ändrad plan
 
-Föreslagen modell vid start, återstart och beslutad årlig omräkning:
+Varje faktiskt mottagen nettopremie `P_j` ger enligt B-027:
 
 ```text
-B = C / A_b(t, D_kvar)
-U = max(0, B − G)
-M = G + U = max(G, B)
+G_j = P_j / A_gj(t_j,D_referens)
+G = summa G_j
 ```
 
-`M` är föreslaget brutto-månadsbelopp, inte nettobelopp efter preliminär
-inkomstskatt. `U` är ett rörligt, inte garanterat, tillägg. Kontrollera
-skatte-/avtalskrav på beloppsförlopp innan ett nytt belopp beslutas.
-Ingen extra ”garantibetalning” läggs ovanpå `M`: garantin är dess golv.
+Referensplan är livsvarigt från 66-årsmånaden. Om den månaden är passerad
+är start tidigast nästa månad efter mottagning. Premier under pågående
+uttag går till en separat ännu inte startad del enligt PR-018/025.
+En premie kan inte garantera redan förbrukade månadsrätter.
 
-Om `C < V_g` ska avvikelsen synas och prövas mot bolagets finansiering.
-En framtida underskottsmodell måste ange kapitalstöd, likviditet och
-bokföring; det räcker inte att sätta `M = G` och skapa pengar i kundkontot.
-Saknad finansiering blockerar automatisk verkställighet i simuleringen
-och skapar ärende, men får inte framställas som upphävd kundgaranti.
+Vid delning fördelas varje garantidel proportionellt, utan ny värdering.
+Vid annan ändring, del för del på ursprunglig grund:
 
-Kapitaltransaktioner måste skilja premier, faktiskt fördelad avkastning,
-kapitalavgift, avkastningsskatt, arvsvinster, pensionsutbetalning och
-bolagets dokumenterade kapitalstöd. Ingen post får räknas dubbelt när
-en nettoränta eller nettoavkastning redan inkluderar kostnaden.
-Avkastning och möjlig fördelning av överskott behöver samordnas med
-kapitalförvaltningens riktlinjer. Förslaget antar ingen gratis finansiering.
+```text
+V_j(t) = G_j_gammal × A_gj(t,D_gammal_kvar)
+G_j_ny = V_j(t) / A_gj(t,D_ny_kvar)
+```
 
-## 7. Kontrollerbara metodexempel
+Framtida start, paus, återstart och förlängning kan ge annat månadsbelopp
+genom den nya planen. Marknadsfall får inte ändra `G_j` för samma plan.
+Ingen automatisk garantiförstärkning av avkastning/arvsvinst sker.
+Återtag korrigerar exakt den spårade garantidelen enligt PR-019.
+Beräkningsbeslut sparar gamla och nya planer, faktorer och delbelopp.
 
-Följande är syntetiska räknefall för en tidsbegränsad plan vid start:
-ingen dödlighet under perioden och nettoränta noll. De är inte godkända
-tariffer eller kundprognoser. Faktorn för 60 månadsrätter blir då 60.
+## 5. Pension och beloppsgolv
 
-| Fall | Utfall utan betalningsavrundning |
-|---|---|
-| Garantigrund 1 000 kr, 60 månader | `G = 1 000 / 60 = 16,666666… kr/mån` |
-| Samma garanti, kapital 1 200 kr | `B = 20`, `U = 3,333333…`, `M = 20 kr/mån` |
-| Samma garanti, kapital 900 kr | `B = 15`, `U = 0`, `M = 16,666666…`; underskott måste finansieras |
-| 12 av 60 förbrukade; garanti 16,666666…; ändras till 120 totalt | Garantivärde kvar 800; ny garanti `800 / 108 = 7,407407… kr/mån` |
-| Individens kön ändras, övriga indata samma | Oförändrat belopp |
-| Ny tariff finns men gammal garantidel saknar version | Fel/manuell utredning, ingen tyst omräkning |
+Vid start, januari, återstart eller planändring:
 
-Beräkna med hög precision och avrunda endast beslutad utbetalning till
-ören med föreslagen ROUND_HALF_UP. Den aktuariella skillnaden från
-avrundning ska spåras; sista utbetalningen får inte godtyckligt ökas eller
-sänkas för att tömma kapital. Slutavräkning behöver separat regel.
-Livsvarig form med noll dödlighet och noll ränta har oändlig faktor och
-är ett felaktigt beräkningsunderlag, inte pension noll kronor.
+```text
+B = C / A_b(t,D_kvar)
+M_kandidat = max(G,B)
+M = max(M_kandidat, skatterättsligt/avtalat beloppsgolv)
+rörligt tillägg = M − G
+```
 
-## 8. Förutsättningar före implementation
+Avrunda slutligt beslutat `M` till ören med ROUND_HALF_UP, men höj vid
+behov till `ceil(G × 100)/100` och gällande bindande beloppsgolv.
+G är summan av garantidelar för samma uttagsdel, inte varje delavrundning
+var för sig. En positiv rätt ger minst ett öre i månadsbrutto.
+Garantin betalas inte igen ovanpå
+`M`. Månadsbeloppet ligger normalt fast mellan omräkningar. Planens
+skatterättsliga gren och eventuellt tidigare beloppsgolv kommer från
+PR-009, inte från att tillägget kallas rörligt.
 
-1. Produktinriktning är godkänd i B-027; fastställ giltighetsdag och behandling av befintlig mockhistorik.
-2. Kalibrera och versionslås unisexdödlighet inklusive marginal och svans.
-3. Fastställ utbetalningsgrund, kostnads-/skatteparametrar och överskottsmodell.
-4. Bestäm underskottsfinansiering, dödsfall/arvsvinster och slutavräkning.
-5. Granska oberoende exempel för start, paus, återstart och ändrad tid samt
-   känslighet för längre liv, lägre avkastning och högre kostnader.
-6. Specificera transaktioner och historiska garantidelar innan någon migration.
+Bolagets faktiska kapitalstöd i PR-028 finansierar garanterat och låst
+belopp när kundkapitalet inte räcker. Avgifter/skatt, betalningsskuld och
+arvsvinstpool särredovisas. Produktformeln skapar inga tillgångar.
 
-B-027 fastställer premieandel och nettoränta som produktval. Ingen fullständig
-tariff blir gällande genom denna fil. Reglerna
-[PR-ITP1-008](produktregler/PR-ITP1-008-garanti.md) och
-[PR-ITP1-009](produktregler/PR-ITP1-009-pensionsbelopp.md) är utkast.
+## 6. Faktiska arvsvinster och kapitalbevarande
+
+Ett kollektiv omfattar endast denna produkt utan återbetalningsskydd.
+PR-010 reserverar obetalda rättigheter före frigjort kapital.
+PR-011 fördelar bara faktiskt frigjorda tillgångar. Riskvikten är
+`C_vid_månadsbörjan × q_m/(1−q_m)` för levande mottagare med hel månads
+exponering. Paus/fribrev deltar. Dödlighet i annuitetsfaktorn är värdering,
+inte ytterligare bokförd arvsvinst. Fördelning ger ingen ny garanti.
+Ingen förutbetald schablonarvsvinst eller utjämningsreserv används i v1.0.
+
+## 7. Prognos och ekonomiska kontrollfall
+
+Kundprognos använder 0/3/5 % nominell bruttoavkastning, sedan avgift/skatt,
+och samma dokumenterade dödlighet. Kommande premier ingår endast om det
+anges. Visa garanti för samma plan samt osäkerheten i scenario, dödlighet
+och skatt. Prognos är inget betalningsbeslut eller en tillgång.
+
+[Leveranskontrollen](../projekt/04_produktregelverk/LEVERANSKONTROLL.md)
+innehåller numeriska resultat med denna tabell och modellen, bevarande-
+exempel och dokumentkontroller. De ersätter inte byggsessionens tester.
+Modellen är specificerad för simuleringen; en verklig lansering kräver
+aktuariell validering mot bestånd, urval och solvens samt erforderliga
+styrdokument. Dessa verksamhetskrav hör till risk-/ekonomiprojekten.
 
 | Version | Datum | Ändring |
 |---|---|---|
-| 0.1 | 2026-10-11 | Modell, parameterregister och syntetiska kontrollfall |
+| 0.1–0.2 | 2026-10-11 | Tidigare metodutkast med öppna parametrar |
+| 1.0 | 2026-10-11 | Valda grunder, låst statistik, svans och full beräkningsordning |
