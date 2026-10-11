@@ -203,7 +203,7 @@ Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen
 |-----|-------------------------------|-----|-------------------|----------|-------------|
 | `berakning` | `beräkna-itp1-premie` | Nej | `compute` | aktuarie | Alla |
 | `kunddata` | `hämta-kunddata` m.fl. | Ja | `write` | forsakring | forsakring (kommunikation: bara mottagaruppgifter) |
-| `regelverk` | `tolka-itp1-fråga`, `complianceöversyn`, uppslag i `04_regulatoriskt/`/`05_styrdokument/` | Nej | `read` | compliance | Alla |
+| `regelverk` | `tolka-itp1-fråga`, `complianceöversyn`, uppslag i källregister, tolkningar och produktregler (`04_regulatoriskt/`, `01_domän/produktregler/`) samt `05_styrdokument/` | Nej | `read` | compliance | Alla |
 | `bestand` | Aggregerade nyckeltal om beståndet (antal, premievolym, kapital per segment) – ingen individdata | Nej | `compute` | aktuarie | Alla |
 | `marknadsdata` | `marknadsdata` (Fas 2d) | Nej | `read` | kapital | kapital, aktuarie |
 | `portfolj` | Allokering, rebalanseringsförslag, order | Nej | `external` | kapital | kapital |
@@ -241,13 +241,13 @@ Modellen är agent-factorys `Orchestrator`/`WorkflowStep` (steg, villkor, obliga
 
 | Steg | Team (roll) | Uppgift | Pod(ar) | Godkännande |
 |------|-------------|---------|---------|-------------|
-| 1 | compliance (`deep`) | Tolka regelverksändringen, konsekvensanalys | regelverk | Ja |
-| 2 | compliance (`deep`) | Föreslå ändrade produktregler/villkor (`01_domän/`) | regelverk, dokument | Ja |
+| 1 | compliance (`deep`) | Tolka regelverksändringen och gör konsekvensanalys – ny/ändrad tolkning `T-ITP1-…` i `04_regulatoriskt/tolkningar/` | regelverk, dokument | Ja |
+| 2 | compliance (`deep`) | Föreslå ändrade produktregler `PR-ITP1-…` i `01_domän/produktregler/` och ev. villkor | regelverk, dokument | Ja |
 | 3 | utveckling (`standard`) | Ändra kod/konfiguration (t.ex. premiemotorns åldersfönster), tester | dokument | Ja – operatören granskar ändringen innan produktionssättning |
 | 4 | aktuarie (`deep`) | Beståndsinsikt: hur många berörs, effekt på premier och kapital | bestand, berakning | Nej (rapport) |
 | 5 | kommunikation (`standard`) | Utkast till kundinformation, om relevant | kommunikation | Ja – externt utskick (§3.5) |
 
-Det befintliga `02_system/Agentsystem/regelförändringsflöde.md` täcker steg 1, 3 och 5; steg 2 och 4 tillkommer med flaggskeppet.
+Det befintliga `02_system/Agentsystem/regelförändringsflöde.md` täcker steg 1, 3 och 5; steg 2 och 4 tillkommer med flaggskeppet. Dokumentkedjan källa → tolkning → produktregel följer arbetssättet i `projekt/04_produktregelverk/ARBETSSATT.md`.
 
 ---
 
