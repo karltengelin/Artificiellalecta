@@ -15,6 +15,7 @@ Läs dessa filer i ordning:
 1. `MASTER_CONTEXT.md` – projektets fundament (vision, scope, arkitekturprinciper, mappstruktur)
 2. `BESLUTSLOGG.md` – alla fattade beslut med motivering. Refereras med beteckningar som B-008, B-015 etc.
 3. `ATT_GORA.md` – backlog och prioriteringar
+4. `AGENTS.md` – gemensamma arbetsregler när flera AI-verktyg (Claude Code/Cowork, Codex m.fl.) jobbar parallellt i repot
 
 Kontrollera även repo-tillståndet. Om det finns ocommittade ändringar, oväntade filer eller något som ser konstigt ut – fråga innan du fortsätter.
 
@@ -30,7 +31,7 @@ Steget är medvetet inlagt – fel som upptäcks här är billigare att rätta �
 
 ## 3. Arbetsregler
 
-- **Diff före commit.** Visa alltid vad du tänker ändra (diff eller filinnehåll) innan du committar. Jag godkänner aktivt. Samma princip som MASTER_CONTEXT §3.5 "människa-i-loopen", applicerad på repot.
+- **Diff i samma svar som committen.** Visa vad som ändrades (diff eller sammanfattning) i samma rapport som du gör committen i – inte som ett separat godkännandesteg innan. Jag kan alltid be dig backa en commit om något är fel.
 - **Commit-meddelanden.** Kort rubrik som säger vad ändringen gör. Använd kategori-prefix där det passar – t.ex. `skelett:`, `dokumentation:`, `skill:`, `agent:`, `regelverk:`. Föreslå alltid commit-meddelandet tillsammans med diff:en.
 - **Följ B-015 (mappstruktur).** Dokumentation på svenska i numrerade mappar i roten. Kod under `src/` med engelska namn. Inga svenska tecken i Python-modulnamn.
 - **Följ B-012.** Allt skrivs som Markdown. PDF eller andra format genereras bara vid behov.
@@ -39,4 +40,4 @@ Steget är medvetet inlagt – fel som upptäcks här är billigare att rätta �
 - **Externa konton sätter jag upp manuellt.** Om en uppgift kräver Supabase, Google Workspace eller liknande externa tjänster – avbryt och be mig göra den biten. Du kan inte skapa konton åt mig. Guiden för Supabase finns i `ATT_GORA.md`.
 - **Konsistenskontroll efter ändringar.** Många fakta beskrivs på flera ställen (teknisk stack i både MASTER_CONTEXT och README, tabeller i `databasschema.md`, agentstatus i `agentkarta.md`, filhänvisningar i flera dokument). Efter varje ändring – särskilt när ett beslut ersätter ett tidigare (som B-018 ersatte B-014) – sök igenom repot efter referenser till det som ändrats och rätta inaktuella omnämnanden i samma commit-grupp. Om en drift upptäcks som inte hör till aktuell uppgift: flagga den, åtgärda inte utan godkännande.
 - **Hemligheter aldrig i repot.** API-nycklar, lösenord och connection strings hör hemma i `.env` (gitignorerad). `.env.example` dokumenterar *vilka* variabler som behövs, aldrig deras värden. Detta täcks delvis av `.gitignore` men en explicit regel skyddar mot slarv. Om du ser något som ser ut som en hemlighet i en fil som ska committas – stoppa och flagga.
-- **Inga git-skrivningar från Cowork-sandboxen.** Cowork-sandboxen är en Linux-mount mot Windows-repot, och git-writes (`add`, `commit`, `mv`, `rm`, `reset`) lämnar stale `index.lock`/`HEAD.lock` och korrupta indexfiler som operatören får städa manuellt. Claude ska skapa och redigera filer fritt, validera dem genom att köra kod, men **alla `git`-kommandon som muterar repot körs av operatören från cmd**. Läsande kommandon (`git log`, `git rev-parse`, `git show <ref>:<fil>`) är OK när de fungerar. Claude föreslår commit-grupper och commit-meddelanden i konversationen som operatören klistrar in.
+- **Git-skrivningar tillåtna på egen branch.** Claude Code får köra `add`, `commit` och `push` direkt på sin egen arbetsbranch utan att vänta på godkännande i förväg. Merge till `main` görs också av Claude Code själv, men bara efter ett explicit muntligt OK i chatten (t.ex. "mergea det") – inget manuellt `git`-kommando krävs av operatören. Force-push och historieomskrivning (`reset --hard`, `rebase` av redan pushad historia) körs ändå aldrig utan explicit instruktion för just den åtgärden. Om stale lockfiler, korrupt index eller annat miljöspecifikt gitproblem dyker upp – stoppa omedelbart, flagga det, och återställ inte den här regeln på eget bevåg.
