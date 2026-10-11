@@ -8,6 +8,11 @@ Koppla ihop försäkringssystemet och de underliggande databasmodellerna till et
 indikatorer och nyckeltal, och göra det möjligt för en agent att svara på frågor i datat
 (t.ex. "hur påverkar en regelverksändring beståndet?").
 
+Inriktningen är en gemensam analys- och rapporteringsförmåga: definierade mått och vyer
+som försörjer operatörens dashboard, Genie/agentfrågor och kontrollerade rapporteringsunderlag.
+Regeländringar är ett användningsfall bland flera. Se
+[DASHBOARD_DESIGN.md](DASHBOARD_DESIGN.md) för första förslaget till frågor, mått och dataflöde.
+
 ## Status
 
 🟡 Första avgränsade analysen implementerad på egen arbetsbranch: premieeffekt av ett
@@ -18,13 +23,17 @@ Se [ANALYSDESIGN.md](ANALYSDESIGN.md) för antaganden, datakvalitet och fortsatt
 och [EXEMPELANALYS.md](EXEMPELANALYS.md) för ett helt syntetiskt exempel.
 Den slutliga BI-arkitekturen, lagringslösningen och agentexponeringen är fortfarande öppna.
 Databricks är vald databasplattform (B-018), men detta steg väljer inget separat BI-lager.
+Dashboard- och Genie-inriktningen är dokumenterad som designförslag, inte driftsatt integration.
 
 ### Nästa steg
 
+- Fastställ dashboardens måttdefinitioner, värderingsgrunder och första rapportmottagare.
+- Verifiera Unity Catalog, SQL Warehouse och Genie-stöd i den faktiska Databricks-miljön.
 - Integrera läsning genom gemensamma tjänster när Claudes T3/T4-arbete är integrerat.
 - Fastställ historisk arbetsgivarkoppling och löneunderlagens betydelse vid flera försäkringar.
 - Utöka till hela beståndet, månadstrender och kvalitetskontroller som inkluderar saknade premier.
 - Bestäm åtkomst och rapportkontrakt innan insikter exponeras för agenter.
+- Visualisera flöden och ansvar tillsammans med [Projekt 9: Processkartor](../09_processkartor/PROJEKTPLAN.md).
 
 ## Beroenden
 
