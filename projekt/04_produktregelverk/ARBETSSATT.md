@@ -111,10 +111,13 @@ inte den beslutade villkorsversionen utan ett separat granskat ändringsförslag
 ## 7. Föreslagen fortsättning
 
 Uttagsutkast finns nu i [gemensamma förutsättningar](../../01_domän/produktregler/UTTAG_GEMENSAMT.md)
-med fyra separata regler och [T-ITP1-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md).
+med sex separata regler och [T-ITP1-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md).
+Tidsbegränsad utbetalning och förlängning har kompletterats med
+[T-ITP1-003](../../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md)
+och PR-ITP1-006/007.
 Nästa steg för uttagsområdet är granskning av bolagsval och
 [villkorsändring](VILLKORSANDRING_UTTAG.md), därefter partiella uttag,
-förlängning, aktuariell grund och modell för uttagsplaner.
+slutavräkning, aktuariell grund och modell för uttagsplaner.
 
 Granska först dokumentkedjan och avrundningsvalet. Skriv därefter separata regler
 för premieåldrar, pensionsmedförande lön och anställningsperiod. Utred sedan

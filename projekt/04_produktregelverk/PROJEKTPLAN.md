@@ -20,10 +20,13 @@ Första arbetsutkastet till placering, skrivsätt och spårbarhet finns i
 premietrappan, källregister och öppna tolkningsfrågor. Dokumenten är utkast;
 ingen ny villkorsversion eller produktregel är antagen genom detta arbete.
 
-Uttagsområdet har nu fyra separata utkast (tidigarelagt, uppskjutet, paus och
-återupptagande), se [gemensam ingång](../../01_domän/produktregler/UTTAG_GEMENSAMT.md),
+Uttagsområdet har nu sex separata utkast (tidigarelagt, uppskjutet, paus,
+återupptagande, tidsbegränsad utbetalning och förlängning), se
+[gemensam ingång](../../01_domän/produktregler/UTTAG_GEMENSAMT.md),
 [källtolkning](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md)
 och [föreslagen villkorsändring](VILLKORSANDRING_UTTAG.md).
+Utredningen om tidsbegränsad utbetalning finns i
+[T-ITP1-003](../../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md).
 Domänens felaktiga 63-årsgräns är rättad. Villkorsversion 1.0 är markerad
 med granskningsanmärkning i väntan på beslut; uttagslogik är inte byggd.
 

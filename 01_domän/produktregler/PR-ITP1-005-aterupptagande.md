@@ -1,6 +1,6 @@
 # PR-ITP1-005 – återupptagande efter paus
 
-> **Version:** 0.1 | **Granskningsstatus:** Utkast | **Implementation:** Saknas
+> **Version:** 0.2 | **Granskningsstatus:** Utkast | **Implementation:** Saknas
 > **Ägare:** Operatören | **Upprättad:** 2026-10-11 | **Godkänd av/datum:** Ej godkänd
 > **Ursprung:** ITP:s flexibilitetsöverenskommelse; egna verkställighets- och beräkningskrav.
 
@@ -30,8 +30,9 @@ aktuariell grund/version och tillämplig skatterättslig gren.
    tidigare utbetalningshistorik ska behållas.
 5. Inga retroaktiva belopp skapas för avtalade pausmånader. Återstart är
    inte en ny 60-månadersperiod: tidigare förbrukade månader räknas av.
-   En förlängning utöver pausens effekt kräver eget beslut enligt en kommande
-   regel. Förkortning efter första start tillåts inte i föreslaget villkor.
+   En förlängning utöver pausens effekt kräver eget beslut enligt
+   [PR-ITP1-007](PR-ITP1-007-forlangd-utbetalning.md).
+   Förkortning efter första start tillåts inte i föreslaget villkor.
 6. Ingen särskild ändringsavgift eller hälsoprövning införs för återstarten.
    Ny förtida pensioneringsprövning vid återstart införs inte automatiskt;
    ursprungliga villkor och ändrade förhållanden behöver separat utredning.
@@ -57,3 +58,4 @@ frivillig paus. Ingen kod finns för denna regel.
 | Version | Datum | Ändring |
 |---|---|---|
 | 0.1 | 2026-10-11 | Första utkast |
+| 0.2 | 2026-10-11 | Koppling till separat förlängningsregel |

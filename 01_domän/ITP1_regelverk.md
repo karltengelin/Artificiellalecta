@@ -60,6 +60,11 @@ Notera för datamodellen: gränserna är **månadsbaserade**, inte dagbaserade. 
 Se [källregistret](../04_regulatoriskt/kallregister.md),
 [tolkning T-ITP1-002](../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md)
 och [uttagsreglernas gemensamma förutsättningar](produktregler/UTTAG_GEMENSAMT.md).
+Tidsbegränsad utbetalning och förlängning preciseras i utkasten
+[PR-ITP1-006](produktregler/PR-ITP1-006-tidsbegransad-utbetalning.md) och
+[PR-ITP1-007](produktregler/PR-ITP1-007-forlangd-utbetalning.md), med
+[T-ITP1-003](../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md)
+som underlag. Bolagens tidsutbud och ändringsfrister är inte generella avtalsgränser.
 Ansökningsfrister och detaljer för förtida uttag behöver bolagsvillkor och
 ytterligare avtalskontroll. Den tidigare uppgiften om 63 år var felaktig.
 Detta rättar domänkunskapen; förslag till ändring av villkorsversion 1.0 ligger

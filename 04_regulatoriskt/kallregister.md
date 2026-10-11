@@ -1,6 +1,6 @@
 # Källregister – produktregelverk
 
-> **Status:** Arbetsutkast | **Version:** 0.1 | **Kontrolldatum:** 2026-10-11
+> **Status:** Arbetsutkast | **Version:** 0.2 | **Kontrolldatum:** 2026-10-11
 > Registret anger vad som faktiskt har kontrollerats. Det är inte en fullständig
 > bedömning av alla regelverks tillämplighet.
 
@@ -8,7 +8,7 @@
 
 | Dokument | Karaktär och användning | Begränsning |
 |---|---|---|
-| [ITP1-regelverk](../01_domän/ITP1_regelverk.md) | Intern domänsammanställning, premie- och åldersregler, basbelopp | Inte avtalets originaltext; uttagsgränser och historisk giltighet behöver granskas |
+| [ITP1-regelverk](../01_domän/ITP1_regelverk.md) | Intern domänsammanställning, premie- och åldersregler, basbelopp | Uttagsålder och form kontrollerade mot punkt 7.5; detaljvillkor och historisk giltighet återstår |
 | [Försäkringsvillkor](../01_domän/försäkringsvillkor.md) | Bolagets simulerade villkor, B-021/B-022 | Produktval måste skiljas från externa krav; uttag och garanti återstår att utreda |
 | [Regelverkskarta](regelverkskarta.md) | Översikt över huvudregim och tvärgående krav | Citeringsmarkörerna kan inte användas som källänkar; kartans påståenden behöver verifieras per regel |
 
@@ -60,7 +60,7 @@ undermapparna. Dokumenten ovan är sammanställningar och egna villkor.
 - **Utgivare:** PTK; avtal mellan Svenskt Näringsliv och PTK.
 - **Version:** Gäller från 2026-01-01; kontrollerad 2026-10-11.
 - **Kontrollerat avsnitt:** Avdelning 1, punkt 7.5, tryckt sida 14 (PDF-sida 15).
-- **Användning:** Uttagsreglernas ålder och utbetalningsform, T-ITP1-002.
+- **Användning:** Uttagsreglernas ålder och utbetalningsform, T-ITP1-002/003. Punkt 7.5 om tidsbegränsat uttag kontrollerad på nytt 2026-10-11.
 - **Begränsning:** Administrationsavtal och ITP-nämndens detaljregler är inte genomgångna. Premiepunktens exakta hänvisning återstår i T-ITP1-001.
 - **Länk:** [ITP och TGL, avtalsutgåva 2026](https://www.ptk.se/wp-content/uploads/2025/12/Avtal_ITP_och_TGL_2026.pdf).
 
@@ -90,6 +90,16 @@ undermapparna. Dokumenten ovan är sammanställningar och egna villkor.
 - **Användning:** Jämförelse för månadsgräns, pensioneringskontroll, begäransfrist, pausens omfattning och slutdatum. Det är Alectas villkor, inte bindande villkor för vår simulering eller universella ITP-krav.
 - **Begränsning:** Villkoren innehåller också ITPK och andra produkter; bara ITP1 ålderspension används här. Garanti- och placeringsmodell överförs inte.
 - **Länkar:** [Villkor, utgåva 2026-08-27](https://www.alecta.se/media/qpppilcr/6108-forsakringsvillkor-alecta-optimal-pension-enligt-itp.pdf), [Pausa eller förläng utbetalning](https://www.alecta.se/utbetalning/pausa-eller-forlang-utbetalning).
+
+### K-AMF-UTTAG – jämförelse av erbjudna utbetalningstider
+
+- **Utgivare:** AMF, informationssidan ”Hur länge kan jag ta ut pensionen?”.
+- **Version:** Sidan anger uppdaterad 2025-12-18; kontrollerad 2026-10-11.
+- **Avsnitt:** ”Privatanställd tjänsteman: ITP 1 och ITPK” samt ”Så gör du ditt val”.
+- **Kontrollerat:** AMF anger 5–20 år för tidsbegränsad ITP1 och ändring före start senast två månader före. Detta är jämförelseunderlag för bolagens erbjudanden och frister, inte universella ITP-regler.
+- **Begränsning:** AMF:s fullständiga villkor är inte granskade i denna komplettering. ITPK:s uppgifter används inte för vår produkt.
+- **Användning:** T-ITP1-003; motiverar varför en enskild leverantörs maxlängd eller frist inte ska presenteras som gemensamt avtalskrav.
+- **Länk:** [AMF – hur länge kan jag ta ut pensionen?](https://www.amf.se/ta-ut-din-pension/sa-tar-du-ut-din-tjanstepension/hur-lange-kan-jag-ta-ut-pensionen/).
 
 ## 3. Källor att komplettera per frågeområde
 

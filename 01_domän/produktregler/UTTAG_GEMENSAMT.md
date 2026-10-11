@@ -1,8 +1,8 @@
 # Gemensamma förutsättningar för uttagsreglerna
 
-> **Version:** 0.1 | **Status:** Utkast, ej godkänt | **Implementation:** Saknas
+> **Version:** 0.2 | **Status:** Utkast, ej godkänt | **Implementation:** Saknas
 > **Ägare:** Operatören | **Upprättad:** 2026-10-11
-> **Gäller för:** PR-ITP1-002–005, endast ITP1 ålderspension.
+> **Gäller för:** PR-ITP1-002–007, endast ITP1 ålderspension.
 
 | Regel | Fråga |
 |---|---|
@@ -10,10 +10,13 @@
 | [PR-ITP1-003](PR-ITP1-003-uppskjutet-uttag.md) | Första start efter ordinarie pensionsålder |
 | [PR-ITP1-004](PR-ITP1-004-paus.md) | Pausa redan påbörjad utbetalning |
 | [PR-ITP1-005](PR-ITP1-005-aterupptagande.md) | Återuppta efter paus |
+| [PR-ITP1-006](PR-ITP1-006-tidsbegransad-utbetalning.md) | Välja och hantera tidsbegränsad utbetalning |
+| [PR-ITP1-007](PR-ITP1-007-forlangd-utbetalning.md) | Förlänga pågående utbetalningstid |
 
 ## Externa krav och egna val
 
 [T-ITP1-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md)
+och [T-ITP1-003](../../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md)
 redovisar källor och tillämplighet. Enligt ITP-avtalet avdelning 1 punkt 7.5
 är ordinarie start 66-årsmånaden, tidigaste ålder 55 år och standardformen
 livsvarig; tidsbegränsat uttag är minst fem år. Här föreslås hela
@@ -71,7 +74,11 @@ räcker inte för alla sådana kombinationer.
 
 **Dataförslag, ingen migration:** Separat versionshanterad uttagsplan med
 första faktiska start, planerad start/återstart, pausperioder, utbetalningsform,
-avtalad total/återstående utbetalningstid och beslutskoppling. Betalningsjournalen
+avtalad total/återstående utbetalningstid och beslutskoppling. Total tid avser
+antal utbetalningsmånader från första start, inklusive förbrukade månader och
+exklusive paus. Ändringar av total tid och enbart förskjutet slut vid paus
+ska kunna skiljas åt. Livsvarig form har inget ändligt totalantal eller slutdatum.
+Betalningsjournalen
 måste skilja en rätt till månadsbelopp från banköverföring: ett misslyckat
 betalningsförsök är inte en avtalad paus och ska inte förbruka två månader
 vid ett nytt försök.
@@ -86,8 +93,10 @@ innehåller äldre, felaktiga åldersantaganden och får inte användas som
 verifierat implementationsunderlag; ersättning föreslås separat.
 
 Aktuariell grund, garanti, skatterättslig gren och tillståndsmodell behöver
-granskas före kodarbete. Förlängning av utbetalningstid behöver en egen regel.
+granskas före kodarbete. Tidsbegränsad utbetalning och förlängning beskrivs nu
+i PR-ITP1-006/007; slutavräkning och partiella uttag behöver kompletteras.
 
 | Version | Datum | Ändring |
 |---|---|---|
 | 0.1 | 2026-10-11 | Gemensamma förutsättningar och dataförslag |
+| 0.2 | 2026-10-11 | Tidsbegränsad utbetalning, förlängning och tydlig definition av total tid |

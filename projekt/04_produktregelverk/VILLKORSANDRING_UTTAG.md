@@ -7,7 +7,9 @@
 ## Varför ändring behövs
 
 Nuvarande §7 innehåller fel åldersantaganden och otillräcklig beskrivning av
-paus. [T-ITP1-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md)
+paus och tidsbegränsad utbetalning.
+[T-ITP1-002](../../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md) och
+[T-ITP1-003](../../04_regulatoriskt/tolkningar/T-ITP1-003-tidsbegransad-utbetalning.md)
 skiljer externa regler från föreslagna bolagsval.
 
 ## Föreslagen ersättning av §7
@@ -21,10 +23,19 @@ skiljer externa regler från föreslagna bolagsval.
    samt att hen inte får eller har ansökt om sjukpenning, sjukersättning
    eller arbetsskadeersättning från Försäkringskassan eller utländsk
    motsvarighet. Partiella uttag och undantag prövas separat.
-3. Tidsbegränsad utbetalning kan väljas för minst 60 utbetalningsmånader.
-   Förkortning efter första start tillåts inte. Förlängning kan begäras
-   utan särskild ändringsavgift eller hälsoprövning; tillämpningen behöver
-   kompletteras med separat produktregel före implementation.
+3. Tidsbegränsad utbetalning kan väljas i hela månader, minst 60 totalt,
+   utan fast maxlängd i föreslaget erbjudande. Total tid räknas från första
+   starten och omfattar redan förbrukade utbetalningsmånader men inte paus.
+   Utbetalningsformen och tiden kan ändras före första start enligt fristen
+   nedan. Förkortning efter första start tillåts inte.
+   Pågående tidsbegränsad plan kan förlängas upprepade gånger, även under
+   paus, utan särskild ändringsavgift eller hälsoprövning. Nytt totalantal
+   månader ska vara större än tidigare totalantal. Övergång till livsvarig
+   form kan prövas enligt föreslaget bolagsval och godkänd beräkningsgrund.
+   Förlängning ska få effekt innan planen avslutas och ändrar inte i sig
+   avtalad återstart. Kunden får information om ny tid, slutmånad och
+   belopp; när tidsbegränsad plan är fullgjord skapas inga nya månadsbelopp.
+   Slutavräkning hanteras separat.
 4. Innan första utbetalningen har påbörjats kan start skjutas upp. Det
    ändrar inte automatiskt premieplikten eller försäkringens fribrevsstatus.
 5. Pågående uttag kan pausas upprepade gånger utan särskild ändringsavgift
@@ -53,7 +64,7 @@ skiljer externa regler från föreslagna bolagsval.
 ## Beslutsförslag, utan nytt beslutsnummer
 
 ”Uttagsvillkoren för simulerad ITP1 ålderspension preciseras enligt
-PR-ITP1-002–005 och tillhörande gemensamma förutsättningar, efter granskning
+PR-ITP1-002–007 och tillhörande gemensamma förutsättningar, efter granskning
 av markerade bolagsval. Försäkringsvillkoren får version 1.1 med ersatt §7.
 Scope B-002/B-021 ändras inte. Giltighet avser framtida händelser på nya och
 befintliga simulerade försäkringar från beslutad ikraftträdandedag; historiska

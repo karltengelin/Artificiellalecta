@@ -1,6 +1,6 @@
 # T-ITP1-002 – uttagsålder, uppskjutande och paus
 
-> **Status:** Utkast | **Version:** 0.1 | **Ägare:** Operatören
+> **Status:** Utkast | **Version:** 0.2 | **Ägare:** Operatören
 > **Upprättad och källkontrollerad:** 2026-10-11 | **Godkänd av/datum:** Ej godkänd
 > **Omfattning:** ITP1 ålderspension enligt B-002, B-021 och B-022. Ingen implementation.
 
@@ -59,7 +59,7 @@ Det innebär inte att bolaget erbjuder sjukpension eller sjukförsäkring.
 | Ansökningstid | Komplett begäran senast sista dagen i föregående månad, svensk tid | Annan frist kan väljas; ingen extern universell frist har fastställts |
 | Pausens omfattning | Hela pågående uttaget från vald försäkring | Partiellt uttag inom försäkring kräver separat design |
 | Pausens längd | Hela månader, minst en, ingen fast maxlängd eller antal | Återstartsdatum bestäms; tillsvidarepaus behöver egen rutin |
-| Tidsbegränsad pension | Minst 60 utbetalningsmånader; paus förbrukar inga månader | Förlängning utöver pausens effekt blir separat regel |
+| Tidsbegränsad pension | Minst 60 utbetalningsmånader; paus förbrukar inga månader | Se PR-ITP1-006/007 och T-ITP1-003 för tidsval och förlängning |
 | Förkortning efter start | Tillåts inte i föreslaget villkor | Bolagsval; inte ett påstående om ett generellt lagförbud |
 
 ## Operativa konsekvenser
@@ -77,9 +77,10 @@ Källkontrollen avser förhållandena 2026-10-11. Den ger ingen retroaktiv
 giltighet åt bolagsvalen. Operatören behöver godkänna valen och övergången till
 ny villkorsversion innan implementation. Aktuariell grund, garantin F-004,
 allmän pensionsplan och partiella uttag måste utredas före automatiska beslut
-om berörda uttag. Gemensam ITP-rätt till förlängning är identifierad men dess
-fullständiga produktregel ingår inte i dessa fyra regler.
+om berörda uttag. Tidsbegränsad utbetalning och förlängning beskrivs separat i
+[T-ITP1-003](T-ITP1-003-tidsbegransad-utbetalning.md) och PR-ITP1-006/007.
 
 | Version | Datum | Ändring |
 |---|---|---|
 | 0.1 | 2026-10-11 | Första källgrundade uttagsutkast |
+| 0.2 | 2026-10-11 | Hänvisning till tidsbegränsad utbetalning och förlängning |
