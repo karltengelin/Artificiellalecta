@@ -21,6 +21,7 @@ Se MASTER_CONTEXT §7 för fullständig översikt.
 - `03_skills/` – Skill-instruktioner (markdown)
 - `04_regulatoriskt/` – Regelverkskällor (lager 1)
 - `05_styrdokument/` – Interna styrdokument (lager 3)
+- `projekt/` – Delprojektens projektplaner (B-024)
 - `src/` – Python-kod
 - `tests/`, `data/`, `scripts/` – Tester, mockdata, engångsskript
 
@@ -28,6 +29,6 @@ Se MASTER_CONTEXT §7 för fullständig översikt.
 
 - Python ≥ 3.11
 - Databricks Lakebase (serverless Postgres) via SQLAlchemy (B-018)
-- Modellagnostisk AI-arkitektur (OpenAI + Anthropic)
+- Modellagnostisk AI-arkitektur (OpenAI + Anthropic) via eget abstraktionslager i `src/ai/`
 - Markdown som primärt informationsformat
 - Git + GitHub för versionskontroll

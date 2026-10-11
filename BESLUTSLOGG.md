@@ -8,6 +8,62 @@
 
 ## Beslut
 
+### B-026 | 2026-10-11 | Agentekosystem: team med ledande agent som orkestrerare, skill-poddar som behörighetsenhet
+
+**Beslut:**
+1. Agenter organiseras i team per funktionsområde. Teamets orkestrerare är dess ledande agent – inga separata chefsagenter. Andra team och flöden når ett team via den ledande agenten; eskalering till compliance är alltid tillåten (B-011). Teamindelning: sju team (`forsakring`, `kommunikation`, `kapital`, `aktuarie`, `compliance`, `ekonomi`, `utveckling`) för de tio befintliga agenterna.
+2. Skills paketeras i skill-poddar som är behörighetsenheten i körning: gemensam dataåtkomst, PII-klass, högsta sidoeffektsklass och ägarteam. Agenter får poddar, inte enskilda skills.
+3. Varje skill deklarerar sidoeffektsklass (`read`/`compute`/`write`/`external`). `external` körs aldrig direkt av en agent utan blir ett godkännandeärende (§3.5).
+4. Samverkan sker genom strukturerad delegering mellan ledande agenter och deterministiska flöden med persisterat tillstånd och godkännandesteg (B-016).
+5. Modellval via roller per agent och flödessteg; nycklar per team via AI-lagret (B-025); poddar kan exponeras som MCP-servrar för operatören och externa AI-verktyg (B-017, B-024).
+
+**Motivering:**
+- Speglar avdelningar i ett riktigt bolag utan att bryta B-008 – ledande agent som orkestrerare ger ingen extra agent och ingen extra överlämning
+- Behörighet ligger i struktur (monterade poddar, databasroller), inte i prompt (B-006/B-007)
+- Spårbarhet och mänsklig kontroll: körjournal per körning, externa handlingar godkänns av operatören (B-016, §3.5)
+- Samma förmågor för operatören och externa AI-agenter genom MCP-exponering (B-017, B-024)
+
+**Övervägda alternativ:**
+
+*Separat chefsagent per team* – fördubblar antalet agenter, lägger en överlämning med kontextförlust framför varje uppgift och bryter B-008. Avvisat.
+
+*Behörighet per enskild skill* – tio agenter × alla skills blir ohanterligt att granska. Avvisat till förmån för poddar (enskilda skills kan fortfarande nekas).
+
+*Kommunikationsagenten under `forsakring`* – tvingar andra team att gå via handläggaragenten för att nå utgående kanaler. Avvisat; kommunikation blir eget enagentsteam och bolagets enda väg ut.
+
+**Konsekvenser:**
+- Ramverket beskrivs i `02_system/agentekosystem.md`
+- Byggordning: Fas 3b (agent-runtime v1: `ecosystem.yaml`, skill-register, poddar, agentloop, körjournal, godkännandekö) före Fas 5; Fas 3c (delegering + flödesmotor med persisterat tillstånd) inför flaggskeppsscenariot
+- Skillkatalogen får en pod-kolumn när runtime byggs
+- En egen Lakebase-roll för PII-poddar sätts upp av operatören när den första sådana podden byggs
+- Öppna frågor (internrevision som eget team, lagring av journal och godkännandekö, format för agentdefinitioner) listas i `agentekosystem.md` §13
+- Genomfört i commits `5de60bc` och `cdc1021` på branch `claude/ai-abstraktionslager-b69434`
+
+---
+
+### B-025 | 2026-10-11 | AI-abstraktionslager: egen tunn wrapper ovanpå officiella SDK:er
+
+**Beslut:** AI-abstraktionslagret (B-009) byggs som en egen tunn wrapper i `src/ai/` ovanpå leverantörernas officiella SDK:er – Anthropic (Messages API) och OpenAI (Responses API). Agent- och skillkod anropar bara `ai`-paketet och väljer modellroll (`fast`/`standard`/`deep`), aldrig modell-ID. Rollerna mappas till modeller i `src/ai/ai_config.yaml`, var och en med reservmodell hos den andra leverantören. API-nycklar följer konventionen `<NYCKELVARIABEL>_<TEAM>` med den gemensamma nyckeln som reserv.
+
+**Motivering:**
+- LiteLLM: stort beroendeträd och en supply chain-incident på PyPI i mars 2026 (versioner som stal hemligheter) – lagret hanterar per definition våra API-nycklar. OpenAI-formatet som minsta gemensamma nämnare läcker Anthropic-specifika parametrar till anropande kod
+- OpenRouter: tredje part i dataflödet för alla promptar (biträde, jfr B-006), avgift, ersätter direkta leverantörsnycklar
+- Egen wrapper: ca 1 000 rader, bara officiella SDK:er som beroenden, nativa funktioner per leverantör, testbar med fejkleverantör, bygger vidare på agent-factory
+- Två leverantörer motiverar inte ett bredare ramverk
+
+**Övervägda alternativ:**
+
+*LiteLLM (SDK eller proxyserver)* och *OpenRouter* – avvisade enligt ovan. Båda kan läggas till senare som adapter bakom samma gränssnitt utan att agentkod påverkas.
+
+**Konsekvenser:**
+- `src/ai/` med kanoniska typer, adaptrar, konfiguration, anropslogg (`logs/ai_calls.jsonl`) och 81 tester; specifikation och utvärdering i `02_system/ai_abstraktion.md`
+- Beroenden `anthropic>=1.13,<2`, `openai>=3.28,<4`, `pydantic`, `pyyaml`; SDK:erna får bara importeras i `src/ai/providers/`
+- Röktest mot riktiga API:er (`scripts/smoke_test_ai.py`) godkänt 2026-10-11: båda leverantörerna, strukturerade svar, verktygsloop och fortsättning hos andra leverantören mitt i en verktygsloop (kostnad ca 0,02 USD)
+- Omprövas om fler än 3–4 leverantörer behövs eller om nycklar ska delas centralt av många användare
+- Genomfört i commits `b9f1cac` och `37d4623` på branch `claude/ai-abstraktionslager-b69434`
+
+---
+
 ### B-024 | 2026-10-11 | Programvision utökad till AI-native bolag + delprojektstruktur
 
 **Beslut:**

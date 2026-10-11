@@ -104,13 +104,16 @@ Ett dedikerat flöde triggas när ett regelverk ändras. Dokumenteras separat i 
 - **Delat skillsbibliotek (B-007):** Alla skills ligger centralt i `03_skills/`. Varje agent har en deklarerad lista över vilka skills den får använda.
 - **Behörighetsmodell (B-006):** Skills som rör personuppgifter är begränsade till de agenter som faktiskt behöver dem.
 - **Människa-i-loopen (§3.5):** Alla externa åtgärder (utskick, rapportinlämningar, transaktioner, avtalssigneringar) kräver manuellt godkännande.
+- **Team och skill-poddar (B-026):** Agenterna organiseras i sju team där den ledande agenten är teamets orkestrerare; behörighet ges per skill-pod. Se `agentekosystem.md` §3–5.
 
 ---
 
 ## 5. Hänvisningar
 
 - Detaljerade agentbeskrivningar: `02_system/agenter/`
-- Skillkatalog: `03_skills/skillkatalog.md` *(ej skriven ännu)*
+- Skillkatalog: `03_skills/skillkatalog.md`
 - Regelförändringsflöde: `02_system/Agentsystem/regelförändringsflöde.md`
+- Agentekosystem (team, poddar, delegering, modellval, nycklar): `02_system/agentekosystem.md`
+- AI-lagret som alla agenter anropar modeller via: `02_system/ai_abstraktion.md`
 - Arkitekturprinciper: `MASTER_CONTEXT.md §3`
 - Beslut om agentarkitektur: B-006, B-007, B-008, B-011

@@ -1,6 +1,6 @@
 # Projekt 7: Kundchattbot
 
-> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, förslag B-024).
+> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, B-024).
 
 ## Scope
 
@@ -18,7 +18,7 @@ och kan svara på vad kunden får/inte får göra med sin försäkring.
 
 ## Befintlig grund i repot
 
-- Inget specifikt ännu – bygger vidare på modellagnostiska abstraktionslagret (B-009) och
+- Inget specifikt ännu – bygger vidare på modellagnostiska abstraktionslagret (B-009, `src/ai/`) och
   skillsbiblioteket (B-007)
 
 ## Öppna designfrågor

@@ -1,0 +1,78 @@
+# Konfiguration för AI-abstraktionslagret (B-009, B-025).
+# Specifikation: 02_system/ai_abstraktion.md §6. Inga hemligheter här – bara
+# NAMNEN på miljövariablerna som håller nycklarna (värdena ligger i .env).
+#
+# Team-nycklar: <api_key_env>_<TEAM-ID I VERSALER>, t.ex. ANTHROPIC_API_KEY_KAPITAL.
+# Saknas team-nyckeln används den gemensamma nyckeln.
+
+providers:
+  anthropic:
+    type: anthropic
+    api_key_env: ANTHROPIC_API_KEY
+    max_retries: 2
+    timeout_seconds: 300
+  openai:
+    type: openai
+    api_key_env: OPENAI_API_KEY
+    max_retries: 2
+    timeout_seconds: 300
+
+# Pris i USD per 1M tokens (standardnivå, kort kontext), verifierat 2026-10-11:
+#   Anthropic: https://platform.claude.com/docs/en/about-claude/pricing
+#   OpenAI:    https://developers.openai.com/api/docs/pricing
+# cached_input = läsning ur prompt-cache, cache_write = skrivning (5 min TTL).
+models:
+  anthropic:claude-opus-5:
+    price: {input: 5.00, output: 25.00, cached_input: 0.50, cache_write: 6.25}
+    capabilities: {tools: true, structured_output: true, effort: true}
+    # server_side_fallback: avböjda förfrågningar körs om på Anthropics
+    # rekommenderade reservmodell inom samma anrop (beta, fallbacks: "default").
+    options: {prompt_caching: true, server_side_fallback: true}
+  anthropic:claude-sonnet-5:
+    price: {input: 2.00, output: 10.00, cached_input: 0.20, cache_write: 2.50}
+    capabilities: {tools: true, structured_output: true, effort: true}
+    options: {prompt_caching: true}
+  anthropic:claude-haiku-4-5:
+    price: {input: 1.00, output: 5.00, cached_input: 0.10, cache_write: 1.25}
+    capabilities: {tools: true, structured_output: true, effort: false}
+    options: {prompt_caching: true}
+  openai:gpt-6-astra:
+    price: {input: 10.00, output: 50.00, cached_input: 1.00}
+    capabilities: {tools: true, structured_output: true, effort: true}
+  openai:gpt-6.1-sol:
+    price: {input: 2.00, output: 10.00, cached_input: 0.10}
+    capabilities: {tools: true, structured_output: true, effort: true}
+  openai:gpt-6-luna:
+    price: {input: 0.10, output: 0.50, cached_input: 0.01}
+    capabilities: {tools: true, structured_output: true, effort: true}
+
+# Roller som agenter och flöden väljer. Varje roll har reserv hos den andra
+# leverantören. Effort är startvärden som ska utvärderas (ai_abstraktion.md §6.1).
+roles:
+  fast:
+    model: openai:gpt-6-luna
+    fallbacks: [anthropic:claude-haiku-4-5]
+    effort: low
+    max_output_tokens: 4000
+  standard:
+    model: anthropic:claude-sonnet-5
+    fallbacks: [openai:gpt-6.1-sol]
+    effort: medium
+    max_output_tokens: 16000
+  deep:
+    model: anthropic:claude-opus-5
+    fallbacks: [openai:gpt-6-astra]
+    effort: high
+    max_output_tokens: 16000
+
+defaults:
+  role: standard
+  max_output_tokens: 16000
+
+# Anropsloggen (ai_abstraktion.md §10). log_content: true loggar promptar och
+# svar – bara för felsökning i sandlådan (B-006). Överstyrs av AI_TRACE_FILE
+# och AI_LOG_CONTENT.
+tracing:
+  sink: jsonl
+  path: logs/ai_calls.jsonl
+  log_content: false

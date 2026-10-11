@@ -1,6 +1,6 @@
 # Projekt 2: BI & insikter
 
-> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, förslag B-024).
+> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, B-024).
 
 ## Scope
 
@@ -29,5 +29,6 @@ något byggs.
 - Hur används Databricks konkret för BI – separat lagringslager, direkta queries mot Lakebase,
   eller något annat?
 - Hur exponeras insikter för en agent (verktyg/skill vs. färdiga rapporter)?
-- Relation till det tvärgående agentekosystemet (`02_system/agentekosystem.md`, kommer) – är
-  BI-agenten en egen agent eller en skill på en befintlig?
+- Relation till det tvärgående agentekosystemet (`02_system/agentekosystem.md`) – är
+  BI-agenten en egen agent eller en skill på en befintlig? Ekosystemramverket (B-026) lutar mot
+  en skill-pod `bestand` (aggregerade nyckeltal) + Data scientist-agenten i team `aktuarie`.

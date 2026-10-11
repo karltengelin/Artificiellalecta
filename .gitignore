@@ -56,7 +56,7 @@ htmlcov/
 *.db-journal
 
 # Mockdata-CSV är ett reproducerbart mellansteg (genereras av
-# scripts/generate_mock_data.py), slutdestinationen är Supabase.
+# scripts/generate_mock_data.py), slutdestinationen är databasen (Lakebase, B-018).
 data/*.csv
 data/*.json
 !data/.gitkeep

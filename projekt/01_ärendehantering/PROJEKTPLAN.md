@@ -1,6 +1,6 @@
 # Projekt 1: Ärendehantering & handläggar-UI
 
-> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, förslag B-024).
+> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, B-024).
 
 ## Scope
 
@@ -15,7 +15,7 @@ tillståndsperioder, premier).
 
 ## Beroenden
 
-- Fas 3 (AI-abstraktionslager, B-009) måste vara klar innan agentdelen (handläggaragent) byggs
+- Fas 3 (AI-abstraktionslager, B-009) ✅ byggd 2026-10-11 i `src/ai/`. Agentdelen (handläggaragent) kräver dessutom agent-runtime – föreslagen Fas 3b, se `02_system/agentekosystem.md` §12
 - `cases`-tabell finns inte än – del av detta projekts scope att definiera (jfr `databasschema.md`)
 
 ## Befintlig grund i repot
@@ -23,6 +23,7 @@ tillståndsperioder, premier).
 - Utredning: `ATT_GORA.md` 🔵 (admin-UI med inbyggd Claude)
 - Beslut: B-020 (handläggar-UI före kundportal), B-017 (människa som fullständig operatör)
 - Datamodell: `02_system/databasschema.md`, `src/models/`
+- AI-lager och agentramverk: `02_system/ai_abstraktion.md`, `02_system/agentekosystem.md` (team `forsakring`)
 
 ## Öppna designfrågor
 

@@ -1,6 +1,6 @@
 # Projekt 4: Produktregelverk & försäkringsvillkor
 
-> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, förslag B-024).
+> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, B-024).
 
 ## Scope
 
