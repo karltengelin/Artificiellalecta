@@ -33,7 +33,7 @@ from services.errors import (
 from services.events import EventLog, OperationEvent, default_event_log
 from services.rules import ProductRuleCatalog
 
-SessionFactory = Callable[[], AbstractContextManager[Any]]
+SessionFactory = Callable[[], AbstractContextManager[Any]]  # se services.db
 
 
 class ResultStatus(StrEnum):

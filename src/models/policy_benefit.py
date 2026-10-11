@@ -13,7 +13,7 @@ import uuid
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Index, String
+from sqlalchemy import JSON, CheckConstraint, Date, ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -47,6 +47,7 @@ class PolicyBenefit(Base):
             "benefit_type",
             unique=True,
             postgresql_where="end_date IS NULL",
+            sqlite_where=text("end_date IS NULL"),  # testdatabasen (tjänstelagrets tester)
         ),
     )
 
@@ -64,7 +65,9 @@ class PolicyBenefit(Base):
     benefit_type: Mapped[str] = mapped_column(String(30), nullable=False)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    parameters: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    parameters: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"), nullable=True  # JSONB i Lakebase, JSON i tester
+    )
 
     policy: Mapped["Policy"] = relationship(back_populates="benefits")
     premium_transactions: Mapped[list["PremiumTransaction"]] = relationship(

@@ -27,6 +27,7 @@ from services.errors import (
     ApprovalError,
     InvalidInputError,
     MissingReasonError,
+    NotFoundError,
     ServiceConfigError,
     ServiceError,
     UnknownOperationError,
@@ -34,6 +35,9 @@ from services.errors import (
 from services.events import JsonlEventLog, MemoryEventLog, OperationEvent
 from services.rules import ProductRuleCatalog, RuleStatus
 from services.service import OperationResult, ResultStatus, ServiceLayer
+
+# Registrerar alla operationer i standardregistret (måste ligga efter importerna ovan)
+from services import operations  # noqa: E402, F401  isort: skip
 
 __all__ = [
     "AccessDecision",
@@ -48,6 +52,7 @@ __all__ = [
     "MemoryApprovalStore",
     "MemoryEventLog",
     "MissingReasonError",
+    "NotFoundError",
     "Operation",
     "OperationContext",
     "OperationEvent",

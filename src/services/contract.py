@@ -25,7 +25,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from services.errors import ServiceConfigError, UnknownOperationError
+from services.errors import ServiceConfigError, ServiceError, UnknownOperationError
 
 #: Operationsnamn blir verktygsnamn för agenter – samma krav som i AI-lagret.
 OPERATION_NAME_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
@@ -101,6 +101,15 @@ class OperationContext:
     run_id: str | None = None  # agentkörning (körjournal, AI-lagrets anropslogg)
     case_id: str | None = None  # ärende (delprojekt 1)
     session: Any = None
+
+    def require_session(self) -> Any:
+        """Databassessionen – för operationer som läser eller skriver databasen."""
+        if self.session is None:
+            raise ServiceError(
+                "Tjänstelagret saknar databasanslutning – skapa ServiceLayer med session_factory "
+                "(t.ex. services.db.database_session_factory())"
+            )
+        return self.session
 
 
 @dataclass(frozen=True)

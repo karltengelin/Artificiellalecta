@@ -13,7 +13,7 @@ from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Index, Numeric, String
+from sqlalchemy import JSON, CheckConstraint, Date, ForeignKey, Index, Numeric, String, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,7 +45,12 @@ class PremiumTransaction(Base):
         CheckConstraint(
             "EXTRACT(DAY FROM period_month) = 1",
             name="ck_premium_transactions_period_first_of_month",
-        ),
+        ).ddl_if(dialect="postgresql"),
+        # Samma regel i testdatabasen (SQLite saknar EXTRACT)
+        CheckConstraint(
+            "CAST(strftime('%d', period_month) AS INTEGER) = 1",
+            name="ck_premium_transactions_period_first_of_month",
+        ).ddl_if(dialect="sqlite"),
         CheckConstraint(
             "pensionable_salary_sek IS NULL OR pensionable_salary_sek >= 0",
             name="ck_premium_transactions_salary",
@@ -57,6 +62,7 @@ class PremiumTransaction(Base):
             "period_month",
             unique=True,
             postgresql_where="transaction_type = 'premium'",
+            sqlite_where=text("transaction_type = 'premium'"),  # testdatabasen
         ),
         Index("ix_premium_transactions_benefit_period", "benefit_id", "period_month"),
     )
@@ -88,7 +94,7 @@ class PremiumTransaction(Base):
     amount_sek: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
 
     calculation_basis: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB, nullable=True
+        JSON().with_variant(JSONB(), "postgresql"), nullable=True  # JSONB i Lakebase, JSON i tester
     )
 
     status: Mapped[str] = mapped_column(

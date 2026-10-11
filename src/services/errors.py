@@ -15,6 +15,10 @@ class UnknownOperationError(ServiceError):
     """Operationen finns inte i operationsregistret."""
 
 
+class NotFoundError(ServiceError):
+    """Det efterfrågade objektet (försäkrad, försäkring, basbelopp …) finns inte."""
+
+
 class InvalidInputError(ServiceError):
     """Indata validerar inte mot operationens indatamodell."""
 
