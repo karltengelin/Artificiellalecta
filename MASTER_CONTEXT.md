@@ -176,6 +176,7 @@ Artificiellalecta/
 │   ├── databasschema.md            ← Tabellstruktur och SQLAlchemy-modeller (B-018, B-022)
 │   ├── ai_abstraktion.md           ← AI-lagret: utvärdering, gränssnitt, roller, nycklar (B-009/B-025)
 │   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
+│   ├── tjänstelager.md             ← Operationer för handläggare, agenter och skript (förslag B-028)
 │   ├── agentkarta.md               ← Översikt över alla agenter
 │   ├── agenter/                    ← En MD-fil per agent (10 st)
 │   └── Agentsystem/                ← Orkestrerade flöden, en MD-fil per flöde (B-016)
@@ -221,6 +222,7 @@ Artificiellalecta/
 │   │   └── development/            ← (= 03_skills/utveckling/)
 │   ├── models/                     ← SQLAlchemy-modeller
 │   ├── ai/                         ← Modellagnostiskt abstraktionslager (ai_config.yaml, providers/)
+│   ├── services/                   ← Tjänstelagret (kommer, Fas 1f)
 │   └── utils/                      ← Gemensam kod
 │
 ├── tests/                          ← Tester
