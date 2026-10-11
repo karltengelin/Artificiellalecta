@@ -43,7 +43,7 @@ All kod som anropar AI-modeller ska gå via ett **abstraktionslager**, inte dire
 - Modellval, API-nyckel och provider hanteras via konfigurationsfil eller miljövariabler
 - Prompter skrivs så generiskt som möjligt så de fungerar mellan leverantörer
 - Leverantörsspecifika finesser (t.ex. Anthropics tool use-format eller OpenAIs JSON mode) kapslas in i abstraktions­lagret
-- Möjliga verktyg att utvärdera: LiteLLM, OpenRouter, eller egen wrapper
+- LiteLLM, OpenRouter och egen wrapper är utvärderade i `02_system/ai_abstraktion.md` – förslag: egen tunn wrapper ovanpå de officiella SDK:erna, byggd i `src/ai/` (B-025, förslag)
 
 ### 3.2 Skills före nya agenter
 Default vid ny funktion är att bygga en skill som en befintlig agent får tillgång till – inte att skapa en ny agent. Nya agenter skapas endast när mandatet är fundamentalt annorlunda.
@@ -106,7 +106,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🔲 Ej påbörjat | — |
 
-**Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Fördjupas i `02_system/agentekosystem.md` (kommer) och vidareutvecklar B-008/B-009/B-016. Öppna designfrågor här löses efter hand, inte i och med detta beslut.
+**Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Fördjupas i `02_system/agentekosystem.md` (förslag B-026) och vidareutvecklar B-008/B-009/B-016. Öppna designfrågor här löses efter hand, inte i och med detta beslut.
 
 ---
 
@@ -117,7 +117,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | Programspråk | Python | Primärt för all logik och agenter |
 | Databas | Databricks Lakebase (serverless Postgres, Free Edition) | Postgres-kompatibel, gratis för icke-kommersiellt bruk. Åtkomst via SQLAlchemy ORM. Se B-018 (ersätter B-014/Supabase). |
 | Dokumentlager | Markdown/textfiler | Regler, processer, villkor |
-| AI-leverantörer | OpenAI + Anthropic (modellagnostiskt) | Via abstraktionslager, se 3.1 |
+| AI-leverantörer | OpenAI + Anthropic (modellagnostiskt) | Via eget abstraktionslager i `src/ai/` (förslag B-025), se 3.1 och `02_system/ai_abstraktion.md` |
 | AI-arbetsmiljö | Claude API + Claude Cowork | Utveckling och agentkörning |
 | Versionskontroll | Git + GitHub | Repo: [Artificiellalecta](https://github.com/karltengelin/Artificiellalecta.git). Kopplas in via Cowork-connector. |
 
@@ -167,7 +167,8 @@ Artificiellalecta/
 ├── 02_system/                      ← Systemdokumentation
 │   ├── arkitektur.md               (kommer)
 │   ├── databasschema.md            (kommer)
-│   ├── ai_abstraktion.md           (kommer)
+│   ├── ai_abstraktion.md           ← AI-lagret: utvärdering, gränssnitt, roller, nycklar (B-009/B-025)
+│   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
 │   ├── agentkarta.md               ← Översikt över alla agenter
 │   ├── agenter/                    ← En MD-fil per agent (10 st)
 │   └── Agentsystem/                ← Orkestrerade flöden, en MD-fil per flöde (B-016)
@@ -212,7 +213,7 @@ Artificiellalecta/
 │   │   ├── regulatory/             ← (= 03_skills/regelverk/)
 │   │   └── development/            ← (= 03_skills/utveckling/)
 │   ├── models/                     ← SQLAlchemy-modeller
-│   ├── ai/                         ← Modellagnostiskt abstraktionslager
+│   ├── ai/                         ← Modellagnostiskt abstraktionslager (ai_config.yaml, providers/)
 │   └── utils/                      ← Gemensam kod
 │
 ├── tests/                          ← Tester

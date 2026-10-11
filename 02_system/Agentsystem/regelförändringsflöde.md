@@ -86,3 +86,4 @@ Varje körning av flödet ska producera:
 
 - Beslutslogg: B-008 (skills före agenter – detta flöde är ett motiverat undantag), B-016 (hybrid orchestration)
 - Agentbeskrivningar: `02_system/agenter/`
+- Flaggskeppsflödet (detta flöde utökat med produktregeländring och beståndsinsikt): `02_system/agentekosystem.md` §6.2

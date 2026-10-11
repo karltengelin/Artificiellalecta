@@ -18,7 +18,7 @@ och kan svara på vad kunden får/inte får göra med sin försäkring.
 
 ## Befintlig grund i repot
 
-- Inget specifikt ännu – bygger vidare på modellagnostiska abstraktionslagret (B-009) och
+- Inget specifikt ännu – bygger vidare på modellagnostiska abstraktionslagret (B-009, `src/ai/`) och
   skillsbiblioteket (B-007)
 
 ## Öppna designfrågor

@@ -28,6 +28,6 @@ Se MASTER_CONTEXT §7 för fullständig översikt.
 
 - Python ≥ 3.11
 - Databricks Lakebase (serverless Postgres) via SQLAlchemy (B-018)
-- Modellagnostisk AI-arkitektur (OpenAI + Anthropic)
+- Modellagnostisk AI-arkitektur (OpenAI + Anthropic) via eget abstraktionslager i `src/ai/`
 - Markdown som primärt informationsformat
 - Git + GitHub för versionskontroll

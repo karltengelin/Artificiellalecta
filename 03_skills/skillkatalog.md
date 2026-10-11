@@ -28,3 +28,4 @@
 - **B-007** – delat skillsbibliotek
 - **B-008** – skills före nya agenter
 - Agenternas skill-listor: `02_system/agenter/<agent>.md`
+- Skill-kontrakt och skill-poddar (behörighetsenhet i körning, förslag B-026): `02_system/agentekosystem.md` §5
