@@ -6,6 +6,18 @@
 
 ---
 
+## 🗂️ Program & delprojekt (B-024, förslag)
+
+Hela programmet (visionen om ett AI-native tjänstepensionsbolag) är strukturerat i åtta delprojekt, se `MASTER_CONTEXT.md` §4b och mappen `projekt/`. Fasplanen och prioritetslistorna nedan är oförändrade och gäller fortsatt – de hör hemma under specifika delprojekt enligt denna mappning:
+
+- Fas 1 (premiemotor) + regelverksutbyggnad → **Delprojekt 4: Produktregelverk & villkor**
+- Fas 2 (paper trading) → **Delprojekt 5: Kapitalförvaltning**
+- Fas 4/5 (handläggar-UI + handläggaragent) → **Delprojekt 1: Ärendehantering**
+
+Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundchattbot) och 8 (Företagsöversikt) är nya och har ännu inga detaljerade uppgifter nedan – de bryts ut till egna listor i respektive `projekt/<nr>_<namn>/PROJEKTPLAN.md` allt eftersom de påbörjas, istället för att trängas in i denna lista.
+
+---
+
 ## 📋 Fasplan (beslutad 2026-07-12)
 
 Övergripande ordning för de kommande byggfaserna. Detaljuppgifter ligger under respektive prioritetsrubrik nedan.

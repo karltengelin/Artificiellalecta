@@ -11,6 +11,12 @@ Målet är att bygga ett komplett, simulerat tjänstepensionsbolag som administr
 
 Detta är en **sandbox/simuleringsmiljö** – inga riktiga kunder, inget riktigt kapital. Syftet är att bygga fungerande processer, system och agenter som speglar hur ett verkligt bolag fungerar.
 
+**Programvision (B-024, förslag):** Utöver att bygga produkten (ovan) är det övergripande målet att visa upp ett **AI-native tjänstepensionsbolag** – en organisation där agentteam utför det löpande arbete som avdelningarna i ett riktigt bolag skulle göra (handläggning, kapitalförvaltning, aktuariellt arbete, regelefterlevnad, rapportering, kundkommunikation), och där system och data är byggda för att vara tillgängliga för vilken AI-agent som helst att arbeta mot – inte bara de agenter som byggs i detta projekt.
+
+**Flaggskeppsscenario:** Det viktigaste som ska kunna demonstreras när programmet är klart är ett fullständigt, spårbart flöde från regelverksändring till produktion: en ändring i ett nationellt regelverk (t.ex. ändrad pensionsålder) tolkas av agenter till konkreta produktregler, dessa produktregler sätts i produktion i försäkringssystemet, och agenterna tar fram en business insight om hur ändringen påverkar det befintliga beståndet – allt på ett strömlinjeformat och säkert sätt, med människa-i-loopen (§3.5) på kritiska steg.
+
+Programmet struktureras i ett antal namngivna delprojekt, se §4b.
+
 ---
 
 ## 2. Produktavgränsning
@@ -78,6 +84,29 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 | Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🔲 Ej påbörjat |
 | Rapportering | FI-rapporter, intern rapportering, revisionsunderlag | 🔲 Ej påbörjat |
 | Internrevision | Kontroller, granskning, avvikelsehantering | 🔲 Ej påbörjat |
+
+Se §4b för hur arbetet mot dessa områden struktureras i konkreta delprojekt.
+
+---
+
+## 4b. Delprojektöversikt (program) — B-024, förslag
+
+Arbetet mot visionen i §1 struktureras i åtta namngivna delprojekt plus ett tvärgående arkitekturramverk. Varje delprojekt har en projektmapp i `projekt/` (se §7) med en `PROJEKTPLAN.md` som ger ett avgränsat uppdrag – tänkt att kunna ges till Codex eller en egen Claude Code-session utan att den behöver känna till hela repot.
+
+Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentation/kod in i projektmappen – den pekar bara till var den befintliga grunden ligger. Kod, när den byggs, läggs under det centrala `src/`-trädet (B-015) snarare än i egna per-projekt-src-mappar, för att inte bryta den enda importerbara paketroten.
+
+| Nr | Delprojekt | Projektmapp | Kort scope | Status | Befintlig grund |
+|----|-----------|-------------|------------|--------|-----------------|
+| 1 | Ärendehantering & handläggar-UI | `projekt/01_ärendehantering/` | Handläggarens gränssnitt + bakomliggande backend för att handläggningar ska påverka systemen | 🟡 Utredning klar | Fas 4/5, B-020 |
+| 2 | BI & insikter | `projekt/02_bi_insikter/` | Koppla försäkringssystem + databaser till indikatorer/BI; agent som svarar på datafrågor | 🔲 Ej påbörjat | B-018 (Lakebase) |
+| 3 | Kundportal | `projekt/03_kundportal/` | Låtsas-hemsida: se pension, förmåner, pausa/skjuta upp utbetalning | 🔲 Ej påbörjat | Nämnd som senare fas i B-020 |
+| 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟡 Pågår | `01_domän/`, `04_regulatoriskt/` |
+| 5 | Kapitalförvaltning | `projekt/05_kapitalförvaltning/` | Paper trading-portfölj + gränssnitt för att analysera innehav och styra allokering | 🟡 Utredning klar | Fas 2, B-019 |
+| 6 | Avdelningsfunktioner | `projekt/06_avdelningsfunktioner/` | Funktioner per avdelning, bl.a. en aktuariell modul för premiesättning kopplad till FI-krav | 🔲 Ej påbörjat | — |
+| 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
+| 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🔲 Ej påbörjat | — |
+
+**Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Fördjupas i `02_system/agentekosystem.md` (kommer) och vidareutvecklar B-008/B-009/B-016. Öppna designfrågor här löses efter hand, inte i och med detta beslut.
 
 ---
 
@@ -164,6 +193,16 @@ Artificiellalecta/
 │   ├── 03_riktlinjer/
 │   └── 04_processer/
 │
+├── projekt/                         ← Delprojektens PROJEKTPLAN.md (B-024, se §4b)
+│   ├── 01_ärendehantering/
+│   ├── 02_bi_insikter/
+│   ├── 03_kundportal/
+│   ├── 04_produktregelverk/
+│   ├── 05_kapitalförvaltning/
+│   ├── 06_avdelningsfunktioner/
+│   ├── 07_kundchattbot/
+│   └── 08_företagsöversikt/
+│
 ├── src/                            ← All Python-kod
 │   ├── agents/                     ← Agent­implementationer
 │   ├── skills/                     ← Skill-implementationer
@@ -185,6 +224,7 @@ Artificiellalecta/
 - Dokumentationsmappar i roten använder svenska namn (`beräkning`, `regelverk` etc.)
 - Python-kod under `src/` använder engelska namn eftersom Pythons modulnamn inte hanterar `å`, `ä`, `ö`
 - En skill har sin instruktion (MD-fil) i `03_skills/<kategori>/` och sin implementation (Python-fil) i `src/skills/<category>/` enligt mappning ovan
+- Varje `projekt/<nr>_<namn>/` innehåller en `PROJEKTPLAN.md` (scope, status, beroenden) och ev. egen `docs/`-undermapp. Kod för delprojektet läggs ändå i det centrala `src/`-trädet, inte i en egen src-mapp under projektmappen – annars bryts principen om en enda importerbar paketrot
 
 ---
 

@@ -1,0 +1,36 @@
+# Projekt 4: Produktregelverk & försäkringsvillkor
+
+> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, förslag B-024).
+
+## Scope
+
+Göra efterforskning för att förstå och tolka gällande regelverk (LTF, FFFS:er, DORA, GDPR, IDD,
+SFDR, AI-förordningen, skatt m.fl.), och omsätta tolkningen i en komplett uppsättning produktregler
+som det egenbyggda försäkringssystemet speglar. Detta delprojekt är också hemmaplan för
+flaggskeppsscenariot (MASTER_CONTEXT §1): regelverksändring → produktregel → produktionssatt
+systemändring.
+
+## Status
+
+🟡 Pågår. Fas 1a (ITP1-regelverk, försäkringsvillkor v1.0) är klar. Utbyggnad av
+`04_regulatoriskt/` per regelverk är hög prioritet i `ATT_GORA.md`.
+
+## Beroenden
+
+- Produktregler som tas fram här styr direkt vad premiemotorn (Fas 1c) och framtida
+  försäkringssystem ska implementera
+
+## Befintlig grund i repot
+
+- `01_domän/ITP1_regelverk.md`, `01_domän/försäkringsvillkor.md`
+- `04_regulatoriskt/regelverkskarta.md`
+- B-010 (fyrlagermodell: regelverkskällor → tolkningar → styrdokument → operativt arbete)
+- B-011 (compliance-agenten äger regelverk + styrdokument)
+- B-021/B-022 (försäkringsvillkor v1.0, förenklingar)
+
+## Öppna designfrågor
+
+- Vilket regelverk används som demo-case för flaggskeppsscenariot (pensionsålder nämndes som
+  exempel, inte nödvändigt bästa valet)?
+- Hur dokumenteras kopplingen regelverk → produktregel → kodändring så att den är granskningsbar
+  (jfr B-016 om orkestrerade flöden för compliance-kritiska processer)?
