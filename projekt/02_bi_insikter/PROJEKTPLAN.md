@@ -10,9 +10,21 @@ indikatorer och nyckeltal, och göra det möjligt för en agent att svara på fr
 
 ## Status
 
-🔲 Ej påbörjat. Tilltänkt att använda Databricks (redan vald databasplattform, B-018) för
-lagring/analys av insiktsdata, men arkitekturen är inte bestämd ännu – ska bollas med Karl innan
-något byggs.
+🟡 Första avgränsade analysen implementerad på egen arbetsbranch: premieeffekt av ett
+hypotetiskt IBB för en vald månad. Karl har godkänt detta BI-spår parallellt med Claude Codes
+tjänstearbete. Ren beräkning, offline-backup och Markdownrapport; inga databasskrivningar.
+
+Se [ANALYSDESIGN.md](ANALYSDESIGN.md) för antaganden, datakvalitet och fortsatt integration,
+och [EXEMPELANALYS.md](EXEMPELANALYS.md) för ett helt syntetiskt exempel.
+Den slutliga BI-arkitekturen, lagringslösningen och agentexponeringen är fortfarande öppna.
+Databricks är vald databasplattform (B-018), men detta steg väljer inget separat BI-lager.
+
+### Nästa steg
+
+- Integrera läsning genom gemensamma tjänster när Claudes T3/T4-arbete är integrerat.
+- Fastställ historisk arbetsgivarkoppling och löneunderlagens betydelse vid flera försäkringar.
+- Utöka till hela beståndet, månadstrender och kvalitetskontroller som inkluderar saknade premier.
+- Bestäm åtkomst och rapportkontrakt innan insikter exponeras för agenter.
 
 ## Beroenden
 
