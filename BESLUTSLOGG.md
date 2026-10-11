@@ -8,6 +8,35 @@
 
 ## Beslut
 
+### B-024 | 2026-10-11 | Programvision utökad till AI-native bolag + delprojektstruktur
+
+**Beslut:**
+1. Projektets vision utökas från att bara bygga produkten (ålderspension ITP1, B-002 oförändrat som produktscope) till att också bygga och visa upp ett **AI-native tjänstepensionsbolag** – en organisation där agentteam utför avdelningarnas löpande arbete, med ett **flaggskeppsscenario**: en regelverksändring tolkas till produktregler, produktregler produktionssätts i försäkringssystemet, och agenter tar fram en business insight om hur ändringen påverkar det befintliga beståndet.
+2. Arbetet struktureras i åtta namngivna delprojekt (ärendehantering, BI & insikter, kundportal, produktregelverk, kapitalförvaltning, avdelningsfunktioner, kundchattbot, företagsöversikt – se `MASTER_CONTEXT.md` §4b). Agentekosystem-design (orkestrerare, skill-poddar, modellval/nycklar) är inte ett nionde delprojekt utan ett tvärgående arkitekturramverk alla delprojekt ska byggas enligt.
+3. Delprojekt får en fysisk projektmapp i repo-roten (`projekt/<nr>_<namn>/`) med egen `PROJEKTPLAN.md` (scope, status, beroenden, öppna frågor). Redan påbörjade delprojekt (1 ärendehantering, 4 produktregelverk, 5 kapitalförvaltning) flyttar inte redan byggd dokumentation/kod dit – projektmappen pekar bara till var den befintliga grunden ligger. Ny kod för alla delprojekt läggs ändå i det centrala `src/`-trädet (B-015), inte i egna per-projekt-src-mappar.
+
+**Motivering:**
+- Karl vill kunna demonstrera ett strömlinjeformat, säkert flöde från nationell regelverksändring till produktionssatt systemändring och affärsinsikt – det kräver att fler funktionsområden (BI, kundportal, kapitalförvaltningsanalys, avdelningsfunktioner) faktiskt byggs, inte bara premiemotorn
+- Fysisk mappisolering per delprojekt ger ett avgränsat uppdrag som kan ges till Codex eller en egen Claude Code-session utan att den behöver känna till hela repot
+- Att inte flytta redan byggd kod/dokumentation undviker att riva upp fungerande Fas 1/Fas 2/regelverksarbete bara för att passa en ny mappkonvention
+- Att göra agentekosystem-design till ett tvärgående ramverk istället för ett nionde delprojekt undviker cirkularitet (vem bygger det åt sig själv)
+- Kod kvar i det centrala `src/`-trädet bevarar B-015:s princip om en enda importerbar paketrot – annars hade projektmapparna brutit mot den separationen
+
+**Övervägda alternativ:**
+
+*Bara dokumentera i ATT_GORA, ingen ny mappstruktur* – enklast, men ger inget fysiskt avgränsat uppdrag att lämna över till Codex/Claude Code. Avvisat.
+
+*Flytta all befintlig kod/dokumentation in i de nya projektmapparna direkt* – mest konsekvent mappstruktur, men stor omstrukturering utan tillräcklig nytta just nu för redan fungerande delar (Fas 1/Fas 2). Kan omprövas senare om projektmapparna visar sig behöva äga mer än bara planeringsdokument.
+
+**Konsekvenser:**
+- `MASTER_CONTEXT.md` uppdaterat: ny programvision + flaggskeppsscenario (§1), ny delprojektöversikt (§4b), ny mappstruktur-post för `projekt/` (§7)
+- `ATT_GORA.md` kompletterat med en mappning mellan befintlig fasplan och de nya delprojekten, utan att prioritetslistorna i övrigt ändrats
+- Ny mapp `projekt/` med en `PROJEKTPLAN.md` per delprojekt (1–8)
+- BI-arkitektur (delprojekt 2), kapitalförvaltningens analysgränssnitt (delprojekt 5) och agentekosystem-designen (ramverket) är uttryckligen öppna frågor som inte löses av detta beslut – de tas i kommande sessioner
+- Redan genomfört i commit `9bbbc48` på branch `claude/att-gora-lista-innehal-da0702`
+
+---
+
 ### B-023 | 2026-10-11 | Parallellt arbete mellan Claude Code och Codex + git-skrivningar tillåtna för agenter
 
 **Beslut:**
