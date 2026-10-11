@@ -11,7 +11,7 @@ Målet är att bygga ett komplett, simulerat tjänstepensionsbolag som administr
 
 Detta är en **sandbox/simuleringsmiljö** – inga riktiga kunder, inget riktigt kapital. Syftet är att bygga fungerande processer, system och agenter som speglar hur ett verkligt bolag fungerar.
 
-**Programvision (B-024, förslag):** Utöver att bygga produkten (ovan) är det övergripande målet att visa upp ett **AI-native tjänstepensionsbolag** – en organisation där agentteam utför det löpande arbete som avdelningarna i ett riktigt bolag skulle göra (handläggning, kapitalförvaltning, aktuariellt arbete, regelefterlevnad, rapportering, kundkommunikation), och där system och data är byggda för att vara tillgängliga för vilken AI-agent som helst att arbeta mot – inte bara de agenter som byggs i detta projekt.
+**Programvision (B-024):** Utöver att bygga produkten (ovan) är det övergripande målet att visa upp ett **AI-native tjänstepensionsbolag** – en organisation där agentteam utför det löpande arbete som avdelningarna i ett riktigt bolag skulle göra (handläggning, kapitalförvaltning, aktuariellt arbete, regelefterlevnad, rapportering, kundkommunikation), och där system och data är byggda för att vara tillgängliga för vilken AI-agent som helst att arbeta mot – inte bara de agenter som byggs i detta projekt.
 
 **Flaggskeppsscenario:** Det viktigaste som ska kunna demonstreras när programmet är klart är ett fullständigt, spårbart flöde från regelverksändring till produktion: en ändring i ett nationellt regelverk (t.ex. ändrad pensionsålder) tolkas av agenter till konkreta produktregler, dessa produktregler sätts i produktion i försäkringssystemet, och agenterna tar fram en business insight om hur ändringen påverkar det befintliga beståndet – allt på ett strömlinjeformat och säkert sätt, med människa-i-loopen (§3.5) på kritiska steg.
 
@@ -43,7 +43,7 @@ All kod som anropar AI-modeller ska gå via ett **abstraktionslager**, inte dire
 - Modellval, API-nyckel och provider hanteras via konfigurationsfil eller miljövariabler
 - Prompter skrivs så generiskt som möjligt så de fungerar mellan leverantörer
 - Leverantörsspecifika finesser (t.ex. Anthropics tool use-format eller OpenAIs JSON mode) kapslas in i abstraktions­lagret
-- LiteLLM, OpenRouter och egen wrapper är utvärderade i `02_system/ai_abstraktion.md` – förslag: egen tunn wrapper ovanpå de officiella SDK:erna, byggd i `src/ai/` (B-025, förslag)
+- LiteLLM, OpenRouter och egen wrapper är utvärderade i `02_system/ai_abstraktion.md` – beslut: egen tunn wrapper ovanpå de officiella SDK:erna, byggd i `src/ai/` (B-025)
 
 ### 3.2 Skills före nya agenter
 Default vid ny funktion är att bygga en skill som en befintlig agent får tillgång till – inte att skapa en ny agent. Nya agenter skapas endast när mandatet är fundamentalt annorlunda.
@@ -79,7 +79,7 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 |--------|-------------|--------|
 | Kapitalförvaltning | Placering av premiereserver, portföljövervakning | 🔲 Ej påbörjat |
 | Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🔲 Ej påbörjat |
-| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell (`employers`, `insured_persons`) och seedad databas |
+| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026 |
 | Ärende­hantering | Inkommande ärenden, handläggning, svar | 🔲 Ej påbörjat |
 | Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🔲 Ej påbörjat |
 | Rapportering | FI-rapporter, intern rapportering, revisionsunderlag | 🔲 Ej påbörjat |
@@ -89,7 +89,7 @@ Se §4b för hur arbetet mot dessa områden struktureras i konkreta delprojekt.
 
 ---
 
-## 4b. Delprojektöversikt (program) — B-024, förslag
+## 4b. Delprojektöversikt (program) — B-024
 
 Arbetet mot visionen i §1 struktureras i åtta namngivna delprojekt plus ett tvärgående arkitekturramverk. Varje delprojekt har en projektmapp i `projekt/` (se §7) med en `PROJEKTPLAN.md` som ger ett avgränsat uppdrag – tänkt att kunna ges till Codex eller en egen Claude Code-session utan att den behöver känna till hela repot.
 
@@ -106,7 +106,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🔲 Ej påbörjat | — |
 
-**Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Fördjupas i `02_system/agentekosystem.md` (förslag B-026) och vidareutvecklar B-008/B-009/B-016. Öppna designfrågor här löses efter hand, inte i och med detta beslut.
+**Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Ramverket är beslutat i B-026 och beskrivs i `02_system/agentekosystem.md`; det vidareutvecklar B-008/B-009/B-016. Kvarvarande öppna frågor listas där (§13).
 
 ---
 
@@ -117,7 +117,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | Programspråk | Python | Primärt för all logik och agenter |
 | Databas | Databricks Lakebase (serverless Postgres, Free Edition) | Postgres-kompatibel, gratis för icke-kommersiellt bruk. Åtkomst via SQLAlchemy ORM. Se B-018 (ersätter B-014/Supabase). |
 | Dokumentlager | Markdown/textfiler | Regler, processer, villkor |
-| AI-leverantörer | OpenAI + Anthropic (modellagnostiskt) | Via eget abstraktionslager i `src/ai/` (förslag B-025), se 3.1 och `02_system/ai_abstraktion.md` |
+| AI-leverantörer | OpenAI + Anthropic (modellagnostiskt) | Via eget abstraktionslager i `src/ai/` (B-025), se 3.1 och `02_system/ai_abstraktion.md` |
 | AI-arbetsmiljö | Claude API + Claude Cowork | Utveckling och agentkörning |
 | Versionskontroll | Git + GitHub | Repo: [Artificiellalecta](https://github.com/karltengelin/Artificiellalecta.git). Kopplas in via Cowork-connector. |
 
@@ -166,7 +166,7 @@ Artificiellalecta/
 │
 ├── 02_system/                      ← Systemdokumentation
 │   ├── arkitektur.md               (kommer)
-│   ├── databasschema.md            (kommer)
+│   ├── databasschema.md            ← Tabellstruktur och SQLAlchemy-modeller (B-018, B-022)
 │   ├── ai_abstraktion.md           ← AI-lagret: utvärdering, gränssnitt, roller, nycklar (B-009/B-025)
 │   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
 │   ├── agentkarta.md               ← Översikt över alla agenter

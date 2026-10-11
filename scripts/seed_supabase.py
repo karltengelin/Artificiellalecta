@@ -1,5 +1,6 @@
-"""Seedar Supabase med mockdata från `data/employers.csv` och
-`data/insured_persons.csv`.
+"""Seedar databasen (Lakebase via `DATABASE_URL`, B-018) med mockdata från
+`data/employers.csv` och `data/insured_persons.csv`. Filnamnet är historiskt
+(från tiden med Supabase, B-014).
 
 Stegen:
   1. Skapar tabellerna (om de inte finns) enligt SQLAlchemy-modellerna.

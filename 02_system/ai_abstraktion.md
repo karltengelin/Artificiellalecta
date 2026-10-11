@@ -1,7 +1,7 @@
 # AI-abstraktionslagret
 
-> **Status:** 🟢 Specificerat och implementerat i `src/ai/` (Fas 3). Valet av lösning är föreslaget som **B-025** och inväntar beslut.
-> **Beslut:** B-009 (modellagnostisk arkitektur), B-025 (förslag: egen tunn wrapper)
+> **Status:** 🟢 Specificerat och implementerat i `src/ai/` (Fas 3). Valet av lösning är beslutat i **B-025**.
+> **Beslut:** B-009 (modellagnostisk arkitektur), B-025 (egen tunn wrapper)
 > **Relaterat:** `02_system/agentekosystem.md` (hur team, agenter och skill-poddar använder lagret), MASTER_CONTEXT §3.1
 > **Senast verifierat mot leverantörernas dokumentation:** 2026-10-11
 
@@ -79,7 +79,7 @@ Egna kanoniska typer och en adapter per leverantör ovanpå de officiella SDK:er
 | K11 Litet beroendeavtryck | ❌ stort träd, incident 2026 | ✅ (HTTP) men tredje part | ✅ |
 | K12 Kostnad per team/agent | ✅ med proxy | 🟡 | ✅ |
 
-### 3.3 Rekommendation (förslag B-025)
+### 3.3 Rekommendation och beslut (B-025)
 
 **Egen tunn wrapper ovanpå de officiella SDK:erna**, med Anthropic (Messages API) och OpenAI (Responses API) som första adaptrar.
 
@@ -380,7 +380,7 @@ Anropsloggen är det tekniska lagret (kostnad, prestanda, fel). Den verksamhetsm
 ## 15. Hänvisningar
 
 - **B-009** – modellagnostisk arkitektur (kravet bakom lagret)
-- **B-025** *(förslag)* – val av egen tunn wrapper
+- **B-025** – val av egen tunn wrapper
 - **B-006** – dataminimering (ingen innehållsloggning som standard)
 - **B-016** – spårbarhet i orkestrerade flöden
 - `02_system/agentekosystem.md` – team, skill-poddar, modellval och nyckelhantering på ekosystemnivå

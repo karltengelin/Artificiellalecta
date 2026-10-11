@@ -1,6 +1,6 @@
 # Projekt 8: Företagsöversikt
 
-> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, förslag B-024).
+> Del av programmet "AI-native tjänstepensionsbolag" (MASTER_CONTEXT §4b, B-024).
 
 ## Scope
 

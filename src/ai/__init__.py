@@ -1,4 +1,4 @@
-"""Modellagnostiskt AI-abstraktionslager (B-009, förslag B-025).
+"""Modellagnostiskt AI-abstraktionslager (B-009, B-025).
 
 Agent- och skillkod importerar bara härifrån – aldrig från `ai.providers`
 eller direkt från `anthropic`/`openai`. Specifikation:

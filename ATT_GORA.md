@@ -6,7 +6,7 @@
 
 ---
 
-## 🗂️ Program & delprojekt (B-024, förslag)
+## 🗂️ Program & delprojekt (B-024)
 
 Hela programmet (visionen om ett AI-native tjänstepensionsbolag) är strukturerat i åtta delprojekt, se `MASTER_CONTEXT.md` §4b och mappen `projekt/`. Fasplanen och prioritetslistorna nedan är oförändrade och gäller fortsatt – de hör hemma under specifika delprojekt enligt denna mappning:
 
@@ -24,7 +24,7 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 
 1. **Fas 1 – Försäkringssystemet (premiemotorn):** ITP1-domändokument, tabellerna `policies` + `premium_transactions`, premieberäkning som skill, genererad premiehistorik
 2. **Fas 2 – Kapitalförvaltning (paper trading, B-019):** placeringsriktlinje i `05_styrdokument/`, tabellerna `portfolios`/`portfolio_holdings`/`trades`, marknadsdata via gratis-API, regelstyrd förvaltningslogik med beslutslogg. Simulerad wallet – inget riktigt kapital (B-003)
-3. **Fas 3 – AI-abstraktionslagret (B-009):** blockerar all agentkod – byggs före agenterna. ✅ **2026-10-11** byggt i `src/ai/` (förslag B-025). Föreslagen fortsättning (`02_system/agentekosystem.md` §12, förslag B-026): **Fas 3b** agent-runtime v1 (skill-register, poddar, agentloop, körjournal) före Fas 5, **Fas 3c** delegering och flödesmotor inför flaggskeppsscenariot
+3. **Fas 3 – AI-abstraktionslagret (B-009):** blockerar all agentkod – byggs före agenterna. ✅ **2026-10-11** byggt i `src/ai/` (B-025). Fortsättning enligt B-026 (`02_system/agentekosystem.md` §12): **Fas 3b** agent-runtime v1 (skill-register, poddar, agentloop, körjournal) före Fas 5, **Fas 3c** delegering och flödesmotor inför flaggskeppsscenariot
 4. **Fas 4 – Handläggar-UI (B-020):** FastAPI-backend + tabellvyer + inbyggd Claude (se utredningen under 🔵 nedan). Kundportal byggs senare på samma backend
 5. **Fas 5 – Handläggaragent + `cases`-tabell + första skills**
 
@@ -62,7 +62,7 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 
 ## 🟡 Medium prioritet – domänkartläggning
 
-- [x] **2026-10-11** Specificera AI-abstraktionslagret i `02_system/ai_abstraktion.md` – LiteLLM, OpenRouter och egen wrapper utvärderade; egen tunn wrapper föreslagen (B-025) och byggd i `src/ai/` (Anthropic Messages API + OpenAI Responses API, roller `fast`/`standard`/`deep` med reserv hos andra leverantören, team-nycklar, anropslogg, 81 tester). Agentekosystemet designat i `02_system/agentekosystem.md` (förslag B-026)
+- [x] **2026-10-11** Specificera AI-abstraktionslagret i `02_system/ai_abstraktion.md` – LiteLLM, OpenRouter och egen wrapper utvärderade; egen tunn wrapper beslutad (B-025) och byggd i `src/ai/` (Anthropic Messages API + OpenAI Responses API, roller `fast`/`standard`/`deep` med reserv hos andra leverantören, team-nycklar, anropslogg, 81 tester). Agentekosystemet designat i `02_system/agentekosystem.md` (B-026)
 - [ ] **Operatör: lägg in API-nycklar och kör röktestet** – `ANTHROPIC_API_KEY` och `OPENAI_API_KEY` i `.env`, sedan `pip install -e .[dev]` i huvudrepots `.venv` och `python scripts/smoke_test_ai.py` (några ören). Verifierar båda adaptrarna, verktygsloop och korsleverantörsreserv mot riktiga API:er
 - [ ] **Kartlägga processer** i `01_domän/processer_översikt.md` (kundärenden, premiehantering, rapportering, etc.)
 - [x] **2026-07-12** Skriva ut försäkringsvillkor för ITP1 ålderspension i `01_domän/försäkringsvillkor.md` *(gjordes i Fas 1a)*
@@ -100,7 +100,7 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
   1. **Python-backend (FastAPI)** – tar emot meddelanden från admin-UI:n,
      anropar modellen via AI-lagret (`src/ai/`, B-009 – inte direkt mot
      Claude API) med systemprompt + verktyg, returnerar svar.
-     Sessionshistorik sparas per konversation (troligen i Supabase).
+     Sessionshistorik sparas per konversation (troligen i Lakebase, B-018).
 
   2. **Systemprompt (förkonfigurerad)** – laddas automatiskt vid varje
      konversation. Innehåller: bolagskontext (vad Artificiellalecta är),
@@ -140,8 +140,8 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 ## 💭 Att utreda / oklart
 
 - [ ] **Git branch-strategi** – kör main direkt i tidigt skede, eller feature branches + PR redan från start?
-- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(designförslag: sidoeffektsklasser och godkännandekö, `02_system/agentekosystem.md` §5.3)*
-- [ ] Loggning och spårbarhet – hur sparas agentbeslut? *(designförslag: anropslogg `02_system/ai_abstraktion.md` §10 + körjournal `02_system/agentekosystem.md` §4.3)*
+- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(ramverk beslutat i B-026: sidoeffektsklasser och godkännandekö, `02_system/agentekosystem.md` §5.3 – detaljer när agent-runtime byggs)*
+- [ ] Loggning och spårbarhet – hur sparas agentbeslut? *(ramverk beslutat i B-025/B-026: anropslogg `02_system/ai_abstraktion.md` §10 + körjournal `02_system/agentekosystem.md` §4.3 – lagring i Lakebase avgörs i Fas 3c)*
 - [ ] Backup-strategi för databas och dokument
 
 ---

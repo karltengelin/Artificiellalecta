@@ -21,6 +21,7 @@ Se MASTER_CONTEXT §7 för fullständig översikt.
 - `03_skills/` – Skill-instruktioner (markdown)
 - `04_regulatoriskt/` – Regelverkskällor (lager 1)
 - `05_styrdokument/` – Interna styrdokument (lager 3)
+- `projekt/` – Delprojektens projektplaner (B-024)
 - `src/` – Python-kod
 - `tests/`, `data/`, `scripts/` – Tester, mockdata, engångsskript
 

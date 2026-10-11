@@ -1,7 +1,7 @@
 # Agentekosystem
 
 > **Typ:** Tvärgående arkitekturramverk (MASTER_CONTEXT §4b, B-024) – inte ett delprojekt utan det sätt alla delprojekt bygger agenter på
-> **Status:** 🟡 Designförslag (förslag **B-026**). AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Agent-runtime, skill-poddar och flödesmotor är ännu inte byggda – se byggordningen i §12.
+> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Agent-runtime, skill-poddar och flödesmotor är ännu inte byggda – se byggordningen i §12.
 > **Vidareutvecklar:** B-006, B-007, B-008, B-009, B-011, B-016, B-017
 
 ---
@@ -86,7 +86,7 @@ Varje team har en egen orkestrerare – men det är **teamets ledande agent**, i
 
 **Ingen VD-agent i v1.** Operatören är högsta orkestrerare. Kända tvärgående processer körs av flödesmotorn (§6.2); ad hoc-samarbete sker via delegering mellan ledande agenter (§6.1).
 
-### 3.3 Föreslagen teamindelning
+### 3.3 Teamindelning
 
 De tio befintliga agenterna (`agentkarta.md`) fördelas på sju team:
 
@@ -345,8 +345,8 @@ Byggs efter agent-runtime (§12).
 
 ## 14. Hänvisningar
 
-- **B-026** *(förslag)* – detta ramverk
-- **B-025** *(förslag)* – AI-lagret som ramverket bygger på
+- **B-026** – detta ramverk
+- **B-025** – AI-lagret som ramverket bygger på
 - **B-006/B-007** – behörighetsmodell och delat skillbibliotek (poddar är behörighetsenheten)
 - **B-008** – få agenter (ledande agent som orkestrerare, inga chefsagenter)
 - **B-011** – compliance-agenten tar emot eskaleringar från alla
