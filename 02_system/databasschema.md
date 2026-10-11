@@ -144,16 +144,16 @@
 
 ## 7. Tabell: `policy_benefits` – Försäkringsförmåner
 
-**Domän:** En förmån inom en försäkring. I nuläget finns bara premiebestämd ålderspension (`retirement_dc`), men modellen är byggd för att TGL, familjeskydd m.fl. ska kunna läggas till som ytterligare rader på samma försäkring – med sina egna premier och parametrar, utan schemaändring.
+**Domän:** En förmån inom en försäkring. Endast premiebestämd ITP1 ålderspension (`retirement_dc`) ingår i beslutat produktscope. TGL och familjeskydd är tekniskt förberedda som typer enligt B-022, men får användas som produkter först om scope utökas genom ett nytt uttryckligt beslut och villkoren uppdateras. Förberedelsen innebär att dessa typer då kan läggas till som ytterligare rader med egna premier och parametrar, utan schemaändring.
 
 | Kolumn | Datatyp | Constraints | Beskrivning |
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
 | `policy_id` | `UUID` | NOT NULL, FK → `policies(id)` ON DELETE RESTRICT | Försäkringen |
-| `benefit_type` | `VARCHAR(30)` | NOT NULL, CHECK in (`'retirement_dc'`, `'tgl'`, `'family_protection'`) | Förmånstyp. Nya typer läggs till i CHECK vid behov |
+| `benefit_type` | `VARCHAR(30)` | NOT NULL, CHECK in (`'retirement_dc'`, `'tgl'`, `'family_protection'`) | Tekniskt tillåtna typer; endast `retirement_dc` ingår i beslutat produktscope |
 | `start_date` | `DATE` | NOT NULL | Förmånens ikraftträdande |
 | `end_date` | `DATE` | NULL | Förmånens upphörande, NULL = löpande |
-| `parameters` | `JSONB` | NULL | Förmånsspecifika parametrar (t.ex. TGL-belopp, förmånstagare) – olika per typ, därav JSONB |
+| `parameters` | `JSONB` | NULL | Förmånsspecifika parametrar; stöd för andra förmånstyper är en teknisk framtidsförberedelse |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
 
 **Integritet:** Unikt index på `(policy_id, benefit_type)` där `end_date IS NULL` – max en pågående förmån av varje typ per försäkring. Historiska (avslutade) förmåner av samma typ tillåts.
@@ -164,7 +164,7 @@
 
 ## 8. Tabell: `premium_transactions` – Premietransaktioner
 
-**Domän:** En rad per **förmån**, kalendermånad och transaktionstyp (B-022: premien hör till förmånen, inte försäkringen – TGL-premier ska inte blandas med pensionspremier). Ordinarie ålderspensionspremie beräknas enligt `01_domän/ITP1_regelverk.md` §2/§8. Tabellen är **spårbarhetens kärna**: varje krona i pensionskapitalet ska kunna följas hit och räknas om ur sitt underlag.
+**Domän:** En rad per **förmån**, kalendermånad och transaktionstyp (B-022: premien hör till förmånen, inte försäkringen). I nuvarande produktscope hanteras bara ålderspensionspremier. Om andra förmånstyper senare godkänns genom ett nytt scopebeslut ska deras premier hållas åtskilda från pensionspremier. Ordinarie ålderspensionspremie beräknas enligt `01_domän/ITP1_regelverk.md` §2/§8. Tabellen är **spårbarhetens kärna**: varje krona i pensionskapitalet ska kunna följas hit och räknas om ur sitt underlag.
 
 | Kolumn | Datatyp | Constraints | Beskrivning |
 |--------|---------|-------------|-------------|
