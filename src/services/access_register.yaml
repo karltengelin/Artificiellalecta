@@ -1,0 +1,26 @@
+# Åtkomstregister för tjänstelagret (B-028). Specifikation: 02_system/tjänstelager.md §4.
+#
+# En rad per operation: vad en AGENT får göra med den.
+#   AGENT       – agenten får utföra operationen direkt (om den finns i agentens skill-poddar)
+#   APPROVAL    – agenten får föreslå; en handläggare måste godkänna innan den utförs
+#   HUMAN_ONLY  – endast handläggare; operationen syns inte för agenter
+#
+# Handläggare får alltid utföra alla operationer (B-017).
+#
+# Golv som registret inte kan gå förbi:
+#   - operation som saknas här                           -> HUMAN_ONLY
+#   - external (påverkar omvärlden)                      -> minst APPROVAL
+#   - write/external vars produktregel inte är godkänd   -> HUMAN_ONLY
+#
+# Ändra vad agenter får göra: ändra nivån på raden, committa och merga efter granskning.
+# En rad för en operation som inte finns ger fel vid start (fångar stavfel).
+
+operations: {}
+  # Planerade operationer (Fas 1f) – raderna läggs till när operationerna byggs:
+  # get_insured_overview: AGENT              # T2, läsning
+  # get_premium_history: AGENT               # T2, läsning
+  # calculate_premium_preview: AGENT         # T2, beräkning (PR-ITP1-001)
+  # register_salary_change: APPROVAL         # T3, skrivning
+  # set_policy_paid_up: APPROVAL             # T3, skrivning
+  # terminate_policy: HUMAN_ONLY             # T3, skrivning
+  # correct_premium_transaction: HUMAN_ONLY  # T3, skrivning

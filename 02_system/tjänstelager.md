@@ -1,6 +1,6 @@
 # Tjänstelagret
 
-> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f. Kod: `src/services/`, register: `src/services/access_register.yaml`.
+> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1 klar** (grunden). Kod: `src/services/`, register: `src/services/access_register.yaml`.
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (backend för två klienter), B-022 (försäkringsmodellen), B-026 (agentekosystem)
 > **Relaterat:** `02_system/agentekosystem.md` (harness, skill-poddar), `01_domän/produktregler/` (reglerna operationerna implementerar), `02_system/databasschema.md`
 
@@ -188,7 +188,7 @@ Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelop
 
 ## 10. Öppna frågor
 
-- **Testdatabas:** modellerna använder JSONB (Postgres). Testas tjänstelagret mot en lokal Postgres, en separat Lakebase-gren eller ett minnesbaserat repositorium? Avgörs i T1.
+- **Testdatabas:** modellerna använder JSONB (Postgres). Testas tjänstelagret mot en lokal Postgres, en separat Lakebase-gren eller ett minnesbaserat repositorium? Avgörs i T2, när första operationen läser databasen (T1 behövde ingen databas).
 - **Fyraögonprincip** (två olika människor) är inte möjlig med en operatör – framtida option per operation.
 - **Hur mycket indata som loggas** för PII-operationer – fullt, maskerat eller som referens.
 

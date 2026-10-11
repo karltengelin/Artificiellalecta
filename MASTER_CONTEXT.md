@@ -225,7 +225,7 @@ Artificiellalecta/
 │   │   └── development/            ← (= 03_skills/utveckling/)
 │   ├── models/                     ← SQLAlchemy-modeller
 │   ├── ai/                         ← Modellagnostiskt abstraktionslager (ai_config.yaml, providers/)
-│   ├── services/                   ← Tjänstelagret (kommer, Fas 1f)
+│   ├── services/                   ← Tjänstelagret (B-028): kontrakt, access_register.yaml, godkännande, händelselogg
 │   └── utils/                      ← Gemensam kod
 │
 ├── tests/                          ← Tester
