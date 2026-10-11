@@ -8,6 +8,31 @@
 
 ## Beslut
 
+### B-023 | 2026-10-11 | Parallellt arbete mellan Claude Code och Codex + git-skrivningar tillåtna för agenter
+
+**Beslut:**
+1. En gemensam regelfil `AGENTS.md` införs för parallellt arbete mellan flera AI-verktyg (Claude Code/Cowork och Codex) i samma repo. Filen innehåller Codex-specifika arbetsregler (motsvarande `CLAUDE.md`) samt ett gemensamt avsnitt (§4) med regler för: branch per uppgift, uppdelning av arbete efter beroenden (inte bara filer/mappar), hantering av delade dokument (MASTER_CONTEXT/BESLUTSLOGG/ATT_GORA), synk mot main innan beroende uppgifter, databaskoordinering mot Lakebase, och integration till main. `CLAUDE.md` hänvisar till `AGENTS.md` i sin läslista (§1).
+2. Regeln "inga git-skrivningar från Cowork-sandboxen" tas bort. Claude Code och Codex får köra `add`/`commit`/`push` på sin egen arbetsbranch utan att vänta på godkännande i förväg, och mergea in i `main` själva – men bara efter ett explicit muntligt OK från operatören i chatten för den specifika mergen. Force-push och historieomskrivning kräver fortfarande explicit instruktion per åtgärd.
+
+**Motivering:**
+- Karl vill jobba parallellt med Claude Code och Codex utan att de krockar, och utan att manuellt klippa-och-klistra git-kommandon för varje ändring – det bromsar ett projekt där målet är att vara snabbfotad
+- Den gamla git-skrivningsregeln byggde på ett specifikt tekniskt problem i Cowork-sandboxens Linux-mount (stale lockfiler). Det är inte visat att samma begränsning gäller i andra miljöer, och ett verifieringsförsök i den aktuella Claude Code-miljön (commit + push + merge + push till main) visade inga problem
+- Sandbox-scope (B-003) gör risken av en felaktig commit/merge låg jämfört med ett produktionssystem med verkliga konsekvenser
+- Mänsklig kontroll bevaras där det är viktigast: main-merge kräver fortsatt explicit muntligt godkännande, destruktiva git-operationer kräver fortsatt explicit instruktion per åtgärd
+
+**Övervägda alternativ:**
+
+*Full autonomi även till main* – agenten hade mergat utan godkännande alls. Snabbast, men ingen mänsklig kontrollpunkt innan en ändring når main. Avvisat.
+
+*Fortsatt manuell klipp-och-klistra för alla git-kommandon* – säkrast, men för långsamt med två parallella AI-verktyg.
+
+**Konsekvenser:**
+- `CLAUDE.md` och `AGENTS.md` uppdaterade och mergade till main (commit `ecefc17`)
+- Codex-worktreen måste själv hämta in senaste main för att få de nya reglerna (se instruktion given till Codex samma dag)
+- Om stale lockfiler eller korrupt index trots allt dyker upp i en specifik miljö: agenten stoppar omedelbart och flaggar, återställer inte den gamla regeln på eget bevåg
+
+---
+
 ### B-022 | 2026-07-12 | Försäkringsmodell med förmåner och tillståndsperioder
 
 **Beslut:** Försäkringsdatamodellen struktureras i tre nivåer med en parallell tidslinje:
