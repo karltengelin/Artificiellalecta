@@ -1,5 +1,7 @@
 """Tester för åtkomstregistret, golven och produktregelstatus (tjänstelager.md §4, B-028)."""
 
+from datetime import date
+
 import pytest
 from pydantic import BaseModel
 
@@ -149,10 +151,32 @@ class TestProduktregler:
         )
         (tmp_path / "PR-X-001-a.md").write_text("> **Status:** Specificerad tillämpning.\n", encoding="utf-8")
         (tmp_path / "PR-X-002-b.md").write_text("> **Status:** Ersatt av PR-X-001.\n", encoding="utf-8")
-        catalog = ProductRuleCatalog(tmp_path)
+        catalog = ProductRuleCatalog(tmp_path, today=date(2026, 11, 1))
         assert catalog.adoption_decision == "B-031"
         assert catalog.status("PR-X-001") == RuleStatus.GODKAND
         assert catalog.status("PR-X-002") == RuleStatus.ERSATT
+
+    def test_infort_paket_med_senare_giltighetsdag_ar_kommande(self, tmp_path):
+        (tmp_path / "README.md").write_text(
+            "> **Paket:** PR-X v1.0 | **Införandebeslut:** B-031 | **Gäller från:** 2026-11-01\n", encoding="utf-8"
+        )
+        (tmp_path / "PR-X-001-a.md").write_text(
+            "> **Filversion:** 1.0 | **Paket:** PR-X v1.0\n> **Status:** Specificerad.\n", encoding="utf-8"
+        )
+        catalog = ProductRuleCatalog(tmp_path, today=date(2026, 10, 31))
+        assert catalog.status("PR-X-001") == RuleStatus.KOMMANDE
+        d = decide(OperationKind.WRITE, "APPROVAL", ("PR-X-001",), catalog)
+        assert d.effective == AgentAccess.HUMAN_ONLY
+        assert any("PR-X-001 (kommande, gäller från 2026-11-01)" in r for r in d.reasons)
+
+    def test_regelstatus_for_handelseloggen(self, tmp_path):
+        (tmp_path / "README.md").write_text("> **Paket:** PR-X v1.0 | **Dokumentdatum:** 2026-10-11\n", encoding="utf-8")
+        (tmp_path / "PR-X-001-a.md").write_text(
+            "> **Filversion:** 1.0 | **Paket:** PR-X v1.0\n> **Status:** Specificerad.\n", encoding="utf-8"
+        )
+        catalog = ProductRuleCatalog(tmp_path)
+        assert catalog.package == "PR-X v1.0"
+        assert catalog.describe(["PR-X-001"]) == "Regelstatus: PR-X-001 v1.0 specificerad; paket PR-X v1.0 ej infört"
 
     def test_specificerad_regel_stanger_skrivning_for_agenter(self, tmp_path):
         (tmp_path / "PR-X-001-a.md").write_text("> **Status:** Specificerad.\n", encoding="utf-8")

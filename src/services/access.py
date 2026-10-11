@@ -87,9 +87,9 @@ def effective_access(
             reasons.append("skrivande operation utan produktregel")
         else:
             not_approved = [
-                f"{rule_id} ({status.value})"
+                f"{rule_id} ({rules.label(rule_id)})"
                 for rule_id in op.rules
-                if (status := rules.status(rule_id)) != RuleStatus.GODKAND
+                if rules.status(rule_id) != RuleStatus.GODKAND
             ]
             if not_approved:
                 effective = strictest(effective, AgentAccess.HUMAN_ONLY)

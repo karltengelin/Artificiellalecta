@@ -240,7 +240,8 @@ Denna hänvisningsuppdatering ändrar inget schema eller någon kod.
 **Index:** `(operation, occurred_at)`, `(actor_id, occurred_at)`, `run_id`.
 
 **Designnoter:**
-- Skrivs i **samma transaktion** som operationen – en ändring utan loggrad kan inte uppstå
+- Skrivs i **samma transaktion** som operationen – en ändring utan loggrad kan inte uppstå (transaktionsgränsen: `tjänstelager.md` §6.1)
+- För utförda ändringar innehåller `detail` regelstatus och filversion vid verkställigheten
 - Läsresultat loggas inte (kan vara stora och fulla av personuppgifter) – bara vem som läste vad
 - Data här kan inte genereras fram igen – omfattas av backup (`scripts/backup_database.py`)
 
@@ -265,6 +266,9 @@ Denna hänvisningsuppdatering ändrar inget schema eller någon kod.
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | `created_at` = när förslaget lades |
 
 **Index:** `status`.
+
+**Designnoter:**
+- Ett ärende avgörs med en villkorlig uppdatering (`… WHERE id = … AND status = 'pending'`) i samma transaktion som ändringen och loggraden – av två samtidiga beslut kan bara ett lyckas, och fallerar verkställigheten är ärendet fortfarande `pending` (`tjänstelager.md` §6.1). Ingen schemaändring behövdes för detta
 
 ---
 

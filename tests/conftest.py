@@ -3,6 +3,12 @@
 `insurance_db` – en testdatabas i minnet (SQLite) med samma modeller som Lakebase
 (modellerna är portabla, se 02_system/databasschema.md) och ett litet bestånd:
 en försäkrad med en försäkring som gått från premiebetalande till fribrev.
+
+`insurance_file_db` – samma bestånd i en SQLite-fil där varje session får en egen
+anslutning och varje transaktion börjar med BEGIN IMMEDIATE. Används för tester
+med samtidiga anrop: databasen serialiserar transaktionerna i stället för att
+alla trådar delar en anslutning. Bevisar inte Postgres radlås – se
+tests/test_services_postgres.py.
 """
 
 from datetime import date
@@ -10,7 +16,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.pool import StaticPool
 
 from models import (
@@ -26,14 +32,7 @@ from models import (
 from services.db import session_factory_for
 
 
-@pytest.fixture
-def insurance_db():
-    engine = create_engine(
-        "sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False}
-    )
-    Base.metadata.create_all(engine)
-    session_factory = session_factory_for(engine)
-
+def seed_insurance(session_factory) -> SimpleNamespace:
     with session_factory() as s:
         s.add_all(
             [
@@ -95,7 +94,39 @@ def insurance_db():
                     paid_date=period if status == "paid" else None,
                 )
             )
-        ids = SimpleNamespace(person=person.id, policy=policy.id, benefit=benefit.id)
+        return SimpleNamespace(person=person.id, policy=policy.id, benefit=benefit.id, employer=employer.id)
 
+
+@pytest.fixture
+def insurance_db():
+    engine = create_engine(
+        "sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False}
+    )
+    Base.metadata.create_all(engine)
+    session_factory = session_factory_for(engine)
+    ids = seed_insurance(session_factory)
+    yield SimpleNamespace(engine=engine, session_factory=session_factory, ids=ids)
+    engine.dispose()
+
+
+@pytest.fixture
+def insurance_file_db(tmp_path):
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'insurance.db'}", connect_args={"check_same_thread": False, "timeout": 15}
+    )
+
+    # pysqlite: låt SQLAlchemy styra transaktionerna och ta skrivlåset direkt vid start,
+    # så att samtidiga transaktioner köas i stället för att fastna i ett låsläge.
+    @event.listens_for(engine, "connect")
+    def _autocommit_driver(dbapi_connection, _record):
+        dbapi_connection.isolation_level = None
+
+    @event.listens_for(engine, "begin")
+    def _begin_immediate(connection):
+        connection.exec_driver_sql("BEGIN IMMEDIATE")
+
+    Base.metadata.create_all(engine)
+    session_factory = session_factory_for(engine)
+    ids = seed_insurance(session_factory)
     yield SimpleNamespace(engine=engine, session_factory=session_factory, ids=ids)
     engine.dispose()

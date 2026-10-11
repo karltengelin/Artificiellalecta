@@ -180,6 +180,7 @@ Artificiellalecta/
 │   ├── ai_abstraktion.md           ← AI-lagret: utvärdering, gränssnitt, roller, nycklar (B-009/B-025)
 │   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
 │   ├── tjänstelager.md             ← Operationer för handläggare, agenter och skript (B-028)
+│   ├── tjänstelager_operationer.md ← Genererad förteckning: operationer, agentnivå och skäl (T4)
 │   ├── agentkarta.md               ← Översikt över alla agenter
 │   ├── agenter/                    ← En MD-fil per agent (10 st)
 │   └── Agentsystem/                ← Orkestrerade flöden, en MD-fil per flöde (B-016)

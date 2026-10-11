@@ -3,12 +3,14 @@
 Handläggar-UI:t, agenter (via harness) och skript anropar `execute()`. Här
 kontrolleras aktören mot åtkomstregistret, förslag från agenter läggs i
 godkännandekön, och varje ändring loggas i händelseloggen.
+
+Transaktionsgräns (services.transaction): varje anrop är en transaktion.
+Ändring + loggrad, förslag + loggrad, godkännandets status + ändring +
+loggrad, avslag + loggrad – sparas tillsammans eller inte alls.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any
@@ -21,12 +23,12 @@ from services.approvals import (
     ApprovalStore,
     DatabaseApprovalStore,
     MemoryApprovalStore,
-    decided,
 )
 from services.contract import (
     AgentAccess,
     Operation,
     OperationContext,
+    OperationKind,
     OperationRegistry,
     default_registry,
 )
@@ -35,11 +37,11 @@ from services.errors import (
     ApprovalError,
     InvalidInputError,
     MissingReasonError,
+    ServiceConfigError,
 )
 from services.events import DatabaseEventLog, EventLog, OperationEvent, default_event_log
 from services.rules import ProductRuleCatalog
-
-SessionFactory = Callable[[], AbstractContextManager[Any]]  # se services.db
+from services.transaction import SessionFactory, guard_operation, transaction
 
 
 class ResultStatus(StrEnum):
@@ -59,6 +61,10 @@ class OperationResult:
         return self.status == ResultStatus.PENDING_APPROVAL
 
 
+class _ValidationRun(Exception):
+    """Avbryter provkörningen av ett förslag så att den rullas tillbaka."""
+
+
 class ServiceLayer:
     def __init__(
         self,
@@ -70,7 +76,7 @@ class ServiceLayer:
         session_factory: SessionFactory | None = None,
     ) -> None:
         """
-        session_factory: öppnar en databastransaktion per operation (services.db). Med den
+        session_factory: öppnar en databastransaktion per anrop (services.db). Med den
         hamnar händelselogg och godkännandekö i databasen om inget annat anges; utan den
         körs operationerna utan session och loggen hamnar i fil/minne.
         """
@@ -82,6 +88,10 @@ class ServiceLayer:
             events = DatabaseEventLog(session_factory) if session_factory else default_event_log()
         if approvals is None:
             approvals = DatabaseApprovalStore(session_factory) if session_factory else MemoryApprovalStore()
+        if session_factory is None and isinstance(events, DatabaseEventLog):
+            raise ServiceConfigError("Händelselogg i databasen kräver session_factory (gemensam transaktion)")
+        if session_factory is None and isinstance(approvals, DatabaseApprovalStore):
+            raise ServiceConfigError("Godkännandekö i databasen kräver session_factory (gemensam transaktion)")
         self.events = events
         self.approvals = approvals
         self._session_factory = session_factory
@@ -113,7 +123,8 @@ class ServiceLayer:
             decision = effective_access(op, self.register, self.rules)
             if decision.effective == AgentAccess.HUMAN_ONLY:
                 detail = "; ".join(decision.reasons) or "HUMAN_ONLY i registret"
-                self._record(op, ctx, validated, outcome="denied", detail=detail)
+                with transaction(self._session_factory) as tx:
+                    self._record(op, ctx, validated, outcome="denied", detail=detail, session=tx.session)
                 raise AccessDeniedError(
                     f"Agenten '{ctx.actor.id}' får inte utföra '{op.name}' – endast handläggare"
                     + (f" ({'; '.join(decision.reasons)})" if decision.reasons else ""),
@@ -122,56 +133,106 @@ class ServiceLayer:
                     reasons=decision.reasons,
                 )
             if decision.effective == AgentAccess.APPROVAL:
-                request = ApprovalRequest(
-                    operation=op.name,
-                    input=validated.model_dump(mode="json"),
-                    reason=ctx.reason,
-                    proposed_by=ctx.actor.id,
-                    proposed_by_team=ctx.actor.team,
-                    run_id=ctx.run_id,
-                    case_id=ctx.case_id,
-                )
-                self.approvals.add(request)
-                self._record(op, ctx, validated, outcome="proposed", approval_id=request.id)
-                return OperationResult(
-                    ResultStatus.PENDING_APPROVAL, op.name, approval_id=request.id
-                )
+                return self._propose(op, ctx, validated)
 
-        output = self._run(op, ctx, validated)
+        with transaction(self._session_factory) as tx:
+            output = self._call(op, ctx, validated, tx.session)
+            if op.kind.changes_state or op.pii:
+                self._record(
+                    op, ctx, validated, outcome="executed", output=output,
+                    detail=self._rule_detail(op), session=tx.session,
+                )
         return OperationResult(ResultStatus.DONE, op.name, output=output)
 
     def approve(
         self, approval_id: str, ctx: OperationContext, note: str | None = None
     ) -> OperationResult:
-        """En handläggare godkänner ett agentförslag – operationen körs mot aktuellt läge."""
-        request = self._pending_request(approval_id, ctx)
-        op = self.registry.get(request.operation)
-        validated = self._validate_input(op, request.input)
-        run_ctx = replace(
-            ctx,
-            reason=request.reason,
-            run_id=request.run_id,
-            case_id=request.case_id or ctx.case_id,
-        )
-        output = self._run(op, run_ctx, validated, proposed_by=request.proposed_by, approval_id=request.id)
-        self.approvals.update(decided(request, "approved", ctx.actor.id, note))
+        """En handläggare godkänner ett agentförslag – operationen körs mot aktuellt läge.
+
+        Beslutet, ändringen och loggraden sparas i en transaktion. Fallerar
+        operationen (t.ex. för att läget har ändrats) rullas allt tillbaka och
+        ärendet är fortfarande `pending` – det kan avslås eller godkännas på nytt.
+        """
+        self._require_human(ctx)
+        with transaction(self._session_factory) as tx:
+            request = self.approvals.decide(approval_id, "approved", ctx.actor.id, note, tx)
+            op = self.registry.get(request.operation)
+            validated = self._validate_input(op, request.input)
+            run_ctx = replace(
+                ctx,
+                reason=request.reason,
+                run_id=request.run_id,
+                case_id=request.case_id or ctx.case_id,
+            )
+            output = self._call(op, run_ctx, validated, tx.session)
+            self._record(
+                op, run_ctx, validated, outcome="executed", output=output,
+                proposed_by=request.proposed_by, approval_id=request.id,
+                detail=self._rule_detail(op), session=tx.session,
+            )
         return OperationResult(ResultStatus.DONE, op.name, output=output, approval_id=request.id)
 
     def reject(self, approval_id: str, ctx: OperationContext, note: str | None = None) -> None:
-        request = self._pending_request(approval_id, ctx)
-        op = self.registry.get(request.operation)
-        self.approvals.update(decided(request, "rejected", ctx.actor.id, note))
-        self._record(
-            op,
-            replace(ctx, reason=request.reason, run_id=request.run_id),
-            self._validate_input(op, request.input),
-            outcome="rejected",
-            proposed_by=request.proposed_by,
-            approval_id=request.id,
-            detail=note,
-        )
+        """En handläggare avslår ett agentförslag. Beslut och loggrad sparas tillsammans."""
+        self._require_human(ctx)
+        with transaction(self._session_factory) as tx:
+            request = self.approvals.decide(approval_id, "rejected", ctx.actor.id, note, tx)
+            op = self.registry.get(request.operation)
+            self._record(
+                op,
+                replace(ctx, reason=request.reason, run_id=request.run_id, case_id=request.case_id or ctx.case_id),
+                request.input,
+                outcome="rejected",
+                proposed_by=request.proposed_by,
+                approval_id=request.id,
+                detail=note,
+                session=tx.session,
+            )
 
     # --- interna hjälpare ---------------------------------------------------
+
+    def _propose(self, op: Operation, ctx: OperationContext, data: BaseModel) -> OperationResult:
+        """Lägger ett agentförslag i kön – efter prövning mot aktuellt läge (§6 steg 2)."""
+        self._validate_against_state(op, ctx, data)
+        request = ApprovalRequest(
+            operation=op.name,
+            input=data.model_dump(mode="json"),
+            reason=ctx.reason,
+            proposed_by=ctx.actor.id,
+            proposed_by_team=ctx.actor.team,
+            run_id=ctx.run_id,
+            case_id=ctx.case_id,
+        )
+        with transaction(self._session_factory) as tx:
+            self.approvals.add(request, tx)
+            self._record(op, ctx, data, outcome="proposed", approval_id=request.id, session=tx.session)
+        return OperationResult(ResultStatus.PENDING_APPROVAL, op.name, approval_id=request.id)
+
+    def _validate_against_state(self, op: Operation, ctx: OperationContext, data: BaseModel) -> None:
+        """Provkör en write-operation mot databasen och rullar tillbaka.
+
+        Ett förslag som inte går att genomföra nu (saknat underlag, fel läge,
+        dubblett) avvisas direkt i stället för att hamna i kön. `external`
+        provkörs aldrig – den påverkar omvärlden. Vid godkännande prövas
+        förslaget igen mot det läge som då gäller.
+        """
+        if op.kind != OperationKind.WRITE or self._session_factory is None:
+            return
+        try:
+            with transaction(self._session_factory) as tx:
+                self._call(op, ctx, data, tx.session)
+                raise _ValidationRun
+        except _ValidationRun:
+            pass
+
+    def _call(self, op: Operation, ctx: OperationContext, data: BaseModel, session: Any) -> BaseModel | None:
+        with guard_operation(session, op.name):
+            output = op.func(replace(ctx, session=session), data)
+        if op.output_model is not None and not isinstance(output, op.output_model):
+            raise TypeError(
+                f"'{op.name}' returnerade {type(output).__name__}, väntade {op.output_model.__name__}"
+            )
+        return output
 
     @staticmethod
     def _validate_input(op: Operation, data: BaseModel | dict[str, Any]) -> BaseModel:
@@ -183,44 +244,22 @@ class ServiceLayer:
         except ValidationError as exc:
             raise InvalidInputError(f"Ogiltig indata till '{op.name}': {exc}") from exc
 
-    def _pending_request(self, approval_id: str, ctx: OperationContext) -> ApprovalRequest:
+    @staticmethod
+    def _require_human(ctx: OperationContext) -> None:
         if ctx.actor.type != "human":
             raise ApprovalError("Bara en människa kan godkänna eller avslå ett agentförslag")
-        request = self.approvals.get(approval_id)
-        if request is None:
-            raise ApprovalError(f"Okänt godkännandeärende: {approval_id}")
-        if request.status != "pending":
-            raise ApprovalError(f"Ärendet {approval_id} är redan {request.status}")
-        return request
 
-    def _run(
-        self,
-        op: Operation,
-        ctx: OperationContext,
-        data: BaseModel,
-        proposed_by: str | None = None,
-        approval_id: str | None = None,
-    ) -> BaseModel | None:
-        scope = self._session_factory() if self._session_factory else nullcontext(None)
-        with scope as session:
-            output = op.func(replace(ctx, session=session), data)
-            if op.output_model is not None and not isinstance(output, op.output_model):
-                raise TypeError(
-                    f"'{op.name}' returnerade {type(output).__name__}, väntade {op.output_model.__name__}"
-                )
-            if op.kind.changes_state or op.pii:
-                # I samma transaktion som operationen när loggen ligger i databasen (T3)
-                self._record(
-                    op, ctx, data, outcome="executed", output=output,
-                    proposed_by=proposed_by, approval_id=approval_id, session=session,
-                )
-        return output
+    def _rule_detail(self, op: Operation) -> str | None:
+        """Regelstatus vid verkställigheten – vilken regelversion ändringen vilar på."""
+        if not op.kind.changes_state or not op.rules:
+            return None
+        return self.rules.describe(op.rules)
 
     def _record(
         self,
         op: Operation,
         ctx: OperationContext,
-        data: BaseModel,
+        data: BaseModel | dict[str, Any],
         *,
         outcome: str,
         output: BaseModel | None = None,
@@ -244,7 +283,7 @@ class ServiceLayer:
                 reason=ctx.reason,
                 rules=list(op.rules),
                 pii=op.pii,
-                input=data.model_dump(mode="json"),
+                input=data.model_dump(mode="json") if isinstance(data, BaseModel) else data,
                 # Läsresultat loggas inte (kan vara stora och fulla av personuppgifter)
                 output=output.model_dump(mode="json") if output is not None and op.kind.changes_state else None,
                 detail=detail,

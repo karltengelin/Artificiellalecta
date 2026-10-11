@@ -1,6 +1,6 @@
 # Tjänstelagret
 
-> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1 och T2 klara**, T3 påbörjad (händelselogg och godkännandekö i databasen). Kod: `src/services/`, register: `src/services/access_register.yaml`.
+> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1, T2 och T4 klara**, T3 pågår (händelselogg, godkännandekö och transaktionsgräns klara; skrivoperationerna återstår). Kod: `src/services/`, register: `src/services/access_register.yaml`, förteckning: [tjänstelager_operationer.md](tjänstelager_operationer.md).
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (backend för två klienter), B-022 (försäkringsmodellen), B-026 (agentekosystem)
 > **Relaterat:** `02_system/agentekosystem.md` (harness, skill-poddar), `01_domän/produktregler/` (reglerna operationerna implementerar), `02_system/databasschema.md`
 
@@ -105,7 +105,9 @@ Varje operation har en av tre nivåer:
 | Operationen är `external` (påverkar omvärlden, §3.5) | Minst `APPROVAL` |
 | Operationen är `write`/`external` och någon av dess produktregler har inte granskningsstatus `godkänd` (eller saknar regel) | `HUMAN_ONLY` – agenter rör bara det som vilar på en godkänd produktregel |
 
-Registret kan alltså öppna för agenter, men aldrig förbi ett golv. Statusen läses ur `01_domän/produktregler/` (`services/rules.py`). Regelpaketet PR-ITP1 v1.0 antas **som helhet** genom ett samlat införandebeslut; till dess har varje regel status *specificerad* och räknas som ej godkänd. Paketet räknas som infört när paketets `README.md` har raden `**Införandebeslut:** B-nnn` (överenskommelse med delprojekt 4). En regel märkt *ersatt* är alltid ej godkänd, och det äldre formatet `**Granskningsstatus:** utkast/godkänd/ersatt` stöds fortfarande. Allt som inte går att läsa räknas som ej godkänt. En registerrad för en operation som inte finns ger fel vid start, så att stavfel inte tyst lämnar en operation stängd.
+Registret kan alltså öppna för agenter, men aldrig förbi ett golv. Statusen läses ur `01_domän/produktregler/` (`services/rules.py`). Regelpaketet PR-ITP1 v1.0 antas **som helhet** genom ett samlat införandebeslut; till dess har varje regel status *specificerad* och räknas som ej godkänd. Paketet räknas som infört när paketets `README.md` har raden `**Införandebeslut:** B-nnn` (överenskommelse med delprojekt 4). Står där också `**Gäller från:** ÅÅÅÅ-MM-DD` och dagen inte har kommit är reglerna *kommande* och räknas fortfarande som ej godkända – agenter rör inte framtida produktregler. En regel märkt *ersatt* är alltid ej godkänd, och det äldre formatet `**Granskningsstatus:** utkast/godkänd/ersatt` stöds fortfarande. Allt som inte går att läsa räknas som ej godkänt. En registerrad för en operation som inte finns ger fel vid start, så att stavfel inte tyst lämnar en operation stängd.
+
+Tre saker hålls isär: **godkänd specifikation** (regelstatus och införandebeslut), **giltighet för en händelse** (`Gäller från`, och för beräkningar periodens parametrar – t.ex. premiemånadens inkomstbasbelopp) och **teknisk implementation** (vilka operationer som anger regeln, se förteckningen). Ett B-nummer i README bevisar bara det första. Varje utförd ändring loggar därför regelstatus och filversion vid verkställigheten i händelseloggens `detail`, t.ex. *Regelstatus: PR-ITP1-014 v1.0 specificerad; paket PR-ITP1 v1.0 ej infört*. Handläggare kan utföra operationerna före införandet (B-017); loggen visar då att regeln inte var införd.
 
 **Regler:**
 
@@ -115,7 +117,7 @@ Registret kan alltså öppna för agenter, men aldrig förbi ett golv. Statusen 
    - **Tjänstelagret** kontrollerar aktören vid varje anrop. En agent som anropar en `HUMAN_ONLY`-operation får ett fel – oavsett hur anropet kom dit. Det här är det egentliga skyddet.
    - **Harness** visar aldrig `HUMAN_ONLY`-operationer som verktyg, så agenten försöker inte ens.
 4. **Bara en människa kan godkänna** ett agentförslag, och godkännandet loggas med både förslagsställare och godkännare.
-5. **Registret är versionerat.** Varje ändring syns i en diff och godkänns vid merge. En genererad förteckning (§9, T4) visar för varje operation registrets nivå, effektiv nivå och varför – t.ex. *APPROVAL i registret men HUMAN_ONLY eftersom PR-ITP1-002 är utkast*.
+5. **Registret är versionerat.** Varje ändring syns i en diff och godkänns vid merge. Den genererade förteckningen **[tjänstelager_operationer.md](tjänstelager_operationer.md)** (T4) visar för varje operation typ, produktregler och deras status, PII, registrets nivå, effektiv nivå och varför – t.ex. *APPROVAL i registret men HUMAN_ONLY eftersom PR-ITP1-014 är specificerad*. Den skapas med `python scripts/list_operations.py` (utan databas och utan modellanrop) och hämtar effektiv nivå från `ServiceLayer.decision()`; ett test fallerar om filen inte stämmer med koden, registret och regelstatusen.
 
 ---
 
@@ -137,12 +139,30 @@ Varje anrop bär ett `OperationContext`:
 ## 6. Godkännande
 
 1. En agent anropar en `APPROVAL`-operation.
-2. Tjänstelagret validerar indata och regler – förslaget ska vara giltigt redan när det läggs.
+2. Tjänstelagret validerar indata och regler – förslaget ska vara giltigt redan när det läggs. En `write`-operation **provkörs** mot aktuellt databasläge och rullas tillbaka; ett förslag som inte går att genomföra (saknat underlag, fel läge, dubblett) avvisas direkt i stället för att hamna i kön. `external` provkörs aldrig.
 3. Ett **godkännandeärende** sparas (operation, indata, motivering, föreslagen av, `run_id`) med status `pending`, och agenten får svaret *väntar på godkännande* med ärende-id.
-4. Handläggaren ser kön (CLI i v1, handläggar-UI:t från Fas 4), granskar och godkänner eller avslår.
+4. Handläggaren ser kön (CLI i v1, handläggar-UI:t från Fas 4), granskar och godkänner eller avslår. Bara en människa (`human`) kan godkänna eller avslå – inte en agent och inte ett skript.
 5. Vid godkännande körs operationen **på nytt mot aktuellt läge** (data kan ha ändrats), utförd av handläggaren, med agenten angiven som förslagsställare.
 
 Kön ligger i tjänstelagret – inte i harness – så att människor ser alla förslag på ett ställe oavsett vilken agent eller vilket flöde som lade dem. Det justerar B-026, där harness skapade godkännandeärenden; harness tar nu bara emot svaret *väntar på godkännande*.
+
+### 6.1 Transaktionsgräns
+
+Varje anrop till tjänstelagret är **en databastransaktion** (`services/transaction.py`). Det som hör ihop sparas tillsammans eller inte alls:
+
+| Anrop | Sparas i samma transaktion |
+|-------|----------------------------|
+| Utförd operation | Affärsändringen + loggraden `executed` |
+| Agentförslag | Godkännandeärendet + loggraden `proposed` |
+| Godkännande | Ärendets status `approved` + affärsändringen + loggraden `executed` (med förslagsställare och godkännande-id) |
+| Avslag | Ärendets status `rejected` + loggraden `rejected` |
+| Nekat agentförsök | Loggraden `denied` |
+
+Fallerar något steg – operationen, loggraden eller själva commit – rullas allt tillbaka. Ett godkännande som fallerar lämnar alltså ärendet som `pending`; det kan avslås eller godkännas på nytt, och ändringen kan aldrig ha sparats utan sin loggrad eller sin status.
+
+**Samtidiga godkännanden.** Godkännandet börjar med ett atomiskt anspråk på ärendet: `UPDATE approval_requests SET status = 'approved' … WHERE id = … AND status = 'pending'`. I Postgres (Lakebase) tar uppdateringen radlås: ett andra samtidigt godkännande väntar tills det första har gjort commit, prövar sedan villkoret på nytt och får ”redan approved”. Rullas det första tillbaka tar det andra över. Samma ärende kan därför aldrig verkställas två gånger, varken vid upprepade eller samtidiga anrop.
+
+**Operationerna äger inte transaktionen.** De får sessionen via `ctx.session` men får inte göra `commit`, `rollback` eller stänga den – tjänstelagret stoppar en commit och avbryter anropet om transaktionen avslutats. Utan databas (tester) finns ingen rollback; kön i minnet återställer då själv sina ändringar om anropet fallerar.
 
 ---
 
@@ -184,7 +204,7 @@ Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelop
 
 **Tabellerna** `operation_events` och `approval_requests` (`databasschema.md` §9b–9c) används automatiskt när tjänstelagret har en databasanslutning: händelsen skrivs i samma transaktion som ändringen, och godkännandekön överlever omstarter. Utan databas hamnar loggen i fil och kön i minnet.
 
-**Tester:** tjänstelagret testas mot en SQLite-databas i minnet med samma modeller som Lakebase (`tests/conftest.py`, fixturen `insurance_db`). Modellerna är portabla utan att Postgres-DDL:en ändrats (`databasschema.md` §12). I produktion används `services.db.database_session_factory()` mot Lakebase via `DATABASE_URL`.
+**Tester:** tjänstelagret testas mot en SQLite-databas i minnet med samma modeller som Lakebase (`tests/conftest.py`, fixturen `insurance_db`). Modellerna är portabla utan att Postgres-DDL:en ändrats (`databasschema.md` §12). I produktion används `services.db.database_session_factory()` mot Lakebase via `DATABASE_URL`. Transaktionsgränsen och samtidiga godkännanden testas i `tests/test_services_transactions.py`; samtidigheten mot en SQLite-fil (`insurance_file_db`) där databasen köar transaktionerna. Det bevisar inte Postgres radlås – samma scenarier finns i `tests/test_services_postgres.py` och körs när `SERVICES_TEST_POSTGRES_URL` pekar på en **isolerad** Postgres (aldrig Lakebase-beståndet; `DATABASE_URL` vägras).
 
 **Byggda operationer:**
 
