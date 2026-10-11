@@ -175,7 +175,7 @@ class OpenAIProvider:
 
 
 def _parse_arguments(raw: str) -> dict[str, Any]:
-    """Ogiltig JSON blir ett fält som agent-runtime kan avvisa som verktygsfel."""
+    """Ogiltig JSON blir ett fält som harness kan avvisa som verktygsfel."""
     try:
         value = json.loads(raw or "{}")
     except json.JSONDecodeError:

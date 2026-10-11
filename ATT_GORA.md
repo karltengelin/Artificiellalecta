@@ -24,7 +24,7 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 
 1. **Fas 1 – Försäkringssystemet (premiemotorn):** ITP1-domändokument, tabellerna `policies` + `premium_transactions`, premieberäkning som skill, genererad premiehistorik
 2. **Fas 2 – Kapitalförvaltning (paper trading, B-019):** placeringsriktlinje i `05_styrdokument/`, tabellerna `portfolios`/`portfolio_holdings`/`trades`, marknadsdata via gratis-API, regelstyrd förvaltningslogik med beslutslogg. Simulerad wallet – inget riktigt kapital (B-003)
-3. **Fas 3 – AI-abstraktionslagret (B-009):** blockerar all agentkod – byggs före agenterna. ✅ **2026-10-11** byggt i `src/ai/` (B-025). Fortsättning enligt B-026 (`02_system/agentekosystem.md` §12): **Fas 3b** agent-runtime v1 (skill-register, poddar, agentloop, körjournal) före Fas 5, **Fas 3c** delegering och flödesmotor inför flaggskeppsscenariot
+3. **Fas 3 – AI-abstraktionslagret (B-009):** blockerar all agentkod – byggs före agenterna. ✅ **2026-10-11** byggt i `src/ai/` (B-025). Fortsättning enligt B-026 (`02_system/agentekosystem.md` §12): **Fas 3b** harness v1 (skill-register, poddar, agentloop, körjournal) före Fas 5, **Fas 3c** delegering och flödesmotor inför flaggskeppsscenariot
 4. **Fas 4 – Handläggar-UI (B-020):** FastAPI-backend + tabellvyer + inbyggd Claude (se utredningen under 🔵 nedan). Kundportal byggs senare på samma backend
 5. **Fas 5 – Handläggaragent + `cases`-tabell + första skills**
 
@@ -57,6 +57,29 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 - [ ] **Fas 2c: Tabeller `portfolios`, `portfolio_holdings`, `trades`** – wallet = portfölj med startkassa (t.ex. 1 000 kr simulerade)
 - [ ] **Fas 2d: Marknadsdata-skill** – gratis-API (t.ex. yfinance), hämta kurser för riktlinjens tillgångsslag
 - [ ] **Fas 2e: Förvaltningslogik** – regelstyrd i första versionen (ingen LLM förrän Fas 3): allokera enligt riktlinjen, rebalansera vid avvikelse, logga varje beslut med motivering. Koppla premieinflödet från Fas 1 till portföljen
+
+---
+
+## 🟠 Fas 3b–3c – Harness och agentsamverkan (B-026)
+
+Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 byggordning). Fas 3b blockerar Fas 5 (handläggaragenten).
+
+**Fas 3b – Harness v1**
+- [ ] **3b-1: `src/agents/ecosystem.yaml`** – team, agenter, poddmontering och gränser (steg- och kostnadstak). Avgör den öppna formatfrågan i `agentekosystem.md` §13
+- [ ] **3b-2: Skill-kontrakt och skill-register** – varje skill deklarerar namn, beskrivning, indatamodell, sidoeffektsklass, PII och pod; registret bygger verktygsdefinitioner (`ToolSpec`) ur kontrakten (§5.2)
+- [ ] **3b-3: Guardrails i harness** – agenten ser och kan bara anropa verktyg ur sina poddar; nekade skills; tester som visar att otillåtna verktyg inte går att anropa
+- [ ] **3b-4: Agentloopen** – instruktion ur `02_system/agenter/<agent>.md`, `ai.bind(team, agent, run_id)`, append-only historik, steg- och kostnadstak (§4.2)
+- [ ] **3b-5: Godkännandekö** – `external`-handlingar (och `write` i compliance-kritiska steg) blir godkännandeärenden; fil/CLI i v1 (§5.3)
+- [ ] **3b-6: Körjournal** – JSONL per körning i `logs/agent_runs/`, länkad till anropsloggen via `run_id` (§4.3)
+- [ ] **3b-7: Första podden `berakning`** – premiemotorn som skill enligt kontraktet; skillkatalogen får pod-kolumn
+- [ ] **3b-8: Tester och röktest** – agentkörningar mot `FakeProvider` utan nätverk, plus ett röktest mot riktig modell
+
+**Fas 3c – Samverkan (inför flaggskeppsscenariot)**
+- [ ] **3c-1: Delegering mellan team** – `delegate_to_team` med strukturerat uppdrag, `parent_run_id`, djup- och kostnadstak (§6.1)
+- [ ] **3c-2: Flödesmotor** – persisterat tillstånd och godkännandesteg; tabeller för flöden, godkännanden och körjournal i `databasschema.md` (körning mot Lakebase enligt AGENTS.md §4.5)
+- [ ] **3c-3: Första flödet** – regelförändrings-/flaggskeppsflödet (§6.2)
+
+**Senare:** MCP-exponering av poddar (§9), anropsloggen i databasen, egen Lakebase-roll för PII-poddar (sätts upp av operatören), kostnadsindikatorer per team.
 
 ---
 
@@ -140,7 +163,7 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 ## 💭 Att utreda / oklart
 
 - [ ] **Git branch-strategi** – kör main direkt i tidigt skede, eller feature branches + PR redan från start?
-- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(ramverk beslutat i B-026: sidoeffektsklasser och godkännandekö, `02_system/agentekosystem.md` §5.3 – detaljer när agent-runtime byggs)*
+- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(ramverk beslutat i B-026: sidoeffektsklasser och godkännandekö, `02_system/agentekosystem.md` §5.3 – detaljer när harness byggs)*
 - [ ] Loggning och spårbarhet – hur sparas agentbeslut? *(ramverk beslutat i B-025/B-026: anropslogg `02_system/ai_abstraktion.md` §10 + körjournal `02_system/agentekosystem.md` §4.3 – lagring i Lakebase avgörs i Fas 3c)*
 - [ ] Backup-strategi för databas och dokument
 

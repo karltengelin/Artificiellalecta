@@ -5,6 +5,8 @@
 | Fält | Värde |
 |------|-------|
 | **Funktionsområde** | Regulatorisk rapportering |
+| **Team** | Regelefterlevnad & rapportering (`compliance`) – se `../agentekosystem.md` §3 (B-026) |
+| **Roll i teamet** | Specialist |
 | **Status** | 🔲 Ej påbörjad |
 | **Skapad** | 2026-05-15 |
 

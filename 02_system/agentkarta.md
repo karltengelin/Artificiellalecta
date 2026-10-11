@@ -7,18 +7,20 @@
 
 ## 1. Agentöversikt
 
-| Agent | Funktionsområde | Status |
-|-------|-----------------|--------|
-| [Compliance-agent](agenter/compliance-agent.md) | Regelefterlevnad | 🔲 Ej påbörjad |
-| [Handläggaragent](agenter/handlaggaragent.md) | Kundadministration & ärendehantering | 🔲 Ej påbörjad |
-| [Kommunikationsagent](agenter/kommunikationsagent.md) | Kund- & intressentkommunikation | 🔲 Ej påbörjad |
-| [Data scientist-agent](agenter/data-scientist-agent.md) | Datahantering & analys | 🔲 Ej påbörjad |
-| [Portföljförvaltningsagent](agenter/portfoljforvaltningsagent.md) | Kapitalförvaltning | 🔲 Ej påbörjad |
-| [Utvecklaragent](agenter/utvecklaragent.md) | IT & dataplattform | 🔲 Ej påbörjad |
-| [Aktuarieagent](agenter/aktuarieagent.md) | Aktuariell verksamhet | 🔲 Ej påbörjad |
-| [Rapporteringsagent](agenter/rapporteringsagent.md) | Regulatorisk rapportering | 🔲 Ej påbörjad |
-| [Inköpsagent](agenter/inkopsagent.md) | Inköp & avtalsgranskning | 🔲 Ej påbörjad |
-| [Ekonomiagent](agenter/ekonomiagent.md) | Ekonomi & redovisning | 🔲 Ej påbörjad |
+Varje agent tillhör ett team (B-026). Teamets ledande agent är dess orkestrerare; specialister arbetar på uppdrag av den. Teamets verktyg är de skill-poddar som är monterade på teamet. De ingår i teamets harness-konfiguration, och harness ser till att agenten bara når dem – se `agentekosystem.md` §1 (begrepp), §3 och §5.
+
+| Team | Agent | Roll i teamet | Funktionsområde | Status |
+|------|-------|---------------|-----------------|--------|
+| Försäkring & kund (`forsakring`) | [Handläggaragent](agenter/handlaggaragent.md) | Ledande (orkestrerare) | Kundadministration & ärendehantering | 🔲 Ej påbörjad |
+| Kommunikation (`kommunikation`) | [Kommunikationsagent](agenter/kommunikationsagent.md) | Ledande (orkestrerare) | Kund- & intressentkommunikation | 🔲 Ej påbörjad |
+| Kapitalförvaltning (`kapital`) | [Portföljförvaltningsagent](agenter/portfoljforvaltningsagent.md) | Ledande (orkestrerare) | Kapitalförvaltning | 🔲 Ej påbörjad |
+| Aktuarie & analys (`aktuarie`) | [Aktuarieagent](agenter/aktuarieagent.md) | Ledande (orkestrerare) | Aktuariell verksamhet | 🔲 Ej påbörjad |
+| Aktuarie & analys (`aktuarie`) | [Data scientist-agent](agenter/data-scientist-agent.md) | Specialist | Datahantering & analys | 🔲 Ej påbörjad |
+| Regelefterlevnad & rapportering (`compliance`) | [Compliance-agent](agenter/compliance-agent.md) | Ledande (orkestrerare) | Regelefterlevnad | 🔲 Ej påbörjad |
+| Regelefterlevnad & rapportering (`compliance`) | [Rapporteringsagent](agenter/rapporteringsagent.md) | Specialist | Regulatorisk rapportering | 🔲 Ej påbörjad |
+| Ekonomi & inköp (`ekonomi`) | [Ekonomiagent](agenter/ekonomiagent.md) | Ledande (orkestrerare) | Ekonomi & redovisning | 🔲 Ej påbörjad |
+| Ekonomi & inköp (`ekonomi`) | [Inköpsagent](agenter/inkopsagent.md) | Specialist | Inköp & avtalsgranskning | 🔲 Ej påbörjad |
+| Utveckling & plattform (`utveckling`) | [Utvecklaragent](agenter/utvecklaragent.md) | Ledande (orkestrerare) | IT & dataplattform | 🔲 Ej påbörjad |
 
 ---
 
@@ -63,6 +65,8 @@ Ansvarar för bokföring, budget och likviditetsuppföljning. Levererar finansie
 Alla agenter kan eskalera till **Compliance-agenten** vid juridiskt tveksamma situationer.
 
 ### Löpande samarbeten
+
+Pilarna beskriver vilka underlag som flödar mellan agenterna. Arbete mellan **olika team** beställs via mottagarteamets ledande agent – inte direkt hos en specialist (B-026, `agentekosystem.md` §3.2 och §6.1). Inom ett team fördelar den ledande agenten arbetet.
 
 ```
 Handläggaragent  ──────────────► Kommunikationsagent   (kundkommunikation)

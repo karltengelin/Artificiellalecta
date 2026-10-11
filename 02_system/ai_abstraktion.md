@@ -148,7 +148,7 @@ class Bedomning(BaseModel):
 bedomning = ai.ask_structured(fraga, Bedomning, model="deep")   # -> Bedomning-instans
 ```
 
-### 5.2 Verktygsloop (så agent-runtime använder lagret)
+### 5.2 Verktygsloop (så harness använder lagret)
 
 ```python
 from ai import Message, ToolResult, ToolSpec
@@ -166,7 +166,7 @@ while True:
     messages.append(Message.from_tool_results(results))
 ```
 
-Själva loopen – behörighetskontroll, godkännande av externa handlingar, journal – hör till agent-runtime (se `agentekosystem.md` §4.2), inte till AI-lagret. Lagret garanterar att historiken går att skicka tillbaka till vilken modell som helst i reservkedjan.
+Själva loopen – behörighetskontroll, godkännande av externa handlingar, journal – hör till harness (se `agentekosystem.md` §4.2), inte till AI-lagret. Lagret garanterar att historiken går att skicka tillbaka till vilken modell som helst i reservkedjan.
 
 ### 5.3 Kanoniska typer
 
@@ -343,7 +343,7 @@ Anropsloggen är det tekniska lagret (kostnad, prestanda, fel). Den verksamhetsm
 | Synkront API | Asynkron variant när FastAPI-backenden kräver det |
 | Bara text in | Bilder/PDF när en skill behöver det (t.ex. inkomna dokument i ärendehantering) |
 | Ingen styrning av verktygsval (`tool_choice`) | Modellen väljer själv; tvingande verktygsval stöds inte längre av alla nya modeller – strukturerade svar täcker behovet |
-| Ingen budgetspärr i lagret | Spärren är leverantörernas kostnadstak per workspace/projekt; lagret loggar. Budget per körning hanteras av agent-runtime |
+| Ingen budgetspärr i lagret | Spärren är leverantörernas kostnadstak per workspace/projekt; lagret loggar. Budget per körning hanteras av harness |
 | Ingen PII-maskering i lagret | Skills och agenter ansvarar för dataminimering (B-006) |
 | Två leverantörer | Ny adapter för OpenAI-kompatibla endpoints (OpenRouter, Mistral, lokala modeller) när det behövs |
 | Anropslogg som fil | Databas-sink (`ai_calls`) |

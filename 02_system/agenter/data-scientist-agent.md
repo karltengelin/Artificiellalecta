@@ -5,6 +5,8 @@
 | Fält | Värde |
 |------|-------|
 | **Funktionsområde** | Datahantering & analys |
+| **Team** | Aktuarie & analys (`aktuarie`) – se `../agentekosystem.md` §3 (B-026) |
+| **Roll i teamet** | Specialist |
 | **Status** | 🔲 Ej påbörjad |
 | **Skapad** | 2026-05-15 |
 

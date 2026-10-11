@@ -5,6 +5,8 @@
 | Fält | Värde |
 |------|-------|
 | **Funktionsområde** | Aktuariell verksamhet |
+| **Team** | Aktuarie & analys (`aktuarie`) – se `../agentekosystem.md` §3 (B-026) |
+| **Roll i teamet** | Ledande agent (orkestrerare) |
 | **Status** | 🔲 Ej påbörjad |
 | **Skapad** | 2026-05-15 |
 
