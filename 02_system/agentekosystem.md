@@ -27,12 +27,12 @@ Ramverket beskriver hur bolagets agenter organiseras, vilka förmågor de får, 
 | **Specialist** | Agent i ett team med eget mandat, arbetar på uppdrag av orkestreraren |
 | **Skill** | En förmåga som en agent använder som verktyg – instruktion i `03_skills/`, kod i `src/skills/` (B-015) |
 | **Skill-pod** | Paket av skills med gemensam dataåtkomst och behörighetsklass, monteras på team. Behörighetsenheten (§5). Ordet används inte om team |
-| **Guardrails** | Reglerna för vad ett team och en agent får göra: monterade poddar, nekade skills, sidoeffektsklasser som kräver godkännande, steg- och kostnadstak. Är konfiguration (§4.1, §5.3) |
-| **Harness** | Maskineriet som kör agenterna och tvingar igenom guardrails: bygger kontext, ger modellen bara tillåtna verktyg, kör verktygsanropen, stoppar för godkännande och journalför. En gemensam harness för alla team (§4.2). Kallades "agent-runtime" i B-026 |
+| **Harness** | Allt runt modellen som gör den till en agent: loop, instruktioner, verktyg, kontexthantering och guardrails (*agent = modell + harness*). Hos oss består harness av **en gemensam motor** (kod: agentloop, kontexthantering, verktygskörning, godkännandestopp, journal) som **konfigureras per team** med teamets skill-poddar och guardrails (§4). Kallades "agent-runtime" i B-026. Inte att förväxla med *test harness*/*eval harness* (program som kör tester) |
+| **Guardrails** | Den del av harness-konfigurationen som sätter gränser: monterade poddar, nekade skills, sidoeffektsklasser som kräver godkännande, steg- och kostnadstak (§4.1, §5.3). Verkställs av motorn – aldrig av prompten |
 | **Flöde** | Deterministisk process över flera team med godkännandesteg, körs av flödesmotorn (§6.2) |
 | **AI-lagret** | `src/ai/` – harness anropar modellerna via lagret, aldrig direkt (B-025) |
 
-Bilden bakom ordet: modellen är hästen, harness är selen och tömmarna, och guardrails bestämmer vart tömmarna får styra. Verktyg som bara når en agent via harness, filtrerade per team, går att vakta – verktyg som ligger fritt gör det inte.
+Bilden bakom ordet: modellen är hästen och harness är selen och tömmarna – guardrails är den del som bestämmer vart tömmarna får styra. Verktyg som bara når en agent via harness, filtrerade per team, går att vakta – verktyg som ligger fritt gör det inte.
 
 ---
 
@@ -71,7 +71,7 @@ Bilden bakom ordet: modellen är hästen, harness är selen och tömmarna, och g
 |----------|-----------|------------------------|
 | **Team** | En avdelning: mandat, ledande agent, ev. specialister, monterade poddar, nyckelscope, modellpolicy | §3 |
 | **Agent** | En instans med mandat och instruktion som kör en agentloop mot AI-lagret | §4, `02_system/agenter/` |
-| **Harness** | Maskineriet som kör alla agenter och tvingar igenom teamens guardrails | §4.2, byggs i Fas 3b |
+| **Harness** | Allt runt modellen som gör den till en agent: en gemensam motor (loop, kontext, verktygskörning, godkännande, journal) konfigurerad per team med teamets poddar och guardrails | §1, §4.2, byggs i Fas 3b |
 | **Skill-pod** | Paket av relaterade skills med gemensam dataåtkomst och behörighetsklass – behörighetsenheten | §5, `03_skills/` |
 | **Flöde** | Deterministisk, granskningsbar process över flera team med godkännandesteg | §6.2, `02_system/Agentsystem/` |
 | **AI-lagret** | Modellagnostiskt lager med roller, nycklar och anropslogg | `ai_abstraktion.md`, `src/ai/` |
@@ -162,6 +162,8 @@ Harness kör en loop ovanpå AI-lagrets verktygsgränssnitt (`ai_abstraktion.md`
 6. **Journalför** varje steg (§4.3).
 
 Historiken är append-only – inget tidigare meddelande redigeras eller tas bort under en körning. Det krävs för prompt caching och för att Anthropics tänkande-block ska accepteras.
+
+**Kontexthantering** – vad modellen ser i varje steg – är en central del av harness. I v1 räcker instruktion + uppdrag + append-only historik inom en körning. När körningar blir långa tillkommer komprimering av äldre steg, och när agenter behöver minnas mellan körningar tillkommer ett minne (t.ex. sammanfattningar i körjournalen). Båda hör till motorn, inte till enskilda agenter.
 
 ### 4.3 Körjournal
 
