@@ -51,10 +51,19 @@ Notera för datamodellen: gränserna är **månadsbaserade**, inte dagbaserade. 
 
 **Placering:** Den försäkrade väljer pensionsbolag och sparform via valcentralen. Minst **50 % av premien måste placeras i traditionell försäkring**; resten får placeras i fondförsäkring. Den som inte väljer (ickevalsalternativet) får hela premien i traditionell försäkring hos default-bolaget.
 
-**Uttag:**
-- Uttag kan påbörjas tidigast från **63 års ålder** *(gäller nuvarande regler; verifieras på nytt när uttagslogik implementeras)*
-- Standard är **livsvarig utbetalning**; tidsbegränsat uttag (kortast 5 år) kan väljas
-- Sedan regeländring är det möjligt att **pausa ett påbörjat uttag** – direkt relevant för kundportalens "pausa uttag"-funktion (Fas 4+)
+**Uttag – källkontrollerat 2026-10-11:**
+
+- ITP-planen avdelning 1 punkt 7.5 anger tidigaste ålder **55 år**, ordinarie start **66-årsmånaden** och möjlighet att begära annan start.
+- Standard är **livsvarig utbetalning**; tidsbegränsat uttag är minst fem år. Någon generell senaste start vid 70 år framgår inte av den kontrollerade bestämmelsen.
+- ITP-parternas överenskommelse medger paus och förlängning, även för redan påbörjade uttag, utan särskild ändringsavgift eller hälsoprövning.
+
+Se [källregistret](../04_regulatoriskt/kallregister.md),
+[tolkning T-ITP1-002](../04_regulatoriskt/tolkningar/T-ITP1-002-uttag-och-paus.md)
+och [uttagsreglernas gemensamma förutsättningar](produktregler/UTTAG_GEMENSAMT.md).
+Ansökningsfrister och detaljer för förtida uttag behöver bolagsvillkor och
+ytterligare avtalskontroll. Den tidigare uppgiften om 63 år var felaktig.
+Detta rättar domänkunskapen; förslag till ändring av villkorsversion 1.0 ligger
+separat i [villkorsändringen](../projekt/04_produktregelverk/VILLKORSANDRING_UTTAG.md).
 
 ## 6. Basbelopp och årlig uppdatering
 
