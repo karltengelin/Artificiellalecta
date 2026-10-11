@@ -33,6 +33,13 @@ Programmet struktureras i ett antal namngivna delprojekt, se §4b.
 
 ## 3. Designprinciper
 
+**Garantimodell (B-027):** Den traditionella ITP1-produkten ska ge intjänad
+pensionsgaranti med hela mottagna nettopremien som garantigrund och 0 %
+nettoränta i garantitariffen, utan automatisk garantiförstärkning i första
+modellen. Historiska garantidelar bevarar sina antaganden. Produktinriktningen
+är beslutad; tariffkalibrering, riskgranskning och införande återstår, se
+`01_domän/aktuariell_grund.md`.
+
 Övergripande principer som gäller all utveckling i projektet. För full motivering bakom varje, se `BESLUTSLOGG.md`.
 
 ### 3.1 Modellagnostisk arkitektur
@@ -159,7 +166,7 @@ Artificiellalecta/
 │
 ├── 01_domän/                       ← Domänkunskap (text)
 │   ├── ITP1_regelverk.md           ← Kollektivavtalets regler (premietrappa, åldrar, basbelopp)
-│   ├── aktuariell_grund.md         (kommer)
+│   ├── aktuariell_grund.md         (modellutkast; kalibrering och godkännande återstår)
 │   ├── försäkringsvillkor.md       ← Bolagets villkor för ålderspension ITP1
 
 │   └── processer_översikt.md       (kommer)

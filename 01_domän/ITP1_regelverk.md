@@ -51,6 +51,13 @@ Notera för datamodellen: gränserna är **månadsbaserade**, inte dagbaserade. 
 
 **Placering:** Den försäkrade väljer pensionsbolag och sparform via valcentralen. Minst **50 % av premien måste placeras i traditionell försäkring**; resten får placeras i fondförsäkring. Den som inte väljer (ickevalsalternativet) får hela premien i traditionell försäkring hos default-bolaget.
 
+Traditionell försäkring har en garantidel och möjlighet till överskott enligt
+Avtalats information. Premiebestämdhet betyder inte att garantier saknas.
+Bolagets konstruktion behöver egna villkor; se
+[T-ITP1-004](../04_regulatoriskt/tolkningar/T-ITP1-004-garanti-och-aktuariell-grund.md)
+och [aktuariell grund](aktuariell_grund.md). Ingen allmän garantiprocent
+fastställs genom denna domänsammanställning.
+
 **Uttag – källkontrollerat 2026-10-11:**
 
 - ITP-planen avdelning 1 punkt 7.5 anger tidigaste ålder **55 år**, ordinarie start **66-årsmånaden** och möjlighet att begära annan start.

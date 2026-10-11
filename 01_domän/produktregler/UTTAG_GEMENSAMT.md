@@ -1,8 +1,8 @@
 # Gemensamma förutsättningar för uttagsreglerna
 
-> **Version:** 0.2 | **Status:** Utkast, ej godkänt | **Implementation:** Saknas
+> **Version:** 0.3 | **Status:** Utkast, ej godkänt | **Implementation:** Saknas
 > **Ägare:** Operatören | **Upprättad:** 2026-10-11
-> **Gäller för:** PR-ITP1-002–007, endast ITP1 ålderspension.
+> **Gäller för:** PR-ITP1-002–009, endast ITP1 ålderspension; garantiregeln omfattas när uttagsplanen ändras.
 
 | Regel | Fråga |
 |---|---|
@@ -12,6 +12,8 @@
 | [PR-ITP1-005](PR-ITP1-005-aterupptagande.md) | Återuppta efter paus |
 | [PR-ITP1-006](PR-ITP1-006-tidsbegransad-utbetalning.md) | Välja och hantera tidsbegränsad utbetalning |
 | [PR-ITP1-007](PR-ITP1-007-forlangd-utbetalning.md) | Förlänga pågående utbetalningstid |
+| [PR-ITP1-008](PR-ITP1-008-garanti.md) | Intjänad garanti och historiska garantidelar |
+| [PR-ITP1-009](PR-ITP1-009-pensionsbelopp.md) | Pensionsbelopp och rörligt tillägg |
 
 ## Externa krav och egna val
 
@@ -92,11 +94,13 @@ genom dokumentändringen. [Villkorsversion 1.0](../försäkringsvillkor.md) §7
 innehåller äldre, felaktiga åldersantaganden och får inte användas som
 verifierat implementationsunderlag; ersättning föreslås separat.
 
-Aktuariell grund, garanti, skatterättslig gren och tillståndsmodell behöver
-granskas före kodarbete. Tidsbegränsad utbetalning och förlängning beskrivs nu
+Modellutkast till [aktuariell grund](../aktuariell_grund.md), garantiregel
+och beloppsregel finns nu. Tariffer, finansiering, skatterättslig gren och
+tillståndsmodell behöver granskas före kodarbete. Tidsbegränsad utbetalning och förlängning beskrivs nu
 i PR-ITP1-006/007; slutavräkning och partiella uttag behöver kompletteras.
 
 | Version | Datum | Ändring |
 |---|---|---|
 | 0.1 | 2026-10-11 | Gemensamma förutsättningar och dataförslag |
 | 0.2 | 2026-10-11 | Tidsbegränsad utbetalning, förlängning och tydlig definition av total tid |
+| 0.3 | 2026-10-11 | Modellutkast för garanti och pensionsbelopp |

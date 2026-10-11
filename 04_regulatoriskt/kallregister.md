@@ -1,6 +1,6 @@
 # Källregister – produktregelverk
 
-> **Status:** Arbetsutkast | **Version:** 0.2 | **Kontrolldatum:** 2026-10-11
+> **Status:** Arbetsutkast | **Version:** 0.3 | **Kontrolldatum:** 2026-10-11
 > Registret anger vad som faktiskt har kontrollerats. Det är inte en fullständig
 > bedömning av alla regelverks tillämplighet.
 
@@ -51,7 +51,7 @@ undermapparna. Dokumenten ovan är sammanställningar och egna villkor.
 - **Utgivare:** Finansinspektionen.
 - **Typ:** Register över föreskrift, konsoliderad text och ändringsförfattningar.
 - **Kontrollerat:** Registret anger bland annat avsättningar, kapitalkrav, företagsstyrning, investeringar och information som reglerade områden.
-- **Begränsning:** Registerinformationen är läst; enskilda paragrafer och deras tillämplighet på produktregler är ännu inte genomgångna. Ingen kopia av föreskriftstexten sparad.
+- **Begränsning:** Första kontrollen avsåg registret. Aktuariell dokumentation har därefter granskats som K-FFFS-AKTUARIE nedan; övriga områden är inte detaljgranskade. Ingen lokal kopia sparad.
 - **Kontrollerad:** 2026-10-11.
 - **Länk:** [FI – FFFS 2019:21](https://www.fi.se/sv/vara-register/fffs/sok-fffs/2019/201921/).
 
@@ -100,6 +100,43 @@ undermapparna. Dokumenten ovan är sammanställningar och egna villkor.
 - **Begränsning:** AMF:s fullständiga villkor är inte granskade i denna komplettering. ITPK:s uppgifter används inte för vår produkt.
 - **Användning:** T-ITP1-003; motiverar varför en enskild leverantörs maxlängd eller frist inte ska presenteras som gemensamt avtalskrav.
 - **Länk:** [AMF – hur länge kan jag ta ut pensionen?](https://www.amf.se/ta-ut-din-pension/sa-tar-du-ut-din-tjanstepension/hur-lange-kan-jag-ta-ut-pensionen/).
+
+### K-GARANTI-ALECTA-2026 – bolagsexempel
+
+- **Utgivare/version:** Alectas villkor från 2026-08-27, §4–5, sidor 8–12, och §8. Kontrollerade 2026-10-11.
+- **Kontrollerat:** Premier ger garantidelar med historiska antaganden; kapital/överskott är separata värden. Ändrad plan omräknas med delarnas ursprungliga antaganden.
+- **Begränsning:** Bolagsvillkor, inte allmän ITP-tariff. Alectas garantiförstärkning och avgifter överförs inte automatiskt.
+- **Länk:** [Alectas villkor](https://www.alecta.se/media/qpppilcr/6108-forsakringsvillkor-alecta-optimal-pension-enligt-itp.pdf).
+
+### K-GARANTI-AMF-2023 – garantigrundande premie
+
+- **Utgivare/version:** AMF:s information om nytt ITP-erbjudande från 2023-10-01, läst 2026-10-11.
+- **Avsnitt:** ”Bättre villkor i vår nya traditionella försäkring inom ITP”.
+- **Kontrollerat:** Hela inbetalningen används för garanti från oktober 2023, jämfört med tidigare 85 %.
+- **Begränsning:** Historisk produktinformation, inte alla aktuella tariffparametrar eller universellt avtalskrav.
+- **Länk:** [AMF – förändringar för ITP](https://www.amf.se/kundservice/for-foretag-och-formedlare/nyhetslista/information-om-forandringar-for-itp-hos-amf/).
+
+### K-LTF-AKTUARIE – försäkringsteknisk dokumentation
+
+- **Utgivare:** Sveriges riksdag, konsoliderad lag (2019:742), läst 2026-10-11.
+- **Kontrollerat:** 9 kap. 4–5 §§: styrelsens styrdokument, översyn, försäkringstekniska riktlinjer och beräkningsunderlag.
+- **Begränsning:** Ingen full granskning av tillstånd, solvens eller avsättningar. Simuleringens dokument är inte myndighetsinlämnade riktlinjer.
+- **Länk:** [LTF](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2019742-om-tjanstepensionsforetag_sfs-2019-742/).
+
+### K-FFFS-AKTUARIE – principer och beräkningsunderlag
+
+- **Utgivare/version:** FI, konsoliderad FFFS 2019:21, fil `fs1921k-250221.pdf`, med ändringar till FFFS 2024:32 enligt aktuellt register.
+- **Kontrollerat:** 8 kap. 30–31 och 36–38 §§, PDF-sidor 41–43; lästa 2026-10-11.
+- **Användning:** Principer för förmåner/överskott, antaganden, underskott och reproducerbara beräkningar i T-ITP1-004.
+- **Begränsning:** Ingen fast FI-tariff identifierad här. Omnämnda andra försäkringsområden utvidgar inte vårt scope.
+- **Länkar:** [Konsoliderad föreskrift](https://www.fi.se/contentassets/77f3d56daed74051aed8044001cdcd37/fs1921k-250221.pdf), [Versionsregister](https://www.fi.se/sv/vara-register/fffs/sok-fffs/2019/201921/).
+
+### K-SCB-LIVSLANGD – kandidat för kalibrering
+
+- **Utgivare/version:** SCB, BE0101AW, ettårig livslängdstabell efter kön/ålder, år 1960–2025. Metadata och metodnoter lästa 2026-10-11.
+- **Kontrollerat:** Dödsrisker anges i promille; höga åldrar har utjämningsmodell.
+- **Begränsning:** Inga värden importerade eller antagna som tariff. Unisexmodell, framtida livslängd, bestånd och marginaler återstår.
+- **Länk:** [SCB:s livslängdstabell](https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__BE__BE0101__BE0101I/LivslangdEttariga/).
 
 ## 3. Källor att komplettera per frågeområde
 

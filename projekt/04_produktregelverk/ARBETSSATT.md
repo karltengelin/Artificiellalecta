@@ -96,7 +96,7 @@ och regelversion även om IBB redan är lagrat per år.
 | F-001 | Vilken avtalsutgåva och punkt styr premietrappan? | Hämta ITP-planens avtalsunderlag och fastställ giltighet; webbsammanställningar är kontrollerade men avtalspunkt återstår |
 | F-002 | Ska delbeloppen avrundas var för sig? | Kontrollera administratörens beräkningsregler; befintlig kod gör detta, källstödet är ännu inte verifierat |
 | F-003 | Uttagsåldrar och bolagsvillkor | Avtalspunkt 7.5 verifierad: 55 år/ordinarie 66-årsmånad, inget stöd för generell maxålder 70. Granska T-ITP1-002 och PR-ITP1-002–005; detaljvillkor, partiella uttag och aktuariell grund återstår |
-| F-004 | Vilken garanti erbjuder vår traditionella försäkring? | Precisera garanti och överskott; premiebestämdhet avgör inte ensam garantifrågan |
+| F-004 | Vilken garanti erbjuder vår traditionella försäkring? | B-027 beslutar hela mottagna nettopremien och 0 % nettoränta, utan automatisk garantiförstärkning. T-ITP1-004, PR-ITP1-008/009 och aktuariell grund finns som utkast; tariffkalibrering, riskgranskning, finansiering och införande återstår |
 | F-005 | Vad händer med kapitalet vid dödsfall utan återbetalningsskydd? | Utred dödsfall, arvsvinster och aktuariell modell inom ålderspensionsprodukten |
 | F-006 | Hur fördelas en premie när en person har flera försäkringar? | Precisera beräknings- och fördelningsnivå enligt B-022 så att samma löneunderlag inte används dubbelt |
 | F-007 | Vilka regler gäller historiskt? | Kontrollera avtals- och parameterversioner för premiehistoriken 2023–2026 innan dagens regler ges retroaktiv giltighet |
@@ -118,6 +118,13 @@ och PR-ITP1-006/007.
 Nästa steg för uttagsområdet är granskning av bolagsval och
 [villkorsändring](VILLKORSANDRING_UTTAG.md), därefter partiella uttag,
 slutavräkning, aktuariell grund och modell för uttagsplaner.
+
+Garantiområdet har ett [besluts- och villkorsförslag](GARANTI_BESLUTSFORSLAG.md)
+och [modellutkast till aktuariell grund](../../01_domän/aktuariell_grund.md).
+Produktinriktningen är beslutad i B-027. Nästa steg där är tariffkalibrering,
+riskgranskning och underskottsfinansiering.
+F-004 är därför delvis utredd, inte stängd. F-005 om dödsfall/arvsvinster
+återstår och är ett beroende för en ekonomiskt sammanhängande modell.
 
 Granska först dokumentkedjan och avrundningsvalet. Skriv därefter separata regler
 för premieåldrar, pensionsmedförande lön och anställningsperiod. Utred sedan

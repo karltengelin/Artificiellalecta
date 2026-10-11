@@ -8,6 +8,27 @@
 
 ## Beslut
 
+### B-027 | 2026-10-11 | Premiebaserad garanti för traditionell ITP1-pension
+
+**Beslut:** Operatören godkände garantiförslaget i chatten 2026-10-11 (”vi går på ditt förslag”). Den traditionella ITP1-produkten ska ha en intjänad pensionsgaranti. Hela den mottagna nettopremien är garantigrundande med 0 % nettoränta i garantitariffen. Garantin avser pensionsförmånen för avtalad plan, inte ett oföränderligt kontosaldo eller återbetalning till efterlevande.
+
+Varje garantidel behåller sina ursprungliga antaganden. Ändrad uttagsplan ska ge en spårbar omräkning enligt en granskad aktuariell metod. Kapital, garanterad pension och möjligt rörligt pensionstillägg hålls åtskilda. Automatisk garantiförstärkning ingår inte i första modellen. Kapitalavgiften enligt B-021 och produktscope enligt B-002/B-022 kvarstår.
+
+**Motivering:**
+- Premiebestämdhet anger hur premien bestäms och utesluter inte en garanti i traditionell försäkring.
+- En garantigrund på hela nettopremien ger ett begripligt produktval för simuleringen; nivån är bolagets val, inte ett här fastställt universellt ITP-krav.
+- Versionsspårade garantidelar skyddar tidigare intjänande när antaganden för nya premier ändras.
+
+**Konsekvenser:**
+- Produktinriktningen är beslutad; `01_domän/aktuariell_grund.md` och PR-ITP1-008/009 är fortfarande modell-/regelutkast som kräver parameter- och riskgranskning före införande.
+- Unisexdödlighet, livslängdsmarginal, högåldersmodell, utbetalningsgrund, kostnad/skatt, dödsfall/arvsvinster och underskottsfinansiering återstår.
+- Giltighetsdag och behandling av befintlig mockhistorik beslutas separat. Beslutet skapar inte garantier retroaktivt och godkänner ingen databasändring eller driftsättning.
+- §2.3 i villkorsversion 1.0 ska ersättas när en ny villkorsversion införs. Villkorstext och kvarstående införandekrav finns i `projekt/04_produktregelverk/GARANTI_BESLUTSFORSLAG.md`; ingen ny villkorsversion träder i kraft genom detta beslut.
+
+**Förtydligar:** B-021:s traditionella sparform. Övriga produktavgränsningar och avgifter ändras inte.
+
+---
+
 ### B-026 | 2026-10-11 | Agentekosystem: team med ledande agent som orkestrerare, skill-poddar som behörighetsenhet
 
 **Beslut:**

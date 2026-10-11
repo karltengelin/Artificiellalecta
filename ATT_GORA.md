@@ -66,7 +66,7 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 - [ ] **Operatör: lägg in API-nycklar och kör röktestet** – `ANTHROPIC_API_KEY` och `OPENAI_API_KEY` i `.env`, sedan `pip install -e .[dev]` i huvudrepots `.venv` och `python scripts/smoke_test_ai.py` (några ören). Verifierar båda adaptrarna, verktygsloop och korsleverantörsreserv mot riktiga API:er
 - [ ] **Kartlägga processer** i `01_domän/processer_översikt.md` (kundärenden, premiehantering, rapportering, etc.)
 - [x] **2026-07-12** Skriva ut försäkringsvillkor för ITP1 ålderspension i `01_domän/försäkringsvillkor.md` *(gjordes i Fas 1a)*
-- [ ] **Dokumentera aktuariell grund** – antaganden, tabeller, beräkningsmodeller
+- [ ] **Dokumentera aktuariell grund** – antaganden, tabeller, beräkningsmodeller. **2026-10-11:** modellutkast i `01_domän/aktuariell_grund.md`, produktinriktning godkänd i B-027 och villkorsunderlag i `projekt/04_produktregelverk/GARANTI_BESLUTSFORSLAG.md`; parameterkalibrering, riskgranskning och införandegodkännande återstår.
 - [ ] **Designa regelförändringsflöde** – multi-agent-flöde som triggas när ett regelverk ändras: compliance-agent gör tolkning och konsekvensanalys, utvecklaragent identifierar kodpåverkan, kommunikationsagent förbereder ev. kundkommunikation. Dokumenteras i `02_system/regelförändringsflöde.md`. Ett av undantagen från B-008 (kräver olika mandat).
 
 ## 🟢 Lägre prioritet – när grunden står

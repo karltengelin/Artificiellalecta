@@ -75,3 +75,7 @@ Operatören behöver fastställa bolagsval, giltighetsdag och eventuella
 övergångsundantag. Förslaget blir ingen beslutsloggpost eller ny antagen
 villkorsversion genom denna fil. Det kompletterar inte hela villkorsdokumentets
 återstående garanti- och dödsfallsfrågor.
+
+Garantiområdet har nu ett separat [kompletteringsförslag](GARANTI_BESLUTSFORSLAG.md)
+för §2.3, §5 och garantiomräkningen i §7.7. Förslagen behöver granskas
+tillsammans innan en ny villkorsversion antas. Dödsfallsfrågan är fortsatt öppen.

@@ -30,6 +30,17 @@ Utredningen om tidsbegränsad utbetalning finns i
 Domänens felaktiga 63-årsgräns är rättad. Villkorsversion 1.0 är markerad
 med granskningsanmärkning i väntan på beslut; uttagslogik är inte byggd.
 
+Garanti och pensionsbelopp har två nya regelutkast, PR-ITP1-008/009,
+med [aktuariell grund](../../01_domän/aktuariell_grund.md),
+[källtolkning T-ITP1-004](../../04_regulatoriskt/tolkningar/T-ITP1-004-garanti-och-aktuariell-grund.md)
+och [besluts-/villkorsförslag](GARANTI_BESLUTSFORSLAG.md).
+Grunden är en specificerad modell, inte en kalibrerad eller antagen tariff.
+Produktinriktningen är godkänd i B-027: hela mottagna nettopremien är
+garantigrundande med 0 % nettoränta, utan automatisk garantiförstärkning.
+§2.3 i villkorsversion 1.0 är markerad för ändring vid införandet.
+Dödlighet, ekonomisk validering, underskottsfinansiering och godkännande
+av fullständig tariff och villkorsversion återstår.
+
 ## Beroenden
 
 - Produktregler som tas fram här styr direkt vad premiemotorn (Fas 1c) och framtida

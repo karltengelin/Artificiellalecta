@@ -22,6 +22,12 @@
 
 ## §2 Försäkringsavtalet
 
+> **Granskningsanmärkning 2026-10-11:** §2.3:s formulering om avsaknad av
+> garanti är inte ett verifierat krav för premiebestämd traditionell försäkring.
+> Se [garanti- och villkorsförslag](../projekt/04_produktregelverk/GARANTI_BESLUTSFORSLAG.md).
+> Produktinriktningen är beslutad i B-027. Version 1.0 bevaras tills ny
+> villkorsversion och giltighetsdag fastställs; ingen garanti driftsätts här.
+
 1. Försäkringsavtal tecknas av arbetsgivaren till förmån för den anställde. Den anställde är försäkrad och förmånstagare till ålderspensionen.
 2. Försäkringen träder i kraft den första dagen i månaden då den anställde uppfyller villkoren i §3.1.
 3. Försäkringen är **premiebestämd**: bolaget garanterar inte en viss pensionsnivå, utan pensionens storlek bestäms av inbetalda premier, avkastning och avgifter.
@@ -67,7 +73,7 @@ Avgiftsnivåerna är bolagets beslut (B-021) och kan ändras genom ny version av
 1. Uttag kan påbörjas tidigast från 63 års ålder och senast från 70 års ålder *(åldersgränser verifieras mot gällande regler när uttagslogik implementeras, se `ITP1_regelverk.md` §5)*.
 2. Utbetalning sker som standard **livsvarigt**; den försäkrade kan välja tidsbegränsad utbetalning, dock kortast 5 år.
 3. Den försäkrade kan **pausa ett påbörjat uttag**; kapitalet återgår då till förvaltning. Paus och återupptag hanteras som ärende och ska kunna utföras av den försäkrade själv i kundportalen (framtida fas) samt av handläggare i handläggargränssnittet (Fas 4).
-4. Utbetalningarnas storlek beräknas enligt aktuariella antaganden i `aktuariell_grund.md` *(ej skrivet ännu – krävs innan uttagslogik byggs)*.
+4. Utbetalningarnas storlek beräknas enligt aktuariella antaganden i [aktuariell grund](aktuariell_grund.md) *(modellutkast finns; kalibrering och godkännande krävs innan uttagslogik byggs)*.
 
 ## §8 Efterlevandeskydd
 

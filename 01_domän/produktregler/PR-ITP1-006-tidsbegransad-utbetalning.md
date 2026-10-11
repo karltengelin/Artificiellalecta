@@ -39,7 +39,9 @@ pausperioder och godkänd aktuariell grund med garantihantering.
 5. Beräkna månadsbelopp enligt godkänd aktuariell grund, kapital och
    återstående tid. Spåra regel- och grundversion samt garanti/överskott.
    Förutbestämd period innebär inte ett oföränderligt belopp. En formel
-   `kapital / N` får inte ersätta den ännu saknade beräkningsgrunden.
+   `kapital / N` får inte ersätta den godkända beräkningsgrunden.
+   Se [modellutkast till aktuariell grund](../aktuariell_grund.md) och
+   [PR-ITP1-009](PR-ITP1-009-pensionsbelopp.md); tariffer är ännu inte godkända.
 6. Efter sista avtalade månadsrätten ska inga nya månadsbelopp skapas från
    planen. Obetalda äldre belopp ligger kvar för avräkning. Automatisk
    försäkringsavslutning kräver att inga skyldigheter eller andra relevanta
