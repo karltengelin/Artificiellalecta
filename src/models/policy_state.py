@@ -12,7 +12,7 @@ import uuid
 from datetime import date
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Index, String
+from sqlalchemy import CheckConstraint, Date, ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -51,6 +51,7 @@ class PolicyState(Base):
             "policy_id",
             unique=True,
             postgresql_where="valid_to IS NULL",
+            sqlite_where=text("valid_to IS NULL"),  # testdatabasen (tjänstelagrets tester)
         ),
         Index("ix_policy_states_policy_from", "policy_id", "valid_from"),
     )

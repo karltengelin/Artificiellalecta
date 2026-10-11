@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Simulerat tjänstepensionsbolag för ITP1 ålderspension"
 requires-python = ">=3.11"
 dependencies = [
-    "sqlalchemy>=2.0",
+    # <2.1: SQLAlchemy 2.1 byter standarddrivrutin för postgresql:// till psycopg (v3);
+    # projektet använder psycopg2-binary mot Lakebase (DATABASE_URL utan +drivrutin)
+    "sqlalchemy>=2.0,<2.1",
     "psycopg2-binary>=2.9",
     "python-dotenv>=1.0",
     # AI-abstraktionslagret (src/ai/, B-025): bara leverantörernas
@@ -31,6 +33,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 ai = ["*.yaml"]
+services = ["*.yaml"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

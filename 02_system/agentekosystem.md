@@ -157,7 +157,7 @@ Harness kör en loop ovanpå AI-lagrets verktygsgränssnitt (`ai_abstraktion.md`
 1. **Bygg kontext:** systeminstruktion = agentens MD-instruktion + bolagskontext + datum. Uppdraget blir första användarmeddelandet.
 2. **Bygg verktygslistan:** skills från agentens monterade poddar, filtrerade mot behörighet (§5). Agenten ser bara verktyg den får använda.
 3. **Anropa modellen** via `ai.bind(team=…, agent=…, run_id=…).complete(...)` med agentens modellroll.
-4. **Hantera verktygsanrop** enligt skillens sidoeffektsklass (§5.3): kör direkt, eller skapa ett godkännandeärende och stoppa.
+4. **Hantera verktygsanrop** enligt skillens sidoeffektsklass och operationens agentåtkomst (§5.3): kör direkt, eller ta emot *väntar på godkännande* från tjänstelagret och stoppa.
 5. **Lägg till resultat** och upprepa tills modellen är klar, stegtaket nås eller kostnadstaket för körningen nås.
 6. **Journalför** varje steg (§4.3).
 
@@ -207,6 +207,8 @@ Varje skill-implementation deklarerar:
 
 Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen PII) och kan exponeras som verktyg genom att dess indata beskrivs som en Pydantic-modell – själva beräkningsfunktionen behöver inte ändras.
 
+**Skills mot försäkringssystemet är omslag runt tjänstelagret** (B-028, `tjänstelager.md`). Operationen deklarerar redan indata, typ (`kind` = `side_effect`), produktregler, PII och **agentåtkomst** (`AGENT`/`APPROVAL`/`HUMAN_ONLY`); skillen lägger bara till vilken pod den hör till. Operationer märkta `HUMAN_ONLY` blir aldrig verktyg.
+
 ### 5.3 Sidoeffektsklasser och godkännande
 
 | Klass | Exempel | Hantering |
@@ -214,7 +216,9 @@ Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen
 | `read` | Hämta kunddata, slå upp regelverk, hämta kurser | Körs direkt, journalförs |
 | `compute` | Premieberäkning, beståndsaggregat | Körs direkt, journalförs |
 | `write` | Uppdatera internt ärende, skriva utkast till dokument | Körs direkt och journalförs; i compliance-kritiska flöden kan steget kräva godkännande |
-| `external` | Mail till kund, rapportinlämning, transaktion, produktionssättning | **Körs aldrig direkt av en agent.** Harness skapar ett godkännandeärende med utkastet; operatören godkänner, och först då utförs handlingen – av harness, journalförd med godkännandet (§3.5) |
+| `external` | Mail till kund, rapportinlämning, transaktion, produktionssättning | **Körs aldrig direkt av en agent.** Ett godkännandeärende skapas med utkastet; operatören godkänner, och först då utförs handlingen – journalförd med godkännandet (§3.5) |
+
+**Godkännandekön ligger i tjänstelagret** (B-028, `tjänstelager.md` §6) – inte i harness – så att alla förslag syns på ett ställe i handläggar-UI:t. Harness tar emot svaret *väntar på godkännande* och journalför det. Utöver sidoeffektsklassen kan en operation vara märkt **endast handläggare** (`HUMAN_ONLY`): då kan ingen agent utföra den, inte ens med godkännande (`tjänstelager.md` §4).
 
 ### 5.4 Föreslagna poddar
 
@@ -342,10 +346,13 @@ Byggs efter harness (§12).
 
 ## 12. Byggordning
 
+**Justerad 2026-10-11 (B-028):** agentlagret byggs efter försäkringssystemet och handläggar-UI:t. Ordningen blir Fas 3 (klar) → **Fas 1f** tjänstelagret → **Fas 4** handläggar-UI → **Fas 3b** harness → Fas 5 handläggaragenten → Fas 3c. Skälet: agentverktygen ska kapsla in operationer som redan finns och används av människor (B-017), inte gissade kontrakt.
+
 | Fas | Innehåll | Möjliggör |
 |-----|----------|-----------|
 | **3** ✅ | AI-lagret (`src/ai/`) med roller, team-nycklar, verktygsgränssnitt, anropslogg, fejkleverantör | Allt nedan |
-| **3b** | Harness v1: `ecosystem.yaml`, skill-register med kontrakt och behörighetsfilter, agentloop, körjournal (JSONL), godkännandekö (fil), första podden (`berakning`) | Fas 5 – handläggaragenten |
+| **1f** | Tjänstelagret (`tjänstelager.md`): operationskontrakt, agentåtkomst inkl. *endast handläggare*, godkännandekö, händelselogg, första läs- och skrivoperationerna | Fas 4 och alla agentverktyg |
+| **3b** | Harness v1 (efter Fas 4): `ecosystem.yaml`, skill-register ovanpå tjänstelagret, behörighetsfilter, agentloop, körjournal (JSONL), första poddarna | Fas 5 – handläggaragenten |
 | **3c** | Delegering mellan team, flödesmotor med persisterat tillstånd (Lakebase-tabeller), regelförändringsflödet | Flaggskeppsscenariot |
 | Senare | MCP-exponering av poddar, databas-sink för anropsloggen, kostnadsindikatorer, egen Lakebase-roll för PII-poddar | B-017/B-024 fullt ut, BI |
 
@@ -354,11 +361,11 @@ Byggs efter harness (§12).
 ## 13. Öppna frågor
 
 - **Internrevision:** eget oberoende team – när, och med vilka poddar (läsåtkomst till journaler och anropsloggar)?
-- **Lagring av journal och godkännandekö** i Lakebase – tabellschema i `databasschema.md` när Fas 3c påbörjas.
+- **Lagring av körjournalen** i Lakebase – tabellschema i `databasschema.md` när Fas 3c påbörjas. (Godkännandekön och händelseloggen får tabeller redan i Fas 1f, se `tjänstelager.md` §9.)
 - **Formatet för agentdefinitioner** – samlad `ecosystem.yaml` (förslag) eller körprofil i respektive agents MD-fil?
 - **Utvärderingsuppsättningar** per agent/skill för att kunna byta modell med belägg.
 - **Ledningsfunktion:** behövs en agent för tvärgående prioritering (VD-roll) – eller förblir operatören och flödesmotorn den rollen?
-- **Godkännandegränssnitt:** fil/CLI i Fas 3b, handläggar-UI:t (Fas 4) på sikt.
+- **Godkännandegränssnitt:** CLI i Fas 1f, handläggar-UI:t från Fas 4 (`tjänstelager.md` §6).
 
 ---
 
