@@ -1,6 +1,6 @@
 # Tjänstelagret
 
-> **Status:** 🟡 Designförslag (förslag **B-028**). Kod: `src/services/` (kommer, Fas 1f).
+> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f. Kod: `src/services/`, register: `src/services/access_register.yaml`.
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (backend för två klienter), B-022 (försäkringsmodellen), B-026 (agentekosystem)
 > **Relaterat:** `02_system/agentekosystem.md` (harness, skill-poddar), `01_domän/produktregler/` (reglerna operationerna implementerar), `02_system/databasschema.md`
 
@@ -58,8 +58,9 @@ Varje operation deklarerar:
 | `input` / `output` | Pydantic-modeller – indatamodellen blir direkt verktygsdefinitionen för agenter (`ToolSpec.from_model`) |
 | `kind` | `read` / `compute` / `write` / `external` – samma klasser som sidoeffektsklasserna i B-026 |
 | `rules` | Produktregler som operationen implementerar, t.ex. `["PR-ITP1-001"]` – spårbarhet regel → kod |
-| `agent_access` | `AGENT` / `APPROVAL` / `HUMAN_ONLY` – se §4 |
 | `pii` | Om operationen läser eller exponerar personuppgifter |
+
+Vad agenter får göra med operationen står **inte** i operationen utan i registret (§4) – så att gränserna kan ändras på ett ställe.
 
 Skiss:
 
@@ -69,7 +70,6 @@ Skiss:
     description="Registrerar ny pensionsmedförande månadslön från ett visst datum.",
     kind="write",
     rules=["PR-ITP1-001"],
-    agent_access=AgentAccess.APPROVAL,
     pii=True,
 )
 def register_salary_change(ctx: OperationContext, data: SalaryChange) -> SalaryChangeResult:
@@ -78,7 +78,16 @@ def register_salary_change(ctx: OperationContext, data: SalaryChange) -> SalaryC
 
 ---
 
-## 4. Agentåtkomst – flaggan för *endast handläggare*
+## 4. Agentåtkomst – registret och flaggan *endast handläggare*
+
+Vad agenter får göra bestäms i **registret** `src/services/access_register.yaml` – en fil med en rad per operation. Vill du ändra vad agenter får göra ändrar du nivån på raden; ändringen går via commit och merge som allt annat. Handläggare får utföra alla operationer (B-017); registret kan senare utökas med handläggarroller om bolaget får fler personer.
+
+```yaml
+operations:
+  get_insured_overview: AGENT
+  register_salary_change: APPROVAL
+  terminate_policy: HUMAN_ONLY
+```
 
 Varje operation har en av tre nivåer:
 
@@ -88,15 +97,25 @@ Varje operation har en av tre nivåer:
 | **Agent med godkännande** | `APPROVAL` | Förbereda. Operationen utförs först när en handläggare har godkänt (§6) | Registrera lönändring, sätta försäkring i fribrev |
 | **Endast handläggare** | `HUMAN_ONLY` | Ingenting. Operationen syns inte som verktyg; agenten kan bara lämna över ärendet till en handläggare | Avsluta försäkring, rätta historiska premietransaktioner, ändra identitetsuppgifter |
 
+**Effektiv nivå** är den strängaste av registrets nivå och tre golv:
+
+| Golv | Effekt |
+|------|--------|
+| Operationen saknas i registret | `HUMAN_ONLY` – agentåtkomst måste öppnas uttryckligen |
+| Operationen är `external` (påverkar omvärlden, §3.5) | Minst `APPROVAL` |
+| Operationen är `write`/`external` och någon av dess produktregler har inte granskningsstatus `godkänd` (eller saknar regel) | `HUMAN_ONLY` – agenter rör bara det som vilar på en godkänd produktregel |
+
+Registret kan alltså öppna för agenter, men aldrig förbi ett golv. Statusen läses ur produktregelns rubrik i `01_domän/produktregler/` (`**Granskningsstatus:** utkast/godkänd/ersatt`); allt annat än `godkänd` räknas som ej godkänt. En registerrad för en operation som inte finns ger fel vid start, så att stavfel inte tyst lämnar en operation stängd.
+
 **Regler:**
 
-1. **Strängast som standard.** En operation som inte anger nivå blir `HUMAN_ONLY`. Agentåtkomst måste öppnas uttryckligen.
-2. **Kan bara skärpas, aldrig lättas.** En `external`-operation (påverkar omvärlden, §3.5) kräver minst `APPROVAL` – registret vägrar starta annars. Team och poddar kan neka ytterligare operationer men aldrig öppna en `HUMAN_ONLY`.
+1. **Strängast som standard.** Saknas operationen i registret blir den `HUMAN_ONLY`.
+2. **Kan bara skärpas förbi golven.** Team och poddar kan neka ytterligare operationer men aldrig öppna en `HUMAN_ONLY`.
 3. **Verkställs i två lager:**
    - **Tjänstelagret** kontrollerar aktören vid varje anrop. En agent som anropar en `HUMAN_ONLY`-operation får ett fel – oavsett hur anropet kom dit. Det här är det egentliga skyddet.
    - **Harness** visar aldrig `HUMAN_ONLY`-operationer som verktyg, så agenten försöker inte ens.
 4. **Bara en människa kan godkänna** ett agentförslag, och godkännandet loggas med både förslagsställare och godkännare.
-5. **Flaggan står i koden vid operationen.** Den är versionerad, syns i varje diff och täcks av tester. En genererad förteckning över alla operationer och deras nivåer (§9, T4) gör det enkelt att granska helheten. Att ändra en nivå är en kodändring som du godkänner vid merge.
+5. **Registret är versionerat.** Varje ändring syns i en diff och godkänns vid merge. En genererad förteckning (§9, T4) visar för varje operation registrets nivå, effektiv nivå och varför – t.ex. *APPROVAL i registret men HUMAN_ONLY eftersom PR-ITP1-002 är utkast*.
 
 ---
 
@@ -156,10 +175,10 @@ Läsningar av personuppgifter (`pii=True`) loggas också – vem tittade på vem
 
 | Steg | Innehåll |
 |------|----------|
-| **T1** | Operationskontrakt, register, aktörer, åtkomstkontroll (§4–5) och händelselogg – med tester som visar att en agent inte kan utföra `HUMAN_ONLY` |
+| **T1** | Operationskontrakt, operationsregister, åtkomstregistret med golv och regelstatus, aktörer, åtkomstkontroll (§4–5), godkännandemekanism och händelselogg (i minnet/fil – databastabellerna i T3) – med tester som visar att en agent inte kan utföra `HUMAN_ONLY` |
 | **T2** | Första läsoperationerna: försäkringsöversikt per försäkrad, premiehistorik, förhandsberäkning av premie (premiemotorn, PR-ITP1-001) |
 | **T3** | Första skrivoperationerna – en per nivå: `register_salary_change` (`APPROVAL`), `set_policy_paid_up` (`APPROVAL`), `terminate_policy` (`HUMAN_ONLY`), `correct_premium_transaction` (`HUMAN_ONLY`) – samt godkännandekön |
-| **T4** | Genererad förteckning över alla operationer med nivå, typ, regler och PII |
+| **T4** | Genererad förteckning över alla operationer med registrets nivå, effektiv nivå och skäl, typ, regler och PII |
 
 Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelopp) byggs när motsvarande produktregler i delprojekt 4 är antagna. Därefter byggs handläggar-UI:t (Fas 4) ovanpå tjänstelagret, och sist agentlagret (harness, Fas 3b, och handläggaragenten, Fas 5).
 
@@ -170,7 +189,6 @@ Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelop
 ## 10. Öppna frågor
 
 - **Testdatabas:** modellerna använder JSONB (Postgres). Testas tjänstelagret mot en lokal Postgres, en separat Lakebase-gren eller ett minnesbaserat repositorium? Avgörs i T1.
-- **Operationer utan antagen produktregel:** ska skrivoperationer som saknar antagen regel automatiskt vara `HUMAN_ONLY` tills regeln antas? Det kopplar flaggan direkt till regelarbetet i delprojekt 4.
 - **Fyraögonprincip** (två olika människor) är inte möjlig med en operatör – framtida option per operation.
 - **Hur mycket indata som loggas** för PII-operationer – fullt, maskerat eller som referens.
 
@@ -182,5 +200,5 @@ Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelop
 - **B-020** – handläggar-UI före kundportal, backend för två klienter
 - **B-022** – försäkringsmodellen (försäkring → förmåner → lägen, premier per förmån)
 - **B-026** – agentekosystem (harness, skill-poddar, sidoeffektsklasser)
-- **B-028** *(förslag)* – byggordning och tjänstelager
+- **B-028** – byggordning och tjänstelager
 - `01_domän/produktregler/`, `02_system/agentekosystem.md`, `02_system/databasschema.md`

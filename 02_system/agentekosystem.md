@@ -207,7 +207,7 @@ Varje skill-implementation deklarerar:
 
 Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen PII) och kan exponeras som verktyg genom att dess indata beskrivs som en Pydantic-modell – själva beräkningsfunktionen behöver inte ändras.
 
-**Skills mot försäkringssystemet är omslag runt tjänstelagret** (förslag B-028, `tjänstelager.md`). Operationen deklarerar redan indata, typ (`kind` = `side_effect`), produktregler, PII och **agentåtkomst** (`AGENT`/`APPROVAL`/`HUMAN_ONLY`); skillen lägger bara till vilken pod den hör till. Operationer märkta `HUMAN_ONLY` blir aldrig verktyg.
+**Skills mot försäkringssystemet är omslag runt tjänstelagret** (B-028, `tjänstelager.md`). Operationen deklarerar redan indata, typ (`kind` = `side_effect`), produktregler, PII och **agentåtkomst** (`AGENT`/`APPROVAL`/`HUMAN_ONLY`); skillen lägger bara till vilken pod den hör till. Operationer märkta `HUMAN_ONLY` blir aldrig verktyg.
 
 ### 5.3 Sidoeffektsklasser och godkännande
 
@@ -218,7 +218,7 @@ Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen
 | `write` | Uppdatera internt ärende, skriva utkast till dokument | Körs direkt och journalförs; i compliance-kritiska flöden kan steget kräva godkännande |
 | `external` | Mail till kund, rapportinlämning, transaktion, produktionssättning | **Körs aldrig direkt av en agent.** Ett godkännandeärende skapas med utkastet; operatören godkänner, och först då utförs handlingen – journalförd med godkännandet (§3.5) |
 
-**Godkännandekön ligger i tjänstelagret** (förslag B-028, `tjänstelager.md` §6) – inte i harness – så att alla förslag syns på ett ställe i handläggar-UI:t. Harness tar emot svaret *väntar på godkännande* och journalför det. Utöver sidoeffektsklassen kan en operation vara märkt **endast handläggare** (`HUMAN_ONLY`): då kan ingen agent utföra den, inte ens med godkännande (`tjänstelager.md` §4).
+**Godkännandekön ligger i tjänstelagret** (B-028, `tjänstelager.md` §6) – inte i harness – så att alla förslag syns på ett ställe i handläggar-UI:t. Harness tar emot svaret *väntar på godkännande* och journalför det. Utöver sidoeffektsklassen kan en operation vara märkt **endast handläggare** (`HUMAN_ONLY`): då kan ingen agent utföra den, inte ens med godkännande (`tjänstelager.md` §4).
 
 ### 5.4 Föreslagna poddar
 
@@ -346,7 +346,7 @@ Byggs efter harness (§12).
 
 ## 12. Byggordning
 
-**Justerad 2026-10-11 (förslag B-028):** agentlagret byggs efter försäkringssystemet och handläggar-UI:t. Ordningen blir Fas 3 (klar) → **Fas 1f** tjänstelagret → **Fas 4** handläggar-UI → **Fas 3b** harness → Fas 5 handläggaragenten → Fas 3c. Skälet: agentverktygen ska kapsla in operationer som redan finns och används av människor (B-017), inte gissade kontrakt.
+**Justerad 2026-10-11 (B-028):** agentlagret byggs efter försäkringssystemet och handläggar-UI:t. Ordningen blir Fas 3 (klar) → **Fas 1f** tjänstelagret → **Fas 4** handläggar-UI → **Fas 3b** harness → Fas 5 handläggaragenten → Fas 3c. Skälet: agentverktygen ska kapsla in operationer som redan finns och används av människor (B-017), inte gissade kontrakt.
 
 | Fas | Innehåll | Möjliggör |
 |-----|----------|-----------|

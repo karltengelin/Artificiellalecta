@@ -22,7 +22,7 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 
 Övergripande ordning för de kommande byggfaserna. Detaljuppgifter ligger under respektive prioritetsrubrik nedan.
 
-**Justerad byggordning 2026-10-11 (förslag B-028):** försäkringssystemet först (Fas 1 inklusive tjänstelagret, Fas 1f), därefter handläggar-UI:t ovanpå tjänstelagret (Fas 4), och sist agentlagret – harness (Fas 3b) följt av handläggaragenten (Fas 5). Agentverktygen byggs som tunna omslag runt tjänstelagrets operationer. Kapitalförvaltningen (Fas 2) är oberoende och kan gå parallellt. Fasnumren är oförändrade; ordningen är **1 → 1f → 4 → 3b → 5 → 3c**.
+**Justerad byggordning 2026-10-11 (B-028):** försäkringssystemet först (Fas 1 inklusive tjänstelagret, Fas 1f), därefter handläggar-UI:t ovanpå tjänstelagret (Fas 4), och sist agentlagret – harness (Fas 3b) följt av handläggaragenten (Fas 5). Agentverktygen byggs som tunna omslag runt tjänstelagrets operationer. Kapitalförvaltningen (Fas 2) är oberoende och kan gå parallellt. Fasnumren är oförändrade; ordningen är **1 → 1f → 4 → 3b → 5 → 3c**.
 
 1. **Fas 1 – Försäkringssystemet (premiemotorn):** ITP1-domändokument, tabellerna `policies` + `premium_transactions`, premieberäkning som skill, genererad premiehistorik. **Fas 1f – Tjänstelagret** (`02_system/tjänstelager.md`): alla operationer mot försäkringssystemet via ett gemensamt lager som handläggar-UI, agenter och skript använder, med agentåtkomst per operation (bl.a. *endast handläggare*) och händelselogg. Regelstyrda beräkningar och operationer (uttag, paus, garanti, pensionsbelopp) byggs när produktreglerna i delprojekt 4 är antagna
 2. **Fas 2 – Kapitalförvaltning (paper trading, B-019):** placeringsriktlinje i `05_styrdokument/`, tabellerna `portfolios`/`portfolio_holdings`/`trades`, marknadsdata via gratis-API, regelstyrd förvaltningslogik med beslutslogg. Simulerad wallet – inget riktigt kapital (B-003)
@@ -62,20 +62,20 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 
 ---
 
-## 🔴 Fas 1f – Tjänstelagret (förslag B-028) – byggs nu
+## 🔴 Fas 1f – Tjänstelagret (B-028) – byggs nu
 
 Design: `02_system/tjänstelager.md`. Byggs i den tvärgående chatten (alternativ A); Codex fortsätter med produktreglerna i delprojekt 4. Regelspecifika operationer väntar in antagna regler.
 
-- [ ] **T1: Grunden** – operationskontrakt, register, aktörer (handläggare/agent/system), åtkomstkontroll med nivåerna `AGENT`/`APPROVAL`/`HUMAN_ONLY` (strängast som standard) och händelselogg. Tester som visar att en agent inte kan utföra en `HUMAN_ONLY`-operation. Avgör hur tjänstelagret testas mot databasen (JSONB kräver Postgres)
+- [ ] **T1: Grunden** – operationskontrakt, operationsregister, **åtkomstregistret** `src/services/access_register.yaml` (en rad per operation, ändras där), aktörer (handläggare/agent/system), åtkomstkontroll med nivåerna `AGENT`/`APPROVAL`/`HUMAN_ONLY` och golven (saknas i registret → endast handläggare; `external` → minst godkännande; regel som inte är `godkänd` → endast handläggare), godkännandemekanism och händelselogg. Tester som visar att en agent inte kan utföra en `HUMAN_ONLY`-operation. Avgör hur tjänstelagret testas mot databasen (JSONB kräver Postgres)
 - [ ] **T2: Första läsoperationerna** – försäkringsöversikt per försäkrad, premiehistorik, förhandsberäkning av premie (premiemotorn, PR-ITP1-001)
 - [ ] **T3: Första skrivoperationerna + godkännandekö** – `register_salary_change` och `set_policy_paid_up` (`APPROVAL`), `terminate_policy` och `correct_premium_transaction` (`HUMAN_ONLY`). Tabellerna `operation_events` och `approval_requests` dokumenteras i `databasschema.md` innan de skapas (AGENTS.md §4.5)
-- [ ] **T4: Förteckning över operationer** – genererad lista med nivå, typ, produktregler och PII, så att agentgränserna går att granska på ett ställe
+- [ ] **T4: Förteckning över operationer** – genererad lista med registrets nivå, effektiv nivå och skäl, typ, produktregler och PII, så att agentgränserna går att granska på ett ställe
 
 ---
 
 ## 🟠 Fas 3b–3c – Harness och agentsamverkan (B-026)
 
-Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 byggordning). **Byggs efter Fas 4** (förslag B-028) – agentverktygen kapslar in tjänstelagrets operationer. Fas 3b blockerar Fas 5 (handläggaragenten).
+Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 byggordning). **Byggs efter Fas 4** (B-028) – agentverktygen kapslar in tjänstelagrets operationer. Fas 3b blockerar Fas 5 (handläggaragenten).
 
 **Fas 3b – Harness v1**
 - [ ] **3b-1: `src/agents/ecosystem.yaml`** – team, agenter, poddmontering och gränser (steg- och kostnadstak). Avgör den öppna formatfrågan i `agentekosystem.md` §13
@@ -176,7 +176,7 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 ## 💭 Att utreda / oklart
 
 - [ ] **Git branch-strategi** – kör main direkt i tidigt skede, eller feature branches + PR redan från start?
-- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(ramverk beslutat i B-026: sidoeffektsklasser, `02_system/agentekosystem.md` §5.3; godkännandekön och flaggan* endast handläggare *byggs i tjänstelagret, Fas 1f – `02_system/tjänstelager.md` §4 och §6, förslag B-028)*
+- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(ramverk beslutat i B-026: sidoeffektsklasser, `02_system/agentekosystem.md` §5.3; godkännandekön och flaggan* endast handläggare *byggs i tjänstelagret, Fas 1f – `02_system/tjänstelager.md` §4 och §6, B-028)*
 - [ ] Loggning och spårbarhet – hur sparas agentbeslut? *(ramverk beslutat i B-025/B-026: anropslogg `02_system/ai_abstraktion.md` §10 + körjournal `02_system/agentekosystem.md` §4.3 – lagring i Lakebase avgörs i Fas 3c)*
 - [ ] Backup-strategi för databas och dokument
 

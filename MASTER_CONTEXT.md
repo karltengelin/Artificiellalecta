@@ -76,6 +76,9 @@ All information i projektet sparas i första hand som **Markdown-filer** (.md). 
 ### 3.7 Människa som fullständig operatör
 Systemet ska alltid kunna styras manuellt av en människa, på samma nivå som en agent. Varje åtgärd en agent kan utföra – lägga till en kund, uppdatera en policy, trigga ett flöde – ska också kunna utföras direkt av operatören via Cowork eller annat gränssnitt. Agenter kör på autopilot; operatören kan alltid ta manuell kontroll.
 
+### 3.8 Ett tjänstelager för människor och agenter
+Alla operationer mot försäkringssystemet går via ett gemensamt tjänstelager (`src/services/`) som handläggar-UI, agenter och skript använder. Ett centralt register bestämmer vad agenter får göra med varje operation: utföra direkt, föreslå för godkännande, eller ingenting alls (*endast handläggare*). Skrivande operationer vars produktregel inte är godkänd är alltid endast handläggare. Varje ändring loggas med vem som gjorde den och varför. Se `02_system/tjänstelager.md` och B-028.
+
 ---
 
 ## 4. Bolagets funktionsområden
@@ -176,7 +179,7 @@ Artificiellalecta/
 │   ├── databasschema.md            ← Tabellstruktur och SQLAlchemy-modeller (B-018, B-022)
 │   ├── ai_abstraktion.md           ← AI-lagret: utvärdering, gränssnitt, roller, nycklar (B-009/B-025)
 │   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
-│   ├── tjänstelager.md             ← Operationer för handläggare, agenter och skript (förslag B-028)
+│   ├── tjänstelager.md             ← Operationer för handläggare, agenter och skript (B-028)
 │   ├── agentkarta.md               ← Översikt över alla agenter
 │   ├── agenter/                    ← En MD-fil per agent (10 st)
 │   └── Agentsystem/                ← Orkestrerade flöden, en MD-fil per flöde (B-016)

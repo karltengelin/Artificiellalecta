@@ -8,6 +8,43 @@
 
 ## Beslut
 
+### B-028 | 2026-10-11 | Byggordning och tjänstelager: försäkringssystem före agentlager, en väg in för människor och agenter
+
+**Beslut:**
+1. Byggordningen blir: försäkringssystemets kärna (Fas 1 inkl. tjänstelagret, Fas 1f) → handläggar-UI (Fas 4) → agentlagret (harness, Fas 3b, därefter handläggaragenten, Fas 5) → delegering och flöden (Fas 3c). Kapitalförvaltningen (Fas 2) går parallellt. Fasnumren behålls.
+2. Alla operationer mot försäkringssystemet går via ett gemensamt tjänstelager (`src/services/`) som används av handläggar-UI:t, agenter (via skills i harness) och skript. Varje operation deklarerar indatamodell, typ (`read`/`compute`/`write`/`external`), produktregler den implementerar och PII.
+3. Agentåtkomst per operation i tre nivåer: `AGENT` (agent får utföra), `APPROVAL` (agent får föreslå, handläggare godkänner) och `HUMAN_ONLY` (endast handläggare). Nivåerna anges i **ett centralt register** (`src/services/access_register.yaml`) så att de kan ändras på ett ställe utan att röra operationskoden; ändringar går via commit och merge. Effektiv nivå är den strängaste av registrets nivå och tre golv: operation som saknas i registret → `HUMAN_ONLY`; `external` → minst `APPROVAL`; `write`/`external` vars produktregler inte har granskningsstatus `godkänd` → `HUMAN_ONLY`. Verkställs i tjänstelagret vid varje anrop och i harness (`HUMAN_ONLY` visas aldrig som verktyg).
+4. Godkännandekön och en append-only händelselogg (aktör, förslagsställare, godkännande, produktregler, motivering) ligger i tjänstelagret. Det justerar B-026, där harness skapade godkännandeärenden.
+5. Tjänstelagret byggs i den tvärgående chatten; Codex fortsätter med produktreglerna i delprojekt 4. Regelspecifika operationer byggs när reglerna är godkända.
+
+**Motivering:**
+- Agentverktyg ska kapsla in operationer som redan finns och används av människor, inte gissade kontrakt – en harness byggd först hade bara haft premiemotorn att koppla in
+- B-017: allt en agent kan göra ska handläggaren kunna göra – operationerna behöver finnas för människan först, och samma väg in ger samma spår
+- Behörighet i strukturen: flaggan *endast handläggare* verkställs i tjänstelagret oavsett hur anropet kommer, inte bara i harness eller prompt
+- Ett centralt register gör agentgränserna lätta att överblicka och ändra vid ett senare tillfälle, utan att leta i koden
+- Kopplingen till regelstatus gör att agenter bara rör det som vilar på en godkänd produktregel – arbetet i delprojekt 4 styr direkt vad agenter får göra
+- En implementation per affärsregel, spårbar till produktregel-id – grunden för flaggskeppsflödet regel → kod
+- Händelseloggen ger BI (delprojekt 2) historik att analysera
+
+**Övervägda alternativ:**
+
+*Harness först (Fas 3b direkt efter AI-lagret)* – avvisat: bygger verktygskontrakt utan riktiga operationer.
+
+*Flaggan bara i harness eller `ecosystem.yaml`* – avvisat: skyddar bara agentvägen; en felkopplad skill eller ett skript kunde kringgå den.
+
+*Nivån i koden vid varje operation* – avvisat: spritt över många filer, svårare att överblicka och ändra.
+
+*Två nivåer (tillåten/förbjuden)* – avvisat: förslag med godkännande behövs för vardagsärenden (t.ex. lönändring) så att agenter kan förbereda arbete utan att utföra det.
+
+**Konsekvenser:**
+- `02_system/tjänstelager.md`, ny sektion Fas 1f i `ATT_GORA.md` (T1–T4), fasplanen och `agentekosystem.md` §12 uppdaterade; ny designprincip MASTER_CONTEXT §3.8
+- Handläggare får utföra alla operationer (B-017); registret kan senare utökas med handläggarroller om bolaget får fler personer
+- Tjänstelagret läser produktreglernas granskningsstatus (`utkast`/`godkänd`/`ersatt`) ur `01_domän/produktregler/` – formatet ägs av delprojekt 4 och bör inte ändras utan att tjänstelagret anpassas
+- Nya tabeller `operation_events` och `approval_requests` – dokumenteras i `databasschema.md` innan de skapas (AGENTS.md §4.5)
+- Punkt 3 (registret och regelgolvet) tillkom vid operatörens godkännande av förslaget
+
+---
+
 ### B-027 | 2026-10-11 | Premiebaserad garanti för traditionell ITP1-pension
 
 **Beslut:** Operatören godkände garantiförslaget i chatten 2026-10-11 (”vi går på ditt förslag”). Den traditionella ITP1-produkten ska ha en intjänad pensionsgaranti. Hela den mottagna nettopremien är garantigrundande med 0 % nettoränta i garantitariffen. Garantin avser pensionsförmånen för avtalad plan, inte ett oföränderligt kontosaldo eller återbetalning till efterlevande.
