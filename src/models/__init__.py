@@ -14,6 +14,7 @@ from .policy import Policy
 from .policy_benefit import PolicyBenefit
 from .policy_state import PolicyState
 from .premium_transaction import PremiumTransaction
+from .salary_report import SalaryReport
 
 __all__ = [
     "ApprovalRequestRecord",
@@ -26,4 +27,5 @@ __all__ = [
     "PolicyBenefit",
     "PolicyState",
     "PremiumTransaction",
+    "SalaryReport",
 ]

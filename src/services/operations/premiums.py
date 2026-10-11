@@ -27,6 +27,7 @@ class PremiumHistoryQuery(BaseModel):
 
 
 class PremiumRow(BaseModel):
+    transaction_id: str
     period_month: date
     transaction_type: str
     benefit_type: str
@@ -34,6 +35,7 @@ class PremiumRow(BaseModel):
     amount_sek: Decimal
     status: str
     paid_date: date | None
+    corrects_transaction_id: str | None = Field(description="Rättelserad: premieraden den rättar")
 
 
 class PremiumHistory(BaseModel):
@@ -62,7 +64,7 @@ def get_premium_history(ctx: OperationContext, data: PremiumHistoryQuery) -> Pre
         select(PremiumTransaction, PolicyBenefit.benefit_type)
         .join(PolicyBenefit, PremiumTransaction.benefit_id == PolicyBenefit.id)
         .where(PolicyBenefit.policy_id == policy.id)
-        .order_by(PremiumTransaction.period_month, PremiumTransaction.transaction_type)
+        .order_by(PremiumTransaction.period_month, PremiumTransaction.transaction_type, PremiumTransaction.created_at)
     )
     if data.from_month is not None:
         query = query.where(PremiumTransaction.period_month >= data.from_month.replace(day=1))
@@ -71,6 +73,7 @@ def get_premium_history(ctx: OperationContext, data: PremiumHistoryQuery) -> Pre
 
     rows = [
         PremiumRow(
+            transaction_id=str(tx.id),
             period_month=tx.period_month,
             transaction_type=tx.transaction_type,
             benefit_type=benefit_type,
@@ -78,6 +81,7 @@ def get_premium_history(ctx: OperationContext, data: PremiumHistoryQuery) -> Pre
             amount_sek=tx.amount_sek,
             status=tx.status,
             paid_date=tx.paid_date,
+            corrects_transaction_id=str(tx.corrects_transaction_id) if tx.corrects_transaction_id else None,
         )
         for tx, benefit_type in session.execute(query).all()
     ]

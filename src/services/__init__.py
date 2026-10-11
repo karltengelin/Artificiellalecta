@@ -6,8 +6,8 @@ Specifikation: 02_system/tjänstelager.md.
 
     from services import Actor, OperationContext, ServiceLayer
     service = ServiceLayer()
-    ctx = OperationContext(actor=Actor.human("karl"), reason="Ny lön enligt lönebesked")
-    result = service.execute("register_salary_change", ctx, {...})
+    ctx = OperationContext(actor=Actor.human("karl"), reason="Lönefil för september")
+    result = service.execute("register_salary_report", ctx, {...})
 """
 
 from services.access import AccessDecision, AccessRegister, effective_access
@@ -25,6 +25,8 @@ from services.contract import (
 from services.errors import (
     AccessDeniedError,
     ApprovalError,
+    BlockedError,
+    ConflictError,
     InvalidInputError,
     MissingReasonError,
     NotFoundError,
@@ -47,6 +49,8 @@ __all__ = [
     "AgentAccess",
     "ApprovalError",
     "ApprovalRequest",
+    "BlockedError",
+    "ConflictError",
     "InvalidInputError",
     "JsonlEventLog",
     "MemoryApprovalStore",

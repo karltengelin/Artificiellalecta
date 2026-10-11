@@ -27,6 +27,19 @@ class MissingReasonError(ServiceError):
     """Skrivande operationer kräver en motivering (spårbarhet, B-028)."""
 
 
+class BlockedError(ServiceError):
+    """Fallet stöds inte eller saknar underlag – med skäl och regel. Inget har ändrats.
+
+    Används när en produktregel kräver något modellen eller underlaget inte har
+    (t.ex. spårad kapitalandel vid återtag) eller när fallet medvetet lämnats
+    utanför leveransen. Inte ett avslag i sak – fallet kräver manuell prövning.
+    """
+
+
+class ConflictError(ServiceError):
+    """Krock med aktuellt läge: dubblett, redan utfört, inaktuell version eller samtidig ändring."""
+
+
 class AccessDeniedError(ServiceError):
     """Aktören får inte utföra operationen."""
 

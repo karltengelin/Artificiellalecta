@@ -16,6 +16,8 @@ from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from services.access import AccessDecision, AccessRegister, effective_access
 from services.approvals import (
@@ -35,6 +37,7 @@ from services.contract import (
 from services.errors import (
     AccessDeniedError,
     ApprovalError,
+    ConflictError,
     InvalidInputError,
     MissingReasonError,
     ServiceConfigError,
@@ -226,8 +229,16 @@ class ServiceLayer:
             pass
 
     def _call(self, op: Operation, ctx: OperationContext, data: BaseModel, session: Any) -> BaseModel | None:
-        with guard_operation(session, op.name):
-            output = op.func(replace(ctx, session=session), data)
+        try:
+            with guard_operation(session, op.name):
+                output = op.func(replace(ctx, session=session), data)
+                if isinstance(session, Session):
+                    session.flush()  # databasens regler (unikhet, CHECK) prövas inom anropet
+        except IntegrityError as exc:
+            raise ConflictError(
+                f"'{op.name}' krockar med databasens integritetsregler – dubblett eller samtidig ändring. "
+                "Inget sparades"
+            ) from exc
         if op.output_model is not None and not isinstance(output, op.output_model):
             raise TypeError(
                 f"'{op.name}' returnerade {type(output).__name__}, väntade {op.output_model.__name__}"

@@ -25,6 +25,7 @@ from services import (
     AccessRegister,
     Actor,
     ApprovalError,
+    ConflictError,
     MemoryEventLog,
     NotFoundError,
     OperationContext,
@@ -406,6 +407,34 @@ class TestTransaktionsgransen:
                 {"personal_id_number": PERSON, "email": "x@example.se"},
             )
         assert (email(insurance_db), events(insurance_db)) == (None, [])
+
+    def test_krock_med_databasens_unikhetsregler_blir_konflikt_utan_andring(self, insurance_db, rules):
+        from datetime import date
+        from decimal import Decimal
+
+        from models import SalaryReport
+
+        conflict_registry = OperationRegistry()
+
+        @operation(name="double_report", description="t", kind=OperationKind.WRITE, rules=["PR-T-001"],
+                   registry=conflict_registry)
+        def double_report(ctx: OperationContext, data: Changed) -> Changed:
+            for _ in range(2):  # samma version två gånger – unikt index
+                ctx.session.add(SalaryReport(
+                    insured_person_id=insurance_db.ids.person, employer_id=insurance_db.ids.employer,
+                    period_month=date(2025, 6, 1), version=1, pensionable_salary_sek=Decimal(1),
+                    source="manual", received_date=date(2025, 7, 1),
+                ))
+            return data
+
+        service = ServiceLayer(registry=conflict_registry, register=AccessRegister.from_dict({}), rules=rules,
+                               session_factory=insurance_db.session_factory)
+        with pytest.raises(ConflictError, match="integritetsregler"):
+            service.execute("double_report", OperationContext(actor=Actor.human("karl"), reason="Test"),
+                            {"email": "x"})
+        with insurance_db.session_factory() as s:
+            assert s.scalars(select(SalaryReport)).all() == []
+        assert events(insurance_db) == []
 
     def test_databaskon_kraver_gemensam_transaktion(self, insurance_db, rules):
         with pytest.raises(ServiceConfigError, match="session_factory"):

@@ -1,13 +1,13 @@
 """Operationskontraktet: hur en operation i tjänstelagret deklareras (tjänstelager.md §3).
 
     @operation(
-        name="register_salary_change",
-        description="Registrerar ny pensionsmedförande månadslön från ett visst datum.",
+        name="register_salary_report",
+        description="Registrerar pensionsmedförande lön för en utbetalningsmånad (ny rapport eller rättelse).",
         kind=OperationKind.WRITE,
-        rules=["PR-ITP1-001"],
+        rules=["PR-ITP1-013", "PR-ITP1-014", "PR-ITP1-017"],
         pii=True,
     )
-    def register_salary_change(ctx: OperationContext, data: SalaryChange) -> SalaryChangeResult:
+    def register_salary_report(ctx: OperationContext, data: SalaryReportInput) -> SalaryReportResult:
         ...
 
 Vad agenter får göra med operationen står inte här utan i åtkomstregistret

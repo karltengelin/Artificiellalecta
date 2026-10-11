@@ -1,6 +1,6 @@
 # Tjänstelagret
 
-> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1, T2 och T4 klara**, T3 pågår (händelselogg, godkännandekö och transaktionsgräns klara; skrivoperationerna återstår). Kod: `src/services/`, register: `src/services/access_register.yaml`, förteckning: [tjänstelager_operationer.md](tjänstelager_operationer.md).
+> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1, T2 och T4 klara**. T3 är byggt och testat lokalt: transaktionsgräns, `register_salary_report`, `set_policy_paid_up` och `correct_premium_transaction`, medan `terminate_policy` är uppskjuten (§9.1). Migrationen mot Lakebase och Postgres-verifieringen återstår. Kod: `src/services/`, register: `src/services/access_register.yaml`, förteckning: [tjänstelager_operationer.md](tjänstelager_operationer.md).
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (backend för två klienter), B-022 (försäkringsmodellen), B-026 (agentekosystem)
 > **Relaterat:** `02_system/agentekosystem.md` (harness, skill-poddar), `01_domän/produktregler/` (reglerna operationerna implementerar), `02_system/databasschema.md`
 
@@ -53,7 +53,7 @@ Varje operation deklarerar:
 
 | Fält | Innehåll |
 |------|----------|
-| `name` | Engelska `snake_case`, t.ex. `register_salary_change`. Blir verktygsnamnet för agenter |
+| `name` | Engelska `snake_case`, t.ex. `register_salary_report`. Blir verktygsnamnet för agenter |
 | `description` | Vad operationen gör och när den används (svenska) |
 | `input` / `output` | Pydantic-modeller – indatamodellen blir direkt verktygsdefinitionen för agenter (`ToolSpec.from_model`) |
 | `kind` | `read` / `compute` / `write` / `external` – samma klasser som sidoeffektsklasserna i B-026 |
@@ -66,13 +66,13 @@ Skiss:
 
 ```python
 @operation(
-    name="register_salary_change",
-    description="Registrerar ny pensionsmedförande månadslön från ett visst datum.",
+    name="register_salary_report",
+    description="Registrerar pensionsmedförande lön för en utbetalningsmånad (ny rapport eller rättelse).",
     kind="write",
-    rules=["PR-ITP1-001"],
+    rules=["PR-ITP1-013", "PR-ITP1-014", "PR-ITP1-017"],
     pii=True,
 )
-def register_salary_change(ctx: OperationContext, data: SalaryChange) -> SalaryChangeResult:
+def register_salary_report(ctx: OperationContext, data: SalaryReportInput) -> SalaryReportResult:
     ...
 ```
 
@@ -85,8 +85,8 @@ Vad agenter får göra bestäms i **registret** `src/services/access_register.ya
 ```yaml
 operations:
   get_insured_overview: AGENT
-  register_salary_change: APPROVAL
-  terminate_policy: HUMAN_ONLY
+  register_salary_report: APPROVAL
+  correct_premium_transaction: HUMAN_ONLY
 ```
 
 Varje operation har en av tre nivåer:
@@ -197,7 +197,7 @@ Läsningar av personuppgifter (`pii=True`) loggas också – vem tittade på vem
 |------|----------|
 | **T1** | Operationskontrakt, operationsregister, åtkomstregistret med golv och regelstatus, aktörer, åtkomstkontroll (§4–5), godkännandemekanism och händelselogg (i minnet/fil – databastabellerna i T3) – med tester som visar att en agent inte kan utföra `HUMAN_ONLY` |
 | **T2** | Första läsoperationerna: försäkringsöversikt per försäkrad, premiehistorik, förhandsberäkning av premie (premiemotorn, PR-ITP1-001) |
-| **T3** | Första skrivoperationerna – en per nivå: `register_salary_change` (`APPROVAL`), `set_policy_paid_up` (`APPROVAL`), `terminate_policy` (`HUMAN_ONLY`), `correct_premium_transaction` (`HUMAN_ONLY`) – samt godkännandekön |
+| **T3** | Godkännandekön och transaktionsgränsen (§6.1) samt de första skrivoperationerna: `register_salary_report` och `set_policy_paid_up` (`APPROVAL`), `correct_premium_transaction` (`HUMAN_ONLY`). `terminate_policy` är uppskjuten (§9.1). Planerades som `register_salary_change` – namn och betydelse ändrades när modellen stämdes av (§9.1) |
 | **T4** | Genererad förteckning över alla operationer med registrets nivå, effektiv nivå och skäl, typ, regler och PII |
 
 Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelopp) byggs när motsvarande produktregler i delprojekt 4 är antagna. Därefter byggs handläggar-UI:t (Fas 4) ovanpå tjänstelagret, och sist agentlagret (harness, Fas 3b, och handläggaragenten, Fas 5).
@@ -206,13 +206,39 @@ Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelop
 
 **Tester:** tjänstelagret testas mot en SQLite-databas i minnet med samma modeller som Lakebase (`tests/conftest.py`, fixturen `insurance_db`). Modellerna är portabla utan att Postgres-DDL:en ändrats (`databasschema.md` §12). I produktion används `services.db.database_session_factory()` mot Lakebase via `DATABASE_URL`. Transaktionsgränsen och samtidiga godkännanden testas i `tests/test_services_transactions.py`; samtidigheten mot en SQLite-fil (`insurance_file_db`) där databasen köar transaktionerna. Det bevisar inte Postgres radlås – samma scenarier finns i `tests/test_services_postgres.py` och körs när `SERVICES_TEST_POSTGRES_URL` pekar på en **isolerad** Postgres (aldrig Lakebase-beståndet; `DATABASE_URL` vägras).
 
-**Byggda operationer:**
+**Byggda operationer** – med registrets nivå. Effektiv nivå och skäl (t.ex. att skrivningarna är `HUMAN_ONLY` för agenter tills PR-ITP1 v1.0 är infört och giltigt) står i den genererade förteckningen [tjänstelager_operationer.md](tjänstelager_operationer.md).
 
 | Operation | Typ | Produktregler | PII | Register |
 |-----------|-----|---------------|-----|----------|
 | `get_insured_overview` | `read` | – | Ja | `AGENT` |
 | `get_premium_history` | `read` | – | Ja | `AGENT` |
+| `get_salary_reports` | `read` | – | Ja | `AGENT` |
 | `calculate_premium_preview` | `compute` | PR-ITP1-001 | Nej | `AGENT` |
+| `register_salary_report` | `write` | PR-ITP1-013, -014, -017 | Ja | `APPROVAL` |
+| `set_policy_paid_up` | `write` | PR-ITP1-013 | Ja | `APPROVAL` |
+| `correct_premium_transaction` | `write` | PR-ITP1-001, -014, -017, -019, -032 | Ja | `HUMAN_ONLY` |
+
+### 9.1 Skrivoperationerna i T3 – vad som stöds och vad som blockeras
+
+Modellbehov och avgränsning stämdes av med operatören 2026-10-11. En operation stöder bara de fall som står här. Övriga fall ger `BlockedError` med skäl och regel (manuell prövning) eller `ConflictError` vid dubblett eller inaktuellt läge, och ändrar ingenting. Alla tre låser berörda rader (`SELECT … FOR UPDATE` på person, försäkring eller premierad) så att samtidiga anrop prövas i tur och ordning; databasens unikhetsregler är sista skyddet (krock → `ConflictError`).
+
+**`register_salary_report`** (ny tabell `salary_reports`, `databasschema.md` §8b) – pensionsmedförande lön (PR-ITP1-014) per person, arbetsgivare och utbetalningsmånad. Skiljs från aktuell lön på personen och från premien.
+- *Stöds:* ny rapport (`kind="new"`, version 1) och rättelse (`kind="correction"`, ny version som pekar på den gällande; `corrects_version` måste vara den gällande). Uttrycklig noll; en månad utan rad saknar rapport. Ursprung (`employer`/`manual`), avsändarens referens och mottagningsdag sparas. Rapporten skapar ingen premie och räknar inte om gamla premier – en rättelse av en månad med premie redovisar premien, som rättas med `correct_premium_transaction`.
+- *Skydd:* en dubblett för samma månad ersätter inte den gällande rapporten (PR-ITP1-017); samma avsändarreferens registreras inte två gånger; en rättelse som inte ändrar lönen eller utgår från en inaktuell version avvisas.
+- *Blockeras:* annan arbetsgivare än den försäkrades nuvarande (anställningshistorik saknas i modellen), månad före ITP1-tillhörighet eller anställning, månad efter anställningens slut (slutlön/bonus prövas manuellt, PR-ITP1-013), framtida månad, mottagningsdag i framtiden eller före månaden, avliden försäkrad, och ny rapport för en månad som redan har premie från premiehistoriken.
+
+**`set_policy_paid_up`** (befintlig `policy_states`) – arbetsgivarens avanmälan: anställningens sista dag registreras på den försäkrade (status `terminated`) och försäkringen går över i fribrev dagen efter (PR-ITP1-013).
+- *Stöds:* försäkring med öppet `premium_paying` och utan uttagsläge i tidslinjen; slutdagen senast i går (fribrev från senast i dag). Premieperioden stängs, `paid_up` öppnas och hela tidslinjen valideras (ett öppet läge, inga överlapp).
+- *Blockeras:* pension startad eller avslutad (ett läge per försäkring kan inte uttrycka fribrev samtidigt med pågående eller pausad pension – det kräver att premieläget skiljs från pensionsläget, UTTAG_GEMENSAMT), framtidsdatering (läsningen tolkar den öppna raden som dagens läge), fler premiebetalande försäkringar för personen, premie eller löneunderlag för månader efter slutdagen, avliden eller pensionerad person, och fribrev av andra skäl än avslutad anställning (t.ex. 66 år, där frivillig fortsättning enligt PR-ITP1-016 inte kan prövas). Ett redan registrerat annat slutdatum är en konflikt.
+
+**`correct_premium_transaction`** (ny kolumn `premium_transactions.corrects_transaction_id`, `databasschema.md` §8) – lönerättelse av en premierad (PR-ITP1-019 p.1–2). Ursprungsraden ändras aldrig; en länkad `adjustment`-rad med differensen och fullt underlag skapas med status `pending`.
+- *Stöds:* ej mottagen premie (`pending`/`invoiced`) – kredit eller tillägg på fordran; mottagen premie där rättad premie är minst det mottagna – tilläggspremie som ny fordran (kapital och garanti först när den tas emot, PR-ITP1-018). Omräkning med premiemånadens IBB (PR-ITP1-032) och trappan (PR-ITP1-001). Upprepade rättelser bygger på varandra; samma rättelse två gånger avvisas (differens noll).
+- *Blockeras:* minskning av redan mottagen premie – återtag kräver spårad kapitalandel och historisk garantidel (PR-ITP1-019 p.3, PR-ITP1-020) som modellen saknar, så ingen andel av dagens kapital gissas; flera premierader samma månad (fördelning, PR-ITP1-015); andra radtyper än `premium`; makulerade rader; rader utan beräkningsunderlag eller som inte går att räkna fram igen; IBB som avviker från radens underlag; månad med justeringar utan länk; avliden försäkrad (PR-ITP1-010); rättad lön som inte stämmer med registrerat löneunderlag för månaden.
+- `HUMAN_ONLY`: negativa rättighetsändringar och återkrav avgörs av människa (PR-ITP1-031).
+
+**`terminate_policy` – uppskjuten.** Varken slutavräkning efter sista månadsrätten (PR-ITP1-027) eller dödsfallsavräkning (PR-ITP1-010) kan genomföras korrekt: båda kräver uttagsdelar, månadsanspråk, betalningsskuld och kapitaljournal. Ett avslut genom en lägesändring skulle kunna dölja kapital och anspråk, så det finns ingen operation och ingen registerrad.
+
+**Regelversioner i de byggda fallen.** Beräkningar använder periodens parametrar: premiemånadens IBB ur `base_amounts`, och en rättelse stoppas om radens sparade IBB avviker. Regelstatus och filversion vid verkställigheten skrivs i händelseloggen (§4). Före införandet av PR-ITP1 v1.0 är operationerna handläggarstöd enligt specificerade regler. Begränsning: det finns ännu ingen låst regelversion per händelse eller beräkning (t.ex. `PR-ITP1-001 v1.0` i `calculation_basis`) och ingen markering av teknisk driftsättning. Det behövs för flaggskeppsflödet regel → produktion och bör stämmas av med delprojekt 4.
 
 ---
 

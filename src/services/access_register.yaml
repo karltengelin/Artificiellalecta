@@ -18,10 +18,14 @@
 operations:
   get_insured_overview: AGENT          # läsning, personuppgifter (loggas)
   get_premium_history: AGENT           # läsning, personuppgifter (loggas)
+  get_salary_reports: AGENT            # läsning av löneunderlag, personuppgifter (loggas)
   calculate_premium_preview: AGENT     # beräkning enligt PR-ITP1-001, sparar ingenting
 
-  # Planerade operationer (Fas 1f, T3) – raderna läggs till när operationerna byggs:
-  # register_salary_change: APPROVAL         # T3, skrivning
-  # set_policy_paid_up: APPROVAL             # T3, skrivning
-  # terminate_policy: HUMAN_ONLY             # T3, skrivning
-  # correct_premium_transaction: HUMAN_ONLY  # T3, skrivning
+  # Skrivningar (Fas 1f T3). Till dess PR-ITP1 v1.0 är infört och giltigt ger regelgolvet
+  # HUMAN_ONLY för agenter oavsett nivån här – se 02_system/tjänstelager_operationer.md.
+  register_salary_report: APPROVAL       # löneunderlag per månad, ny rapport eller rättelse (PR-ITP1-014)
+  set_policy_paid_up: APPROVAL           # avanmälan + fribrev, ej startad pension (PR-ITP1-013)
+  correct_premium_transaction: HUMAN_ONLY  # rättelse med motpost; negativ ändring avgörs av människa (PR-ITP1-019, -031)
+
+  # terminate_policy är uppskjuten: slutavräkning (PR-ITP1-027) och dödsfallsavräkning
+  # (PR-ITP1-010) kräver uttagsdelar, månadsanspråk och kapitaljournal som modellen saknar.

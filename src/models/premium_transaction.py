@@ -55,6 +55,11 @@ class PremiumTransaction(Base):
             "pensionable_salary_sek IS NULL OR pensionable_salary_sek >= 0",
             name="ck_premium_transactions_salary",
         ),
+        # En rättelse är alltid en adjustment-rad (Fas 1f T3, PR-ITP1-019)
+        CheckConstraint(
+            "corrects_transaction_id IS NULL OR transaction_type = 'adjustment'",
+            name="ck_premium_transactions_correction_type",
+        ),
         # Max en ordinarie premie per förmån och månad (partiellt unikt index).
         Index(
             "uq_premium_transactions_benefit_period_premium",
@@ -105,6 +110,14 @@ class PremiumTransaction(Base):
         index=True,
     )
     paid_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    # Rättelsens ursprungspost (Fas 1f T3) – lagt till med scripts/migrate_t3_schema.py
+    corrects_transaction_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("premium_transactions.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
 
     benefit: Mapped["PolicyBenefit"] = relationship(
         back_populates="premium_transactions"
