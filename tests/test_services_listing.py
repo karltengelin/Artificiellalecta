@@ -21,9 +21,9 @@ class Empty(BaseModel):
 
 def test_forteckningen_i_repot_stammer_med_koden_registret_och_regelstatusen():
     expected = render_operations(ServiceLayer(events=MemoryEventLog()))
-    assert DEFAULT_PATH.exists(), "kör python scripts/list_operations.py"
+    assert DEFAULT_PATH.exists(), "kör python scripts/documentation/list_operations.py"
     assert DEFAULT_PATH.read_text(encoding="utf-8") == expected, (
-        "02_system/tjänstelager_operationer.md är inte aktuell – kör python scripts/list_operations.py"
+        "02_system/tjänstelager_operationer.md är inte aktuell – kör python scripts/documentation/list_operations.py"
     )
 
 

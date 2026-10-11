@@ -5,11 +5,11 @@ Skriver en mapp `backups/<tidsstämpel>/` med en JSONL-fil per tabell och
 personuppgifter och ska inte in i repot. Bara läsning mot databasen.
 
 Kör regelbundet, t.ex. via Windows Schemaläggaren, och alltid före större
-ändringar. Återställning: scripts/restore_database.py.
+ändringar. Återställning: scripts/maintenance/restore_database.py.
 
 Användning (från repo-roten, i .venv):
-    python scripts/backup_database.py
-    python scripts/backup_database.py --target D:/backup/artificiellalecta
+    python scripts/maintenance/backup_database.py
+    python scripts/maintenance/backup_database.py --target D:/backup/artificiellalecta
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import json
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from utils.backup import backup_database  # noqa: E402

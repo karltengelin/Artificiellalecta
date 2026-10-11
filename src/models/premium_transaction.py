@@ -111,7 +111,7 @@ class PremiumTransaction(Base):
     )
     paid_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
-    # Rättelsens ursprungspost (Fas 1f T3) – lagt till med scripts/migrate_t3_schema.py
+    # Rättelsens ursprungspost (Fas 1f T3) – lagt till med scripts/migrations/migrate_t3_schema.py
     corrects_transaction_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("premium_transactions.id", ondelete="RESTRICT"),

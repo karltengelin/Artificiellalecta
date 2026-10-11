@@ -331,7 +331,7 @@ Anropsloggen är det tekniska lagret (kostnad, prestanda, fel). Den verksamhetsm
 
 - **`FakeProvider`** (`ai.providers.fake`) returnerar skriptade svar och sparar alla förfrågningar för kontroll. Agent- och flödestester injicerar den via `AIClient(provider_overrides={"anthropic": fake, ...})` – inga nätverksanrop, ingen kostnad.
 - **Enhetstester** (`tests/test_ai_*.py`) täcker konfiguration, nyckelval, strikta scheman, klientens reservkedja och båda adaptrarnas översättning åt båda hållen mot SDK:ernas egna typer.
-- **Röktest mot riktiga API:er:** `scripts/smoke_test_ai.py` kör ett textanrop, ett strukturerat svar och en verktygsloop i två varv per leverantör, med billigaste modellerna (totalt några ören). Körs manuellt efter att nycklar lagts in i `.env` eller när SDK:er uppgraderas.
+- **Röktest mot riktiga API:er:** `scripts/diagnostics/smoke_test_ai.py` kör ett textanrop, ett strukturerat svar och en verktygsloop i två varv per leverantör, med billigaste modellerna (totalt några ören). Körs manuellt efter att nycklar lagts in i `.env` eller när SDK:er uppgraderas.
 
 ---
 
@@ -384,4 +384,4 @@ Anropsloggen är det tekniska lagret (kostnad, prestanda, fel). Den verksamhetsm
 - **B-006** – dataminimering (ingen innehållsloggning som standard)
 - **B-016** – spårbarhet i orkestrerade flöden
 - `02_system/agentekosystem.md` – team, skill-poddar, modellval och nyckelhantering på ekosystemnivå
-- Kod: `src/ai/`, tester: `tests/test_ai_*.py`, röktest: `scripts/smoke_test_ai.py`
+- Kod: `src/ai/`, tester: `tests/test_ai_*.py`, röktest: `scripts/diagnostics/smoke_test_ai.py`

@@ -11,7 +11,7 @@ dependencies = [
     "python-dotenv>=1.0",
     # AI-abstraktionslagret (src/ai/, B-025): bara leverantörernas
     # officiella SDK:er. Övre gräns på major-version – uppgraderas medvetet
-    # och verifieras med scripts/smoke_test_ai.py.
+    # och verifieras med scripts/diagnostics/smoke_test_ai.py.
     "anthropic>=1.13,<2",
     "openai>=3.28,<4",
     "pydantic>=2.7",

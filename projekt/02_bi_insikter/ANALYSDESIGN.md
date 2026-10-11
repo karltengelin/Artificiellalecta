@@ -14,7 +14,7 @@ utanför uppgiften. Ingen årsprognos, garanti eller pensionskapital beräknas.
 
 - `src/analytics/premium_impact.py`: ren beräkning och aggregerad Markdownrapport.
 - `src/analytics/snapshot.py`: läsning av den befintliga JSONL-backupens relevanta tabeller.
-- `scripts/analyze_premium_impact.py`: operatörens kommandoradsverktyg med syntetiskt demo
+- `scripts/analysis/analyze_premium_impact.py`: operatörens kommandoradsverktyg med syntetiskt demo
   eller explicit vald offline-backup.
 - `tests/test_analytics_premium_impact.py`: handräknade resultat, gruppindelning,
   åldersgräns, felaktiga underlag, rapportinnehåll och backupkontroller.
@@ -72,8 +72,8 @@ Noll rader eller noll jämförbara grupper ger inget meningsfullt underlag för 
 Från repots rot, med projektets Pythonmiljö och beroenden installerade:
 
 ```powershell
-python scripts/analyze_premium_impact.py --month 2026-06 --scenario-ibb 85000 --output premieanalys-demo.md
-python scripts/analyze_premium_impact.py --snapshot backups/<tid> --month 2026-06 --scenario-ibb 85000 --assume-current-employer --output premieanalys.md
+python scripts/analysis/analyze_premium_impact.py --month 2026-06 --scenario-ibb 85000 --output premieanalys-demo.md
+python scripts/analysis/analyze_premium_impact.py --snapshot backups/<tid> --month 2026-06 --scenario-ibb 85000 --assume-current-employer --output premieanalys.md
 ```
 
 Utan `--snapshot` används tre helt syntetiska exempel. Utan `--output` skrivs Markdown till

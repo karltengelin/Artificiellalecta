@@ -5,16 +5,17 @@ befintliga tabeller och data rörs inte. Körs av operatören från Windows
 (sandboxen når inte databasen). Se 02_system/databasschema.md §9.
 
 Användning (från repo-roten):
-    python scripts/create_tables.py
+    python scripts/setup/create_tables.py
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
 # Gör src/ importerbar när skriptet körs direkt från repo-roten
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from sqlalchemy import inspect  # noqa: E402
 
@@ -23,6 +24,7 @@ from utils.db import make_engine  # noqa: E402
 
 
 def main() -> None:
+    argparse.ArgumentParser(description=__doc__).parse_args()
     engine = make_engine()
 
     before = set(inspect(engine).get_table_names())

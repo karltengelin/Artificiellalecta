@@ -8,7 +8,7 @@ Lakebase är Postgres, där skyddet bygger på radlås:
 - skrivoperationerna låser personen, försäkringen eller premieraden
   (SELECT … FOR UPDATE) så att samtidiga anrop prövas i tur och ordning
 
-Här prövas också migrationen (scripts/migrate_t3_schema.py) från det gamla
+Här prövas också migrationen (scripts/migrations/migrate_t3_schema.py) från det gamla
 schemat, och att resultatet blir identiskt med create_all.
 
 Körs bara när SERVICES_TEST_POSTGRES_URL pekar på en ISOLERAD testdatabas –

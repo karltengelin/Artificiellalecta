@@ -5,7 +5,7 @@ Skapar tabellen `salary_reports` och lägger till
 index – i en transaktion (Postgres-DDL är transaktionell: allt eller inget).
 DDL:en härleds ur modellerna, så resultatet blir detsamma som `create_all` på
 en tom databas. Inga befintliga rader ändras; radantalen kontrolleras före och
-efter. Körs med scripts/migrate_t3_schema.py.
+efter. Körs med scripts/migrations/migrate_t3_schema.py.
 """
 
 from __future__ import annotations

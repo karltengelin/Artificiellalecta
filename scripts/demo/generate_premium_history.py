@@ -19,8 +19,8 @@ Idempotent: personer med befintlig försäkring får inga dubbletter, och
 månader som redan har premium-transaktion på förmånen hoppas över.
 
 Användning (från repo-roten, i .venv):
-    python scripts/generate_premium_history.py --dry-run
-    python scripts/generate_premium_history.py
+    python scripts/demo/generate_premium_history.py --dry-run
+    python scripts/demo/generate_premium_history.py
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from sqlalchemy import select  # noqa: E402
@@ -118,7 +118,7 @@ def main() -> None:
         ]
         if missing_years:
             raise SystemExit(
-                f"base_amounts saknar år {missing_years} – kör scripts/seed_base_amounts.py först."
+                f"base_amounts saknar år {missing_years} – kör scripts/setup/seed_base_amounts.py först."
             )
 
         persons = session.scalars(select(InsuredPerson)).all()

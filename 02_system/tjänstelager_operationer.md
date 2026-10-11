@@ -1,6 +1,6 @@
 # Tjänstelagrets operationer
 
-> **Genererad – ändra inte för hand.** Skapas med `python scripts/list_operations.py`
+> **Genererad – ändra inte för hand.** Skapas med `python scripts/documentation/list_operations.py`
 > ur operationsregistret, åtkomstregistret (`src/services/access_register.yaml`) och
 > produktreglernas status (`01_domän/produktregler/`). Kontrolleras av
 > `tests/test_services_listing.py`. Design och nivåer: [tjänstelager.md](tjänstelager.md) §4.

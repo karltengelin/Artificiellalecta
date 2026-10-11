@@ -7,7 +7,7 @@ agentgränserna går att granska på ett ställe. Effektiv nivå hämtas från
 skilja sig åt.
 
 Deterministisk: sorterad på operationsnamn, inget genereringsdatum. Skapas
-med `scripts/list_operations.py`; tests/test_services_listing.py fallerar
+med `scripts/documentation/list_operations.py`; tests/test_services_listing.py fallerar
 om filen inte stämmer med koden, registret och regelstatusen.
 """
 
@@ -22,7 +22,7 @@ DEFAULT_PATH = Path(__file__).resolve().parents[2] / "02_system" / "tjänstelage
 _HEADER = """\
 # Tjänstelagrets operationer
 
-> **Genererad – ändra inte för hand.** Skapas med `python scripts/list_operations.py`
+> **Genererad – ändra inte för hand.** Skapas med `python scripts/documentation/list_operations.py`
 > ur operationsregistret, åtkomstregistret (`src/services/access_register.yaml`) och
 > produktreglernas status (`01_domän/produktregler/`). Kontrolleras av
 > `tests/test_services_listing.py`. Design och nivåer: [tjänstelager.md](tjänstelager.md) §4.

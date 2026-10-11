@@ -4,16 +4,17 @@ Värden ur 01_domän/ITP1_regelverk.md §6 (verifierade 2026-07-12).
 Idempotent: befintliga år uppdateras, nya läggs till (upsert).
 
 Användning (från repo-roten, i .venv):
-    python scripts/seed_base_amounts.py
+    python scripts/setup/seed_base_amounts.py
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from decimal import Decimal
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from sqlalchemy.dialects.postgresql import insert  # noqa: E402
@@ -30,6 +31,7 @@ BASE_AMOUNTS = [
 
 
 def main() -> None:
+    argparse.ArgumentParser(description=__doc__).parse_args()
     engine = make_engine()
     with session_scope(engine) as session:
         for row in BASE_AMOUNTS:

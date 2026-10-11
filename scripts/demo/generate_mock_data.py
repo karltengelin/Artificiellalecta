@@ -1,7 +1,7 @@
 """Genererar syntetisk mockdata för försäkringstagare och försäkrade.
 
 Datat skrivs till `data/employers.csv` och `data/insured_persons.csv`.
-Skripten `seed_supabase.py` läser därifrån och laddar in i databasen.
+Skripten `scripts/demo/seed_mock_data.py` läser därifrån och laddar in i databasen.
 
 ⚠️  All data är **syntetisk** – inga riktiga personer eller bolag.
     Personnummer och organisationsnummer är tekniskt giltiga (passerar Luhn)
@@ -11,8 +11,8 @@ Skripten `seed_supabase.py` läser därifrån och laddar in i databasen.
 Default-omfattning: 20 arbetsgivare och ~500 anställda totalt.
 
 Användning:
-    python scripts/generate_mock_data.py
-    python scripts/generate_mock_data.py --employers 5 --employees 50
+    python scripts/demo/generate_mock_data.py
+    python scripts/demo/generate_mock_data.py --employers 5 --employees 50
 """
 
 from __future__ import annotations

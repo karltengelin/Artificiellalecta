@@ -8,15 +8,16 @@ Gör ingen skrivning – kör bara `SELECT 1` och rapporterar tydligt om
 anslutningen lyckas eller varför den inte gör det.
 
 Användning:
-    python scripts/test_db_connection.py
+    python scripts/diagnostics/test_db_connection.py
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from sqlalchemy import text  # noqa: E402
@@ -25,6 +26,7 @@ from utils.db import make_engine  # noqa: E402
 
 
 def main() -> None:
+    argparse.ArgumentParser(description=__doc__).parse_args()
     print("Läser DATABASE_URL och försöker koppla upp...")
     try:
         engine = make_engine(echo=False)

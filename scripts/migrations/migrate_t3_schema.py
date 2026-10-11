@@ -6,12 +6,12 @@ befintliga rader och kontrollerar radantalen före och efter. Idempotent: en
 redan migrerad databas lämnas orörd; en delvis migrerad stoppar.
 
 Körs mot den delade databasen – stäm av enligt AGENTS.md §4.5 först och ta
-backup med scripts/backup_database.py. En skarp körning kräver --backup med
+backup med scripts/maintenance/backup_database.py. En skarp körning kräver --backup med
 backupmappen, så att den inte kan köras utan backup.
 
 Användning (från repo-roten, i .venv):
-    python scripts/migrate_t3_schema.py --dry-run
-    python scripts/migrate_t3_schema.py --backup backups/20261011T120000Z
+    python scripts/migrations/migrate_t3_schema.py --dry-run
+    python scripts/migrations/migrate_t3_schema.py --backup backups/20261011T120000Z
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import json
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from utils.db import make_engine  # noqa: E402
@@ -37,7 +37,7 @@ def main() -> None:
     if not args.dry_run:
         manifest = args.backup / "manifest.json" if args.backup else None
         if manifest is None or not manifest.exists():
-            raise SystemExit("Ange --backup med en backupmapp från scripts/backup_database.py (manifest.json saknas)")
+            raise SystemExit("Ange --backup med en backupmapp från scripts/maintenance/backup_database.py (manifest.json saknas)")
         counts = json.loads(manifest.read_text(encoding="utf-8"))["row_counts"]
         print(f"Backup: {args.backup} ({counts.get('premium_transactions', '?')} premietransaktioner)")
 

@@ -1,4 +1,4 @@
-"""Migrationen för Fas 1f T3 (scripts/migrate_t3_schema.py, databasschema.md §12).
+"""Migrationen för Fas 1f T3 (scripts/migrations/migrate_t3_schema.py, databasschema.md §12).
 
 Här prövas DDL:en och skydden utan databas. Själva migrationen från det gamla
 schemat körs mot Postgres i tests/test_services_postgres.py – SQLite kan inte

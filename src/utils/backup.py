@@ -11,7 +11,7 @@ databasen, t.ex. inför en migration.
 Återställning görs bara till tomma tabeller, så att inget skrivs över. Rader
 som pekar på en annan rad i samma tabell (rättelser, nya versioner) läses in
 efter den rad de pekar på.
-Skripten: scripts/backup_database.py och scripts/restore_database.py.
+Skripten: scripts/maintenance/backup_database.py och scripts/maintenance/restore_database.py.
 """
 
 from __future__ import annotations

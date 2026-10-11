@@ -1,4 +1,4 @@
-"""Återställer en backup (från scripts/backup_database.py) till databasen.
+"""Återställer en backup (från scripts/maintenance/backup_database.py) till databasen.
 
 Skapar saknade tabeller och läser in alla rader. Avbryter om någon av
 tabellerna redan innehåller data – inget skrivs över. Används t.ex. om
@@ -8,7 +8,7 @@ kör det här skriptet.
 Körs mot den delade databasen – stäm av enligt AGENTS.md §4.5 först.
 
 Användning (från repo-roten, i .venv):
-    python scripts/restore_database.py backups/20261011T120000Z
+    python scripts/maintenance/restore_database.py backups/20261011T120000Z
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import argparse
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from utils.backup import restore_database  # noqa: E402

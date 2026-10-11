@@ -117,7 +117,7 @@ Tre saker hålls isär: **godkänd specifikation** (regelstatus och införandebe
    - **Tjänstelagret** kontrollerar aktören vid varje anrop. En agent som anropar en `HUMAN_ONLY`-operation får ett fel – oavsett hur anropet kom dit. Det här är det egentliga skyddet.
    - **Harness** visar aldrig `HUMAN_ONLY`-operationer som verktyg, så agenten försöker inte ens.
 4. **Bara en människa kan godkänna** ett agentförslag, och godkännandet loggas med både förslagsställare och godkännare.
-5. **Registret är versionerat.** Varje ändring syns i en diff och godkänns vid merge. Den genererade förteckningen **[tjänstelager_operationer.md](tjänstelager_operationer.md)** (T4) visar för varje operation typ, produktregler och deras status, PII, registrets nivå, effektiv nivå och varför – t.ex. *APPROVAL i registret men HUMAN_ONLY eftersom PR-ITP1-014 är specificerad*. Den skapas med `python scripts/list_operations.py` (utan databas och utan modellanrop) och hämtar effektiv nivå från `ServiceLayer.decision()`; ett test fallerar om filen inte stämmer med koden, registret och regelstatusen.
+5. **Registret är versionerat.** Varje ändring syns i en diff och godkänns vid merge. Den genererade förteckningen **[tjänstelager_operationer.md](tjänstelager_operationer.md)** (T4) visar för varje operation typ, produktregler och deras status, PII, registrets nivå, effektiv nivå och varför – t.ex. *APPROVAL i registret men HUMAN_ONLY eftersom PR-ITP1-014 är specificerad*. Den skapas med `python scripts/documentation/list_operations.py` (utan databas och utan modellanrop) och hämtar effektiv nivå från `ServiceLayer.decision()`; ett test fallerar om filen inte stämmer med koden, registret och regelstatusen.
 
 ---
 

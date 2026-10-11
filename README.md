@@ -23,7 +23,10 @@ Se MASTER_CONTEXT §7 för fullständig översikt.
 - `05_styrdokument/` – Interna styrdokument (lager 3)
 - `projekt/` – Delprojektens projektplaner (B-024)
 - `src/` – Python-kod
-- `tests/`, `data/`, `scripts/` – Tester, mockdata, engångsskript
+- `tests/`, `data/`, `scripts/` – Tester, mockdata och kategoriserade körverktyg
+
+Se [kodbas och skriptkatalog](02_system/skriptkatalog.md) för verktyg, beroenden,
+körordning och vilka kommandon som läser eller ändrar data.
 
 ## Teknisk stack
 

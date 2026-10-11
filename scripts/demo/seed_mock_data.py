@@ -1,6 +1,5 @@
 """Seedar databasen (Lakebase via `DATABASE_URL`, B-018) med mockdata från
-`data/employers.csv` och `data/insured_persons.csv`. Filnamnet är historiskt
-(från tiden med Supabase, B-014).
+`data/employers.csv` och `data/insured_persons.csv`. Tidigare filnamn: seed_supabase.py (Supabase har ersatts av Lakebase, B-018).
 
 Stegen:
   1. Skapar tabellerna (om de inte finns) enligt SQLAlchemy-modellerna.
@@ -13,9 +12,9 @@ Flaggor:
              är läsbara och att miljön är konfigurerad.
 
 Användning:
-    python scripts/seed_supabase.py            # idempotent append/upsert
-    python scripts/seed_supabase.py --reset    # nuke + ladda om
-    python scripts/seed_supabase.py --dry-run  # sanity check
+    python scripts/demo/seed_mock_data.py            # idempotent append/upsert
+    python scripts/demo/seed_mock_data.py --reset    # nuke + ladda om
+    python scripts/demo/seed_mock_data.py --dry-run  # sanity check
 """
 
 from __future__ import annotations
@@ -29,7 +28,7 @@ from pathlib import Path
 from uuid import UUID
 
 # Säkerställ att `src/` finns på sys.path när skriptet körs direkt
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from sqlalchemy.dialects.postgresql import insert  # noqa: E402

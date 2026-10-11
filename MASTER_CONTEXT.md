@@ -181,6 +181,7 @@ Artificiellalecta/
 │   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
 │   ├── tjänstelager.md             ← Operationer för handläggare, agenter och skript (B-028)
 │   ├── tjänstelager_operationer.md ← Genererad förteckning: operationer, agentnivå och skäl (T4)
+│   ├── skriptkatalog.md             ← Kodbas, körverktyg, beroenden och körordning
 │   ├── agentkarta.md               ← Översikt över alla agenter
 │   ├── agenter/                    ← En MD-fil per agent (10 st)
 │   └── Agentsystem/                ← Orkestrerade flöden, en MD-fil per flöde (B-016)
@@ -231,7 +232,14 @@ Artificiellalecta/
 │
 ├── tests/                          ← Tester
 ├── data/                           ← Mockdata, testdata
-└── scripts/                        ← Engångsskript, datagenerering
+└── scripts/                        ← Körverktyg; se 02_system/skriptkatalog.md
+    ├── setup/                      ← Tabeller och grundparametrar
+    ├── demo/                       ← Fiktiva personer och premiehistorik
+    ├── maintenance/                ← Backup och återställning
+    ├── migrations/                 ← Schemaändringar; äldre engångsskript i legacy/
+    ├── diagnostics/                ← Databas- och AI-kontroller
+    ├── analysis/                   ← Manuella analyskörningar
+    └── documentation/              ← Genererade förteckningar
 ```
 
 **Mappnamnskonvention:**

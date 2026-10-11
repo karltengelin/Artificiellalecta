@@ -1,7 +1,7 @@
 """IBB-scenario från offline-backup eller tydligt märkt syntetiskt exempel.
 
-python scripts/analyze_premium_impact.py --scenario-ibb 85000
-python scripts/analyze_premium_impact.py --snapshot backups/<tid> --month 2026-06 \
+python scripts/analysis/analyze_premium_impact.py --scenario-ibb 85000
+python scripts/analysis/analyze_premium_impact.py --snapshot backups/<tid> --month 2026-06 \
     --scenario-ibb 85000 --assume-current-employer
 """
 
@@ -11,7 +11,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from analytics.premium_impact import PremiumObservation, compare_ibb, render_markdown  # noqa: E402
 from analytics.snapshot import load_snapshot  # noqa: E402
