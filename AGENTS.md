@@ -33,8 +33,8 @@ Steget är medvetet inlagt – fel som upptäcks här är billigare att rätta �
 
 ## 3. Arbetsregler (Codex-specifika, motsvarar CLAUDE.md §3)
 
-- **Redovisa ändringar vid commit.** Inom den överenskomna uppgiften får Codex ändra filer, committa och pusha på sin egen arbetsbranch utan ett separat godkännandesteg. Redovisa ändringarna med diff eller sammanfattning och commit-meddelande i rapporten efter committen. Merge till `main` kräver däremot operatörens uttryckliga OK i chatten för just den mergen (§4.6).
-- **Commit-meddelanden.** Kort rubrik som säger vad ändringen gör. Använd kategori-prefix där det passar – t.ex. `skelett:`, `dokumentation:`, `skill:`, `agent:`, `regelverk:`. Ange det använda commit-meddelandet tillsammans med diffen eller sammanfattningen i rapporten.
+- **Diff före commit.** Visa alltid vad du tänker ändra (diff eller filinnehåll) innan du committar. Operatören godkänner aktivt. Samma princip som MASTER_CONTEXT §3.5 "människa-i-loopen", applicerad på repot.
+- **Commit-meddelanden.** Kort rubrik som säger vad ändringen gör. Använd kategori-prefix där det passar – t.ex. `skelett:`, `dokumentation:`, `skill:`, `agent:`, `regelverk:`. Föreslå alltid commit-meddelandet tillsammans med diff:en.
 - **Följ B-015 (mappstruktur).** Dokumentation på svenska i numrerade mappar i roten. Kod under `src/` med engelska namn. Inga svenska tecken i Python-modulnamn.
 - **Följ B-012.** Allt skrivs som Markdown. PDF eller andra format genereras bara vid behov.
 - **Föreslå – logga inte själv.** När du tycker att ett beslut bör in i `BESLUTSLOGG.md`, formulera förslaget och vänta på operatörens godkännande. Skriv aldrig in nya poster där på eget bevåg.
