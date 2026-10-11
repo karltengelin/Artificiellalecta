@@ -207,7 +207,9 @@ def test_migrering_fran_gammalt_schema_blir_identisk_med_create_all():
         with old.engine.connect() as conn:
             assert schema_state(conn) == (False, False)
             constraints = conn.exec_driver_sql(
-                "SELECT conname FROM pg_constraint WHERE conname = 'ck_premium_transactions_correction_type'"
+                "SELECT con.conname FROM pg_constraint con JOIN pg_namespace n ON n.oid = con.connamespace "
+                "WHERE n.nspname = %(s)s AND con.conname = 'ck_premium_transactions_correction_type'",
+                {"s": old.name},
             ).all()
             assert constraints == []
 
