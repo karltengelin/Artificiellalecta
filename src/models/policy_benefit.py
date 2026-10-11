@@ -1,8 +1,10 @@
 """SQLAlchemy-modell för försäkringsförmåner.
 
 Se 02_system/databasschema.md §7. En förmån inom en försäkring – i nuläget
-bara premiebestämd ålderspension (retirement_dc); TGL och familjeskydd är
-förberedda som typer. Förmånens premier ligger i premium_transactions.
+bara premiebestämd ITP1 ålderspension (retirement_dc) i beslutat produktscope.
+TGL och familjeskydd är tekniskt förberedda som typer enligt B-022; användning
+som produkter kräver ett nytt uttryckligt scopebeslut och uppdaterade villkor.
+Förmånens premier ligger i premium_transactions.
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ if TYPE_CHECKING:
     from .policy import Policy
     from .premium_transaction import PremiumTransaction
 
-#: Förmånstyper. Nya typer läggs till i CHECK-constrainten vid behov.
+#: Tekniskt tillåtna typer; bara retirement_dc ingår i beslutat produktscope.
 BENEFIT_TYPES = ("retirement_dc", "tgl", "family_protection")
 
 
