@@ -1,7 +1,7 @@
 # Agentekosystem
 
 > **Typ:** Tvärgående arkitekturramverk (MASTER_CONTEXT §4b, B-024) – inte ett delprojekt utan det sätt alla delprojekt bygger agenter på
-> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Agent-runtime, skill-poddar och flödesmotor är ännu inte byggda – se byggordningen i §12.
+> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Harness, skill-poddar och flödesmotor är ännu inte byggda – se byggordningen i §12.
 > **Vidareutvecklar:** B-006, B-007, B-008, B-009, B-011, B-016, B-017
 
 ---
@@ -17,6 +17,22 @@ Ramverket beskriver hur bolagets agenter organiseras, vilka förmågor de får, 
 3. **Behörighet styrs av struktur, inte av prompt** – vad en agent *kan* göra avgörs av vilka skills den har monterade, inte av vad dess instruktion säger (B-006, B-007).
 4. **Modell- och leverantörsoberoende** – agenter väljer roller, aldrig modeller (B-009).
 5. **Samma förmågor för alla** – operatören och externa AI-verktyg ska kunna använda samma skills som bolagets agenter (B-017, B-024).
+
+### Begrepp
+
+| Begrepp | Betydelse |
+|---------|-----------|
+| **Agentteam** (team) | En avdelning: ansvarsområde, orkestrerare, ev. specialister och monterade skill-poddar (§3) |
+| **Orkestrerare** | Roll som teamets ledande agent har – tar emot uppdrag och fördelar arbete till teamets specialister. Ingen extra agent (§3.2) |
+| **Specialist** | Agent i ett team med eget mandat, arbetar på uppdrag av orkestreraren |
+| **Skill** | En förmåga som en agent använder som verktyg – instruktion i `03_skills/`, kod i `src/skills/` (B-015) |
+| **Skill-pod** | Paket av skills med gemensam dataåtkomst och behörighetsklass, monteras på team. Behörighetsenheten (§5). Ordet används inte om team |
+| **Guardrails** | Reglerna för vad ett team och en agent får göra: monterade poddar, nekade skills, sidoeffektsklasser som kräver godkännande, steg- och kostnadstak. Är konfiguration (§4.1, §5.3) |
+| **Harness** | Maskineriet som kör agenterna och tvingar igenom guardrails: bygger kontext, ger modellen bara tillåtna verktyg, kör verktygsanropen, stoppar för godkännande och journalför. En gemensam harness för alla team (§4.2). Kallades "agent-runtime" i B-026 |
+| **Flöde** | Deterministisk process över flera team med godkännandesteg, körs av flödesmotorn (§6.2) |
+| **AI-lagret** | `src/ai/` – harness anropar modellerna via lagret, aldrig direkt (B-025) |
+
+Bilden bakom ordet: modellen är hästen, harness är selen och tömmarna, och guardrails bestämmer vart tömmarna får styra. Verktyg som bara når en agent via harness, filtrerade per team, går att vakta – verktyg som ligger fritt gör det inte.
 
 ---
 
@@ -55,6 +71,7 @@ Ramverket beskriver hur bolagets agenter organiseras, vilka förmågor de får, 
 |----------|-----------|------------------------|
 | **Team** | En avdelning: mandat, ledande agent, ev. specialister, monterade poddar, nyckelscope, modellpolicy | §3 |
 | **Agent** | En instans med mandat och instruktion som kör en agentloop mot AI-lagret | §4, `02_system/agenter/` |
+| **Harness** | Maskineriet som kör alla agenter och tvingar igenom teamens guardrails | §4.2, byggs i Fas 3b |
 | **Skill-pod** | Paket av relaterade skills med gemensam dataåtkomst och behörighetsklass – behörighetsenheten | §5, `03_skills/` |
 | **Flöde** | Deterministisk, granskningsbar process över flera team med godkännandesteg | §6.2, `02_system/Agentsystem/` |
 | **AI-lagret** | Modellagnostiskt lager med roller, nycklar och anropslogg | `ai_abstraktion.md`, `src/ai/` |
@@ -113,7 +130,7 @@ De tio befintliga agenterna (`agentkarta.md`) fördelas på sju team:
 En agent består, i linje med B-015, av:
 
 - **Mandat och instruktion** i `02_system/agenter/<agent>.md` (finns som skelett för alla tio).
-- **En körprofil** som runtime läser. Förslaget är en samlad fil `src/agents/ecosystem.yaml` med team, agenter och poddmontering – en enda källa för behörigheter som går att granska i en diff:
+- **En körprofil** som harness läser. Förslaget är en samlad fil `src/agents/ecosystem.yaml` med team, agenter och poddmontering – en enda källa för behörigheter som går att granska i en diff:
 
 ```yaml
 teams:
@@ -131,11 +148,11 @@ agents:
     limits: {max_steps: 20, max_cost_usd: 0.50}
 ```
 
-Agent-id är engelska `snake_case` (kod, B-015); visningsnamnet är svenskt. Det exakta formatet bestäms när runtime byggs (Fas 3b).
+Agent-id är engelska `snake_case` (kod, B-015); visningsnamnet är svenskt. Det exakta formatet bestäms när harness byggs (Fas 3b).
 
-### 4.2 Agentloopen
+### 4.2 Agentloopen (harness)
 
-Runtime kör en loop ovanpå AI-lagrets verktygsgränssnitt (`ai_abstraktion.md` §5.2):
+Harness kör en loop ovanpå AI-lagrets verktygsgränssnitt (`ai_abstraktion.md` §5.2):
 
 1. **Bygg kontext:** systeminstruktion = agentens MD-instruktion + bolagskontext + datum. Uppdraget blir första användarmeddelandet.
 2. **Bygg verktygslistan:** skills från agentens monterade poddar, filtrerade mot behörighet (§5). Agenten ser bara verktyg den får använda.
@@ -170,7 +187,7 @@ En **skill-pod** är ett namngivet paket av relaterade skills som delar:
 
 Podden är **behörighetsenheten**: agenter får poddar, inte enskilda skills (enskilda skills kan däremot nekas). Det gör behörighetsgranskning hanterbar – sju team × ett tiotal poddar i stället för tio agenter × alla skills.
 
-**Pod ≠ skillkategori.** Kategorin (`03_skills/data/`, `beräkning/` …) styr var dokumentationen ligger (B-015). Podden styr behörighet i körning. Exempel: `hämta-kunddata` (PII) och `marknadsdata` (ingen PII) ligger båda i kategorin `data` men i olika poddar. Varje skill hör till exakt en kategori och exakt en pod; skillkatalogen får en kolumn för pod när runtime byggs.
+**Pod ≠ skillkategori.** Kategorin (`03_skills/data/`, `beräkning/` …) styr var dokumentationen ligger (B-015). Podden styr behörighet i körning. Exempel: `hämta-kunddata` (PII) och `marknadsdata` (ingen PII) ligger båda i kategorin `data` men i olika poddar. Varje skill hör till exakt en kategori och exakt en pod; skillkatalogen får en kolumn för pod när harness byggs.
 
 ### 5.2 Skill-kontrakt
 
@@ -195,7 +212,7 @@ Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen
 | `read` | Hämta kunddata, slå upp regelverk, hämta kurser | Körs direkt, journalförs |
 | `compute` | Premieberäkning, beståndsaggregat | Körs direkt, journalförs |
 | `write` | Uppdatera internt ärende, skriva utkast till dokument | Körs direkt och journalförs; i compliance-kritiska flöden kan steget kräva godkännande |
-| `external` | Mail till kund, rapportinlämning, transaktion, produktionssättning | **Körs aldrig direkt av en agent.** Runtime skapar ett godkännandeärende med utkastet; operatören godkänner, och först då utförs handlingen – av runtime, journalförd med godkännandet (§3.5) |
+| `external` | Mail till kund, rapportinlämning, transaktion, produktionssättning | **Körs aldrig direkt av en agent.** Harness skapar ett godkännandeärende med utkastet; operatören godkänner, och först då utförs handlingen – av harness, journalförd med godkännandet (§3.5) |
 
 ### 5.4 Föreslagna poddar
 
@@ -229,7 +246,7 @@ Ledande agenter får skillen `delegate_to_team(team, uppdrag)`. Uppdraget är **
 | `expected_output` | Svarsform, gärna ett schema |
 | `references` | Id:n och filvägar i stället för rådata (dataminimering, B-006) |
 
-Runtime startar en barnkörning hos mottagarteamets ledande agent med `parent_run_id`, ärvt kostnadstak och ett djuptak (förslag: 2 nivåer). Svaret kommer tillbaka som verktygsresultat. Tillåtna mottagare deklareras per agent (`delegates_to`).
+Harness startar en barnkörning hos mottagarteamets ledande agent med `parent_run_id`, ärvt kostnadstak och ett djuptak (förslag: 2 nivåer). Svaret kommer tillbaka som verktygsresultat. Tillåtna mottagare deklareras per agent (`delegates_to`).
 
 ### 6.2 Orkestrerade flöden (B-016)
 
@@ -272,7 +289,7 @@ Det befintliga `02_system/Agentsystem/regelförändringsflöde.md` täcker steg 
 
 **AI-nycklar per team** (detaljer i `ai_abstraktion.md` §7):
 
-- Runtime binder varje körning till agentens team: `ai.bind(team="kapital", …)`. AI-lagret väljer då `ANTHROPIC_API_KEY_KAPITAL`/`OPENAI_API_KEY_KAPITAL` om de finns, annars den gemensamma nyckeln.
+- Harness binder varje körning till agentens team: `ai.bind(team="kapital", …)`. AI-lagret väljer då `ANTHROPIC_API_KEY_KAPITAL`/`OPENAI_API_KEY_KAPITAL` om de finns, annars den gemensamma nyckeln.
 - Hos leverantörerna motsvaras ett team av ett Anthropic-*Workspace* och ett OpenAI-*Project*, med eget kostnadstak. Start: bara gemensamma nycklar.
 - Agenter ser aldrig nycklar – de finns bara i AI-lagret.
 
@@ -290,9 +307,9 @@ Varje pod kan exponeras som en **MCP-server** med samma skill-implementationer o
 
 - **Operatören** använder bolagets skills direkt från Cowork eller Claude Code – samma förmågor som agenterna, med samma journalföring (B-017: manuella och automatiserade åtgärder lämnar samma spår).
 - **Externa AI-verktyg** (Codex m.fl.) får som standard bara poddar utan personuppgifter.
-- **En implementation, två ingångar:** agent-runtime och MCP-servern anropar samma Python-funktioner. Det uppfyller B-024:s mål att system och data ska vara tillgängliga för vilken AI-agent som helst, inte bara bolagets egna.
+- **En implementation, två ingångar:** harness och MCP-servern anropar samma Python-funktioner. Det uppfyller B-024:s mål att system och data ska vara tillgängliga för vilken AI-agent som helst, inte bara bolagets egna.
 
-Byggs efter agent-runtime (§12).
+Byggs efter harness (§12).
 
 ---
 
@@ -301,7 +318,7 @@ Byggs efter agent-runtime (§12).
 | Nivå | Mekanism |
 |------|----------|
 | Anrop | AI-lagret beräknar uppskattad kostnad per anrop och loggar den med team, agent och körning |
-| Körning | Runtime summerar kostnaden och stoppar vid agentens `max_cost_usd` |
+| Körning | Harness summerar kostnaden och stoppar vid agentens `max_cost_usd` |
 | Team | Kostnad per team ur anropsloggen; senare som indikator i BI (delprojekt 2) och företagsöversikten (delprojekt 8) |
 | Hård spärr | Kostnadstak per workspace/projekt hos leverantören – gäller även om koden skulle fallera |
 
@@ -326,7 +343,7 @@ Byggs efter agent-runtime (§12).
 | Fas | Innehåll | Möjliggör |
 |-----|----------|-----------|
 | **3** ✅ | AI-lagret (`src/ai/`) med roller, team-nycklar, verktygsgränssnitt, anropslogg, fejkleverantör | Allt nedan |
-| **3b** | Agent-runtime v1: `ecosystem.yaml`, skill-register med kontrakt och behörighetsfilter, agentloop, körjournal (JSONL), godkännandekö (fil), första podden (`berakning`) | Fas 5 – handläggaragenten |
+| **3b** | Harness v1: `ecosystem.yaml`, skill-register med kontrakt och behörighetsfilter, agentloop, körjournal (JSONL), godkännandekö (fil), första podden (`berakning`) | Fas 5 – handläggaragenten |
 | **3c** | Delegering mellan team, flödesmotor med persisterat tillstånd (Lakebase-tabeller), regelförändringsflödet | Flaggskeppsscenariot |
 | Senare | MCP-exponering av poddar, databas-sink för anropsloggen, kostnadsindikatorer, egen Lakebase-roll för PII-poddar | B-017/B-024 fullt ut, BI |
 

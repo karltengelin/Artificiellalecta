@@ -7,7 +7,7 @@
 
 ## 1. Agentöversikt
 
-Varje agent tillhör ett team (B-026). Teamets ledande agent är dess orkestrerare; specialister arbetar på uppdrag av den. Teamets verktyg är de skill-poddar som är monterade på teamet – se `agentekosystem.md` §3 och §5.
+Varje agent tillhör ett team (B-026). Teamets ledande agent är dess orkestrerare; specialister arbetar på uppdrag av den. Teamets verktyg är de skill-poddar som är monterade på teamet, och harness ser till att agenten bara når dem – se `agentekosystem.md` §1 (begrepp), §3 och §5.
 
 | Team | Agent | Roll i teamet | Funktionsområde | Status |
 |------|-------|---------------|-----------------|--------|

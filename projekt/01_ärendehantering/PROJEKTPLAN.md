@@ -15,7 +15,7 @@ tillståndsperioder, premier).
 
 ## Beroenden
 
-- Fas 3 (AI-abstraktionslager, B-009) ✅ byggd 2026-10-11 i `src/ai/`. Agentdelen (handläggaragent) kräver dessutom agent-runtime – föreslagen Fas 3b, se `02_system/agentekosystem.md` §12
+- Fas 3 (AI-abstraktionslager, B-009) ✅ byggd 2026-10-11 i `src/ai/`. Agentdelen (handläggaragent) kräver dessutom harness – Fas 3b enligt B-026, se `02_system/agentekosystem.md` §12 och `ATT_GORA.md`
 - `cases`-tabell finns inte än – del av detta projekts scope att definiera (jfr `databasschema.md`)
 
 ## Befintlig grund i repot

@@ -106,7 +106,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🔲 Ej påbörjat | — |
 
-**Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Ramverket är beslutat i B-026 och beskrivs i `02_system/agentekosystem.md`; det vidareutvecklar B-008/B-009/B-016. Kvarvarande öppna frågor listas där (§13).
+**Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Agenterna körs av en gemensam harness som tvingar igenom varje teams guardrails (vilka verktyg teamet får använda, vad som kräver godkännande). Ramverket är beslutat i B-026 och beskrivs i `02_system/agentekosystem.md`; det vidareutvecklar B-008/B-009/B-016. Kvarvarande öppna frågor listas där (§13).
 
 ---
 
