@@ -98,6 +98,7 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 - [ ] **3b-6: Körjournal** – JSONL per körning i `logs/agent_runs/`, länkad till anropsloggen via `run_id` (§4.3)
 - [ ] **3b-7: Första poddarna** – `berakning` (premiemotorn) och läsoperationerna från tjänstelagret; skillkatalogen får pod-kolumn
 - [ ] **3b-8: Tester och röktest** – agentkörningar mot `FakeProvider` utan nätverk, plus ett röktest mot riktig modell
+- [ ] **3b-9: Admin-sida – Agentteam → Körgränser** *(tillagd 2026-10-12 på operatörens begäran)* – operatören kan se effektiva gränser och ändra kostnadsbudget, modellsteg, verktygsanrop, aktiv tidsgräns och delegeringsgränser per team/agent. Validera värden och arv mellan globala, team-, agent- och rotgränser. Spara varaktigt med konfigurationsversion och ändringslogg (tid, aktör, tidigare och nytt värde); bestäm relationen till `ecosystem.yaml` så att samma inställning inte får två sanningskällor. Nya körningar använder den nya versionen; pågående körningar behåller sin version. Endast autentiserad operatör får ändra; befogenheter och godkännandekrav hanteras separat. **Beroenden:** handläggar-UI:t (Fas 4), 3b-1 och 3b-4; delegeringskontroller aktiveras med 3c-1. Inställningarna hör till harness, utanför försäkringstjänstelagret. Startgränser: `02_system/harness.md` §6.3.
 
 **Fas 3c – Samverkan (inför flaggskeppsscenariot)**
 - [ ] **3c-1: Delegering mellan team** – `delegate_to_team` med strukturerat uppdrag, `parent_run_id`, djup- och kostnadstak (§6.1)
