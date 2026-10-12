@@ -1,7 +1,7 @@
 # Projekt 9: Processkartor och agenternas arbete
 
 > Nytt avgränsat dokumentationsprojekt på Karls begäran 2026-10-11.
-> Tillägg till programöversikten föreslås vid samordnad integration; inget nytt beslutsnummer loggas.
+> Tillagt i programöversikten (MASTER_CONTEXT §4b) 2026-10-12; inget nytt beslutsnummer loggas.
 
 ## Syfte
 

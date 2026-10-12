@@ -6,8 +6,8 @@
 > **2026-10-12:** Paketet antogs som B-031, gäller från 2026-11-01. I samma ändring infördes
 > förslagen om garantistycket och delprojektets status i MASTER_CONTEXT, aktuariell grund i
 > mappöversikten och den aktuariella raden i ATT_GORA, anpassade till beslutet. Förslagen om
-> 04_regulatoriskt-raden i ATT_GORA och om produktregler/ och parametrar/ i mappöversikten
-> återstår.
+> 04_regulatoriskt-raden i ATT_GORA och om produktregler/, parametrar/, källregister och
+> tolkningar i mappöversikten infördes i en följande ändring samma dag. Alla förslag här är införda.
 
 ## Varför separat
 

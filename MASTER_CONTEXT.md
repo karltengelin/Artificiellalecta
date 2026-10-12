@@ -91,10 +91,10 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 | Område | Beskrivning | Status |
 |--------|-------------|--------|
 | Kapitalförvaltning | Placering av premiereserver, portföljövervakning | 🔲 Ej påbörjat |
-| Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🔲 Ej påbörjat |
-| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026 |
+| Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🟡 Påbörjat – aktuariell grund (SIM-modell) och parameterregister, infört genom B-031; beräkningsmotor och reservberäkning saknas |
+| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026, tjänstelager med de första läs- och skrivoperationerna (B-028, B-030) |
 | Ärende­hantering | Inkommande ärenden, handläggning, svar | 🔲 Ej påbörjat |
-| Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🔲 Ej påbörjat |
+| Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🟡 Påbörjat – regelverkskarta, källregister, underlag per regelverk och tio tolkningar (delprojekt 4); styrdokument saknas |
 | Rapportering | FI-rapporter, intern rapportering, revisionsunderlag | 🔲 Ej påbörjat |
 | Internrevision | Kontroller, granskning, avvikelsehantering | 🔲 Ej påbörjat |
 
@@ -104,20 +104,21 @@ Se §4b för hur arbetet mot dessa områden struktureras i konkreta delprojekt.
 
 ## 4b. Delprojektöversikt (program) — B-024
 
-Arbetet mot visionen i §1 struktureras i åtta namngivna delprojekt plus ett tvärgående arkitekturramverk. Varje delprojekt har en projektmapp i `projekt/` (se §7) med en `PROJEKTPLAN.md` som ger ett avgränsat uppdrag – tänkt att kunna ges till Codex eller en egen Claude Code-session utan att den behöver känna till hela repot.
+Arbetet mot visionen i §1 struktureras i nio namngivna delprojekt plus ett tvärgående arkitekturramverk. B-024 inrättade de åtta första; delprojekt 9 lades till 2026-10-11 på operatörens begäran, utan nytt beslutsnummer. Varje delprojekt har en projektmapp i `projekt/` (se §7) med en `PROJEKTPLAN.md` som ger ett avgränsat uppdrag – tänkt att kunna ges till Codex eller en egen Claude Code-session utan att den behöver känna till hela repot.
 
 Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentation/kod in i projektmappen – den pekar bara till var den befintliga grunden ligger. Kod, när den byggs, läggs under det centrala `src/`-trädet (B-015) snarare än i egna per-projekt-src-mappar, för att inte bryta den enda importerbara paketroten.
 
 | Nr | Delprojekt | Projektmapp | Kort scope | Status | Befintlig grund |
 |----|-----------|-------------|------------|--------|-----------------|
 | 1 | Ärendehantering & handläggar-UI | `projekt/01_ärendehantering/` | Handläggarens gränssnitt + bakomliggande backend för att handläggningar ska påverka systemen | 🟡 Utredning klar | Fas 4/5, B-020 |
-| 2 | BI & insikter | `projekt/02_bi_insikter/` | Koppla försäkringssystem + databaser till indikatorer/BI; agent som svarar på datafrågor | 🔲 Ej påbörjat | B-018 (Lakebase) |
+| 2 | BI & insikter | `projekt/02_bi_insikter/` | Koppla försäkringssystem + databaser till indikatorer/BI; agent som svarar på datafrågor | 🟡 Första analysen byggd (premieeffekt av hypotetiskt IBB); dashboard och Genie beslutade, ej driftsatta | B-018 (Lakebase), B-029, `src/analytics/` |
 | 3 | Kundportal | `projekt/03_kundportal/` | Låtsas-hemsida: se pension, förmåner, pausa/skjuta upp utbetalning | 🔲 Ej påbörjat | Nämnd som senare fas i B-020 |
 | 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟢 Dokumentunderlag klart och infört (B-031, gäller från 2026-11-01); kodbygge separat | `01_domän/`, `04_regulatoriskt/` |
 | 5 | Kapitalförvaltning | `projekt/05_kapitalförvaltning/` | Paper trading-portfölj + gränssnitt för att analysera innehav och styra allokering | 🟡 Utredning klar | Fas 2, B-019 |
 | 6 | Avdelningsfunktioner | `projekt/06_avdelningsfunktioner/` | Funktioner per avdelning, bl.a. en aktuariell modul för premiesättning kopplad till FI-krav | 🔲 Ej påbörjat | — |
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🔲 Ej påbörjat | — |
+| 9 | Processkartor | `projekt/09_processkartor/` | Processkartor över agenternas arbete: utlösare, mandat, verktyg, resultat och godkännanden; levererar till delprojekt 8 | 🟡 Plan upplagd | Första målflödet i `projekt/02_bi_insikter/DASHBOARD_DESIGN.md` |
 
 **Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Agenterna körs i en harness – allt runt modellen som gör den till en agent (loop, instruktioner, verktyg, kontexthantering, guardrails) – med samma motor för alla team, konfigurerad per team med teamets verktyg och guardrails. Ramverket är beslutat i B-026 och beskrivs i `02_system/agentekosystem.md`; det vidareutvecklar B-008/B-009/B-016. Kvarvarande öppna frågor listas där (§13).
 
@@ -173,8 +174,10 @@ Artificiellalecta/
 ├── 01_domän/                       ← Domänkunskap (text)
 │   ├── ITP1_regelverk.md           ← Kollektivavtalets regler (premietrappa, åldrar, basbelopp)
 │   ├── aktuariell_grund.md         ← Specificerad SIM-modell, infört (B-031); verklig validering separat
-│   ├── försäkringsvillkor.md       ← Bolagets villkor för ålderspension ITP1
-
+│   ├── försäkringsvillkor.md       ← Bolagets villkor för ålderspension ITP1 (v2.0)
+│   ├── produktregler/              ← Produktpaket PR-ITP1 v1.0, 34 regler (B-031)
+│   ├── parametrar/                 ← Parameterregister och SCB:s dödlighetstabell
+│   ├── historik/                   ← Tidigare villkorsversioner
 │   └── processer_översikt.md       (kommer)
 │
 ├── 02_system/                      ← Systemdokumentation
@@ -199,6 +202,8 @@ Artificiellalecta/
 │
 ├── 04_regulatoriskt/               ← Lager 1: regelverkskällor
 │   ├── regelverkskarta.md
+│   ├── kallregister.md             ← Källor med kontrollerade versioner
+│   ├── tolkningar/                 ← Tolkningar T-ITP1-001–010
 │   ├── 01_huvudregim/
 │   ├── 02_tvärgående/
 │   └── 03_bevakning/
@@ -218,7 +223,8 @@ Artificiellalecta/
 │   ├── 05_kapitalförvaltning/
 │   ├── 06_avdelningsfunktioner/
 │   ├── 07_kundchattbot/
-│   └── 08_företagsöversikt/
+│   ├── 08_företagsöversikt/
+│   └── 09_processkartor/
 │
 ├── src/                            ← All Python-kod
 │   ├── agents/                     ← Agent­implementationer
@@ -231,6 +237,7 @@ Artificiellalecta/
 │   ├── models/                     ← SQLAlchemy-modeller
 │   ├── ai/                         ← Modellagnostiskt abstraktionslager (ai_config.yaml, providers/)
 │   ├── services/                   ← Tjänstelagret (B-028): kontrakt, access_register.yaml, godkännande, händelselogg
+│   ├── analytics/                  ← Analyser och scenarier (delprojekt 2)
 │   └── utils/                      ← Gemensam kod
 │
 ├── tests/                          ← Tester
@@ -259,6 +266,7 @@ Artificiellalecta/
 |-----|-------------|
 | **Claude.ai (detta projekt)** | Strategi, planering, beslut, review, skriva dokument |
 | **Claude Cowork** | Exekvering, bygge av kod, dokumentproduktion, agenter som kör |
+| **Claude Code och Codex** | Parallellt bygge i egna worktrees och brancher (B-023, `AGENTS.md`) |
 
 **Instruktion till Claude:** Läs alltid MASTER_CONTEXT innan du påbörjar en uppgift i detta projekt. Kontrollera även BESLUTSLOGG.md för relevanta beslut. Om något verkar saknas eller är oklart, fråga användaren innan du fortsätter.
 

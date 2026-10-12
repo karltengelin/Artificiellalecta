@@ -8,13 +8,13 @@
 
 ## 🗂️ Program & delprojekt (B-024)
 
-Hela programmet (visionen om ett AI-native tjänstepensionsbolag) är strukturerat i åtta delprojekt, se `MASTER_CONTEXT.md` §4b och mappen `projekt/`. Fasplanen och prioritetslistorna nedan är oförändrade och gäller fortsatt – de hör hemma under specifika delprojekt enligt denna mappning:
+Hela programmet (visionen om ett AI-native tjänstepensionsbolag) är strukturerat i nio delprojekt, se `MASTER_CONTEXT.md` §4b och mappen `projekt/`. Fasplanen och prioritetslistorna nedan är oförändrade och gäller fortsatt – de hör hemma under specifika delprojekt enligt denna mappning:
 
 - Fas 1 (premiemotor) + regelverksutbyggnad → **Delprojekt 4: Produktregelverk & villkor**
 - Fas 2 (paper trading) → **Delprojekt 5: Kapitalförvaltning**
 - Fas 4/5 (handläggar-UI + handläggaragent) → **Delprojekt 1: Ärendehantering**
 
-Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundchattbot) och 8 (Företagsöversikt) är nya och har ännu inga detaljerade uppgifter nedan – de bryts ut till egna listor i respektive `projekt/<nr>_<namn>/PROJEKTPLAN.md` allt eftersom de påbörjas, istället för att trängas in i denna lista.
+Delprojekt 2 (BI & insikter) och 9 (Processkartor) är påbörjade och har sina nästa steg i respektive `projekt/<nr>_<namn>/PROJEKTPLAN.md`. Delprojekt 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundchattbot) och 8 (Företagsöversikt) har ännu inga detaljerade uppgifter. Även de bryts ut till egna listor i sina projektplaner allt eftersom de påbörjas, istället för att trängas in i denna lista.
 
 ---
 
@@ -45,7 +45,8 @@ Delprojekt 2 (BI & insikter), 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundc
 
 - [x] **2026-05-15** Skriva `02_system/agentkarta.md` – tio agentskelett i `02_system/agenter/` plus agentkarta (commit `b88da94`)
 - [x] **2026-07-12** Skriva `03_skills/skillkatalog.md` – första versionen skapad i Fas 1c med premiemotorn + planerade skills. Underhålls löpande
-- [ ] **Bygga ut `04_regulatoriskt/`** – bryta ner regelverkskartan i underdokument per regelverk (LTF, FFFS:er, DORA, GDPR, IDD, SFDR, AI-förordningen, skatt)
+- [x] **2026-10-11** **Bygga ut produktnära `04_regulatoriskt/`** – källregister, tolkningar och underlag per regelverk för ITP, LTF, FFFS, FAL, skatt, GDPR, DORA, distribution, SFDR, AI och AML (delprojekt 4). Bolagets fullständiga policies och rapportering hör till egna verksamhetsprojekt
+- [x] **2026-10-11** **Delprojekt 4: sammanhängande produktpaket** – PR-ITP1 v1.0 (34 regler), villkor v2.0, tio tolkningar och leveranskontroll; infört genom B-031, gäller från 2026-11-01. Regelkod, migrationer och automatiserade regeltester görs i senare sessioner
 - [ ] **Skapa styrdokumentsstruktur** i `05_styrdokument/` – skriva `styrdokumentshierarki.md` som definierar struktur, ägarskap, revisionscykel och standardmetadata för alla styrdokument
 - [x] **2026-05-16** Definiera databasschema – `02_system/databasschema.md` + SQLAlchemy-modeller för `employers` och `insured_persons`. Övriga tabeller (policies, premium_transactions, portfolio_holdings, cases) skjuts upp till de behövs.
 - [x] **2026-05-16** Sätta upp Google-konto för det fiktiva bolaget – Artificiellalecta@gmail.com
@@ -114,7 +115,7 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 - [ ] **Kartlägga processer** i `01_domän/processer_översikt.md` (kundärenden, premiehantering, rapportering, etc.)
 - [x] **2026-07-12** Skriva ut försäkringsvillkor för ITP1 ålderspension i `01_domän/försäkringsvillkor.md` *(gjordes i Fas 1a)*
 - [x] **2026-10-12** **Dokumentera aktuariell SIM-grund** – låst SCB-tabell 2025, unisex, förbättring och marginal, oändlig svans, garantidelar, annuiteter, arvsvinst och bolagsfinansiering i `01_domän/aktuariell_grund.md` och `01_domän/parametrar/PARAMETERREGISTER.md`, med räkneexempel i leveranskontrollen. Produktinriktning B-027; införd som del av PR-ITP1 v1.0 genom B-031, gäller från 2026-11-01. Professionell tariffvalidering för verklig verksamhet är en separat aktivitet.
-- [ ] **Designa regelförändringsflöde** – multi-agent-flöde som triggas när ett regelverk ändras: compliance-agent gör tolkning och konsekvensanalys, utvecklaragent identifierar kodpåverkan, kommunikationsagent förbereder ev. kundkommunikation. Dokumenteras i `02_system/regelförändringsflöde.md`. Ett av undantagen från B-008 (kräver olika mandat).
+- [x] **2026-05-15** **Designa regelförändringsflöde** – multi-agent-flöde som triggas när ett regelverk ändras: compliance-agent gör tolkning och konsekvensanalys, utvecklaragent identifierar kodpåverkan, kommunikationsagent förbereder ev. kundkommunikation. Dokumenterat i `02_system/Agentsystem/regelförändringsflöde.md` och utökat till flaggskeppsflödet i `02_system/agentekosystem.md` §6.2 (B-026). Ett av undantagen från B-008 (kräver olika mandat). Implementeras i Fas 3c (3c-3)
 
 ## 🟢 Lägre prioritet – när grunden står
 
@@ -125,7 +126,7 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 - [ ] **Bygga första skills:** `hämta-kunddata`, `skriv-kundmail`, `tolka-itp1-fråga`
 - [ ] **Skill: complianceöversyn** (på compliance-agenten) – proaktiv genomgång av regelverkskartan mot styrdokument och processer. Rapporterar gap och misstänkta diskrepanser. Triggas manuellt eller schemalagt. Skapas som `03_skills/regelverk/complianceöversyn.md` + `src/skills/regulatory/compliance_review.py`.
 - [ ] **Sätta upp koppling Cowork ↔ Gmail** (MCP)
-- [ ] **Generera testdata** – fiktiva kunder, policys, transaktioner
+- [x] **2026-07-12** **Generera testdata** – fiktiva kunder, policys, transaktioner. Arbetsgivare och försäkrade 2026-05-16, försäkringar och premiehistorik 2023–2026 i Fas 1d; återskapat i nya Lakebase-projektet 2026-10-11
 
 ## 🔵 Utredning & planering – admin-gränssnitt med inbyggd Claude
 
@@ -186,10 +187,10 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 
 ## 💭 Att utreda / oklart
 
-- [ ] **Git branch-strategi** – kör main direkt i tidigt skede, eller feature branches + PR redan från start?
-- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(ramverk beslutat i B-026: sidoeffektsklasser, `02_system/agentekosystem.md` §5.3; godkännandekön och flaggan* endast handläggare *byggs i tjänstelagret, Fas 1f – `02_system/tjänstelager.md` §4 och §6, B-028)*
-- [ ] Loggning och spårbarhet – hur sparas agentbeslut? *(ramverk beslutat i B-025/B-026: anropslogg `02_system/ai_abstraktion.md` §10 + körjournal `02_system/agentekosystem.md` §4.3 – lagring i Lakebase avgörs i Fas 3c)*
-- [ ] Backup-strategi för databas och dokument *(aktualiserad 2026-10-11: Lakebase-projektet försvann. Genererad data återskapas med skripten, men data som skapas av handläggare och agenter via tjänstelagret – händelselogg, godkännanden, ändringar – går inte att återskapa. Behöver lösas före T3)*
+- [x] **2026-10-11** **Git branch-strategi** – en namngiven branch per uppgift och AI-verktyg, merge till main efter operatörens OK (B-023, `AGENTS.md` §4)
+- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(ramverk beslutat i B-026: sidoeffektsklasser, `02_system/agentekosystem.md` §5.3. Godkännandekön och flaggan* endast handläggare *finns i tjänstelagret sedan Fas 1f T3 – tabellen `approval_requests`, `02_system/tjänstelager.md` §4 och §6, B-028. Kvar: gränssnitt för kön och externa handlingar som utskick)*
+- [ ] Loggning och spårbarhet – hur sparas agentbeslut? *(ramverk beslutat i B-025/B-026: anropslogg `02_system/ai_abstraktion.md` §10 + körjournal `02_system/agentekosystem.md` §4.3. Tjänstelagrets händelselogg finns i Lakebase sedan Fas 1f T3a (`operation_events`); körjournalen byggs i Fas 3b och dess lagring i Lakebase avgörs i Fas 3c)*
+- [ ] Backup-strategi för databas och dokument *(aktualiserad 2026-10-11: Lakebase-projektet försvann. Genererad data återskapas med skripten, men data som skapas av handläggare och agenter via tjänstelagret – händelselogg, godkännanden, ändringar – går inte att återskapa. Delvis löst samma dag: `scripts/maintenance/backup_database.py` och `restore_database.py`, backup togs före T3. Kvar: schemalagd körning. Dokumenten versioneras i git)*
 
 ---
 

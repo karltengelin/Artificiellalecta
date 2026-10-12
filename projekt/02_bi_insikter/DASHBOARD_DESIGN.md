@@ -137,5 +137,5 @@ Det tidigare IBB-verktyget är ett avgränsat exempel på ett scenario, beskrive
 
 Vid integration föreslås att MASTER_CONTEXT §4b och ATT_GORA får uppdaterad status för
 projekt 2, samt hänvisning till projekt 9. Dessa gemensamma filer redigeras inte parallellt
-med Claude. B-029 sparar den av operatören godkända BI-inriktningen; regulatoriska grunder
+med Claude. *Infört 2026-10-12.* B-029 sparar den av operatören godkända BI-inriktningen; regulatoriska grunder
 fastställs separat.
