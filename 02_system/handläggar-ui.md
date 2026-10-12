@@ -1,6 +1,6 @@
 # Handläggar-UI:t
 
-> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3).
+> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5).
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret)
 > **Kod:** `src/web/` · **Start:** `python scripts/web/start_ui.py` · **Tester:** `tests/test_web_*.py`
 > **Relaterat:** [tjänstelager.md](tjänstelager.md), [tjänstelager_operationer.md](tjänstelager_operationer.md), `projekt/01_ärendehantering/PROJEKTPLAN.md`
@@ -112,6 +112,20 @@ som väntande och kan avslås. Tider visas i datorns lokala tid, medan tjänstel
 
 **Kön, loggen och agenterna.** De tre läsoperationerna är `HUMAN_ONLY` i registret
 (se [tjänstelager.md](tjänstelager.md) §9).
+
+**Anslutning, stamdata och arbetsgivare (S5).** Operationerna stämdes av med operatören i
+`projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md`. Stödda och blockerade fall står i
+[tjänstelager.md](tjänstelager.md) §9.2.
+
+| Adress | Innehåll | Operation |
+|---|---|---|
+| `/forsakrade/ny` (`?arbetsgivare=`) | Anslut ny anställd: person, försäkring, förmån och premiebetalande | `enroll_insured_person`, `list_employers` |
+| `/forsakrade/{pnr}/lon` | Aktuell månadslön och tjänstgöringsgrad (stamdata). Formuläret skiljer den tydligt från löneunderlaget | `update_current_salary` |
+| `/forsakrade/{pnr}/kontakt` | E-post och telefon, där ett tomt fält tar bort uppgiften. Ange varifrån ändringen kommer och hur personen verifierades | `update_contact_details` |
+| `/arbetsgivare` | Arbetsgivare med antal aktiva försäkrade och länk till anslutning | `list_employers` |
+| `/arbetsgivare/ny` | Ny arbetsgivare (ITP) | `register_employer` |
+
+Översikten har knappar för löneunderlag, aktuell lön och kontaktuppgifter. Startsidan har en knapp för att ansluta en ny försäkrad.
 
 ## 5. Felvisning
 

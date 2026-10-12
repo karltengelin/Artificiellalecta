@@ -1,6 +1,6 @@
 # Tjänstelagret
 
-> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1, T2 och T4 klara**. **T3 klart** för den överenskomna omfattningen: transaktionsgräns, `register_salary_report`, `set_policy_paid_up` och `correct_premium_transaction`, medan `terminate_policy` är uppskjuten (§9.1). Verifierat mot isolerad Postgres och migrerat i Lakebase 2026-10-11. Kod: `src/services/`, register: `src/services/access_register.yaml`, förteckning: [tjänstelager_operationer.md](tjänstelager_operationer.md).
+> **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1, T2 och T4 klara**. **T3 klart** för den överenskomna omfattningen: transaktionsgräns, `register_salary_report`, `set_policy_paid_up` och `correct_premium_transaction`, medan `terminate_policy` är uppskjuten (§9.1). Verifierat mot isolerad Postgres och migrerat i Lakebase 2026-10-11. **Fas 4 (handläggar-UI:t):** läsoperationer för godkännandekön och händelseloggen, samt anslutning, stamdata och arbetsgivare (§9.2). Kod: `src/services/`, register: `src/services/access_register.yaml`, förteckning: [tjänstelager_operationer.md](tjänstelager_operationer.md).
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (backend för två klienter), B-022 (försäkringsmodellen), B-026 (agentekosystem)
 > **Relaterat:** `02_system/agentekosystem.md` (harness, skill-poddar), `01_domän/produktregler/` (reglerna operationerna implementerar), `02_system/databasschema.md`
 
@@ -200,7 +200,7 @@ Läsningar av personuppgifter (`pii=True`) loggas också – vem tittade på vem
 | **T3** | Godkännandekön och transaktionsgränsen (§6.1) samt de första skrivoperationerna: `register_salary_report` och `set_policy_paid_up` (`APPROVAL`), `correct_premium_transaction` (`HUMAN_ONLY`). `terminate_policy` är uppskjuten (§9.1). Planerades som `register_salary_change` – namn och betydelse ändrades när modellen stämdes av (§9.1) |
 | **T4** | Genererad förteckning över alla operationer med registrets nivå, effektiv nivå och skäl, typ, regler och PII |
 
-Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelopp) byggs på produktreglerna från delprojekt 4, antagna genom B-031 (gäller från 2026-11-01), tillsammans med pensions- och betalningsmotorn. Därefter byggs handläggar-UI:t (Fas 4) ovanpå tjänstelagret, och sist agentlagret (harness, Fas 3b, och handläggaragenten, Fas 5).
+Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelopp) byggs på produktreglerna från delprojekt 4, antagna genom B-031 (gäller från 2026-11-01), tillsammans med pensions- och betalningsmotorn. Handläggar-UI:t (Fas 4) är byggt ovanpå tjänstelagret (v1 2026-10-12, [handläggar-ui.md](handläggar-ui.md)); sist kommer agentlagret (harness, Fas 3b, och handläggaragenten, Fas 5).
 
 **Tabellerna** `operation_events` och `approval_requests` (`databasschema.md` §9b–9c) används automatiskt när tjänstelagret har en databasanslutning: händelsen skrivs i samma transaktion som ändringen, och godkännandekön överlever omstarter. Utan databas hamnar loggen i fil och kön i minnet.
 
@@ -221,7 +221,13 @@ Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelop
 | `count_approval_requests` | `read` | – | Nej | `HUMAN_ONLY` |
 | `get_operation_events` | `read` | – | Ja | `HUMAN_ONLY` |
 
-De tre sista byggdes för handläggar-UI:t (Fas 4). De läser godkännandekön och händelseloggen som operationer, så att även läsningen av dem loggas. De är `HUMAN_ONLY`: kön och loggen är handläggarens kontrollyta, och agenter ska inte se andras ärenden (B-006). Händelseloggen per försäkrad väljs på indata och resultat (personnummer, försäkringsnummer, premieradens id), eftersom loggen saknar en egen kolumn för berörda objekt (§7).
+| `enroll_insured_person` | `write` | PR-ITP1-012, -013 | Ja | `APPROVAL` |
+| `update_current_salary` | `write` | – | Ja | `HUMAN_ONLY` |
+| `update_contact_details` | `write` | PR-ITP1-031 | Ja | `HUMAN_ONLY` |
+| `register_employer` | `write` | PR-ITP1-012 | Ja | `HUMAN_ONLY` |
+| `list_employers` | `read` | – | Nej | `AGENT` |
+
+`list_approval_requests`, `count_approval_requests` och `get_operation_events` byggdes för handläggar-UI:t (Fas 4). De läser godkännandekön och händelseloggen som operationer, så att även läsningen av dem loggas. De är `HUMAN_ONLY`: kön och loggen är handläggarens kontrollyta, och agenter ska inte se andras ärenden (B-006). Händelseloggen per försäkrad väljs på indata och resultat (personnummer, försäkringsnummer, premieradens id), eftersom loggen saknar en egen kolumn för berörda objekt (§7).
 
 ### 9.1 Skrivoperationerna i T3 – vad som stöds och vad som blockeras
 
@@ -242,6 +248,52 @@ Modellbehov och avgränsning stämdes av med operatören 2026-10-11 (**B-030**).
 - `HUMAN_ONLY`: negativa rättighetsändringar och återkrav avgörs av människa (PR-ITP1-031).
 
 **`terminate_policy` – uppskjuten.** Varken slutavräkning efter sista månadsrätten (PR-ITP1-027) eller dödsfallsavräkning (PR-ITP1-010) kan genomföras korrekt: båda kräver uttagsdelar, månadsanspråk, betalningsskuld och kapitaljournal. Ett avslut genom en lägesändring skulle kunna dölja kapital och anspråk, så det finns ingen operation och ingen registerrad.
+
+### 9.2 Anslutning, stamdata och arbetsgivare (Fas 4, S5) – vad som stöds och vad som blockeras
+
+Modellval och avgränsning stämdes av med operatören 2026-10-12 (beslutsförslag i `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md`). Ingen schemaändring.
+
+**`enroll_insured_person`** (PR-ITP1-012/013) skapar i en transaktion:
+
+- den försäkrade (status `active`),
+- en försäkring (nästa `AL-NNNNNN`),
+- förmånen `retirement_dc`,
+- läget `premium_paying` från den dokumenterade ITP1-tillhörigheten.
+
+`signed_date` = `start_date` = tillhörighetsdagen. Databasen kräver start ≥ tecknad, så registreringsdagen och anmälans referens står i stället i händelseloggen och i lägets `note`. Anslutningen skapar ingen premie och skickar inget försäkringsbesked (villkor §14), och resultatet anger att beskedet inte är skickat.
+
+- *Stöds:*
+  - ny person hos en aktiv ITP-arbetsgivare;
+  - tillhörighet senast i dag, inte före anställningen och inte före arbetsgivarens ITP-anslutning;
+  - retroaktiv anslutning;
+  - person under 25 år, med `premium_paying` och ordinarie premie från 25-årsmånaden (PR-ITP1-013). Premiemotorns åldersfönster ger ingen premie före dess.
+- *Blockeras:*
+  - VD, ägare, utlandsanställd eller avstående, som kräver uttryckligt beslut (PR-ITP1-012);
+  - tillhörighet i framtiden;
+  - 66 år eller äldre vid start (frivillig premie 66–67, PR-ITP1-016);
+  - arbetsgivare som inte är aktiv eller har annat avtal än ITP (B-002);
+  - befintligt personnummer med avslutad anställning. Återanställning och arbetsgivarbyte kräver anställningshistorik som modellen saknar.
+- *Konflikt:* personen finns redan som aktiv. Två samtidiga anslutningar som räknar fram samma försäkringsnummer stoppas av unikhetsregeln (verifierat mot Postgres).
+
+**`update_current_salary`** ändrar aktuell månadslön och tjänstgöringsgrad på personen. Det är stamdata, inte pensionsmedförande lön: PR-ITP1-014 tillåter inte avtalad lön som underlag. Ändringen skapar därför varken löneunderlag eller premie. Tidigare och nytt värde står i händelseloggen.
+
+- *Blockeras:* anställningen har upphört, eller personen är pensionerad eller avliden.
+- *Konflikt:* oförändrat värde.
+- Operationen har ingen produktregel, så golvet (*write utan regel*) håller den `HUMAN_ONLY` för agenter.
+
+**`update_contact_details`** ändrar e-post och telefon. Båda anges som de ska vara efter ändringen, och ett tomt fält tar bort uppgiften. Motiveringen anger hur rätt person verifierades (PR-ITP1-031). Namn och personnummer ändras inte.
+
+- *Blockeras:* avliden försäkrad.
+- *Konflikt:* oförändrade uppgifter.
+- Operationen är `HUMAN_ONLY`, eftersom ett byte av e-post är en väg till kontokapning.
+
+**`register_employer`** registrerar en ny försäkringstagare med ITP som kollektivavtal och organisationsnummer med kontrollsiffra.
+
+- *Blockeras:* anslutningsdag i framtiden.
+- *Konflikt:* organisationsnumret finns redan.
+- Status, organisationsnummer och anslutningsdag ändras inte här, eftersom en arbetsgivares avslut berör alla dess försäkrade.
+
+**`list_employers`** visar organisationsnummer, namn, status, anslutningsdag och antal aktiva försäkrade, utan kontaktpersoner. Listan läser inga personuppgifter och loggas inte.
 
 **Regelversioner i de byggda fallen.** Beräkningar använder periodens parametrar: premiemånadens IBB ur `base_amounts`, och en rättelse stoppas om radens sparade IBB avviker. Regelstatus och filversion vid verkställigheten skrivs i händelseloggen (§4). Före giltighetsdagen för PR-ITP1 v1.0 (2026-11-01, B-031) är operationerna handläggarstöd enligt kommande regler. Begränsning: det finns ännu ingen låst regelversion per händelse eller beräkning (t.ex. `PR-ITP1-001 v1.0` i `calculation_basis`) och ingen markering av teknisk driftsättning. Det behövs för flaggskeppsflödet regel → produktion och bör stämmas av med delprojekt 4.
 

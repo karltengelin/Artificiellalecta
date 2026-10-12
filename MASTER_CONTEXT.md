@@ -92,8 +92,8 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 |--------|-------------|--------|
 | Kapitalförvaltning | Placering av premiereserver, portföljövervakning | 🔲 Ej påbörjat |
 | Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🟡 Påbörjat – aktuariell grund (SIM-modell) och parameterregister, infört genom B-031; beräkningsmotor och reservberäkning saknas |
-| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026, tjänstelager med de första läs- och skrivoperationerna (B-028, B-030) |
-| Ärende­hantering | Inkommande ärenden, handläggning, svar | 🔲 Ej påbörjat |
+| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026, tjänstelager med läs- och skrivoperationer, inklusive anslutning av ny försäkrad och stamdata (B-028, B-030, Fas 4) |
+| Ärende­hantering | Inkommande ärenden, handläggning, svar | 🟡 Påbörjat – handläggar-UI v1 (Fas 4) med sök, översikt, ändringar, godkännandekö och händelselogg via tjänstelagret; ärenden (`cases`) och handläggaragent saknas |
 | Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🟡 Påbörjat – regelverkskarta, källregister, underlag per regelverk och tio tolkningar (delprojekt 4); styrdokument saknas |
 | Rapportering | FI-rapporter, intern rapportering, revisionsunderlag | 🔲 Ej påbörjat |
 | Internrevision | Kontroller, granskning, avvikelsehantering | 🔲 Ej påbörjat |
@@ -110,7 +110,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 
 | Nr | Delprojekt | Projektmapp | Kort scope | Status | Befintlig grund |
 |----|-----------|-------------|------------|--------|-----------------|
-| 1 | Ärendehantering & handläggar-UI | `projekt/01_ärendehantering/` | Handläggarens gränssnitt + bakomliggande backend för att handläggningar ska påverka systemen | 🟡 Utredning klar | Fas 4/5, B-020 |
+| 1 | Ärendehantering & handläggar-UI | `projekt/01_ärendehantering/` | Handläggarens gränssnitt + bakomliggande backend för att handläggningar ska påverka systemen | 🟡 Handläggar-UI v1 byggt (Fas 4, lokalt); skarp verifiering, ärenden och agent återstår | Fas 4/5, B-020, `src/web/` |
 | 2 | BI & insikter | `projekt/02_bi_insikter/` | Koppla försäkringssystem + databaser till indikatorer/BI; agent som svarar på datafrågor | 🟡 Första analysen byggd (premieeffekt av hypotetiskt IBB); dashboard och Genie beslutade, ej driftsatta | B-018 (Lakebase), B-029, `src/analytics/` |
 | 3 | Kundportal | `projekt/03_kundportal/` | Låtsas-hemsida: se pension, förmåner, pausa/skjuta upp utbetalning | 🔲 Ej påbörjat | Nämnd som senare fas i B-020 |
 | 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟢 Dokumentunderlag klart och infört (B-031, gäller från 2026-11-01); kodbygge separat | `01_domän/`, `04_regulatoriskt/` |

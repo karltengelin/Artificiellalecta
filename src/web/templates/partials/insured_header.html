@@ -10,6 +10,7 @@
     <div><dt>Anställd</dt><dd>{{ o.employment_start_date | iso_date }} – {{ o.employment_end_date | iso_date if o.employment_end_date else "pågår" }}</dd></div>
     <div><dt>Aktuell månadslön</dt><dd>{{ o.monthly_salary_sek | sek(0) }}{% if o.employment_rate is not none %} <span class="muted">· {{ o.employment_rate | number }} %</span>{% endif %}</dd></div>
     <div><dt>ITP1 från</dt><dd>{{ o.itp1_start_date | iso_date }}</dd></div>
+    <div><dt>Kontakt</dt><dd>{{ o.email or "–" }}{% if o.phone %}<br>{{ o.phone }}{% endif %}</dd></div>
     <div><dt>Kapital totalt</dt><dd><strong>{{ o.total_capital_sek | sek }}</strong></dd></div>
   </dl>
 </section>

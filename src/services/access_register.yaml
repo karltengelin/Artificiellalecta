@@ -33,5 +33,12 @@ operations:
   set_policy_paid_up: APPROVAL           # avanmälan + fribrev, ej startad pension (PR-ITP1-013)
   correct_premium_transaction: HUMAN_ONLY  # rättelse med motpost; negativ ändring avgörs av människa (PR-ITP1-019, -031)
 
+  # Stamdata och anslutning (Fas 4 S5). Gäller också golvet: write utan godkänd regel -> HUMAN_ONLY.
+  enroll_insured_person: APPROVAL        # ny anställd: person, försäkring, förmån, premiebetalande (PR-ITP1-012, -013)
+  update_current_salary: HUMAN_ONLY      # aktuell lön är stamdata utan produktregel – inte löneunderlag (PR-ITP1-014)
+  update_contact_details: HUMAN_ONLY     # e-post/telefon; byte är en väg till kontokapning – människa verifierar (PR-ITP1-031)
+  register_employer: HUMAN_ONLY          # ny försäkringstagare = nytt avtal (PR-ITP1-012)
+  list_employers: AGENT                  # referensdata utan kontaktpersoner
+
   # terminate_policy är uppskjuten: slutavräkning (PR-ITP1-027) och dödsfallsavräkning
   # (PR-ITP1-010) kräver uttagsdelar, månadsanspråk och kapitaljournal som modellen saknar.

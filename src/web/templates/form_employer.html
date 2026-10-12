@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf, op_info with context %}
+{% set fe = error.field_errors if error is defined and error else {} %}
+{% block title %}Ny arbetsgivare{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <h1>Ny arbetsgivare</h1>
+  <p class="muted small">Arbetsgivaren är försäkringstagare (PR-ITP1-012). Kollektivavtalet är ITP (B-002).</p>
+  {% include "partials/error_box.html" %}
+  <div class="formgrid">
+    <form method="post" action="/arbetsgivare/ny" class="form">
+      {{ csrf() }}
+      <div class="row">
+        {% call field("org_number", "Organisationsnummer", fe, "10 siffror") %}
+        <input id="f-org_number" name="org_number" value="{{ values.get('org_number', '') }}" required>
+        {% endcall %}
+        {% call field("name", "Namn", fe) %}
+        <input id="f-name" name="name" value="{{ values.get('name', '') }}" required>
+        {% endcall %}
+        {% call field("affiliation_date", "Ansluten till ITP", fe) %}
+        <input id="f-affiliation_date" type="date" name="affiliation_date" value="{{ values.get('affiliation_date', '') }}" required>
+        {% endcall %}
+      </div>
+      <div class="row">
+        {% call field("address_street", "Gatuadress", fe) %}<input id="f-address_street" name="address_street" value="{{ values.get('address_street', '') }}">{% endcall %}
+        {% call field("address_postal_code", "Postnummer", fe) %}<input id="f-address_postal_code" name="address_postal_code" value="{{ values.get('address_postal_code', '') }}">{% endcall %}
+        {% call field("address_city", "Ort", fe) %}<input id="f-address_city" name="address_city" value="{{ values.get('address_city', '') }}">{% endcall %}
+        {% call field("industry_code", "SNI-kod", fe, "5 siffror, valfri") %}<input id="f-industry_code" name="industry_code" value="{{ values.get('industry_code', '') }}">{% endcall %}
+      </div>
+      <div class="row">
+        {% call field("contact_name", "Kontaktperson (HR/lön)", fe) %}<input id="f-contact_name" name="contact_name" value="{{ values.get('contact_name', '') }}">{% endcall %}
+        {% call field("contact_email", "Kontaktens e-post", fe) %}<input id="f-contact_email" type="email" name="contact_email" value="{{ values.get('contact_email', '') }}">{% endcall %}
+        {% call field("contact_phone", "Kontaktens telefon", fe) %}<input id="f-contact_phone" name="contact_phone" value="{{ values.get('contact_phone', '') }}">{% endcall %}
+      </div>
+      {{ reason(values, fe, "T.ex. tecknat ITP-avtal med referens") }}
+      <div class="form__actions">
+        <button type="submit">Registrera arbetsgivare</button>
+        <a href="/arbetsgivare">Avbryt</a>
+      </div>
+    </form>
+    {{ op_info(op) }}
+  </div>
+</section>
+{% endblock %}

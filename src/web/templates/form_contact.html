@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf, op_info with context %}
+{% set fe = error.field_errors if error is defined and error else {} %}
+{% block title %}Ändra kontaktuppgifter{% endblock %}
+{% block content %}
+{% if o %}{% include "partials/insured_header.html" %}{% endif %}
+<section class="panel">
+  <h2>Ändra kontaktuppgifter</h2>
+  <p class="muted small">Ange uppgifterna som de ska vara efter ändringen – ett tomt fält tar bort uppgiften. Kontrollera
+    att begäran kommer från rätt person (PR-ITP1-031) och skriv i motiveringen hur. Namn och personnummer ändras inte här.</p>
+  {% include "partials/error_box.html" %}
+  <div class="formgrid">
+    <form method="post" action="/forsakrade/{{ o.personal_id_number }}/kontakt" class="form">
+      {{ csrf() }}
+      <div class="row">
+        {% call field("email", "E-post", fe) %}
+        <input id="f-email" type="email" name="email" value="{{ values.get('email', '') }}">
+        {% endcall %}
+        {% call field("phone", "Telefon", fe) %}
+        <input id="f-phone" name="phone" value="{{ values.get('phone', '') }}">
+        {% endcall %}
+        {% call field("source", "Ändringen kommer från", fe) %}
+        <select id="f-source" name="source">
+          {% for key, text in [("insured", "Den försäkrade"), ("employer", "Arbetsgivaren"), ("other", "Annat")] %}
+          <option value="{{ key }}" {% if values.get('source') == key %}selected{% endif %}>{{ text }}</option>
+          {% endfor %}
+        </select>
+        {% endcall %}
+      </div>
+      {{ reason(values, fe, "T.ex. ändring begärd av den försäkrade, verifierad genom …") }}
+      <div class="form__actions">
+        <button type="submit">Spara kontaktuppgifter</button>
+        <a href="/forsakrade/{{ o.personal_id_number }}">Avbryt</a>
+      </div>
+    </form>
+    {{ op_info(op) }}
+  </div>
+</section>
+{% endblock %}

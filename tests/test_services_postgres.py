@@ -32,7 +32,7 @@ from types import SimpleNamespace
 import pytest
 from sqlalchemy import create_engine, select
 
-from models import Base, PremiumTransaction, SalaryReport
+from models import Base, Policy, PremiumTransaction, SalaryReport
 from services import ConflictError, OperationResult, ProductRuleCatalog
 from services.db import session_factory_for
 from tests.conftest import seed_insurance
@@ -261,3 +261,25 @@ def test_handelser_per_forsakrad_och_godkannandekon_i_postgres(postgres_db):
     queue = service.execute("list_approval_requests", HUMAN, {"status": None}).output
     counts = service.execute("count_approval_requests", HUMAN, {}).output
     assert (queue.count, counts.pending) == (0, 0)
+
+
+def test_samtidiga_anslutningar_far_aldrig_samma_forsakringsnummer(postgres_db):
+    """Nästa AL-nummer räknas fram ur det högsta – en krock stoppas av unikhetsregeln (ConflictError)."""
+    from tests.test_services_enrollment import enrollment
+
+    service = make_service(postgres_db)
+    people = iter(["199204171236", "198811112229"])
+    lock = threading.Lock()
+
+    def enroll():
+        with lock:
+            pnr = next(people)
+        return service.execute("enroll_insured_person", HUMAN, enrollment(personal_id_number=pnr))
+
+    results = run_concurrently(enroll)
+    done = [r.output.policy_number for r in results if isinstance(r, OperationResult)]
+    assert len(done) >= 1 and len(set(done)) == len(done)
+    assert all(isinstance(r, (OperationResult, ConflictError)) for r in results), results
+    with postgres_db.session_factory() as s:
+        numbers = [p.policy_number for p in s.scalars(select(Policy))]
+    assert len(numbers) == len(set(numbers)) == 1 + len(done)

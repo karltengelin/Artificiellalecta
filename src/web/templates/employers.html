@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Arbetsgivare{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>Arbetsgivare</h1>
+    <nav class="filter" aria-label="Urval">
+      {% for key, text in [("active", "Aktiva"), ("paused", "Pausade"), ("terminated", "Avslutade"), ("alla", "Alla")] %}
+      <a href="/arbetsgivare?status={{ key }}" {% if filter == key %}aria-current="page" class="is-current"{% endif %}>{{ text }}</a>
+      {% endfor %}
+      <a class="button" href="/arbetsgivare/ny">Ny arbetsgivare</a>
+    </nav>
+  </div>
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% if listing.employers %}
+  <table class="table">
+    <thead><tr><th>Arbetsgivare</th><th>Org.nr</th><th>Avtal</th><th>Ansluten</th><th>Status</th><th class="num">Aktiva försäkrade</th><th></th></tr></thead>
+    <tbody>
+      {% for e in listing.employers %}
+      <tr>
+        <td><strong>{{ e.name }}</strong></td>
+        <td>{{ e.org_number }}</td>
+        <td>{{ e.collective_agreement }}</td>
+        <td>{{ e.affiliation_date | iso_date }}</td>
+        <td>{{ {"active": "Aktiv", "paused": "Pausad", "terminated": "Avslutad"}.get(e.status, e.status) }}</td>
+        <td class="num">{{ e.active_insured }}</td>
+        <td class="actions">{% if e.status == "active" %}<a href="/forsakrade/ny?arbetsgivare={{ e.org_number }}">Anslut ny försäkrad</a>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">{{ listing.count }} arbetsgivare. Kontaktpersoner visas inte i listan.</p>
+  {% else %}
+  <p class="empty">Inga arbetsgivare i urvalet.</p>
+  {% endif %}
+</section>
+{% endblock %}

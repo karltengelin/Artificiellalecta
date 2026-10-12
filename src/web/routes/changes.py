@@ -155,6 +155,69 @@ async def correction_submit(request: Request, policy_number: str, transaction_id
     )
 
 
+# --- aktuell lön och kontaktuppgifter (stamdata, S5) ------------------------------------------------
+
+
+@router.get("/forsakrade/{pnr}/lon")
+def current_salary_form(request: Request, pnr: str):
+    try:
+        overview = read(request, "get_insured_overview", {"personal_id_number": pnr})
+    except ServiceError as exc:
+        return render_error(request, exc)
+    values = {
+        "monthly_salary_sek": "" if overview.monthly_salary_sek is None else str(overview.monthly_salary_sek),
+        "employment_rate": "" if overview.employment_rate is None else str(overview.employment_rate),
+    }
+    return render(request, "form_current_salary.html", {
+        "o": overview, "tab": "overview", "values": values, "op": operation_info(request, "update_current_salary"),
+    })
+
+
+@router.post("/forsakrade/{pnr}/lon")
+async def current_salary_submit(request: Request, pnr: str):
+    form = await request.form()
+    check_csrf(request, form)
+    values = _form_dict(form)
+    data = {
+        "personal_id_number": pnr,
+        "monthly_salary_sek": clean_decimal(values.get("monthly_salary_sek")),
+        "employment_rate": clean_decimal(values.get("employment_rate")),
+    }
+    return await _submit(
+        request, "update_current_salary", data, values,
+        form_template="form_current_salary.html", lookup={"personal_id_number": pnr}, tab="overview",
+    )
+
+
+@router.get("/forsakrade/{pnr}/kontakt")
+def contact_form(request: Request, pnr: str):
+    try:
+        overview = read(request, "get_insured_overview", {"personal_id_number": pnr})
+    except ServiceError as exc:
+        return render_error(request, exc)
+    values = {"email": overview.email or "", "phone": overview.phone or "", "source": "insured"}
+    return render(request, "form_contact.html", {
+        "o": overview, "tab": "overview", "values": values, "op": operation_info(request, "update_contact_details"),
+    })
+
+
+@router.post("/forsakrade/{pnr}/kontakt")
+async def contact_submit(request: Request, pnr: str):
+    form = await request.form()
+    check_csrf(request, form)
+    values = _form_dict(form)
+    data = {
+        "personal_id_number": pnr,
+        "email": clean_text(values.get("email")),
+        "phone": clean_text(values.get("phone")),
+        "source": values.get("source") or None,
+    }
+    return await _submit(
+        request, "update_contact_details", data, values,
+        form_template="form_contact.html", lookup={"personal_id_number": pnr}, tab="overview",
+    )
+
+
 # --- förhandsberäkning (compute, sparar ingenting) ---------------------------------------------------
 
 

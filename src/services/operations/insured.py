@@ -64,6 +64,8 @@ class InsuredOverview(BaseModel):
     personal_id_number: str
     first_name: str
     last_name: str
+    email: str | None = Field(default=None, description="Kontaktuppgift")
+    phone: str | None = Field(default=None, description="Kontaktuppgift")
     status: str
     employer: EmployerInfo
     employment_start_date: date
@@ -78,7 +80,7 @@ class InsuredOverview(BaseModel):
 @operation(
     name="get_insured_overview",
     description=(
-        "Visar en försäkrad med anställning, lön, försäkringar, pågående läge per "
+        "Visar en försäkrad med kontaktuppgifter, anställning, lön, försäkringar, pågående läge per "
         "försäkring och kapital per förmån. Sök på personnummer eller försäkringsnummer."
     ),
     kind=OperationKind.READ,
@@ -142,6 +144,8 @@ def get_insured_overview(ctx: OperationContext, data: InsuredLookup) -> InsuredO
         personal_id_number=person.personal_id_number,
         first_name=person.first_name,
         last_name=person.last_name,
+        email=person.email,
+        phone=person.phone,
         status=person.status,
         employer=EmployerInfo(org_number=employer.org_number, name=employer.name),
         employment_start_date=person.employment_start_date,

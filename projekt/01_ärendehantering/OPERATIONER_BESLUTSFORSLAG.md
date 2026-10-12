@@ -1,6 +1,6 @@
 # Beslutsförslag: nya operationer för handläggar-UI:t (Fas 4, S4)
 
-> **Status:** Förslag 2026-10-12. Väntar på operatörens val. Inget är byggt.
+> **Status:** Godkänt av operatören i chatten 2026-10-12, med valen A–D enligt rekommendationerna i §4. `update_employer_details` ingår inte. Byggt i S5 (`tjänstelager.md` §9.2). Beslutsnumret sätts av operatören.
 > **Underlag:** PR-ITP1-012 (anslutning), -013 (premieperioder), -014 (löneunderlag), -016 (kompletterande premier), -029 (information), -031 (data och beslut); försäkringsvillkor v2.0 §2–3 och §14; `02_system/databasschema.md` §3–7; `02_system/tjänstelager.md` §4 och §9.1.
 > **Bygger på:** B-017, B-022, B-028, B-030, B-031.
 
@@ -217,8 +217,8 @@ anslutningen.
 > - `update_current_salary` (aktuell lön som stamdata, skild från löneunderlaget i PR-ITP1-014, `HUMAN_ONLY`
 >   utan produktregel),
 > - `update_contact_details` (e-post och telefon, PR-ITP1-031, `HUMAN_ONLY`),
-> - `register_employer` (`HUMAN_ONLY`) och `list_employers` (`AGENT`)[, samt `update_employer_details`
->   (`HUMAN_ONLY`)].
+> - `register_employer` (`HUMAN_ONLY`) och `list_employers` (`AGENT`). Ändring av arbetsgivarens
+>   uppgifter skjuts upp.
 >
 > Ingen schemaändring. Försäkringens `signed_date` och `start_date` sätts till den dokumenterade
 > ITP1-tillhörighetsdagen. Personer under 25 år ansluts med `premium_paying` från tillhörighetens start, och
@@ -230,8 +230,8 @@ anslutningen.
 > handläggning. Modellen bär dem utan schemaändring. Det som kräver anställnings- eller lönehistorik blockeras i
 > stället för att skriva över data. Aktuell lön hålls isär från pensionsmedförande lön, som B-030 krävde.
 >
-> **Konsekvenser:** Åtkomstregistret får sex rader, förteckningen genereras om och `tjänstelager.md` §9 och
-> `handläggar-ui.md` uppdateras. Anställningshistorik, lönehistorik, namnbyte, arbetsgivarens avslut och
-> försäkringsbesked läggs i ATT_GORA.
+> **Konsekvenser:** Åtkomstregistret får fem rader, förteckningen genereras om och `tjänstelager.md` §9 och
+> `handläggar-ui.md` uppdateras. Anställningshistorik, lönehistorik, namnbyte, ändring av arbetsgivarens
+> uppgifter, arbetsgivarens avslut och försäkringsbesked läggs i ATT_GORA.
 >
 > **Preciserar:** B-028 och B-030.

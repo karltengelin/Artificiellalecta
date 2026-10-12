@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf, op_info with context %}
+{% set fe = error.field_errors if error is defined and error else {} %}
+{% block title %}Ändra aktuell lön{% endblock %}
+{% block content %}
+{% if o %}{% include "partials/insured_header.html" %}{% endif %}
+<section class="panel">
+  <h2>Ändra aktuell lön</h2>
+  <div class="alert alert--info">
+    <p class="alert__message"><strong>Aktuell lön är stamdata</strong> – den avtalade månadslönen enligt arbetsgivaren. Den
+      skapar varken löneunderlag eller premie. Pensionsmedförande lön för en utbetalningsmånad registreras som
+      <a href="/forsakrade/{{ o.personal_id_number }}/loneunderlag/ny">löneunderlag</a> (PR-ITP1-014).</p>
+  </div>
+  {% include "partials/error_box.html" %}
+  <div class="formgrid">
+    <form method="post" action="/forsakrade/{{ o.personal_id_number }}/lon" class="form">
+      {{ csrf() }}
+      <div class="row">
+        {% call field("monthly_salary_sek", "Aktuell månadslön (kr)", fe, "Nu: " ~ (o.monthly_salary_sek | sek)) %}
+        <input id="f-monthly_salary_sek" name="monthly_salary_sek" inputmode="decimal" value="{{ values.get('monthly_salary_sek', '') }}" required>
+        {% endcall %}
+        {% call field("employment_rate", "Tjänstgöringsgrad (%)", fe, "Tomt = oförändrad") %}
+        <input id="f-employment_rate" name="employment_rate" inputmode="decimal" value="{{ values.get('employment_rate', '') }}">
+        {% endcall %}
+      </div>
+      {{ reason(values, fe, "T.ex. löneändring enligt besked från arbetsgivaren") }}
+      <div class="form__actions">
+        <button type="submit">Ändra aktuell lön</button>
+        <a href="/forsakrade/{{ o.personal_id_number }}">Avbryt</a>
+      </div>
+    </form>
+    {{ op_info(op) }}
+  </div>
+</section>
+{% endblock %}

@@ -11,6 +11,7 @@
       <button type="submit">Sök</button>
     </div>
   </form>
+  <p><a class="button secondary" href="/forsakrade/ny">Anslut ny försäkrad</a></p>
   {% if message %}<div class="alert alert--invalid" role="alert"><p class="alert__message">{{ message }}</p></div>{% endif %}
   {% include "partials/error_box.html" %}
   {% if settings.database != "lakebase" %}

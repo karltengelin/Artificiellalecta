@@ -159,6 +159,7 @@ def clean_text(raw: str | None) -> str | None:
 _RULE_REF = re.compile(r"PR-ITP1-\d{3}")
 
 FIELD_NAMES = {
+    "__all__": "Uppgifterna",
     "personal_id_number": "Personnummer",
     "employer_org_number": "Arbetsgivarens organisationsnummer",
     "period_month": "Månad",
@@ -175,6 +176,26 @@ FIELD_NAMES = {
     "basis_reference": "Underlag",
     "reason": "Motivering",
     "note": "Skäl",
+    "first_name": "Förnamn",
+    "last_name": "Efternamn",
+    "employment_start_date": "Anställd från",
+    "itp1_start_date": "ITP1 från",
+    "employment_category": "Ställning",
+    "affiliation_reference": "Anmälan",
+    "monthly_salary_sek": "Aktuell månadslön",
+    "employment_rate": "Tjänstgöringsgrad",
+    "email": "E-post",
+    "phone": "Telefon",
+    "org_number": "Organisationsnummer",
+    "name": "Namn",
+    "affiliation_date": "Ansluten till ITP",
+    "industry_code": "SNI-kod",
+    "address_street": "Gatuadress",
+    "address_postal_code": "Postnummer",
+    "address_city": "Ort",
+    "contact_name": "Kontaktperson",
+    "contact_email": "Kontaktens e-post",
+    "contact_phone": "Kontaktens telefon",
 }
 
 
@@ -259,6 +280,7 @@ def _translate(message: str, error_type: str) -> str:
         "literal_error": "Ogiltigt val",
         "int_parsing": "Ange ett heltal",
         "uuid_parsing": "Ogiltigt id",
+        "less_than_equal": "För stort värde",
         "string_too_short": "För kort",
         "string_too_long": "För långt",
     }

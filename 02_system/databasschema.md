@@ -65,6 +65,8 @@
 - `employers.id` ← `insured_persons.employer_id` (en arbetsgivare har många försäkrade)
 - Koppling till försäkringsavtal går via den försäkrade (`employers` ← `insured_persons` ← `policies`) – `policies` har ingen egen arbetsgivarkolumn
 
+**Ändras via tjänstelagret (Fas 4):** `register_employer` skapar en arbetsgivare med `collective_agreement = 'ITP'` och status `active`; `list_employers` listar utan kontaktpersoner. Status, organisationsnummer och anslutningsdag ändras inte via tjänstelagret ännu.
+
 ---
 
 ## 4. Tabell: `insured_persons` – Försäkrade
@@ -82,7 +84,7 @@
 | `employer_id` | `UUID` | NOT NULL, FK → `employers(id)` ON DELETE RESTRICT | Nuvarande arbetsgivare |
 | `employment_start_date` | `DATE` | NOT NULL | Anställningens startdatum hos `employer_id` |
 | `employment_end_date` | `DATE` | NULL | Avslutsdatum, NULL = pågående anställning |
-| `monthly_salary_sek` | `NUMERIC(10,2)` | NULL | Aktuell månadslön i SEK. NULL om okänd |
+| `monthly_salary_sek` | `NUMERIC(10,2)` | NULL | Aktuell (avtalad) månadslön i SEK, stamdata. NULL om okänd. Inte pensionsmedförande lön (se `salary_reports`, §8b). Ändras med `update_current_salary` |
 | `employment_rate` | `NUMERIC(5,2)` | NULL, CHECK between 0 och 100 | Tjänstgöringsgrad i procent (heltid = 100) |
 | `itp1_start_date` | `DATE` | NULL | Datum då ITP1-täckning startade. Typiskt månaden efter 25-årsdagen eller anställningsstart |
 | `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`'active'`, `'terminated'`, `'retired'`, `'deceased'`), default `'active'` | Livscykelstatus i ITP1-systemet |
@@ -97,6 +99,8 @@
 **Relationer:**
 - `insured_persons.employer_id` → `employers.id` (en försäkrad → en arbetsgivare, en arbetsgivare → många försäkrade)
 - `insured_persons.id` ← `policies.insured_person_id` (1:N – en person kan ha flera försäkringar, se §5/B-022)
+
+**Ändras via tjänstelagret (Fas 4):** `enroll_insured_person` skapar personen med försäkring, förmån och läget `premium_paying` (§5–7) i en transaktion; `update_current_salary` ändrar `monthly_salary_sek`/`employment_rate`; `update_contact_details` ändrar `email`/`phone`; `set_policy_paid_up` (T3) sätter `employment_end_date` och status `terminated`. Modellen har en arbetsgivare och en anställning per person – återanställning och arbetsgivarbyte kräver anställningshistorik och blockeras (`tjänstelager.md` §9.2).
 
 ---
 
@@ -314,8 +318,8 @@ Tabellen är **append-only**: en rättelse är en ny version som pekar på den d
 ## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**
-- `org_number` – Luhn-kontroll (10 siffror, sista siffran är kontrollsiffra)
-- `personal_id_number` – Luhn-kontroll och datumvalidering
+- `org_number` – Luhn-kontroll (10 siffror, sista siffran är kontrollsiffra) – kontrolleras vid `register_employer`
+- `personal_id_number` – Luhn-kontroll och datumvalidering – kontrolleras vid `enroll_insured_person` (befintlig genererad data valideras inte i efterhand)
 - `affiliation_date` ≤ idag
 - `employment_start_date` ≤ `employment_end_date` (om båda satta)
 - `itp1_start_date` ≥ datum när personen fyllde 25 (ITP-avtalets §4)

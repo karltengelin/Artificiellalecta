@@ -27,7 +27,7 @@ Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsov
 1. **Fas 1 – Försäkringssystemet (premiemotorn):** ITP1-domändokument, tabellerna `policies` + `premium_transactions`, premieberäkning som skill, genererad premiehistorik. **Fas 1f – Tjänstelagret** (`02_system/tjänstelager.md`): alla operationer mot försäkringssystemet via ett gemensamt lager som handläggar-UI, agenter och skript använder, med agentåtkomst per operation (bl.a. *endast handläggare*) och händelselogg. Regelstyrda beräkningar och operationer (uttag, paus, garanti, pensionsbelopp) bygger på produktreglerna från delprojekt 4, antagna som PR-ITP1 v1.0 (B-031, gäller från 2026-11-01)
 2. **Fas 2 – Kapitalförvaltning (paper trading, B-019):** placeringsriktlinje i `05_styrdokument/`, tabellerna `portfolios`/`portfolio_holdings`/`trades`, marknadsdata via gratis-API, regelstyrd förvaltningslogik med beslutslogg. Simulerad wallet – inget riktigt kapital (B-003)
 3. **Fas 3 – AI-abstraktionslagret (B-009):** blockerar all agentkod – byggs före agenterna. ✅ **2026-10-11** byggt i `src/ai/` (B-025). Fortsättning enligt B-026 (`02_system/agentekosystem.md` §12): **Fas 3b** harness v1 (skill-register, poddar, agentloop, körjournal) efter Fas 4 och före Fas 5, **Fas 3c** delegering och flödesmotor inför flaggskeppsscenariot
-4. **Fas 4 – Handläggar-UI (B-020):** FastAPI-backend ovanpå tjänstelagret (Fas 1f) + tabellvyer + godkännandekö + inbyggd Claude (se utredningen under 🔵 nedan). Handläggaren gör ändringar för kund via tjänstelagrets operationer. Kundportal byggs senare på samma backend
+4. **Fas 4 – Handläggar-UI (B-020):** FastAPI-backend ovanpå tjänstelagret (Fas 1f) + tabellvyer + godkännandekö + inbyggd Claude (se utredningen under 🔵 nedan). Handläggaren gör ändringar för kund via tjänstelagrets operationer. Kundportal byggs senare på samma backend. ✅ **2026-10-12** v1 byggd (S1–S5, se sektionen Fas 4 nedan) – utan inbyggd Claude, som kommer efter harness
 5. **Fas 5 – Handläggaragent + `cases`-tabell + första skills**
 
 ---
@@ -82,6 +82,28 @@ Design: `02_system/tjänstelager.md`. Byggs i den tvärgående chatten (alternat
 - [ ] **Premie ur löneunderlag** – fakturering och fördelning av ordinarie premie från `salary_reports` (PR-ITP1-001/015/017) är ett eget steg; registreringen skapar ingen premie
 - [x] **2026-10-12** **Godkännandekö för handläggaren** – byggd direkt i handläggar-UI:t (Fas 4, S3) i stället för ett CLI: `/godkannanden` med lista, godkänn och avslå via `ServiceLayer.approve/reject`. Kön läses med den nya läsoperationen `list_approval_requests` (`HUMAN_ONLY`), se `02_system/handläggar-ui.md`
 - [x] **2026-10-11** **T4: Förteckning över operationer** – `02_system/tjänstelager_operationer.md` genereras med `python scripts/documentation/list_operations.py` (utan databas och modellanrop): typ, produktregler med status, PII, registrets nivå, effektiv nivå och skäl, hämtat från `ServiceLayer.decision()`. Deterministisk; `tests/test_services_listing.py` fallerar om filen inte är aktuell. Regelstatus tar nu även hänsyn till `Gäller från` i införandebeslutet (*kommande* = ej godkänd)
+
+---
+
+## 🔴 Fas 4 – Handläggar-UI v1 (B-020, B-028) – byggs nu
+
+Design och drift: `02_system/handläggar-ui.md`. Kod: `src/web/` (FastAPI + Jinja2 + HTMX, inget byggsteg), start `python scripts/web/start_ui.py`. UI:t anropar bara tjänstelagret; bara lokalt (127.0.0.1), ingen inloggning i v1. Branch `claude/handlaggare-ui-v1-1fa1e7`.
+
+- [x] **2026-10-12** **S1: Grund** – app, konfiguration (`HANDLAGGARE_ID`, `HANDLAGGARE_DB` = demo/svc_test/lakebase – Lakebase bara uttryckligen), layout, sök på personnummer eller försäkringsnummer, översikt, löneunderlag och premiehistorik. Lokal demodatabas med fiktivt bestånd (`src/utils/demo_data.py`); Host-kontroll och formulärtoken
+- [x] **2026-10-12** **S2: Skrivformulär** för `register_salary_report`, `set_policy_paid_up` och `correct_premium_transaction` – stopp och krockar visas med skäl, regel och *Ingenting har ändrats*; förhandsberäkning av premie
+- [x] **2026-10-12** **S3: Godkännandekö och händelselogg** – lista, godkänn och avslå; händelser totalt och per försäkrad. Nya läsoperationer `list_approval_requests`, `count_approval_requests`, `get_operation_events` (`HUMAN_ONLY`)
+- [x] **2026-10-12** **S4: Designstopp** – beslutsförslag `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md`, godkänt av operatören med valen A–D. *Beslutsnumret loggas av operatören*
+- [x] **2026-10-12** **S5: Nya operationer** – `enroll_insured_person` (`APPROVAL`), `update_current_salary`, `update_contact_details`, `register_employer` (`HUMAN_ONLY`) och `list_employers` (`AGENT`) med formulär och tester; ingen schemaändring (`tjänstelager.md` §9.2)
+- [ ] **S6: Skarp verifiering i Lakebase** – backup, operatörens OK, därefter anslut en försäkrad, ändra lön, registrera löneunderlag, sätt fribrev och kontrollera raderna och händelseloggen. Godkännandekön kan inte provas skarpt före 2026-11-01 (agenter kan inte föreslå skrivningar förrän PR-ITP1 v1.0 gäller) – den är provad i demodatabasen och testerna
+
+**Följdpunkter från Fas 4:**
+- [ ] **Anställningshistorik** (tabell `employments`) – återanställning, arbetsgivarbyte, flera anställningar och löneunderlag efter avslutad anställning (PR-ITP1-013). Schemaändring enligt T3-mönstret
+- [ ] **Lönehistorik för aktuell lön** – i dag bara aktuellt värde; tidigare värden står i händelseloggen
+- [ ] **Namnbyte** som identitetsuppgift (`HUMAN_ONLY`)
+- [ ] **Ändra arbetsgivarens uppgifter** (`update_employer_details`) och **arbetsgivarens avslut/paus** med avanmälan av alla försäkrade
+- [ ] **Försäkringsbesked vid anslutning** (villkor §14, PR-ITP1-029) – `external`, med kommunikationsagenten
+- [ ] **Interna id:n i UI:ts adresser** i stället för personnummer, när verklig autentisering eller kundportalen byggs
+- [ ] **Inbyggd Claude i handläggar-UI:t** – efter harness (Fas 3b), se utredningen under 🔵
 
 ---
 
@@ -172,6 +194,8 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
      via Python-backenden, visas som filtrerbara tabeller i frontenden.
      Databricks-webbgränssnittet används som debuggingverktyg under utveckling;
      tabell-vyerna i admin-UI:n är den långsiktiga lösningen.
+
+  **Läget 2026-10-12:** Komponent 1 (FastAPI-backend) och 6 (vyer) finns i handläggar-UI v1 (Fas 4), byggda ovanpå tjänstelagret i stället för direkta tabellvyer. Autentisering: v1 är bara lokalt utan inloggning. Delad backend: människor och agenter använder samma tjänstelager. Chatten (komponent 1–5 med modellanrop) byggs efter harness.
 
   **Utestående designfrågor att besluta:**
   - Ska sessionshistorik sparas (och i så fall var – Lakebase?)?

@@ -69,6 +69,33 @@
     <dt>Kapitaleffekt</dt><dd>{{ r.capital_effect }}</dd>
   </dl>
   <p><a href="/forsakringar/{{ r.policy_number }}/premier">Till premiehistoriken</a></p>
+
+  {% elif operation == "enroll_insured_person" %}
+  <h2>Ansluten: {{ r.first_name }} {{ r.last_name }}</h2>
+  <dl class="kv">
+    <dt>Försäkring</dt><dd><a href="/forsakringar/{{ r.policy_number }}">{{ r.policy_number }}</a> · {{ r.state | label('policy_state') }} från {{ r.start_date | iso_date }}</dd>
+    <dt>Ordinarie premie från</dt><dd>{{ r.premium_from_month | month }}</dd>
+    <dt>Arbetsgivare</dt><dd>{{ r.employer_org_number }}</dd>
+    <dt>Försäkringsbesked</dt><dd>{{ "Skickat" if r.information_letter_sent else "Inte skickat – görs i ett senare steg (villkor §14)" }}</dd>
+  </dl>
+  <p>{{ r.note }}</p>
+  <p><a href="/forsakrade/{{ r.personal_id_number }}/loneunderlag/ny">Registrera löneunderlag</a></p>
+
+  {% elif operation == "update_current_salary" %}
+  <h2>Aktuell lön ändrad</h2>
+  <dl class="kv">
+    <dt>Månadslön</dt><dd>{{ r.previous_salary_sek | sek }} → <strong>{{ r.monthly_salary_sek | sek }}</strong></dd>
+    <dt>Tjänstgöringsgrad</dt><dd>{{ r.previous_employment_rate | number }} % → {{ r.employment_rate | number }} %</dd>
+  </dl>
+  <p>{{ r.note }}</p>
+
+  {% elif operation == "update_contact_details" %}
+  <h2>Kontaktuppgifter ändrade</h2>
+  <dl class="kv">
+    {% for c in r.changed %}
+    <dt>{{ field_names.get(c.field, c.field) }}</dt><dd>{{ c.previous or "–" }} → <strong>{{ c.new or "borttagen" }}</strong></dd>
+    {% endfor %}
+  </dl>
   {% endif %}
 
   {% if reason %}<p class="muted small">Motivering: {{ reason }}</p>{% endif %}

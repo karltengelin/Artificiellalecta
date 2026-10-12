@@ -4,7 +4,14 @@
 {% include "partials/insured_header.html" %}
 
 <section class="panel">
-  <h2>Försäkringar</h2>
+  <div class="panel__head">
+    <h2>Försäkringar</h2>
+    <div class="form__actions">
+      <a class="button secondary" href="/forsakrade/{{ o.personal_id_number }}/loneunderlag/ny">Registrera löneunderlag</a>
+      <a class="button secondary" href="/forsakrade/{{ o.personal_id_number }}/lon">Ändra aktuell lön</a>
+      <a class="button secondary" href="/forsakrade/{{ o.personal_id_number }}/kontakt">Ändra kontaktuppgifter</a>
+    </div>
+  </div>
   {% if o.policies %}
   <table class="table">
     <thead>

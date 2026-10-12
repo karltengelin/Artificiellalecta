@@ -22,7 +22,7 @@ from services import ServiceLayer
 from web.config import WebSettings
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.presenters import ErrorView
-from web.routes import changes, insured, journal
+from web.routes import changes, enrollment, insured, journal
 
 log = logging.getLogger("web")
 
@@ -41,6 +41,7 @@ def create_app(service: ServiceLayer | None = None, settings: WebSettings | None
 
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.allowed_hosts))
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    app.include_router(enrollment.router)  # före insured: /forsakrade/ny är inget personnummer
     app.include_router(insured.router)
     app.include_router(changes.router)
     app.include_router(journal.router)

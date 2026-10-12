@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf, op_info with context %}
+{% set fe = error.field_errors if error is defined and error else {} %}
+{% block title %}Anslut ny försäkrad{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <h1>Anslut ny försäkrad</h1>
+  <p class="muted small">Ny anställd hos en ansluten arbetsgivare (PR-ITP1-012). Försäkringen startar den dokumenterade
+    ITP1-tillhörighetsdagen i läget premiebetalande. Ordinarie premie från 25-årsmånaden (PR-ITP1-013).
+    Ingen premie skapas och inget försäkringsbesked skickas här.</p>
+  {% include "partials/error_box.html" %}
+  <div class="formgrid">
+    <form method="post" action="/forsakrade/ny" class="form">
+      {{ csrf() }}
+      <div class="row">
+        {% call field("personal_id_number", "Personnummer", fe, "ÅÅÅÅMMDD-NNNN") %}
+        <input id="f-personal_id_number" name="personal_id_number" value="{{ values.get('personal_id_number', '') }}" required autocomplete="off">
+        {% endcall %}
+        {% call field("first_name", "Förnamn", fe) %}
+        <input id="f-first_name" name="first_name" value="{{ values.get('first_name', '') }}" required>
+        {% endcall %}
+        {% call field("last_name", "Efternamn", fe) %}
+        <input id="f-last_name" name="last_name" value="{{ values.get('last_name', '') }}" required>
+        {% endcall %}
+      </div>
+      <div class="row">
+        {% call field("employer_org_number", "Arbetsgivare", fe) %}
+        <select id="f-employer_org_number" name="employer_org_number" required>
+          <option value="">Välj arbetsgivare …</option>
+          {% for e in employers %}
+          <option value="{{ e.org_number }}" {% if values.get('employer_org_number') == e.org_number %}selected{% endif %}>{{ e.name }} ({{ e.org_number }})</option>
+          {% endfor %}
+        </select>
+        {% endcall %}
+        {% call field("employment_category", "Ställning", fe, "Annat än vanlig anställd kräver uttryckligt beslut (PR-ITP1-012)") %}
+        <select id="f-employment_category" name="employment_category">
+          {% for key, text in categories %}<option value="{{ key }}" {% if values.get('employment_category') == key %}selected{% endif %}>{{ text }}</option>{% endfor %}
+        </select>
+        {% endcall %}
+      </div>
+      <div class="row">
+        {% call field("employment_start_date", "Anställd från", fe) %}
+        <input id="f-employment_start_date" type="date" name="employment_start_date" value="{{ values.get('employment_start_date', '') }}" max="{{ today }}" required>
+        {% endcall %}
+        {% call field("itp1_start_date", "ITP1-tillhörighet från", fe, "Dokumenterad dag enligt anmälan – försäkringens start. Senast i dag") %}
+        <input id="f-itp1_start_date" type="date" name="itp1_start_date" value="{{ values.get('itp1_start_date', '') }}" max="{{ today }}" required>
+        {% endcall %}
+        {% call field("affiliation_reference", "Anmälan", fe, "Arbetsgivarens anmälan, t.ex. filreferens") %}
+        <input id="f-affiliation_reference" name="affiliation_reference" value="{{ values.get('affiliation_reference', '') }}" required minlength="3">
+        {% endcall %}
+      </div>
+      <div class="row">
+        {% call field("monthly_salary_sek", "Aktuell månadslön (kr)", fe, "Stamdata – inte pensionsmedförande lön") %}
+        <input id="f-monthly_salary_sek" name="monthly_salary_sek" inputmode="decimal" value="{{ values.get('monthly_salary_sek', '') }}">
+        {% endcall %}
+        {% call field("employment_rate", "Tjänstgöringsgrad (%)", fe) %}
+        <input id="f-employment_rate" name="employment_rate" inputmode="decimal" value="{{ values.get('employment_rate', '') }}">
+        {% endcall %}
+        {% call field("email", "E-post", fe, "Valfri") %}
+        <input id="f-email" type="email" name="email" value="{{ values.get('email', '') }}">
+        {% endcall %}
+        {% call field("phone", "Telefon", fe, "Valfri") %}
+        <input id="f-phone" name="phone" value="{{ values.get('phone', '') }}">
+        {% endcall %}
+      </div>
+      {{ reason(values, fe, "T.ex. anmälan om nyanställd från arbetsgivaren") }}
+      <div class="form__actions">
+        <button type="submit">Anslut</button>
+        <a href="/">Avbryt</a>
+      </div>
+    </form>
+    {{ op_info(op) }}
+  </div>
+</section>
+{% endblock %}
