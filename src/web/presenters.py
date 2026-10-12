@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -90,13 +90,23 @@ def iso_date(value: Any) -> str:
     if value is None or value == "":
         return "–"
     if isinstance(value, datetime):
-        return value.strftime("%Y-%m-%d %H:%M")
+        return local_time(value)
     if isinstance(value, date):
         return value.isoformat()
     text = str(value)
     if "T" in text:  # tidsstämpel i ISO-format från händelseloggen och kön
-        return text[:16].replace("T", " ")
+        try:
+            return local_time(datetime.fromisoformat(text))
+        except ValueError:
+            return text[:16].replace("T", " ")
     return text
+
+
+def local_time(value: datetime) -> str:
+    """Tjänstelagret sparar UTC (SQLite tappar tidszonen) – visas i datorns lokala tid."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone().strftime("%Y-%m-%d %H:%M")
 
 
 def month(value: Any) -> str:
@@ -164,7 +174,7 @@ FIELD_NAMES = {
     "corrected_salary_sek": "Rättad lön",
     "basis_reference": "Underlag",
     "reason": "Motivering",
-    "note": "Kommentar",
+    "note": "Skäl",
 }
 
 

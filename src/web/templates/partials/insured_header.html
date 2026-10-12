@@ -19,4 +19,5 @@
   {% for p in o.policies %}
   <a href="/forsakringar/{{ p.policy_number }}/premier" {% if tab == "premiums:" ~ p.policy_number %}aria-current="page"{% endif %}>Premier {{ p.policy_number }}</a>
   {% endfor %}
+  <a href="/forsakrade/{{ o.personal_id_number }}/handelser" {% if tab == "events" %}aria-current="page"{% endif %}>Händelser</a>
 </nav>

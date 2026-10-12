@@ -141,7 +141,7 @@ Varje anrop bär ett `OperationContext`:
 1. En agent anropar en `APPROVAL`-operation.
 2. Tjänstelagret validerar indata och regler – förslaget ska vara giltigt redan när det läggs. En `write`-operation **provkörs** mot aktuellt databasläge och rullas tillbaka; ett förslag som inte går att genomföra (saknat underlag, fel läge, dubblett) avvisas direkt i stället för att hamna i kön. `external` provkörs aldrig.
 3. Ett **godkännandeärende** sparas (operation, indata, motivering, föreslagen av, `run_id`) med status `pending`, och agenten får svaret *väntar på godkännande* med ärende-id.
-4. Handläggaren ser kön (CLI i v1, handläggar-UI:t från Fas 4), granskar och godkänner eller avslår. Bara en människa (`human`) kan godkänna eller avslå – inte en agent och inte ett skript.
+4. Handläggaren ser kön i handläggar-UI:t (`/godkannanden`, [handläggar-ui.md](handläggar-ui.md)), granskar och godkänner eller avslår. Det planerade CLI:t byggdes inte; kön läses med `list_approval_requests`. Bara en människa (`human`) kan godkänna eller avslå – inte en agent och inte ett skript.
 5. Vid godkännande körs operationen **på nytt mot aktuellt läge** (data kan ha ändrats), utförd av handläggaren, med agenten angiven som förslagsställare.
 
 Kön ligger i tjänstelagret – inte i harness – så att människor ser alla förslag på ett ställe oavsett vilken agent eller vilket flöde som lade dem. Det justerar B-026, där harness skapade godkännandeärenden; harness tar nu bara emot svaret *väntar på godkännande*.
@@ -217,6 +217,11 @@ Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelop
 | `register_salary_report` | `write` | PR-ITP1-013, -014, -017 | Ja | `APPROVAL` |
 | `set_policy_paid_up` | `write` | PR-ITP1-013 | Ja | `APPROVAL` |
 | `correct_premium_transaction` | `write` | PR-ITP1-001, -014, -017, -019, -032 | Ja | `HUMAN_ONLY` |
+| `list_approval_requests` | `read` | – | Ja | `HUMAN_ONLY` |
+| `count_approval_requests` | `read` | – | Nej | `HUMAN_ONLY` |
+| `get_operation_events` | `read` | – | Ja | `HUMAN_ONLY` |
+
+De tre sista byggdes för handläggar-UI:t (Fas 4). De läser godkännandekön och händelseloggen som operationer, så att även läsningen av dem loggas. De är `HUMAN_ONLY`: kön och loggen är handläggarens kontrollyta, och agenter ska inte se andras ärenden (B-006). Händelseloggen per försäkrad väljs på indata och resultat (personnummer, försäkringsnummer, premieradens id), eftersom loggen saknar en egen kolumn för berörda objekt (§7).
 
 ### 9.1 Skrivoperationerna i T3 – vad som stöds och vad som blockeras
 

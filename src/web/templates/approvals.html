@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import csrf with context %}
+{% block title %}Godkännanden{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>Godkännandekön</h1>
+    <nav class="filter" aria-label="Urval">
+      {% for key, text in [("vantar", "Väntar"), ("godkanda", "Godkända"), ("avslagna", "Avslagna"), ("alla", "Alla")] %}
+      <a href="/godkannanden?status={{ key }}" {% if filter == key %}aria-current="page" class="is-current"{% endif %}>{{ text }}{% if key == "vantar" %} ({{ counts.pending }}){% elif key == "godkanda" %} ({{ counts.approved }}){% elif key == "avslagna" %} ({{ counts.rejected }}){% endif %}</a>
+      {% endfor %}
+    </nav>
+  </div>
+  <p class="muted small">Agenter lägger förslag för operationer med nivån <code>APPROVAL</code>. Bara en handläggare kan avgöra dem.
+    Vid godkännande körs operationen på nytt mot aktuellt läge, med agenten som förslagsställare i händelseloggen.
+    Stoppas den rullas allt tillbaka och ärendet är kvar som väntande (tjänstelager.md §6).</p>
+
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% if error and focus %}<p class="small">Gäller ärende <code>{{ focus }}</code>.</p>{% endif %}
+  {% include "partials/error_box.html" %}
+
+  {% for r in queue.requests %}
+  <article class="request{% if focus == r.approval_id %} is-highlight{% endif %}" id="arende-{{ r.approval_id }}">
+    <header class="request__head">
+      <div>
+        <strong><code>{{ r.operation }}</code></strong>
+        <span class="pill pill--{{ r.status }}">{{ r.status | label('approval_status') }}</span>
+      </div>
+      <span class="muted small">Ärende {{ r.approval_id }}</span>
+    </header>
+    {% if descriptions.get(r.operation) %}<p class="small muted">{{ descriptions[r.operation] }}</p>{% endif %}
+    <dl class="kv">
+      <dt>Föreslagen</dt><dd>{{ r.created_at | iso_date }} av <code>{{ r.proposed_by }}</code>{% if r.proposed_by_team %} ({{ r.proposed_by_team }}){% endif %}{% if r.run_id %} · körning <code>{{ r.run_id }}</code>{% endif %}</dd>
+      <dt>Motivering</dt><dd>{{ r.reason or "–" }}</dd>
+      <dt>Gäller</dt><dd>
+        {% if r.input.get("personal_id_number") %}<a href="/forsakrade/{{ r.input.personal_id_number }}">{{ r.input.personal_id_number | pnr }}</a>
+        {% elif r.input.get("policy_number") %}<a href="/forsakringar/{{ r.input.policy_number }}">{{ r.input.policy_number }}</a>
+        {% else %}–{% endif %}</dd>
+    </dl>
+    <table class="table table--compact table--kv">
+      <tbody>
+        {% for key, value in r.input.items() if value is not none %}
+        <tr><th>{{ field_names.get(key, key) }}</th><td>{{ value }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if r.status == "pending" %}
+    <div class="decide">
+      <form method="post" action="/godkannanden/{{ r.approval_id }}/godkann" class="decide__form"
+            hx-confirm="Godkänna förslaget och utföra {{ r.operation }} nu?">
+        {{ csrf() }}
+        <label for="ok-{{ r.approval_id }}">Kommentar (valfri)</label>
+        <input id="ok-{{ r.approval_id }}" name="note" placeholder="T.ex. kontrollerat mot underlaget">
+        <button type="submit" class="ok">Godkänn och utför</button>
+      </form>
+      <form method="post" action="/godkannanden/{{ r.approval_id }}/avsla" class="decide__form">
+        {{ csrf() }}
+        <label for="no-{{ r.approval_id }}">Skäl för avslag</label>
+        <input id="no-{{ r.approval_id }}" name="note" required placeholder="Sparas i händelseloggen">
+        <button type="submit" class="danger">Avslå</button>
+      </form>
+    </div>
+    {% else %}
+    <p class="small">{{ r.status | label('approval_status') }} {{ r.decided_at | iso_date }} av <code>{{ r.decided_by }}</code>{% if r.decision_note %}: {{ r.decision_note }}{% endif %}</p>
+    {% endif %}
+  </article>
+  {% else %}
+  <p class="empty">Inga ärenden i urvalet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

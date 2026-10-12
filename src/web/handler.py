@@ -7,6 +7,7 @@ Allt som rör data går genom `ServiceLayer`: läsoperationer med `read()`,
 
 from __future__ import annotations
 
+import json
 import secrets
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,7 @@ templates.env.filters.update(
     month=presenters.month,
     pnr=presenters.personal_id,
     label=presenters.label,
+    pretty_json=lambda value: json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True),
 )
 templates.env.globals["field_names"] = presenters.FIELD_NAMES
 
@@ -68,13 +70,29 @@ def check_csrf(request: Request, form: Any) -> None:
         raise HTTPException(status_code=403, detail="Ogiltig eller saknad formulärtoken – ladda om sidan")
 
 
-def render(request: Request, template: str, context: dict[str, Any] | None = None, status_code: int = 200):
+def render(
+    request: Request, template: str, context: dict[str, Any] | None = None, status_code: int = 200,
+    *, push_url: str | None = None,
+):
+    """push_url: adressen HTMX lägger i historiken – en sida som går att ladda om, inte formulärets POST-adress."""
     base = {
         "settings": settings(request),
         "csrf_token": request.app.state.csrf_token,
         "rules": service(request).rules,
+        "pending_approvals": pending_approvals(request),
     }
-    return templates.TemplateResponse(request, template, {**base, **(context or {})}, status_code=status_code)
+    response = templates.TemplateResponse(request, template, {**base, **(context or {})}, status_code=status_code)
+    if push_url:
+        response.headers["HX-Push-Url"] = push_url
+    return response
+
+
+def pending_approvals(request: Request) -> int | None:
+    """Antal väntande förslag i menyn (count_approval_requests – inga personuppgifter, loggas inte)."""
+    try:
+        return service(request).execute("count_approval_requests", handler_ctx(request), {}).output.pending
+    except Exception:  # noqa: BLE001 – menyn ska visas även om databasen inte svarar
+        return None
 
 
 def render_error(

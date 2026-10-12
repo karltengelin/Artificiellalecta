@@ -72,5 +72,6 @@
   {% endif %}
 
   {% if reason %}<p class="muted small">Motivering: {{ reason }}</p>{% endif %}
+  <p class="small"><a href="/forsakrade/{{ o.personal_id_number }}/handelser">Händelser för {{ o.first_name }} {{ o.last_name }}</a> · <a href="/handelselogg">Hela händelseloggen</a></p>
 </section>
 {% endblock %}

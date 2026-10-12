@@ -237,3 +237,27 @@ def test_migrering_fran_gammalt_schema_blir_identisk_med_create_all(tmp_path):
         assert out.difference_sek == 225
         assert make_service(db).execute("register_salary_report", HUMAN, report()).output.version == 1
         assert make_service(db).execute("get_salary_reports", HUMAN, {"personal_id_number": ACTIVE}).output.reports
+
+
+# --- handläggar-UI:ts läsoperationer: JSON-urval i Postgres (->>) ----------------------------------
+
+
+def test_handelser_per_forsakrad_och_godkannandekon_i_postgres(postgres_db):
+    """Händelseloggen per försäkrad väljer på indata/resultat i JSONB – annan SQL än i SQLite."""
+    db = seed_active(postgres_db)
+    service = make_service(db)
+    service.execute("get_insured_overview", HUMAN, {"personal_id_number": ACTIVE})
+    service.execute("get_premium_history", HUMAN, {"policy_number": "AL-000001"})  # den andra personens försäkring
+    out = service.execute("correct_premium_transaction", HUMAN, correction(db.tx[date(2026, 6, 1)], "50000")).output
+
+    active = service.execute(
+        "get_operation_events", HUMAN, {"personal_id_number": ACTIVE, "include_reads": True}
+    ).output
+    assert [e.operation for e in active.events] == ["correct_premium_transaction", "get_insured_overview"]
+    assert active.events[0].output["adjustment_transaction_id"] == out.adjustment_transaction_id
+    changes_only = service.execute("get_operation_events", HUMAN, {"personal_id_number": ACTIVE}).output
+    assert [e.operation for e in changes_only.events] == ["correct_premium_transaction"]
+
+    queue = service.execute("list_approval_requests", HUMAN, {"status": None}).output
+    counts = service.execute("count_approval_requests", HUMAN, {}).output
+    assert (queue.count, counts.pending) == (0, 0)

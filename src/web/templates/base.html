@@ -14,7 +14,8 @@
     <a class="brand" href="/">Artificiellalecta <span>Handläggare</span></a>
     <nav class="mainnav">
       <a href="/">Sök</a>
-      {% block nav_extra %}{% endblock %}
+      <a href="/godkannanden">Godkännanden{% if pending_approvals %}<span class="count" title="Väntande förslag">{{ pending_approvals }}</span>{% endif %}</a>
+      <a href="/handelselogg">Händelselogg</a>
     </nav>
     <div class="who">
       <span class="db db--{{ settings.database }}" title="Databas">{{ settings.database_label }}</span>

@@ -1,0 +1,39 @@
+{# Händelseloggen som tabell. Kräver `log` (EventList). #}
+{% if log.events %}
+<table class="table events">
+  <thead>
+    <tr><th>Tid</th><th>Operation</th><th>Utfall</th><th>Aktör</th><th>Motivering</th><th>Regler</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for e in log.events %}
+    <tr>
+      <td class="nowrap">{{ e.occurred_at | iso_date }}</td>
+      <td><code>{{ e.operation }}</code><br><span class="muted small">{{ e.kind | label('operation_kind') }}</span></td>
+      <td><span class="pill pill--{{ e.outcome }}">{{ e.outcome | label('event_outcome') }}</span></td>
+      <td>
+        {{ e.actor_type | label('actor_type') }} <code>{{ e.actor_id }}</code>{% if e.actor_team %} <span class="muted small">({{ e.actor_team }})</span>{% endif %}
+        {% if e.proposed_by %}<br><span class="small">föreslaget av <code>{{ e.proposed_by }}</code></span>{% endif %}
+      </td>
+      <td>{{ e.reason or "–" }}</td>
+      <td class="small">{{ e.rules | join(", ") if e.rules else "–" }}</td>
+      <td>
+        <details>
+          <summary class="small">Detaljer</summary>
+          <dl class="kv small">
+            {% if e.approval_id %}<dt>Godkännande</dt><dd><code>{{ e.approval_id }}</code></dd>{% endif %}
+            {% if e.run_id %}<dt>Körning</dt><dd><code>{{ e.run_id }}</code></dd>{% endif %}
+            {% if e.detail %}<dt>Detalj</dt><dd>{{ e.detail }}</dd>{% endif %}
+            <dt>Händelse</dt><dd><code>{{ e.event_id }}</code></dd>
+          </dl>
+          {% if e.input %}<p class="small"><strong>Indata</strong></p><pre class="json">{{ e.input | pretty_json }}</pre>{% endif %}
+          {% if e.output %}<p class="small"><strong>Resultat</strong></p><pre class="json">{{ e.output | pretty_json }}</pre>{% endif %}
+        </details>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if log.truncated %}<p class="muted small">Visar de {{ log.count }} senaste – fler händelser matchar urvalet.</p>{% endif %}
+{% else %}
+<p class="empty">Inga händelser i urvalet.</p>
+{% endif %}

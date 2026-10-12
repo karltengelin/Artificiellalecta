@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Händelselogg{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>Händelselogg</h1>
+    <form class="filter" action="/handelselogg" method="get">
+      <label>Operation
+        <select name="operation">
+          <option value="">Alla</option>
+          {% for name in operations %}<option value="{{ name }}" {% if filters.operation == name %}selected{% endif %}>{{ name }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Utfall
+        <select name="utfall">
+          <option value="">Alla</option>
+          {% for key, text in [("executed", "Utförd"), ("proposed", "Föreslagen"), ("rejected", "Avslagen"), ("denied", "Nekad")] %}
+          <option value="{{ key }}" {% if filters.utfall == key %}selected{% endif %}>{{ text }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label><input type="checkbox" name="lasningar" value="1" {% if filters.lasningar %}checked{% endif %}> Läsningar</label>
+      <button type="submit" class="secondary">Visa</button>
+    </form>
+  </div>
+  <p class="muted small">Tjänstelagrets append-only logg (tabellen <code>operation_events</code>). Ändringar, agentförslag, avslag
+    och nekade agentförsök – och på begäran läsningar av personuppgifter. Senaste först.</p>
+  {% include "partials/event_table.html" %}
+</section>
+{% endblock %}

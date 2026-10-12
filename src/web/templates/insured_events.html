@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Händelser – {{ o.first_name }} {{ o.last_name }}{% endblock %}
+{% block content %}
+{% include "partials/insured_header.html" %}
+<section class="panel">
+  <div class="panel__head">
+    <h2>Händelser</h2>
+    <form class="filter" action="/forsakrade/{{ o.personal_id_number }}/handelser" method="get">
+      <label><input type="checkbox" name="lasningar" value="1" {% if filters.lasningar %}checked{% endif %}> Visa läsningar (vem tittade)</label>
+      <button type="submit" class="secondary">Visa</button>
+    </form>
+  </div>
+  <p class="muted small">Händelser vars indata eller resultat pekar på den försäkrade, en av försäkringarna eller en premierad.</p>
+  {% include "partials/event_table.html" %}
+</section>
+{% endblock %}

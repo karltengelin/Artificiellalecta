@@ -1,6 +1,6 @@
 # Handläggar-UI:t
 
-> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2).
+> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3).
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret)
 > **Kod:** `src/web/` · **Start:** `python scripts/web/start_ui.py` · **Tester:** `tests/test_web_*.py`
 > **Relaterat:** [tjänstelager.md](tjänstelager.md), [tjänstelager_operationer.md](tjänstelager_operationer.md), `projekt/01_ärendehantering/PROJEKTPLAN.md`
@@ -94,6 +94,24 @@ Efter en lyckad ändring visas operationens resultat.
 | `/berakna/premie` (POST, HTMX) | `calculate_premium_preview`: förhandsberäkning i formulären, sparar ingenting | Löneunderlag och premierättelse |
 
 Rättas lönen för en månad som har premie, länkar resultatsidan direkt till premierättelsen med den nya lönen.
+
+**Godkännandekön och händelseloggen (S3).**
+
+| Adress | Innehåll | Operationer |
+|---|---|---|
+| `/godkannanden?status=vantar\|godkanda\|avslagna\|alla` | Agentförslag med operation, indata, motivering, förslagsställare och körning | `list_approval_requests`, `count_approval_requests` |
+| `/godkannanden/{id}/godkann` (POST) | Godkänn med valfri kommentar. Operationen körs på nytt mot aktuellt läge, och agenten blir förslagsställare i loggen | `ServiceLayer.approve` |
+| `/godkannanden/{id}/avsla` (POST) | Avslå med obligatoriskt skäl, som sparas i loggen | `ServiceLayer.reject` |
+| `/handelselogg` | Hela loggen, senaste först, med urval på operation och utfall. Läsningar visas på begäran | `get_operation_events` |
+| `/forsakrade/{pnr}/handelser` | Händelser som rör den försäkrade | `get_operation_events` |
+
+Antalet väntande förslag visas i menyn. Det hämtas med `count_approval_requests`, som inte läser
+personuppgifter och därför inte loggas. Ett godkännande som krockar med dagens läge, till exempel för
+att handläggaren redan har registrerat underlaget, rullas tillbaka i sin helhet. Ärendet ligger då kvar
+som väntande och kan avslås. Tider visas i datorns lokala tid, medan tjänstelagret sparar UTC.
+
+**Kön, loggen och agenterna.** De tre läsoperationerna är `HUMAN_ONLY` i registret
+(se [tjänstelager.md](tjänstelager.md) §9).
 
 ## 5. Felvisning
 
