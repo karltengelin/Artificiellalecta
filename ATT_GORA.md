@@ -94,7 +94,21 @@ Design och drift: `02_system/handläggar-ui.md`. Kod: `src/web/` (FastAPI + Jinj
 - [x] **2026-10-12** **S3: Godkännandekö och händelselogg** – lista, godkänn och avslå; händelser totalt och per försäkrad. Nya läsoperationer `list_approval_requests`, `count_approval_requests`, `get_operation_events` (`HUMAN_ONLY`)
 - [x] **2026-10-12** **S4: Designstopp** – beslutsförslag `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md`, godkänt av operatören med valen A–D. *Beslutsnumret loggas av operatören*
 - [x] **2026-10-12** **S5: Nya operationer** – `enroll_insured_person` (`APPROVAL`), `update_current_salary`, `update_contact_details`, `register_employer` (`HUMAN_ONLY`) och `list_employers` (`AGENT`) med formulär och tester; ingen schemaändring (`tjänstelager.md` §9.2)
-- [ ] **S6: Skarp verifiering i Lakebase** – backup, operatörens OK, därefter anslut en försäkrad, ändra lön, registrera löneunderlag, sätt fribrev och kontrollera raderna och händelseloggen. Godkännandekön kan inte provas skarpt före 2026-11-01 (agenter kan inte föreslå skrivningar förrän PR-ITP1 v1.0 gäller) – den är provad i demodatabasen och testerna
+- [x] **2026-10-12** **S6: Skarp verifiering i Lakebase.** Före körningen:
+  - backup `backups/20261012T193537Z`, med 500 försäkrade, 498 försäkringar och 15 097 premietransaktioner;
+  - kontroll att T3-schemat redan fanns (`migrate_t3_schema.py --dry-run`);
+  - operatörens OK enligt AGENTS.md §4.5.
+
+  Via UI:t mot Lakebase anslöts den märkta verifieringsposten **Vera Verifiering (19920417-1236, AL-000499)** hos BilFöretaget AB #15, med ITP1 från 2026-10-01. Därefter ändrades aktuell lön från 38 000 till 39 500 kr, löneunderlag på 39 500 kr registrerades för 2026-10, och fribrevet sattes med sista dag 2026-10-11.
+
+  Kontroll i en skrivskyddad transaktion:
+  - Person, försäkring, förmån och läget premiebetalande 2026-10-01–2026-10-11 finns, följt av fribrev från 2026-10-12.
+  - Löneunderlaget v1 finns. Inga premier skapades.
+  - Händelseloggen har fyra utförda ändringar med `karl`, motivering och regelstatus (*kommande, gäller från 2026-11-01*).
+  - Ett stoppat försök (lön för avslutad anställning) ändrade ingenting.
+  - Radantal efteråt: personer 501, försäkringar 499, lägen 527, löneunderlag 1, premier 15 097 (oförändrat).
+
+  Godkännandekön kan inte provas skarpt före 2026-11-01, eftersom agenter inte kan föreslå skrivningar förrän PR-ITP1 v1.0 gäller. Den är provad i demodatabasen, mot `svc_test` och i testerna
 
 **Följdpunkter från Fas 4:**
 - [ ] **Anställningshistorik** (tabell `employments`) – återanställning, arbetsgivarbyte, flera anställningar och löneunderlag efter avslutad anställning (PR-ITP1-013). Schemaändring enligt T3-mönstret

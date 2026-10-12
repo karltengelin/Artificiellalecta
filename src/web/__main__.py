@@ -36,7 +36,7 @@ def main() -> None:
             parser.error("--reset-demo gäller bara demodatabasen")
         settings.demo_path.unlink(missing_ok=True)
     app = create_app(settings=settings)
-    print(f"Handläggar-UI: http://{HOST}:{args.port}  ·  {settings.database_label}  ·  handläggare {settings.handler_id}")
+    print(f"Handläggar-UI: http://{HOST}:{args.port}  ·  {settings.database_label}  ·  handläggare {settings.handler_id}", flush=True)
     uvicorn.run(app, host=HOST, port=args.port, access_log=False)
 
 

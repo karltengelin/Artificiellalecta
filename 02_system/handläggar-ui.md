@@ -1,6 +1,6 @@
 # Handläggar-UI:t
 
-> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5).
+> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5). **Verifierat skarpt i Lakebase 2026-10-12** (S6, se ATT_GORA): verifieringsposten AL-000499.
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret)
 > **Kod:** `src/web/` · **Start:** `python scripts/web/start_ui.py` · **Tester:** `tests/test_web_*.py`
 > **Relaterat:** [tjänstelager.md](tjänstelager.md), [tjänstelager_operationer.md](tjänstelager_operationer.md), `projekt/01_ärendehantering/PROJEKTPLAN.md`

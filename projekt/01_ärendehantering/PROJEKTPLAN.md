@@ -9,7 +9,7 @@ faktiskt påverkar systemen och databaserna bakom: policys, förmåner, tillstå
 
 ## Status
 
-🟡 **Handläggar-UI v1 byggt (Fas 4, 2026-10-12)**, lokalt och utan inloggning. Ärenden (`cases`), inbyggd
+🟡 **Handläggar-UI v1 byggt och verifierat i Lakebase (Fas 4, 2026-10-12)**, lokalt och utan inloggning. Ärenden (`cases`), inbyggd
 Claude och handläggaragent återstår. Byggs enligt B-020 före kundportalen (projekt 3).
 
 Handläggaren kan i v1:
@@ -29,7 +29,7 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 | S3 | Godkännandekö och händelselogg | ✅ |
 | S4 | Designstopp: nya operationer, se [OPERATIONER_BESLUTSFORSLAG.md](OPERATIONER_BESLUTSFORSLAG.md) | ✅ Godkänt, beslutsnumret sätts av operatören |
 | S5 | Anslutning, aktuell lön, kontaktuppgifter, arbetsgivare | ✅ |
-| S6 | Skarp verifiering i Lakebase | Väntar på backup och operatörens OK |
+| S6 | Skarp verifiering i Lakebase | ✅ Backup `20261012T193537Z`. Verifieringsposten AL-000499 anslöts, fick ändrad lön och löneunderlag och sattes i fribrev. Rader och händelselogg stämmer (ATT_GORA) |
 
 ## Beroenden
 
@@ -52,7 +52,6 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 
 ## Nästa steg
 
-- S6, skarp verifiering i Lakebase, efter backup och OK.
 - Följdpunkterna i `ATT_GORA.md` under Fas 4:
   - anställningshistorik
   - lönehistorik

@@ -110,7 +110,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 
 | Nr | Delprojekt | Projektmapp | Kort scope | Status | Befintlig grund |
 |----|-----------|-------------|------------|--------|-----------------|
-| 1 | Ärendehantering & handläggar-UI | `projekt/01_ärendehantering/` | Handläggarens gränssnitt + bakomliggande backend för att handläggningar ska påverka systemen | 🟡 Handläggar-UI v1 byggt (Fas 4, lokalt); skarp verifiering, ärenden och agent återstår | Fas 4/5, B-020, `src/web/` |
+| 1 | Ärendehantering & handläggar-UI | `projekt/01_ärendehantering/` | Handläggarens gränssnitt + bakomliggande backend för att handläggningar ska påverka systemen | 🟡 Handläggar-UI v1 byggt och verifierat i Lakebase (Fas 4, lokalt); ärenden och agent återstår | Fas 4/5, B-020, `src/web/` |
 | 2 | BI & insikter | `projekt/02_bi_insikter/` | Koppla försäkringssystem + databaser till indikatorer/BI; agent som svarar på datafrågor | 🟡 Första analysen byggd (premieeffekt av hypotetiskt IBB); dashboard och Genie beslutade, ej driftsatta | B-018 (Lakebase), B-029, `src/analytics/` |
 | 3 | Kundportal | `projekt/03_kundportal/` | Låtsas-hemsida: se pension, förmåner, pausa/skjuta upp utbetalning | 🔲 Ej påbörjat | Nämnd som senare fas i B-020 |
 | 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟢 Dokumentunderlag klart och infört (B-031, gäller från 2026-11-01); kodbygge separat | `01_domän/`, `04_regulatoriskt/` |
