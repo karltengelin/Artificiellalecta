@@ -27,7 +27,7 @@
         <td class="num">{{ t.amount_sek | sek }}</td>
         <td><span class="txstatus txstatus--{{ t.status }}">{{ t.status | label('transaction_status') }}</span></td>
         <td>{{ t.paid_date | iso_date }}</td>
-        <td class="actions">{% block premium_actions scoped %}{% endblock %}</td>
+        <td class="actions">{% if t.transaction_type == "premium" and t.status != "cancelled" %}<a href="/forsakringar/{{ history.policy_number }}/premier/{{ t.transaction_id }}/rattelse">Rätta</a>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

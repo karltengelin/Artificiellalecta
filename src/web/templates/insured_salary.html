@@ -6,6 +6,7 @@
 <section class="panel">
   <div class="panel__head">
     <h2>Löneunderlag</h2>
+    <a class="button" href="/forsakrade/{{ o.personal_id_number }}/loneunderlag/ny">Registrera löneunderlag</a>
   </div>
   <p class="muted small">Pensionsmedförande lön per utbetalningsmånad (PR-ITP1-014), rapporterad av arbetsgivaren
     eller registrerad av handläggare. Skiljs från aktuell månadslön på personen och från premien. En månad utan rad
@@ -25,7 +26,7 @@
         <td>{{ g.current.source | label('salary_source') }}</td>
         <td>{{ g.current.source_reference or "–" }}</td>
         <td>{{ g.current.received_date | iso_date }}</td>
-        <td class="actions">{% block salary_actions scoped %}{% endblock %}</td>
+        <td class="actions"><a href="/forsakrade/{{ o.personal_id_number }}/loneunderlag/ny?typ=rattelse&amp;manad={{ g.month | month }}&amp;version={{ g.current.version }}">Rätta</a></td>
       </tr>
       {% for h in g.history %}
       <tr class="is-superseded">

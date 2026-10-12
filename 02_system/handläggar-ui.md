@@ -1,6 +1,6 @@
 # Handläggar-UI:t
 
-> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1).
+> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2).
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret)
 > **Kod:** `src/web/` · **Start:** `python scripts/web/start_ui.py` · **Tester:** `tests/test_web_*.py`
 > **Relaterat:** [tjänstelager.md](tjänstelager.md), [tjänstelager_operationer.md](tjänstelager_operationer.md), `projekt/01_ärendehantering/PROJEKTPLAN.md`
@@ -81,6 +81,19 @@ Agentförslagen prövas mot regelpaketet som om det redan gällde, men bara i de
 | `/forsakringar/{nr}/premier` | Premiehistorik med urval på månader och summa betalt | `get_insured_overview`, `get_premium_history` |
 
 Varje sidvisning loggas som läsning av personuppgifter (vem tittade på vem). Läsresultatet loggas inte.
+
+**Skrivformulär (S2).** Formulären visar operationens beskrivning, produktregler med status och vad
+agenter får göra med operationen enligt registret och regelgolvet. Varje formulär kräver en motivering.
+Efter en lyckad ändring visas operationens resultat.
+
+| Formulär (GET) → skickas till (POST) | Operation | Nås från |
+|---|---|---|
+| `/forsakrade/{pnr}/loneunderlag/ny` → `/forsakrade/{pnr}/loneunderlag` | `register_salary_report`: ny rapport eller rättelse (`?typ=rattelse&manad=&version=`) | Fliken Löneunderlag |
+| `/forsakringar/{nr}/fribrev` → samma adress | `set_policy_paid_up`: avanmälan och fribrev | Översikten, vid premiebetalande försäkring |
+| `/forsakringar/{nr}/premier/{id}/rattelse` → samma adress | `correct_premium_transaction`: länkad rättelserad | Premiehistoriken, per premierad |
+| `/berakna/premie` (POST, HTMX) | `calculate_premium_preview`: förhandsberäkning i formulären, sparar ingenting | Löneunderlag och premierättelse |
+
+Rättas lönen för en månad som har premie, länkar resultatsidan direkt till premierättelsen med den nya lönen.
 
 ## 5. Felvisning
 

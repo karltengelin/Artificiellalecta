@@ -117,3 +117,25 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .alert--denied, .alert--error { background: var(--bad-soft); border-color: #e39a9c; color: #5c1214; }
 .alert--success { background: var(--ok-soft); border-color: #8fcca6; color: #12452a; }
 .alert--info { background: var(--accent-soft); border-color: #9cc2dc; color: #12364f; }
+
+/* formulär */
+.formgrid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); gap: 1.5rem; align-items: start; }
+@media (max-width: 860px) { .formgrid { grid-template-columns: 1fr; } }
+.form { display: flex; flex-direction: column; gap: .8rem; }
+.form .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .8rem; }
+.field { display: flex; flex-direction: column; gap: .2rem; }
+.field label, .choice legend { font-weight: 600; font-size: .9rem; }
+.field__help { color: var(--muted); font-size: .8rem; }
+.field__error { color: var(--bad); font-size: .85rem; font-weight: 600; }
+.field--error input, .field--error select, .field--error textarea { border-color: var(--bad); background: #fffafa; }
+.choice { border: 1px solid var(--line); border-radius: var(--radius); padding: .5rem .8rem; display: flex; gap: 1.25rem; flex-wrap: wrap; }
+.form__actions { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+.opinfo { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: .8rem 1rem; font-size: .88rem; }
+.opinfo h3 { font-size: .95rem; margin: 0 0 .4rem; }
+.opinfo h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); margin: .8rem 0 .3rem; }
+.opinfo ul { margin: 0; padding-left: 1.1rem; }
+.opinfo p { margin: .3rem 0; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1.25rem; margin: .5rem 0 1rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+.table--compact { margin-bottom: 1rem; max-width: 720px; }

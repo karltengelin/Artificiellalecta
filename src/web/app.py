@@ -22,7 +22,7 @@ from services import ServiceLayer
 from web.config import WebSettings
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.presenters import ErrorView
-from web.routes import insured
+from web.routes import changes, insured
 
 log = logging.getLogger("web")
 
@@ -42,6 +42,7 @@ def create_app(service: ServiceLayer | None = None, settings: WebSettings | None
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.allowed_hosts))
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.include_router(insured.router)
+    app.include_router(changes.router)
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):

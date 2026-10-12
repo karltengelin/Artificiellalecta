@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf, op_info with context %}
+{% set fe = error.field_errors if error is defined and error else {} %}
+{% block title %}Rätta premie{% endblock %}
+{% block content %}
+{% if o %}{% include "partials/insured_header.html" %}{% endif %}
+<section class="panel">
+  <h2>Rätta premie efter rättat löneunderlag</h2>
+  {% include "partials/error_box.html" %}
+  {% if t %}
+  <table class="table table--compact">
+    <thead><tr><th>Månad</th><th>Typ</th><th class="num">Lön</th><th class="num">Belopp</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>{{ t.period_month | month }}</strong></td>
+        <td>{{ t.transaction_type | label('transaction_type') }}</td>
+        <td class="num">{{ t.pensionable_salary_sek | sek(0) if t.pensionable_salary_sek is not none else "–" }}</td>
+        <td class="num">{{ t.amount_sek | sek }}</td>
+        <td>{{ t.status | label('transaction_status') }}</td>
+      </tr>
+      {% for l in linked %}
+      <tr class="tx--adjustment">
+        <td></td><td>Tidigare rättelse</td>
+        <td class="num">{{ l.pensionable_salary_sek | sek(0) if l.pensionable_salary_sek is not none else "–" }}</td>
+        <td class="num">{{ l.amount_sek | sek }}</td>
+        <td>{{ l.status | label('transaction_status') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="formgrid">
+    <form method="post" action="/forsakringar/{{ policy_number }}/premier/{{ t.transaction_id }}/rattelse" class="form">
+      {{ csrf() }}
+      <input type="hidden" name="personal_id_number" value="{{ o.personal_id_number if o else '' }}">
+      <input type="hidden" name="period_month" value="{{ t.period_month.isoformat() }}">
+      {% call field("corrected_salary_sek", "Rättad pensionsmedförande lön (kr)", fe, "Lönen för premiemånaden enligt det nya underlaget. Är löneunderlag registrerat för månaden måste det stämma.") %}
+      <input id="f-corrected_salary_sek" name="corrected_salary_sek" inputmode="decimal" value="{{ values.get('corrected_salary_sek', '') }}" required>
+      {% endcall %}
+      {% call field("basis_reference", "Underlag", fe, "T.ex. rättat lönebesked med referens") %}
+      <input id="f-basis_reference" name="basis_reference" value="{{ values.get('basis_reference', '') }}" required minlength="3">
+      {% endcall %}
+      {{ reason(values, fe) }}
+      <div class="form__actions">
+        <button type="submit">Skapa rättelserad</button>
+        <button type="button" class="secondary" hx-post="/berakna/premie" hx-include="closest form" hx-target="#preview" hx-swap="innerHTML">Förhandsberäkna premie</button>
+        <a href="/forsakringar/{{ policy_number }}/premier">Avbryt</a>
+      </div>
+      <div id="preview" aria-live="polite"></div>
+      <p class="muted small">Ursprungsraden ändras aldrig. Rättelsen blir en länkad justeringsrad med differensen, som ny fordran eller kredit. Minskning av redan mottagen premie stoppas (PR-ITP1-019 p.3).</p>
+    </form>
+    {{ op_info(op) }}
+  </div>
+  {% else %}
+  <p class="empty">Premieraden finns inte.</p>
+  {% endif %}
+</section>
+{% endblock %}

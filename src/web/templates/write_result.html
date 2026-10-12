@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Utfört – {{ operation }}{% endblock %}
+{% block content %}
+{% include "partials/insured_header.html" %}
+<section class="panel">
+  {% if approval is defined and approval %}
+  <div class="alert alert--success" role="status">
+    <strong class="alert__title">Förslaget är godkänt och utfört</strong>
+    <p class="alert__message">Föreslaget av <code>{{ approval.proposed_by }}</code>{% if approval.proposed_by_team %} ({{ approval.proposed_by_team }}){% endif %}, godkänt av {{ settings.handler_id }}. Händelseloggen anger båda.</p>
+  </div>
+  {% else %}
+  <div class="alert alert--success" role="status">
+    <strong class="alert__title">Utfört</strong>
+    <p class="alert__message">Ändringen är sparad och loggad i händelseloggen med {{ settings.handler_id }} som handläggare.</p>
+  </div>
+  {% endif %}
+
+  {% set r = result %}
+  {% if operation == "register_salary_report" %}
+  <h2>Löneunderlag {{ r.period_month | month }} – {{ "ny rapport" if r.kind == "new" else "rättelse" }}</h2>
+  <dl class="kv">
+    <dt>Version</dt><dd>v{{ r.version }}</dd>
+    <dt>Pensionsmedförande lön</dt><dd>{{ r.pensionable_salary_sek | sek }}</dd>
+    {% if r.previous_salary_sek is not none %}<dt>Tidigare lön</dt><dd>{{ r.previous_salary_sek | sek }}</dd>{% endif %}
+    <dt>Arbetsgivare</dt><dd>{{ r.employer_org_number }}</dd>
+  </dl>
+  <p>{{ r.note }}</p>
+  {% if r.affected_premiums %}
+  <h3>Berörd premie</h3>
+  <table class="table table--compact">
+    <thead><tr><th>Typ</th><th class="num">Lön</th><th class="num">Belopp</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for p in r.affected_premiums %}
+      <tr>
+        <td>{{ p.transaction_type | label('transaction_type') }}</td>
+        <td class="num">{{ p.pensionable_salary_sek | sek(0) if p.pensionable_salary_sek is not none else "–" }}</td>
+        <td class="num">{{ p.amount_sek | sek }}</td>
+        <td>{{ p.status | label('transaction_status') }}</td>
+        <td class="actions">
+          {% if p.transaction_type == "premium" and o.policies | length == 1 %}
+          <a href="/forsakringar/{{ o.policies[0].policy_number }}/premier/{{ p.transaction_id }}/rattelse?lon={{ r.pensionable_salary_sek }}">Rätta premien</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  <p><a href="/forsakrade/{{ o.personal_id_number }}/loneunderlag">Till löneunderlaget</a></p>
+
+  {% elif operation == "set_policy_paid_up" %}
+  <h2>Fribrev {{ r.policy_number }}</h2>
+  <dl class="kv">
+    <dt>Anställningens sista dag</dt><dd>{{ r.employment_end_date | iso_date }}{% if r.employment_end_registered %} <span class="muted small">(registrerad nu)</span>{% endif %}</dd>
+    <dt>Premieperiod stängd</dt><dd>{{ r.closed_period.state | label('policy_state') }} {{ r.closed_period.valid_from | iso_date }} – {{ r.closed_period.valid_to | iso_date }}</dd>
+    <dt>Ny period</dt><dd>{{ r.new_period.state | label('policy_state') }} från {{ r.new_period.valid_from | iso_date }}</dd>
+    <dt>Personens status</dt><dd>{{ r.person_status_before | label('person_status') }} → {{ r.person_status_after | label('person_status') }}</dd>
+  </dl>
+  <p><a href="/forsakringar/{{ r.policy_number }}">Till översikten</a></p>
+
+  {% elif operation == "correct_premium_transaction" %}
+  <h2>Premierättelse {{ r.policy_number }} {{ r.period_month | month }}</h2>
+  <dl class="kv">
+    <dt>Fall</dt><dd>{{ "Ej mottagen premie – kredit eller tillägg på fordran" if r.case == "unreceived_claim" else "Tilläggspremie på mottagen premie" }}</dd>
+    <dt>Lön</dt><dd>{{ r.previous_salary_sek | sek }} → {{ r.corrected_salary_sek | sek }}</dd>
+    <dt>Premie</dt><dd>{{ r.previous_total_sek | sek }} → {{ r.corrected_total_sek | sek }} <span class="muted small">(IBB {{ r.income_base_amount_sek | sek(0) }})</span></dd>
+    <dt>Rättelserad</dt><dd><strong>{{ r.difference_sek | sek }}</strong> <span class="muted small">ej fakturerad</span></dd>
+    <dt>Redan mottaget</dt><dd>{{ r.received_sek | sek }}</dd>
+    <dt>Kapitaleffekt</dt><dd>{{ r.capital_effect }}</dd>
+  </dl>
+  <p><a href="/forsakringar/{{ r.policy_number }}/premier">Till premiehistoriken</a></p>
+  {% endif %}
+
+  {% if reason %}<p class="muted small">Motivering: {{ reason }}</p>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf, op_info with context %}
+{% set fe = error.field_errors if error is defined and error else {} %}
+{% block title %}Registrera löneunderlag{% endblock %}
+{% block content %}
+{% if o %}{% include "partials/insured_header.html" %}{% endif %}
+<section class="panel">
+  <h2>Registrera löneunderlag</h2>
+  {% include "partials/error_box.html" %}
+  <div class="formgrid">
+    <form method="post" action="/forsakrade/{{ o.personal_id_number }}/loneunderlag" class="form">
+      {{ csrf() }}
+      <input type="hidden" name="personal_id_number" value="{{ o.personal_id_number }}">
+      <fieldset class="choice">
+        <legend>Typ</legend>
+        <label><input type="radio" name="kind" value="new" {% if values.get("kind", "new") == "new" %}checked{% endif %}> Ny rapport för månaden</label>
+        <label><input type="radio" name="kind" value="correction" {% if values.get("kind") == "correction" %}checked{% endif %}> Rättelse av gällande version</label>
+        {% if fe.get("kind") %}<small class="field__error">{{ fe["kind"] }}</small>{% endif %}
+      </fieldset>
+      <div class="row">
+        {% call field("period_month", "Utbetalningsmånad", fe) %}
+        <input id="f-period_month" type="month" name="period_month" value="{{ values.get('period_month', '')[:7] }}" required>
+        {% endcall %}
+        {% call field("corrects_version", "Version som rättas", fe, "Bara vid rättelse – den gällande versionen") %}
+        <input id="f-corrects_version" type="number" min="1" name="corrects_version" value="{{ values.get('corrects_version', '') }}">
+        {% endcall %}
+      </div>
+      <div class="row">
+        {% call field("pensionable_salary_sek", "Pensionsmedförande lön (kr)", fe, "Utbetald bruttolön efter löneväxling (PR-ITP1-014). 0 = rapporterad noll") %}
+        <input id="f-pensionable_salary_sek" name="pensionable_salary_sek" inputmode="decimal" value="{{ values.get('pensionable_salary_sek', '') }}" required>
+        {% endcall %}
+        {% call field("employer_org_number", "Arbetsgivare (org.nr)", fe, "Den försäkrades nuvarande arbetsgivare") %}
+        <input id="f-employer_org_number" name="employer_org_number" value="{{ values.get('employer_org_number', '') }}" required>
+        {% endcall %}
+      </div>
+      <div class="row">
+        {% call field("source", "Ursprung", fe) %}
+        <select id="f-source" name="source">
+          <option value="employer" {% if values.get("source") == "employer" %}selected{% endif %}>Arbetsgivarens rapport</option>
+          <option value="manual" {% if values.get("source") == "manual" %}selected{% endif %}>Underlag som handläggaren registrerar</option>
+        </select>
+        {% endcall %}
+        {% call field("source_reference", "Avsändarens referens", fe, "T.ex. lönefil eller lönebesked – samma referens registreras inte två gånger") %}
+        <input id="f-source_reference" name="source_reference" value="{{ values.get('source_reference', '') }}">
+        {% endcall %}
+        {% call field("received_date", "Mottagen", fe) %}
+        <input id="f-received_date" type="date" name="received_date" value="{{ values.get('received_date', '') }}" required>
+        {% endcall %}
+      </div>
+      {{ reason(values, fe) }}
+      <div class="form__actions">
+        <button type="submit">Registrera löneunderlag</button>
+        <button type="button" class="secondary" hx-post="/berakna/premie" hx-include="closest form" hx-target="#preview" hx-swap="innerHTML">Förhandsberäkna premie</button>
+        <a href="/forsakrade/{{ o.personal_id_number }}/loneunderlag">Avbryt</a>
+      </div>
+      <div id="preview" aria-live="polite"></div>
+      <p class="muted small">Registreringen skapar ingen premie och räknar inte om gamla premier. Ändras lönen för en månad som har premie rättas premien separat.</p>
+    </form>
+    {{ op_info(op) }}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,34 @@
+{# Formulärmakron. `errors` är felrutans field_errors (eller tom). #}
+
+{% macro field(name, label, errors, help=None) %}
+<div class="field{% if errors.get(name) %} field--error{% endif %}">
+  <label for="f-{{ name }}">{{ label }}</label>
+  {{ caller() }}
+  {% if help %}<small class="field__help">{{ help }}</small>{% endif %}
+  {% if errors.get(name) %}<small class="field__error">{{ errors[name] }}</small>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro reason(values, errors, placeholder="Varför görs ändringen? T.ex. underlag och referens") %}
+{% call field("reason", "Motivering", errors, "Krävs för alla ändringar och sparas i händelseloggen.") %}
+<textarea id="f-reason" name="reason" rows="3" required placeholder="{{ placeholder }}">{{ values.get("reason", "") }}</textarea>
+{% endcall %}
+{% endmacro %}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endmacro %}
+
+{% macro op_info(op) %}
+<aside class="opinfo">
+  <h3>Operation <code>{{ op.name }}</code></h3>
+  <p>{{ op.description }}</p>
+  {% if op.rules %}
+  <h4>Produktregler</h4>
+  <ul>
+    {% for r in op.rules %}<li><code>{{ r.id }}</code>{% if r.title %} {{ r.title }}{% endif %} <span class="muted small">({{ r.status }})</span></li>{% endfor %}
+  </ul>
+  {% endif %}
+  <h4>För agenter</h4>
+  <p class="small">Registret: <code>{{ op.registered or "saknas" }}</code> · effektiv nivå: <code>{{ op.effective }}</code>{% if op.reasons %}<br><span class="muted">{{ op.reasons | join("; ") }}</span>{% endif %}</p>
+  <p class="small muted">Handläggare får alltid utföra operationen (B-017).</p>
+</aside>
+{% endmacro %}

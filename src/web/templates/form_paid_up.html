@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf, op_info with context %}
+{% set fe = error.field_errors if error is defined and error else {} %}
+{% block title %}Fribrev {{ policy_number or (policy.policy_number if policy else "") }}{% endblock %}
+{% block content %}
+{% if o %}{% include "partials/insured_header.html" %}{% endif %}
+<section class="panel">
+  <h2>Avanmälan och fribrev{% if policy %} – {{ policy.policy_number }}{% endif %}</h2>
+  {% include "partials/error_box.html" %}
+  {% if policy %}
+  <p>Nuvarande läge:
+    {% if policy.current_state %}<span class="state state--{{ policy.current_state.state }}">{{ policy.current_state.state | label('policy_state') }}</span>
+    från {{ policy.current_state.valid_from | iso_date }}{% else %}inget pågående läge{% endif %}.
+  </p>
+  {% if policy.current_state and policy.current_state.state != "premium_paying" %}
+  <div class="alert alert--info"><p class="alert__message">Fribrev registreras bara från premiebetalande läge. Tjänstelagret prövar ändå anropet och visar skälet om det stoppas.</p></div>
+  {% endif %}
+  <div class="formgrid">
+    <form method="post" action="/forsakringar/{{ policy.policy_number }}/fribrev" class="form"
+          hx-confirm="Registrera anställningens slut och sätta {{ policy.policy_number }} i fribrev?">
+      {{ csrf() }}
+      {% call field("employment_end_date", "Anställningens sista dag", fe, "Enligt arbetsgivarens avanmälan. Fribrev gäller från dagen efter. Ingen framtidsdatering.") %}
+      <input id="f-employment_end_date" type="date" name="employment_end_date" value="{{ values.get('employment_end_date', '') }}" required>
+      {% endcall %}
+      {{ reason(values, fe, "T.ex. avanmälan från arbetsgivaren med datum och referens") }}
+      <div class="form__actions">
+        <button type="submit" class="danger">Registrera avanmälan och fribrev</button>
+        <a href="/forsakringar/{{ policy.policy_number }}">Avbryt</a>
+      </div>
+      <p class="muted small">Anställningens slut sparas på den försäkrade (status <em>anställningen avslutad</em>), premieperioden stängs och fribrevsperioden öppnas i samma transaktion.</p>
+    </form>
+    {{ op_info(op) }}
+  </div>
+  {% else %}
+  <p class="empty">Försäkringen finns inte hos den försäkrade.</p>
+  {% endif %}
+</section>
+{% endblock %}

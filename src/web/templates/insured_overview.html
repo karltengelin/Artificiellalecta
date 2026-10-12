@@ -30,7 +30,9 @@
         <td class="num">{{ p.capital_sek | sek }}</td>
         <td class="actions">
           <a href="/forsakringar/{{ p.policy_number }}/premier">Premiehistorik</a>
-          {% block policy_actions scoped %}{% endblock %}
+          {% if p.current_state and p.current_state.state == "premium_paying" %}
+          <a href="/forsakringar/{{ p.policy_number }}/fribrev">Avanmälan/fribrev</a>
+          {% endif %}
         </td>
       </tr>
       {% endfor %}
