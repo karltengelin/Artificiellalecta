@@ -225,22 +225,22 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
 </nav>
 
 <header class="hero wrap" id="lage">
-  <p class="eyebrow">Företagsöversikt · läget 12 oktober 2026 · main @ 070e6bb</p>
+  <p class="eyebrow">Företagsöversikt · läget 12 oktober 2026 · main @ d1bc32a</p>
   <h1>Artificiellalecta</h1>
   <p class="lede">Ett simulerat tjänstepensionsbolag som administrerar en enda produkt, ITP1 ålderspension, och som ska kunna drivas av en person med hjälp av AI-agenter.</p>
   <div class="prose">
-    <p><strong>Var står bygget?</strong> Grunden är lagd. Försäkringssystemet med premiemotor och demodata ligger i Lakebase. Tjänstelagret, som alla ändringar i försäkringsdata ska gå igenom, är byggt och testat. AI-lagret är byggt. Produktregelverket är infört genom B-031 och gäller från 1 november 2026.</p>
-    <p>Det som en handläggare, en kund eller en agent faktiskt kan använda finns inte ännu. Handläggar-UI, agenter, kundportal och kapitalförvaltning är utredda eller designade men inte byggda. Nästa steg i byggordningen är handläggar-UI:t ovanpå tjänstelagret.</p>
+    <p><strong>Var står bygget?</strong> Grunden är lagd. Försäkringssystemet med premiemotor och demodata ligger i Lakebase. Tjänstelagret, som alla ändringar i försäkringsdata ska gå igenom, är byggt och testat. AI-lagret är byggt. Produktregelverket är infört genom B-031 och gäller från 1 november 2026. Handläggar-UI:t är byggt i en första version ovanpå tjänstelagret och verifierat mot Lakebase.</p>
+    <p>En handläggare kan nu arbeta i ett lokalt handläggar-UI där varje läsning och ändring går genom tjänstelagret och loggas. Agenter, kundportal och kapitalförvaltning är utredda eller designade men inte byggda. Nästa steg i byggordningen är harness, motorn i agentlagret.</p>
   </div>
   <dl class="facts">
-    <div><dt>31</dt><dd>beslut i beslutsloggen</dd></div>
+    <div><dt>32</dt><dd>beslut i beslutsloggen</dd></div>
     <div><dt>34</dt><dd>produktregler, gäller från 1 november</dd></div>
     <div><dt>10</dt><dd>tabeller i Lakebase</dd></div>
-    <div><dt>7</dt><dd>operationer i tjänstelagret</dd></div>
-    <div><dt>303</dt><dd>automatiska tester</dd></div>
+    <div><dt>15</dt><dd>operationer i tjänstelagret</dd></div>
+    <div><dt>409</dt><dd>automatiska tester</dd></div>
     <div><dt>0 av 10</dt><dd>agenter byggda</dd></div>
   </dl>
-  <p class="demo">Demodata i Lakebase: 20 arbetsgivare · 500 försäkrade · 498 försäkringar · 15 097 premietransaktioner 2023–2026 · 39,0 Mkr i premier. Allt är genererat och kan återskapas med skripten.</p>
+  <p class="demo">Demodata i Lakebase: 20 arbetsgivare · 500 försäkrade · 498 försäkringar · 15 097 premietransaktioner 2023–2026 · 39,0 Mkr i premier. Den genererade datan kan återskapas med skripten. Dessutom finns en märkt verifieringspost från handläggar-UI:t (AL-000499).</p>
   <ul class="legend" aria-label="Statusförklaring">
     <li><span class="swatch st-ok"></span>Byggt eller i drift</li>
     <li><span class="swatch st-part"></span>Delvis byggt</li>
@@ -267,7 +267,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
         <div class="layer-name">Ytor<span>där människor och AI kommer in</span></div>
         <div class="layer-row">
           <button class="blk st-ok" data-k="operator" aria-pressed="false"><b>Operatören</b><small>Cowork, Claude Code, Codex</small></button>
-          <button class="blk st-plan" data-k="ui" aria-pressed="false"><b>Handläggar-UI</b><small>Delprojekt 1 · Fas 4</small></button>
+          <button class="blk st-part" data-k="ui" aria-pressed="false"><b>Handläggar-UI</b><small>Delprojekt 1 · Fas 4 · v1 byggd</small></button>
           <button class="blk st-part" data-k="bi" aria-pressed="false"><b>Dashboard och Genie</b><small>Delprojekt 2</small></button>
           <button class="blk st-none" data-k="portal" aria-pressed="false"><b>Kundportal</b><small>Delprojekt 3</small></button>
           <button class="blk st-none" data-k="chat" aria-pressed="false"><b>Kundchattbot</b><small>Delprojekt 7</small></button>
@@ -287,7 +287,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
       <div class="layer">
         <div class="layer-name">Kärna<span>Fas 1f</span></div>
         <div class="layer-row">
-          <button class="blk blk-wide st-ok" data-k="services" aria-pressed="true"><b>Tjänstelagret</b><small>src/services · 7 operationer · åtkomstregister · godkännandekö · händelselogg</small></button>
+          <button class="blk blk-wide st-ok" data-k="services" aria-pressed="true"><b>Tjänstelagret</b><small>src/services · 15 operationer · åtkomstregister · godkännandekö · händelselogg</small></button>
         </div>
       </div>
       <p class="conn">Anropar rena beräkningar och läser och skriver databasen, en transaktion per anrop.</p>
@@ -326,8 +326,8 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
     <h3>Tjänstelagret</h3>
     <p>Den enda vägen in till försäkringssystemet. Samma operation används av handläggare, agenter och skript. Ett register bestämmer vad agenter får göra, och varje ändring loggas med vem som gjorde den och varför.</p>
     <div class="detail-cols">
-      <div><h4>Finns</h4><ul><li>7 operationer: 4 läsande eller beräknande, 3 skrivande</li><li>Åtkomstregister med nivåerna AGENT, APPROVAL och HUMAN_ONLY plus tre golv</li><li>Godkännandekö och händelselogg i Lakebase, en transaktion per anrop</li><li>156 tester, verifierat mot isolerad Postgres</li></ul></div>
-      <div><h4>Saknas</h4><ul><li>Regelstyrda operationer: uttag, paus, garanti, pensionsbelopp, avslut</li><li>Premie ur löneunderlag (fakturering)</li><li>Ett gränssnitt för godkännandekön</li></ul></div>
+      <div><h4>Finns</h4><ul><li>15 operationer: 8 läsande eller beräknande, 7 skrivande</li><li>Åtkomstregister med nivåerna AGENT, APPROVAL och HUMAN_ONLY plus tre golv</li><li>Godkännandekö och händelselogg i Lakebase, en transaktion per anrop</li><li>184 tester, verifierat mot isolerad Postgres</li></ul></div>
+      <div><h4>Saknas</h4><ul><li>Regelstyrda operationer: uttag, paus, garanti, pensionsbelopp, avslut</li><li>Premie ur löneunderlag (fakturering)</li><li>Anställningshistorik för återanställning och arbetsgivarbyte</li></ul></div>
     </div>
     <p class="detail-files">I repot: <code>src/services/</code> <code>src/services/access_register.yaml</code> <code>02_system/tjänstelager.md</code></p>
     <p><a href="#tjanstelagret">Så går ett anrop genom tjänstelagret</a></p>
@@ -357,8 +357,8 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
       <header><div><span class="card-no">Fas 1f · B-028</span><h4>Tjänstelagret</h4></div><span class="chip st-ok">Byggt</span></header>
       <div class="track" role="img" aria-label="Plan, design och bygge klara, delvis i bruk"><i class="on"></i><i class="on"></i><i class="on"></i><i class="half"></i></div>
       <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
-      <dl><dt>Finns</dt><dd>Steg T1–T4 klara. 7 operationer, kö och logg i Lakebase.</dd>
-      <dt>Saknas</dt><dd>Regelstyrda operationer och ett gränssnitt för kön. Agenters skrivningar är spärrade till 1 november, när reglerna börjar gälla.</dd>
+      <dl><dt>Finns</dt><dd>Steg T1–T4 klara. 15 operationer, varav 8 tillkom med handläggar-UI:t (B-032). Kö och logg i Lakebase.</dd>
+      <dt>Saknas</dt><dd>Regelstyrda operationer och premie ur löneunderlag. Agenters skrivningar är spärrade till 1 november, när reglerna börjar gälla.</dd>
       <dt>Kopplas in via</dt><dd>Allt ovanför: UI, harness och skript.</dd></dl>
     </article>
     <article class="card">
@@ -382,11 +382,11 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
   <h3>Delprojekt 1–9</h3>
   <div class="cards" style="margin-top:14px">
     <article class="card">
-      <header><div><span class="card-no">Delprojekt 1</span><h4>Ärendehantering och handläggar-UI</h4></div><span class="chip st-plan">Utrett</span></header>
-      <div class="track" role="img" aria-label="Plan och utredning klara, bygge ej påbörjat"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+      <header><div><span class="card-no">Delprojekt 1</span><h4>Ärendehantering och handläggar-UI</h4></div><span class="chip st-part">v1 byggd</span></header>
+      <div class="track" role="img" aria-label="Plan, design och bygge av v1 klara, i bruk lokalt"><i class="on"></i><i class="on"></i><i class="on"></i><i class="half"></i></div>
       <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
-      <dl><dt>Finns</dt><dd>Utredning av admin-UI med inbyggd Claude. Beslut B-017 och B-020.</dd>
-      <dt>Nästa</dt><dd>FastAPI-backend ovanpå tjänstelagret, vyer för kö och historik, tabellen <code>cases</code>.</dd>
+      <dl><dt>Finns</dt><dd>Handläggar-UI v1 i <code>src/web/</code>: sök, översikt, ändringar, anslutning, godkännandekö och händelselogg. Verifierat i Lakebase. Beslut B-017, B-020 och B-032.</dd>
+      <dt>Nästa</dt><dd>Tabellen <code>cases</code> och ärendeflöde, inbyggd Claude efter harness, anställningshistorik.</dd>
       <dt>Kopplas in via</dt><dd><code>ServiceLayer.execute</code>, <code>approve</code> och <code>reject</code>.</dd></dl>
     </article>
     <article class="card">
@@ -466,7 +466,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
   </div>
   <figure>
     <div class="diagram">
-      <svg viewBox="0 0 1092 372" role="img" aria-label="Byggordningen: Fas 1 och 1f är klara, handläggar-UI:t är nästa steg, därefter harness, handläggaragent, flödesmotor och flaggskeppet. Produktregler, AI-lagret och BI matar in i kedjan ovanifrån; kundportal, chattbot och kapitalförvaltning hänger på nedifrån.">
+      <svg viewBox="0 0 1092 372" role="img" aria-label="Byggordningen: Fas 1 och 1f är klara, handläggar-UI:t är byggt i en första version, harness är nästa steg, därefter handläggaragent, flödesmotor och flaggskeppet. Produktregler, AI-lagret och BI matar in i kedjan ovanifrån; kundportal, chattbot och kapitalförvaltning hänger på nedifrån.">
         <defs>
           <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
         </defs>
@@ -498,11 +498,11 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
         <text class="t-cap" x="238" y="194" text-anchor="middle">FAS 1F</text>
         <text class="t-b" x="238" y="215" text-anchor="middle">Tjänstelagret</text>
 
-        <g class="n-plan n-next"><rect x="324" y="170" width="136" height="64" rx="6"/></g>
+        <g class="n-part"><rect x="324" y="170" width="136" height="64" rx="6"/></g>
         <text class="t-cap" x="392" y="194" text-anchor="middle">FAS 4 · DP 1</text>
         <text class="t-b" x="392" y="215" text-anchor="middle">Handläggar-UI</text>
 
-        <g class="n-plan"><rect x="478" y="170" width="136" height="64" rx="6"/></g>
+        <g class="n-plan n-next"><rect x="478" y="170" width="136" height="64" rx="6"/></g>
         <text class="t-cap" x="546" y="194" text-anchor="middle">FAS 3B</text>
         <text class="t-b" x="546" y="215" text-anchor="middle">Harness</text>
 
@@ -526,8 +526,8 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
         <path class="edge" d="M922,202 H938" marker-end="url(#ao)"/>
 
         <!-- du är här -->
-        <line class="edge acc" x1="315" y1="150" x2="315" y2="252"/>
-        <text class="t-acc" x="315" y="144" text-anchor="middle">du är här</text>
+        <line class="edge acc" x1="469" y1="150" x2="469" y2="252"/>
+        <text class="t-acc" x="463" y="144" text-anchor="end">du är här</text>
 
         <!-- grenar nedåt -->
         <g class="n-plan"><rect x="16" y="300" width="200" height="56" rx="6"/></g>
@@ -1045,9 +1045,9 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
         <g class="n-none"><rect x="60" y="20" width="220" height="50" rx="6"/></g>
         <text class="t-mono t-b" x="170" y="41" text-anchor="middle">agents/</text>
         <text class="t-sub" x="170" y="59" text-anchor="middle">tom · Fas 3b</text>
-        <g class="n-none"><rect x="380" y="20" width="220" height="50" rx="6"/></g>
-        <text class="t-mono t-b" x="490" y="41" text-anchor="middle">api/</text>
-        <text class="t-sub" x="490" y="59" text-anchor="middle">finns ej · handläggar-UI, Fas 4</text>
+        <g class="n-ok"><rect x="380" y="20" width="220" height="50" rx="6"/></g>
+        <text class="t-mono t-b" x="490" y="41" text-anchor="middle">web/</text>
+        <text class="t-sub" x="490" y="59" text-anchor="middle">handläggar-UI · Fas 4</text>
 
         <g class="n-ok"><rect x="60" y="120" width="220" height="50" rx="6"/></g>
         <text class="t-mono t-b" x="170" y="141" text-anchor="middle">ai/</text>
@@ -1073,7 +1073,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
         <text class="t-lbl" x="178" y="98">ai.bind()</text>
         <path class="edge dash" d="M280,52 L420,118" marker-end="url(#am)"/>
         <text class="t-lbl" x="318" y="102" text-anchor="middle">execute()</text>
-        <path class="edge dash" d="M490,70 V118" marker-end="url(#am)"/>
+        <path class="edge" d="M490,70 V118" marker-end="url(#am)"/>
         <text class="t-lbl" x="498" y="98">execute, approve</text>
 
         <path class="edge" d="M490,170 V228" marker-end="url(#am)"/>
@@ -1158,14 +1158,15 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
   </div>
 
   <h3>Testerna</h3>
-  <p class="note" style="margin:8px 0 14px; max-width:80ch">303 tester i 20 filer. Tjänstelagret testas mot en SQLite-databas i minnet med samma modeller som Lakebase. Sju tester körs bara mot en isolerad Postgres, och AI-lagret testas mot fejkleverantören utan nätverk.</p>
-  <div class="bars" role="img" aria-label="Tester per område: tjänstelagret 156, AI-lagret 83, analys 21, premiemotorn 17, skriptens ingångar 17, backup och migration 9">
-    <div class="bar-row"><span>Tjänstelagret</span><div class="bar"><span style="width:100%"></span></div><span class="num">156</span></div>
-    <div class="bar-row"><span>AI-lagret</span><div class="bar"><span style="width:53.2%"></span></div><span class="num">83</span></div>
-    <div class="bar-row"><span>Analys</span><div class="bar"><span style="width:13.5%"></span></div><span class="num">21</span></div>
-    <div class="bar-row"><span>Premiemotorn</span><div class="bar"><span style="width:10.9%"></span></div><span class="num">17</span></div>
-    <div class="bar-row"><span>Skriptens ingångar</span><div class="bar"><span style="width:10.9%"></span></div><span class="num">17</span></div>
-    <div class="bar-row"><span>Backup och migration</span><div class="bar"><span style="width:5.8%"></span></div><span class="num">9</span></div>
+  <p class="note" style="margin:8px 0 14px; max-width:80ch">409 tester i 26 filer. Tjänstelagret testas mot en SQLite-databas i minnet med samma modeller som Lakebase, och handläggar-UI:t med FastAPI:s TestClient mot ett demobestånd. Nio tester körs bara mot en isolerad Postgres, och AI-lagret testas mot fejkleverantören utan nätverk.</p>
+  <div class="bars" role="img" aria-label="Tester per område: tjänstelagret 184, AI-lagret 83, handläggar-UI 77, analys 21, skriptens ingångar 18, premiemotorn 17, backup och migration 9">
+    <div class="bar-row"><span>Tjänstelagret</span><div class="bar"><span style="width:100%"></span></div><span class="num">184</span></div>
+    <div class="bar-row"><span>AI-lagret</span><div class="bar"><span style="width:45.1%"></span></div><span class="num">83</span></div>
+    <div class="bar-row"><span>Handläggar-UI</span><div class="bar"><span style="width:41.8%"></span></div><span class="num">77</span></div>
+    <div class="bar-row"><span>Analys</span><div class="bar"><span style="width:11.4%"></span></div><span class="num">21</span></div>
+    <div class="bar-row"><span>Skriptens ingångar</span><div class="bar"><span style="width:9.8%"></span></div><span class="num">18</span></div>
+    <div class="bar-row"><span>Premiemotorn</span><div class="bar"><span style="width:9.2%"></span></div><span class="num">17</span></div>
+    <div class="bar-row"><span>Backup och migration</span><div class="bar"><span style="width:4.9%"></span></div><span class="num">9</span></div>
   </div>
 </section>
 
@@ -1181,17 +1182,18 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
     <table>
       <thead><tr><th>Saknas</th><th>Kopplas in i</th><th>Väntar på</th></tr></thead>
       <tbody>
-        <tr><td>Handläggar-UI</td><td>FastAPI-endpoints runt <code>ServiceLayer.execute</code>, <code>approve</code> och <code>reject</code>. Kö och historik läses ur <code>approval_requests</code> och <code>operation_events</code>.</td><td>Nästa i byggordningen</td></tr>
+        <tr><td>Inbyggd Claude i handläggar-UI:t</td><td>Chattyta i <code>src/web/</code> som anropar AI-lagret med tjänstelagrets operationer som verktyg.</td><td>Harness</td></tr>
+        <tr><td>Anställningshistorik</td><td>Tabell <code>employments</code> för återanställning, arbetsgivarbyte och löneunderlag efter avslutad anställning (PR-ITP1-013). I dag blockeras de fallen.</td><td>Schemaändring enligt T3-mönstret</td></tr>
         <tr><td>Ärenden</td><td><code>case_id</code> finns redan i <code>OperationContext</code>, händelseloggen och godkännandekön. En tabell <code>cases</code> behövs.</td><td>Delprojekt 1, Fas 5</td></tr>
         <tr><td>Premie ur löneunderlag</td><td><code>salary_reports</code> → premiemotorn → <code>premium_transactions</code>, enligt PR-ITP1-001, 015 och 017.</td><td>Eget steg i Fas 1f</td></tr>
         <tr><td>Uttag, paus, garanti, pensionsbelopp och avslut</td><td>Nya <code>@operation</code>-funktioner med rader i <code>access_register.yaml</code>. Kräver att premieläge och pensionsläge skiljs åt, och uttagsdelar och kapitaljournal i datamodellen.</td><td>Modellbeslut. Reglerna är införda: PR-ITP1-002–010 och 024–028</td></tr>
         <tr><td>Låst regelversion per händelse</td><td>Beräkningsunderlaget och händelseloggen får t.ex. <code>PR-ITP1-001 v1.0</code>.</td><td>Avstämning med delprojekt 4. Behövs för flaggskeppet</td></tr>
-        <tr><td>Harness</td><td><code>operations_for_agents()</code>, <code>ToolSpec.from_model()</code> och <code>ai.bind()</code>. Konfiguration i en ny <code>src/agents/ecosystem.yaml</code>.</td><td>Handläggar-UI:t</td></tr>
+        <tr><td>Harness</td><td><code>operations_for_agents()</code>, <code>ToolSpec.from_model()</code> och <code>ai.bind()</code>. Konfiguration i en ny <code>src/agents/ecosystem.yaml</code>.</td><td>Nästa i byggordningen</td></tr>
         <tr><td>Fler skills</td><td>Tomma mappar i <code>src/skills/</code> och <code>03_skills/</code>. Planerade: hämta-kunddata, skriv-kundmail, tolka-itp1-fråga, complianceöversyn, marknadsdata.</td><td>Harness och poddar</td></tr>
         <tr><td>Flödesmotor och delegering</td><td>Harness plus tabeller för flöden och körjournal. Första flödet är regelförändringsflödet i <code>02_system/Agentsystem/</code>.</td><td>Harness</td></tr>
         <tr><td>Kapitalförvaltning</td><td>Placeringsriktlinje i <code>05_styrdokument/</code> → tabellerna <code>portfolios</code>, <code>portfolio_holdings</code>, <code>trades</code> → betalda premier som insättningar.</td><td>Riktlinjen. Kan gå parallellt</td></tr>
         <tr><td>Dashboard och Genie</td><td>Lakebase registreras i Unity Catalog, mått som metric views, pod <code>bestand</code> för agenter.</td><td>Verifiering av Databricks-miljön</td></tr>
-        <tr><td>Kundportal och chattbot</td><td>Samma FastAPI-backend som handläggar-UI:t. Chattboten får pod <code>regelverk</code> över regler och villkor.</td><td>Handläggar-UI:t</td></tr>
+        <tr><td>Kundportal och chattbot</td><td>Samma FastAPI-backend som handläggar-UI:t. Chattboten får pod <code>regelverk</code> över regler och villkor.</td><td>Uttagsoperationer och kundinloggning</td></tr>
         <tr><td>Styrdokument</td><td><code>styrdokumentshierarki.md</code>, sedan policies och riktlinjer i de fyra undermapparna.</td><td>Ingen spärr</td></tr>
         <tr><td>MCP-exponering av poddar</td><td>Samma skill-funktioner som harness använder, en MCP-server per pod.</td><td>Harness</td></tr>
         <tr><td>Schemamigrationer med Alembic</td><td>Ersätter enskilda skript som <code>migrate_t3_schema.py</code>.</td><td>Eget beslut, nytt beroende</td></tr>
@@ -1216,8 +1218,8 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
 <script>
 (function(){
   var B = {
-    operator:{t:'Operatören',s:'ok',l:'I bruk',a:'Ytor',d:'Du styr bolaget i dag genom Cowork, Claude Code och Codex: bygger, kör skript och fattar beslut. Det är den enda vägen in just nu.',h:['Skript för setup, demo, backup, migration, analys och dokumentation','CLAUDE.md och AGENTS.md styr hur AI-verktygen arbetar parallellt i egna brancher','Beslutsloggen med 31 beslut'],m:['Ett eget gränssnitt för vardagsarbetet, som kommer med handläggar-UI:t'],f:['CLAUDE.md','AGENTS.md','scripts/'],x:['#kod','Skripten']},
-    ui:{t:'Handläggar-UI',s:'plan',l:'Utrett, ej byggt',a:'Ytor · Delprojekt 1 · Fas 4 · B-020',d:'FastAPI-backend ovanpå tjänstelagret med tabellvyer, godkännandekö och inbyggd Claude. Handläggaren gör ändringar för kund genom samma operationer som agenterna ska använda.',h:['Utredning i ATT_GORA och beslut B-020','Allt UI:t ska anropa finns: execute, approve, reject och läsoperationerna'],m:['FastAPI-app och endpoints','Vyer för kön och historiken','Autentisering och sessionshistorik','Tabellen cases'],f:['projekt/01_ärendehantering/PROJEKTPLAN.md','src/services/service.py'],x:['#luckor','Vad som saknas']},
+    operator:{t:'Operatören',s:'ok',l:'I bruk',a:'Ytor',d:'Du styr bolaget i dag genom Cowork, Claude Code och Codex: bygger, kör skript och fattar beslut. Vardagsarbetet med försäkrade görs i handläggar-UI:t.',h:['Skript för setup, demo, backup, migration, analys och dokumentation','CLAUDE.md och AGENTS.md styr hur AI-verktygen arbetar parallellt i egna brancher','Beslutsloggen med 32 beslut'],m:['Inloggning, när fler än operatören ska arbeta i systemet'],f:['CLAUDE.md','AGENTS.md','scripts/'],x:['#kod','Skripten']},
+    ui:{t:'Handläggar-UI',s:'part',l:'v1 byggd',a:'Ytor · Delprojekt 1 · Fas 4 · B-020, B-032',d:'Lokalt webbgränssnitt (FastAPI, Jinja2 och HTMX) ovanpå tjänstelagret. Handläggaren söker försäkrade, ansluter nya, ändrar lön och kontaktuppgifter, registrerar löneunderlag, sätter fribrev, rättar premier och avgör agentförslag – genom samma operationer som agenterna ska använda. Verifierat i Lakebase 12 oktober.',h:['Sök, översikt, löneunderlag, premiehistorik och händelser per försäkrad','Skrivformulär med motivering; stopp visas med skäl och regel','Godkännandekö och händelselogg','Anslutning av ny försäkrad och arbetsgivare (B-032)'],m:['Inbyggd Claude, efter harness','Inloggning – v1 körs bara lokalt','Tabellen cases och ärendeflöde','Anställningshistorik för återanställning och arbetsgivarbyte'],f:['src/web/','02_system/handläggar-ui.md','projekt/01_ärendehantering/PROJEKTPLAN.md'],x:['#luckor','Vad som saknas']},
     bi:{t:'Dashboard och Genie',s:'part',l:'Första analysen byggd',a:'Ytor · Delprojekt 2 · B-029',d:'En Databricks AI/BI-dashboard med gemensamma mått, och Genie för frågor i datat. Samma underlag ska försörja dashboarden, agenternas analyser och rapporteringen.',h:['Analys av premieeffekt vid hypotetiskt IBB','Designförslag med frågor, mått och dataflöde'],m:['Lakebase registrerat i Unity Catalog','Mått som metric views, själva dashboarden och Genie-kopplingen','Pod bestand för agenter'],f:['projekt/02_bi_insikter/DASHBOARD_DESIGN.md','src/analytics/'],x:['#delprojekt','Delprojektet']},
     portal:{t:'Kundportal',s:'none',l:'Ej påbörjat',a:'Ytor · Delprojekt 3',d:'Låtsashemsida där en försäkrad ser sin ålderspension och kan pausa eller skjuta upp utbetalning.',h:['Projektplan','Beslut B-020: samma backend som handläggar-UI:t'],m:['Allt bygge','Uttags- och utbetalningsoperationer i tjänstelagret','Kundinloggning'],f:['projekt/03_kundportal/PROJEKTPLAN.md'],x:['#ordning','Byggordningen']},
     chat:{t:'Kundchattbot',s:'none',l:'Ej påbörjat',a:'Ytor · Delprojekt 7',d:'Chattbot i kundportalen som svarar på vad kunden får och inte får göra med sin försäkring.',h:['Projektplan','Kunskapskällan: 34 produktregler och villkor v2.0'],m:['Kundportalen att visas i','Pod regelverk för uppslag i regler och villkor'],f:['projekt/07_kundchattbot/PROJEKTPLAN.md'],x:['#regler','Regelkedjan']},
@@ -1225,7 +1227,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
     teams:{t:'7 team, 10 agenter',s:'plan',l:'Beskrivna, ej byggda',a:'Agentlager · B-026',d:'Avdelningar med en ledande agent som orkestrerare: försäkring, kommunikation, kapital, aktuarie, compliance, ekonomi och utveckling. Du är högsta orkestrerare; det finns ingen VD-agent.',h:['En beskrivning per agent i 02_system/agenter/','Teamindelning i agentkarta.md'],m:['Instruktioner i körbar form','Allt som kräver harness','Ett oberoende internrevisionsteam'],f:['02_system/agentkarta.md','02_system/agenter/'],x:['#agenter','Teamen']},
     pods:{t:'Skill-poddar',s:'plan',l:'En skill finns',a:'Agentlager · B-026',d:'Paket av skills med gemensam dataåtkomst som monteras på team. Podden är behörighetsenheten: en agent utan podden kunddata kan inte nå personuppgifter oavsett vad prompten säger.',h:['Premiemotorn, i podden berakning','Tjänstelagrets operationer, som blir verktyg genom tunna omslag'],m:['Skill-kontrakt och register','hämta-kunddata, skriv-kundmail, tolka-itp1-fråga, marknadsdata m.fl.'],f:['03_skills/skillkatalog.md','src/skills/'],x:['#agenter','Teamen och poddarna']},
     flow:{t:'Flödesmotor',s:'plan',l:'Designat',a:'Agentlager · Fas 3c · B-016',d:'Deterministiska flöden över flera team med godkännandesteg och sparat tillstånd, eftersom ett godkännande kan dröja i dagar. Ledande agenter kan också delegera till andra team.',h:['Design i agentekosystem.md §6','Regelförändringsflödet beskrivet i 02_system/Agentsystem/'],m:['Kod och tabeller för flöden och körjournal'],f:['02_system/Agentsystem/regelförändringsflöde.md'],x:['#agenter','Flaggskeppsscenariot']},
-    services:{t:'Tjänstelagret',s:'ok',l:'Byggt',a:'Kärna · Fas 1f · B-028',d:'Den enda vägen in till försäkringssystemet. Samma operation används av handläggare, agenter och skript. Ett register bestämmer vad agenter får göra, och varje ändring loggas med vem som gjorde den och varför.',h:['7 operationer: 4 läsande eller beräknande, 3 skrivande','Åtkomstregister med nivåerna AGENT, APPROVAL och HUMAN_ONLY plus tre golv','Godkännandekö och händelselogg i Lakebase, en transaktion per anrop','156 tester, verifierat mot isolerad Postgres'],m:['Regelstyrda operationer: uttag, paus, garanti, pensionsbelopp, avslut','Premie ur löneunderlag (fakturering)','Ett gränssnitt för godkännandekön'],f:['src/services/','src/services/access_register.yaml','02_system/tjänstelager.md'],x:['#tjanstelagret','Så går ett anrop genom tjänstelagret']},
+    services:{t:'Tjänstelagret',s:'ok',l:'Byggt',a:'Kärna · Fas 1f · B-028',d:'Den enda vägen in till försäkringssystemet. Samma operation används av handläggare, agenter och skript. Ett register bestämmer vad agenter får göra, och varje ändring loggas med vem som gjorde den och varför.',h:['15 operationer: 8 läsande eller beräknande, 7 skrivande','Åtkomstregister med nivåerna AGENT, APPROVAL och HUMAN_ONLY plus tre golv','Godkännandekö och händelselogg i Lakebase, en transaktion per anrop','184 tester, verifierat mot isolerad Postgres'],m:['Regelstyrda operationer: uttag, paus, garanti, pensionsbelopp, avslut','Premie ur löneunderlag (fakturering)','Anställningshistorik för återanställning och arbetsgivarbyte'],f:['src/services/','src/services/access_register.yaml','02_system/tjänstelager.md'],x:['#tjanstelagret','Så går ett anrop genom tjänstelagret']},
     engine:{t:'Premiemotorn',s:'ok',l:'Byggd',a:'Beräkning · Fas 1c',d:'En ren funktion som räknar ITP1-premien ur lön och inkomstbasbelopp enligt premietrappan, med åldersfönstret 25–66 år och ett sparat beräkningsunderlag för revision.',h:['calculate_itp1_premium','17 tester mot handräknade exempel','Används av tjänstelagret, demogeneratorn och analysen'],m:[],f:['src/skills/calculation/calculate_itp1_premium.py','03_skills/beräkning/beräkna-itp1-premie.md'],x:['#regler','Räkneexempel']},
     analytics:{t:'Analys',s:'part',l:'Första analysen byggd',a:'Beräkning · Delprojekt 2',d:'Jämför premierna för en vald månad med ett hypotetiskt inkomstbasbelopp. Läser en offline-backup, inte databasen direkt, och skriver en Markdownrapport. Ändrar ingenting i beståndet.',h:['premium_impact.py och snapshot.py','21 tester','Kommandot scripts/analysis/analyze_premium_impact.py'],m:['Läsning via gemensamma tjänster','Hela beståndet, månadstrender, historisk arbetsgivare per premie'],f:['src/analytics/','projekt/02_bi_insikter/ANALYSDESIGN.md'],x:['#delprojekt','Delprojekt 2']},
     payout:{t:'Pension och betalning',s:'none',l:'Ej påbörjat',a:'Beräkning',d:'Uttag, paus, garanti, pensionsbelopp, slutavräkning och dödsfall. Reglerna är införda och gäller från 1 november, men ingen kod finns.',h:['Produktreglerna PR-ITP1-002–010 och 024–028','Aktuariell grund och parameterregister'],m:['Uttagsdelar, månadsanspråk, betalningsskuld och kapitaljournal i datamodellen','Separat premieläge och pensionsläge','Operationen terminate_policy'],f:['01_domän/produktregler/UTTAG_GEMENSAMT.md','01_domän/aktuariell_grund.md'],x:['#luckor','Vad som saknas']},

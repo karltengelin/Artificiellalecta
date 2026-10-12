@@ -365,7 +365,7 @@ Byggs efter harness (§12).
 - **Formatet för agentdefinitioner** – samlad `ecosystem.yaml` (förslag) eller körprofil i respektive agents MD-fil?
 - **Utvärderingsuppsättningar** per agent/skill för att kunna byta modell med belägg.
 - **Ledningsfunktion:** behövs en agent för tvärgående prioritering (VD-roll) – eller förblir operatören och flödesmotorn den rollen?
-- **Godkännandegränssnitt:** CLI i Fas 1f, handläggar-UI:t från Fas 4 (`tjänstelager.md` §6).
+- **Godkännandegränssnitt:** ✅ löst 2026-10-12 – kön avgörs i handläggar-UI:t (`/godkannanden`, Fas 4, `handläggar-ui.md`) via `ServiceLayer.approve/reject`; det planerade CLI:t byggdes inte (`tjänstelager.md` §6).
 
 ---
 

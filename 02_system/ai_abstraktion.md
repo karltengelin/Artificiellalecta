@@ -339,7 +339,7 @@ Anropsloggen är det tekniska lagret (kostnad, prestanda, fel). Den verksamhetsm
 
 | Avgränsning | Plan |
 |-------------|------|
-| Ingen streaming | Behövs för chattytan i handläggar-UI:t (Fas 4) – läggs till som `stream()` i klienten |
+| Ingen streaming | Behövs för den inbyggda chatten i handläggar-UI:t, som byggs efter harness (Fas 3b; UI v1 i Fas 4 saknar chatt) – läggs till som `stream()` i klienten |
 | Synkront API | Asynkron variant när FastAPI-backenden kräver det |
 | Bara text in | Bilder/PDF när en skill behöver det (t.ex. inkomna dokument i ärendehantering) |
 | Ingen styrning av verktygsval (`tool_choice`) | Modellen väljer själv; tvingande verktygsval stöds inte längre av alla nya modeller – strukturerade svar täcker behovet |
