@@ -5,9 +5,10 @@ correct_premium_transaction (PR-ITP1-019). Varje test kontrollerar både
 ändringen och att ett misslyckat eller blockerat anrop lämnar data och
 händelselogg orörda.
 
-Agentåtkomst prövas mot två regelmappar: de riktiga produktreglerna (PR-ITP1
-v1.0 specificerat, inte infört) och en kopia i tmp där kopians README har ett
-införandebeslut. De riktiga filerna ändras aldrig.
+Agentåtkomst prövas mot de riktiga produktreglerna (PR-ITP1 v1.0 infört genom
+B-031, gäller från 2026-11-01; testernas dag är 2026-10-11) och mot kopior i tmp
+där kopians README har ett annat eller inget införandebeslut. De riktiga filerna
+ändras aldrig.
 """
 
 from __future__ import annotations
@@ -122,17 +123,21 @@ def seed_active(insurance_db):
     return insurance_db
 
 
-def adopted_rules(tmp_path, valid_from: str = "2026-10-01") -> ProductRuleCatalog:
-    """Kopia av de riktiga produktreglerna med införandebeslut i kopians README."""
+def rules_copy(tmp_path, adoption: str | None = None) -> ProductRuleCatalog:
+    """Kopia av de riktiga produktreglerna där kopians README har det angivna införandebeslutet, eller inget."""
     target = tmp_path / "produktregler"
     shutil.copytree(default_rules_dir(), target)
     readme = target / "README.md"
-    readme.write_text(
-        readme.read_text(encoding="utf-8")
-        + f"\n> **Införandebeslut:** B-999 | **Gäller från:** {valid_from}\n",
-        encoding="utf-8",
-    )
+    lines = [line for line in readme.read_text(encoding="utf-8").splitlines() if "**Införandebeslut:**" not in line]
+    if adoption:
+        lines.append(f"> **Införandebeslut:** {adoption}")
+    readme.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return ProductRuleCatalog(target, today=TODAY)
+
+
+def adopted_rules(tmp_path, valid_from: str = "2026-10-01") -> ProductRuleCatalog:
+    """Kopia av produktreglerna med ett införandebeslut som gäller från valid_from."""
+    return rules_copy(tmp_path, f"B-999 | **Gäller från:** {valid_from}")
 
 
 def make_service(db, rules: ProductRuleCatalog | None = None) -> ServiceLayer:
@@ -174,7 +179,7 @@ class TestLoneunderlag:
         (event,) = events(db, "executed", "register_salary_report")
         assert event.output["report_id"] == str(saved.id)
         assert event.rules == ["PR-ITP1-013", "PR-ITP1-014", "PR-ITP1-017"]
-        assert "PR-ITP1-014 v1.0 specificerad" in event.detail and "ej infört" in event.detail
+        assert "PR-ITP1-014 v1.0 kommande" in event.detail and "infört B-031" in event.detail
         assert rows(db, PremiumTransaction, PremiumTransaction.period_month == date(2026, 7, 1)) == []  # ingen premie
 
     def test_uttrycklig_noll_skiljs_fran_saknad_rapport(self, db):
@@ -596,13 +601,26 @@ class TestPremierattelse:
 class TestAgentatkomst:
     WRITES = ("register_salary_report", "set_policy_paid_up", "correct_premium_transaction")
 
-    def test_utan_infort_paket_ar_alla_skrivningar_endast_handlaggare(self, db):
-        service = make_service(db)
+    def test_utan_infort_paket_ar_alla_skrivningar_endast_handlaggare(self, db, tmp_path):
+        service = make_service(db, rules_copy(tmp_path))
         for name in self.WRITES:
             decision = service.decision(name)
             assert decision.effective == AgentAccess.HUMAN_ONLY, name
         assert any("PR-ITP1-014 (specificerad)" in r for r in service.decision("register_salary_report").reasons)
         assert service.decision("register_salary_report").registered == AgentAccess.APPROVAL
+
+    def test_riktiga_paketet_ar_kommande_fore_giltighetsdagen(self, db):
+        service = make_service(db)  # de riktiga reglerna, testets dag 2026-10-11
+        for name in self.WRITES:
+            assert service.decision(name).effective == AgentAccess.HUMAN_ONLY, name
+        reasons = service.decision("register_salary_report").reasons
+        assert any("PR-ITP1-014 (kommande, gäller från 2026-11-01)" in r for r in reasons)
+
+    def test_riktiga_paketet_foljer_registret_fran_giltighetsdagen(self, db):
+        service = make_service(db, ProductRuleCatalog(today=date(2026, 11, 1)))
+        assert service.decision("register_salary_report").effective == AgentAccess.APPROVAL
+        assert service.decision("set_policy_paid_up").effective == AgentAccess.APPROVAL
+        assert service.decision("correct_premium_transaction").effective == AgentAccess.HUMAN_ONLY
 
     def test_agent_nekas_och_forsoket_loggas_utan_andring(self, db):
         service = make_service(db)

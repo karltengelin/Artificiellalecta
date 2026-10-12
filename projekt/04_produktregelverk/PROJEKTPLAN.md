@@ -1,7 +1,7 @@
 # Projekt 4 – produktregelverk och försäkringsvillkor
 
-> **Leverans:** 2026-10-11 | **Status:** Dokumentunderlag färdigställt enligt sessionens utökade uppdrag.
-> Del av programmet i MASTER_CONTEXT §4b, B-024. Samlat införande är separat.
+> **Leverans:** 2026-10-11 | **Status:** Dokumentunderlag färdigställt och infört genom B-031 (2026-10-12), gäller från 2026-11-01.
+> Del av programmet i MASTER_CONTEXT §4b, B-024. Kodbygget av reglerna sker i senare sessioner.
 
 ## Uppdrag och resultat
 
@@ -20,7 +20,7 @@ anger valda SIM-grunder, faktisk sparad SCB-tabell och exakta årsparametrar.
 underlag per regelverk och tio tolkningar visar externa krav och egna val.
 [Leveranskontrollen](LEVERANSKONTROLL.md) visar täckning, räkneexempel,
 dokumentkontroller och gränssnitt till andra projekt.
-[Paketförslaget](PAKET_BESLUTSFORSLAG.md) samlar det formella införandet.
+[Paketförslaget](PAKET_BESLUTSFORSLAG.md) antogs som B-031.
 
 ## Färdiga områden
 

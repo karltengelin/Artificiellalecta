@@ -2,7 +2,7 @@
 
 > **Version:** 1.0 | **Dokumentdatum:** 2026-10-11
 > **Status:** Fullständigt specificerad simuleringsmodell, med valda antaganden.
-> **Införande:** Föreslaget 2026-11-01 enligt produktpaketet. Ingen kod eller myndighetsvaliderad tariff ingår.
+> **Införande:** B-031, gäller från 2026-11-01 enligt produktpaketet. Ingen kod eller myndighetsvaliderad tariff ingår.
 
 ## 1. Värden och grunder
 

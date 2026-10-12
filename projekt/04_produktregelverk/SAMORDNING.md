@@ -2,6 +2,12 @@
 
 > **Datum:** 2026-10-11 | Förberedda följdändringar, inga nya sakbeslut.
 > Produktpaketet är färdigt i sin hemvist. Detta underlag undviker samtidig redigering av delade dokument.
+>
+> **2026-10-12:** Paketet antogs som B-031, gäller från 2026-11-01. I samma ändring infördes
+> förslagen om garantistycket och delprojektets status i MASTER_CONTEXT, aktuariell grund i
+> mappöversikten och den aktuariella raden i ATT_GORA, anpassade till beslutet. Förslagen om
+> 04_regulatoriskt-raden i ATT_GORA och om produktregler/ och parametrar/ i mappöversikten
+> återstår.
 
 ## Varför separat
 

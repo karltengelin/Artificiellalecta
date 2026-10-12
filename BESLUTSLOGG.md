@@ -8,6 +8,39 @@
 
 ## Beslut
 
+### B-031 | 2026-10-12 | Produktpaket PR-ITP1 v1.0 infört, gäller från 2026-11-01
+
+**Beslut:** Operatören antog i chatten 2026-10-12 det samlade införandeförslaget i `projekt/04_produktregelverk/PAKET_BESLUTSFORSLAG.md` (”ja”). Artificiellalectas produktunderlag för traditionell ITP1 ålderspension fastställs som produktpaket PR-ITP1 v1.0:
+
+1. **Innehåll:** produktregler PR-ITP1-001–034, försäkringsvillkor v2.0, aktuariell grund v1.0 och parameterregistret. Endast ålderspension utan efterlevande- eller återbetalningsskydd erbjuds. B-002, B-003, B-021, B-022 och B-027 består.
+2. **Grunder:** SIM-G-2026-01 (garanti), SIM-B-2026-01 (utbetalning) och SIM-R-2026-01 (arvsvinst): SCB:s dödsrisker 2025, unisex 50/50, 1,5 % årlig förbättring, 20 % extra livslängdsmarginal för garanti och utbetalning, noll nettoränta och explicit oändlig högålderssvans. Grunderna är bestämda simuleringsantaganden, inte professionellt kalibrerade marknadstariffer.
+3. **Produktval:** de val som listas i paketförslagets tabell, bland annat tidigaste uttag månaden efter 55 år med pensioneringsprövning före 66, minst 60 månaders tidsbegränsad utbetalning, högst tre deluttag, paus i hela månader utan avgift, utbetalning första bankdagen efter pensionsmånaden, arvsvinst bara av faktiskt frigjort kapital, och att bolaget finansierar garantiunderskott med separat bokfört eget kapital.
+4. **Giltighet:** paketet gäller nya produktbeslut och händelser i simuleringen från **2026-11-01**. Till dess är reglerna *kommande*. Äldre transaktioner skrivs inte om; importerad rätt behåller sin ursprungsgrund. SIM-HIST används bara vid separat, uttryckligt beslutad omgenerering av ett märkt syntetiskt scenario.
+5. **Registrering:** raden `**Införandebeslut:** B-031 | **Gäller från:** 2026-11-01` i `01_domän/produktregler/README.md`. Tjänstelagret (`services/rules.py`) läser raden, så att inga PR-filer behöver godkännas separat.
+
+**Motivering:**
+- Paketet är ett sammanhängande kontrakt; att anta det som helhet undviker motsägelser mellan delvis godkända regler (PR-ITP1-032).
+- Tjänstelagret kräver godkända och giltiga produktregler innan agenter får röra skrivande operationer (B-028). Utan införande hade skrivoperationerna förblivit *endast handläggare* för agenter oavsett registret.
+- 2026-11-01 är den dag villkor v2.0, aktuariell grund och leveranskontrollens räkneexempel utgår från. Ett datum framåt ger en tydlig gräns mot den genererade historiken 2023–2026.
+
+**Övervägda alternativ:**
+
+*Gälla från beslutsdagen* – snabbare, men bryter mot dokumentens datum och räkneexemplen. Avvisat.
+
+*Godkänna regel för regel* – reglerna förutsätter varandra (bland annat premie-, pensions- och betalningsförlopp), och delvis godkända paket kan ge motsägelser. Avvisat.
+
+**Konsekvenser:**
+- Från 2026-11-01 gäller registrets nivåer för agenter: `register_salary_report` och `set_policy_paid_up` blir `APPROVAL`, `correct_premium_transaction` förblir `HUMAN_ONLY`. Före dess är reglerna *kommande* och skrivningarna *endast handläggare* för agenter. Handläggare påverkas inte (B-017). Inga agenter är byggda än, så ändringen märks först med harness (Fas 3b).
+- Händelseloggen anger från och med nu att paketet är infört genom B-031.
+- Beslutet ändrar ingen kod, inget databasschema och inga befintliga data. Regelstyrda operationer (uttag, paus, garanti, pensionsbelopp, avslut) är fortfarande obyggda; reglerna är nu godkända specifikationer för det bygget.
+- Ingen verklig produkt lanseras. Professionell tariff-, bestånds- och solvensvalidering och verkligt tillstånd hör till separata verksamhetsprocesser.
+- Den genererade förteckningen `02_system/tjänstelager_operationer.md` beror på dagens datum och genereras om 2026-11-01 (ATT_GORA).
+- Status är uppdaterad i paketets README, villkoren, den aktuariella grunden, paketförslaget, delprojekt 4:s plan, MASTER_CONTEXT, ATT_GORA och tjänstelagrets dokumentation.
+
+**Preciserar:** B-027 (garantimodellen, vars tariff och införande nu är beslutade genom SIM-G-2026-01) och B-028 (regelgolvet för agentåtkomst). B-021:s villkor v1.0 ersätts av v2.0 från 2026-11-01; B-021:s förenklingar består.
+
+---
+
 ### B-030 | 2026-10-11 | Tjänstelagrets första skrivoperationer: löneunderlag, fribrev och premierättelse (Fas 1f T3)
 
 **Beslut:** Operatören valde modell och avgränsning för de första skrivoperationerna i tjänstelagret (B-028) i chatten 2026-10-11 och bad att beslutet loggas.

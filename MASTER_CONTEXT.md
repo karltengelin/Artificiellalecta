@@ -37,7 +37,10 @@ Programmet struktureras i ett antal namngivna delprojekt, se §4b.
 pensionsgaranti med hela mottagna nettopremien som garantigrund och 0 %
 nettoränta i garantitariffen, utan automatisk garantiförstärkning i första
 modellen. Historiska garantidelar bevarar sina antaganden. Produktinriktningen
-är beslutad; tariffkalibrering, riskgranskning och införande återstår, se
+är beslutad i B-027. Produktpaket PR-ITP1 v1.0 med försäkringsvillkor v2.0 och
+valda SIM-grunder är infört genom B-031 och gäller från 2026-11-01. Kodbygget
+återstår; professionell tariff-, bestånds- och solvensvalidering krävs före
+verklig verksamhet. Se `01_domän/produktregler/README.md` och
 `01_domän/aktuariell_grund.md`.
 
 Övergripande principer som gäller all utveckling i projektet. För full motivering bakom varje, se `BESLUTSLOGG.md`.
@@ -110,7 +113,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 1 | Ärendehantering & handläggar-UI | `projekt/01_ärendehantering/` | Handläggarens gränssnitt + bakomliggande backend för att handläggningar ska påverka systemen | 🟡 Utredning klar | Fas 4/5, B-020 |
 | 2 | BI & insikter | `projekt/02_bi_insikter/` | Koppla försäkringssystem + databaser till indikatorer/BI; agent som svarar på datafrågor | 🔲 Ej påbörjat | B-018 (Lakebase) |
 | 3 | Kundportal | `projekt/03_kundportal/` | Låtsas-hemsida: se pension, förmåner, pausa/skjuta upp utbetalning | 🔲 Ej påbörjat | Nämnd som senare fas i B-020 |
-| 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟡 Pågår | `01_domän/`, `04_regulatoriskt/` |
+| 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟢 Dokumentunderlag klart och infört (B-031, gäller från 2026-11-01); kodbygge separat | `01_domän/`, `04_regulatoriskt/` |
 | 5 | Kapitalförvaltning | `projekt/05_kapitalförvaltning/` | Paper trading-portfölj + gränssnitt för att analysera innehav och styra allokering | 🟡 Utredning klar | Fas 2, B-019 |
 | 6 | Avdelningsfunktioner | `projekt/06_avdelningsfunktioner/` | Funktioner per avdelning, bl.a. en aktuariell modul för premiesättning kopplad till FI-krav | 🔲 Ej påbörjat | — |
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
@@ -169,7 +172,7 @@ Artificiellalecta/
 │
 ├── 01_domän/                       ← Domänkunskap (text)
 │   ├── ITP1_regelverk.md           ← Kollektivavtalets regler (premietrappa, åldrar, basbelopp)
-│   ├── aktuariell_grund.md         (modellutkast; kalibrering och godkännande återstår)
+│   ├── aktuariell_grund.md         ← Specificerad SIM-modell, infört (B-031); verklig validering separat
 │   ├── försäkringsvillkor.md       ← Bolagets villkor för ålderspension ITP1
 
 │   └── processer_översikt.md       (kommer)

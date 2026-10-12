@@ -1,7 +1,7 @@
 # Arbetssätt – ett sammanhängande produktpaket
 
 > **Version:** 1.0 | **Datum:** 2026-10-11
-> Färdig dokumentstruktur på operatörens mandat; formellt införande separat.
+> Färdig dokumentstruktur på operatörens mandat; paketet infört genom B-031, gäller från 2026-11-01.
 > B-005/B-010/B-012/B-015/B-021/B-022/B-024/B-027.
 
 ## Placering och spårbarhet
@@ -46,10 +46,11 @@ driftsatt kod eller professionell bedömning av ett verkligt bestånd.
 Extern ikraftträdandedag, föreslagen produktdag, godkännande och driftsättning
 lagras var för sig.
 
-Allt införandeunderlag är samlat i [paketförslaget](PAKET_BESLUTSFORSLAG.md).
+Allt införandeunderlag är samlat i [paketförslaget](PAKET_BESLUTSFORSLAG.md),
+som operatören antog 2026-10-12 som B-031 med giltighet från 2026-11-01.
 Nya beslutsloggsposter skrivs först efter operatörens godkännande enligt
 AGENTS/CLAUDE. Ingen ny beslutsbeteckning reserveras under parallellt arbete.
-Godkännande av denna text ändrar inte historiska transaktioner.
+Införandet ändrar inte historiska transaktioner.
 
 ## Avslutade utredningsfrågor
 

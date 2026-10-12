@@ -1,8 +1,8 @@
 # Försäkringsvillkor – traditionell ålderspension ITP1
 
 > **Version:** 2.0 | **Dokumentdatum:** 2026-10-11
-> **Status:** Fullständigt villkorsförslag för produktpaket PR-ITP1 v1.0.
-> **Föreslagen tillämpning i simuleringen:** 2026-11-01 efter samlat införandebeslut.
+> **Status:** Fastställda villkor i produktpaket PR-ITP1 v1.0 (B-031).
+> **Tillämpning i simuleringen:** från 2026-11-01. Till dess gäller v1.0.
 > **Försäkringsgivare:** Artificiellalecta, simulerat bolag enligt B-003. Ingen rättslig verkan för verkliga försäkringar.
 > Tidigare v1.0 finns i [historik](historik/forsakringsvillkor_v1_0.md). Dokumentet ändrar inga transaktioner.
 

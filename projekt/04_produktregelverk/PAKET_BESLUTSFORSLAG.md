@@ -1,7 +1,7 @@
 # Samlat införandeförslag – produktpaket PR-ITP1 v1.0
 
-> **Datum:** 2026-10-11 | **Status:** Fullständigt förslag för operatörens samlade införandebeslut.
-> Egna produktval är utarbetade på sessionens mandat. Ingen post har skrivits i BESLUTSLOGG.
+> **Datum:** 2026-10-11 | **Status:** Antaget av operatören 2026-10-12 som **B-031**, gäller från 2026-11-01.
+> Egna produktval är utarbetade på sessionens mandat. Beslutet är registrerat i BESLUTSLOGG och i regelpaketets README.
 
 ## Föreslagen beslutstext
 
@@ -66,3 +66,7 @@ Operatörens beslut registreras med ledigt B-nummer, godkännandedatum,
 beslutad produktdag, paket-/dataversion och eventuell övergångsändring.
 Det ska vara möjligt att anta hela paketet och sedan driftsätta det i
 byggsessionen utan att godkänna varje PR-fil separat.
+
+**Registrerat 2026-10-12:** B-031, beslutad produktdag 2026-11-01, paket PR-ITP1 v1.0
+med SCB-tabellen 2025 enligt parameterregistret. Ingen övergångsändring utöver
+paketets egen (PR-ITP1-032).

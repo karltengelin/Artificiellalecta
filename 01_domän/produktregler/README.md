@@ -1,9 +1,10 @@
 # Produktregler – ITP1 ålderspension
 
 > **Paket:** PR-ITP1 v1.0 | **Dokumentdatum:** 2026-10-11
-> **Status:** Sammanställt dokumentunderlag enligt operatörens uppdrag att färdigställa delprojektet.
+> **Status:** Infört som helhet av operatören 2026-10-12. Reglerna är *kommande* till giltighetsdagen.
 > **Ägare:** Operatören. Metadata och gemensamma krav här gäller samtliga PR-filer.
-> **Föreslagen tillämpning i simuleringen:** 2026-11-01. Införandet är ett separat beslut; ingen kod eller historik ändras av dokumenten.
+> **Införandebeslut:** B-031 | **Gäller från:** 2026-11-01
+> Införandet ändrar ingen kod och ingen historik; teknisk driftsättning sker i byggsessionerna.
 
 Detta är ingången till hela produktspecifikationen. [Försäkringsvillkor v2.0](../försäkringsvillkor.md)
 beskriver kundens rättigheter. Reglerna här preciserar utfallet, inklusive undantag,
@@ -28,8 +29,8 @@ blockerar det berörda beslutet tills den är rättad; ingen AI får välja tyst
 
 **Status betyder dokumentmässigt färdig specifikation, inte driftsatt system,
 myndighetsgodkända villkor eller en professionellt validerad försäkringstariff.**
-Egna val är gjorda på operatörens mandat i sessionen. Formellt införande och
-eventuell beslutsloggspost hanteras samlat i [paketförslaget](../../projekt/04_produktregelverk/PAKET_BESLUTSFORSLAG.md).
+Egna val är gjorda på operatörens mandat i sessionen. Paketet infördes som helhet
+genom B-031 enligt [paketförslaget](../../projekt/04_produktregelverk/PAKET_BESLUTSFORSLAG.md).
 
 ## Regelkatalog
 
