@@ -1,6 +1,6 @@
 # Harness – utredning och designförslag
 
-> **Status:** Förslag för operatörens beslut. Ingen harness eller produktionskod byggs genom dokumentet.
+> **Status:** Designinriktningen godkänd i chatten 2026-10-12: egen tunn motor och samlad konfiguration. Operatören preciserade att tjänstelagret endast hör till försäkringssystemet och överlät val av startgränser. Dokumentet beskriver den fortsatta designen; ingen harness eller produktionskod byggs genom det.
 > **Datum:** 2026-10-12. Kod och lokalt underlag granskat på `main` **0a8227c**, hämtad från origin samma dag.
 > **Omfattning:** Fas 3b samt de kontrakt Fas 3c behöver från början. Byggordningen **1 → 1f → 4 → 3b → 5 → 3c** enligt B-028 består.
 > **Grund:** B-024/B-026 (vision och team), B-025 (AI-lagret), B-028/B-030/B-031 (tjänstelager och produktregler).
@@ -10,6 +10,8 @@
 **Rekommendation: bygg en egen tunn harness ovanpå `src/ai/` och tjänstelagret.** Använd en samlad `src/agents/ecosystem.yaml` för team, agentprofiler, poddar och begränsningar. Behåll agenternas Markdown-filer som läsbara arbetsinstruktioner. Befogenheterna avgörs av kod och granskad konfiguration.
 
 En modell kan föreslå nästa steg. Harness avgör om steget är tillåtet, kör rätt verktyg och sparar vad som hände. Tjänstelagret avgör sedan om försäkringsoperationen får utföras, kräver godkännande eller är endast för handläggare. Modellen får ingen direkt databasanslutning, inget generellt filverktyg och ingen möjlighet att utnämna sig till människa.
+
+**Tjänstelagrets gräns:** `src/services/` hanterar försäkringssystemets operationer och deras regler, godkännanden och affärslogg. Att andra områden också använder databasen gör dem inte till försäkringsoperationer. Dokument, kommunikation, kapitalförvaltning, ekonomi och utveckling har egna avgränsade verktygsadaptrar/gateways. Harness kontrollerar deras mandat, resurser och sidoeffekter; respektive gateway skyddar själva verkställigheten. Gemensamt är säkerhetsprinciperna och spårbarheten, inte ett allmänt bolagstjänstelager eller försäkringens åtkomstregister.
 
 Ett vanligt uppdrag kan vara: ”Utred det nya löneunderlaget och förbered registrering.” Operatören ser då lästa underlag, beräkningen, agentens korta motivering och ett preciserat förslag. Statusen **väntar på godkännande** betyder att affärsändringen inte är gjord. Först operatörens beslut verkställer den.
 
@@ -22,9 +24,11 @@ flowchart TD
     H --> P[Kontrollerad verktygskörning]
     P --> S[Tjänstelager: aktör, åtkomstgolv och affärsregler]
     P --> D[Dokumentgateway: läsning och isolerade utkast]
+    P --> X[Övriga domängateways: egna mandat och godkännanden]
     S --> DB[Lakebase och händelselogg]
     S --> Q[Godkännandekö]
     O[Autentiserad operatör] --> Q
+    O --> X
     Q --> S
     H --> J[Körjournal med referenser till underlag och beslut]
 ```
@@ -70,7 +74,7 @@ Detta är en **daterad inventering**, inte en lista inbyggd i motorn. En paralle
 |---|---|---|
 | Konfigurationsläsare och policykompilator | Validera team, poddar, resursgränser; producera effektiv profil och förklaringar | Affärsregler eller modell-ID |
 | Kontextbyggare | Välja versionerade instruktioner och minsta nödvändiga underlag | Fritt upptäckande av alla filer/kunder |
-| Skill-register och dispatcher | Generera scheman, kontrollera varje anrop, anropa tjänstelagret | Direkt SQL, mänsklig identitet eller egna försäkringsgodkännanden |
+| Skill-register och dispatcher | Generera scheman, kontrollera varje anrop, anropa försäkringstjänstelagret eller rätt avgränsad gateway | Direkt SQL, mänsklig identitet eller egna försäkringsgodkännanden |
 | Agentloop och budgetbok | Steg, väntan, fel, resultat och förbrukning | Teamens affärsberäkningar |
 | `RunStore` och körjournal | Händelser, referenser, status och skyddade återstartspunkter | Ersätta tjänstelagrets händelselogg |
 | Dokumentgateway | Säkra läshandtag och versionsbundna Markdown-utkast | Godkänna eller ändra gällande regler |
@@ -121,7 +125,8 @@ flowchart LR
 | Fråga | Auktoritativ källa | Verkställs av |
 |---|---|---|
 | Vad operationen gör, schema, klass, produktregler och PII | `Operation` i tjänstelagrets register | Tjänstelager och dispatcher |
-| Bolagets agentnivå och golv | `access_register.yaml`, `services/access.py`, produktreglernas status | Tjänstelagret; harness använder `decision()` |
+| Försäkringsoperationernas agentnivå och golv | `access_register.yaml`, `services/access.py`, produktreglernas status | Försäkringstjänstelagret; harness använder `decision()` |
+| Verkställighetsregler utanför försäkringssystemet | Respektive gateways granskade kontrakt, resursmandat och godkännandekrav | Dispatcher och respektive gateway; inte försäkringens register |
 | Teammandat, poddmontering, nekade skills, resurser och budget | Föreslagen `ecosystem.yaml` | Policykompilator och dispatcher |
 | Aktuellt kund-/ärendescope, mål och flödessteg | Betrodd `RunRequest` från UI/flöde | Dispatcher och datagateway |
 | Hur agenten ska arbeta och uttrycka sig | Agentens MD-instruktion och skillinstruktioner | Modell; ger inga rättigheter |
@@ -160,10 +165,10 @@ defaults:
   limits:
     max_steps: 20
     max_tool_calls: 30
-    max_cost_usd: 0.50
-    max_output_tokens: 2000
-    max_context_bytes: 60000
-    max_wall_seconds: 180
+    max_cost_usd: 2.00
+    max_output_tokens: 4000
+    max_context_bytes: 120000
+    max_wall_seconds: 600
   journal:
     mode: references
     log_provider_state: false
@@ -207,6 +212,9 @@ pods:
     write_roots: [logs/agent_artifacts/forsakring]
     file_types: [.md]
     overwrite_existing: false
+    max_file_bytes: 102400
+    max_files_per_run: 10
+    max_total_artifact_bytes: 524288
     skills:
       write_markdown_draft: {executor: document_draft, kind: write}
 
@@ -235,10 +243,10 @@ agents:
     limits:
       max_steps: 12
       max_tool_calls: 18
-      max_cost_usd: 0.25
+      max_cost_usd: 0.50
       max_output_tokens: 1500
       max_context_bytes: 40000
-      max_wall_seconds: 120
+      max_wall_seconds: 180
 
 delegation:
   enabled: false
@@ -311,7 +319,7 @@ Lokala skills får bara peka på godkända exekverartyper och implementationsreg
 |---|---|---|
 | Affärsoperation | Registrera löneunderlag | Tjänstelagrets `approval_requests`; `approve` utför åtgärden och loggar den atomiskt |
 | Process-/dokumentgrind | Godkänna en regeltolkning innan nästa steg | Flödesmotorns versionsbundna beslut; godkänner ett underlag, utför inte en försäkringsoperation |
-| Extern verkställighet | Skicka brev, lämna rapport, driftsätta | Betrodd tjänste-/kanalgateway med exakt godkänt innehåll, mål och kvitto; minst APPROVAL |
+| Extern verkställighet | Skicka brev, lämna rapport, driftsätta | Respektive domän-/kanalgateway med exakt mänskligt godkänt innehåll, mål och kvitto. För försäkringsoperationer gäller även tjänstelagrets external-golv |
 
 En flödesgrind får aldrig ersätta godkännandet av en APPROVAL-operation. Om ett team/flöde kräver mänsklig granskning även för en AGENT-operation ska **föreslagen `pending_review`** stoppa innan `execute`; godkännandet gäller operation, indatahash, scope och version. Därefter körs den som ursprunglig **agent** och journalen länkar grinden. Dagens `execute` har ingen parameter som tvingar en annars AGENT-operation till kön. Första profilen använder därför inga sådana extra operationsgrindar. I Fas 3c visas grindarna och tjänstekön tillsammans i UI, men deras betydelse hålls isär.
 
@@ -319,11 +327,13 @@ Ett befintligt tjänsteärende innehåller sparade indata. Det ska inte ändras 
 
 ### 4.3 Interna utkast och externa kanaler: undvik ett dolt kryphål
 
-Nuvarande regelgolv stänger **alla** `write`/`external` utan godkänd produktregel. Det passar försäkringsoperationer. Ett internt dokumentutkast eller ett mailutskick har inte alltid en sådan produktregel. Att märka dem som `read`, lägga dit en påhittad PR-regel eller anropa dem som `Actor.system` skulle kringgå skyddet.
+Nuvarande regelgolv stänger **försäkringstjänstelagrets** `write`/`external` utan godkänd produktregel. Det golvet består för försäkringsoperationer. Ett dokumentutkast, mailutskick, ekonomisk bokning eller en release är ett annat verksamhetsområdes handling och ska inte registreras där. Samma databas kan innehålla flera områdens tabeller; gränsen följer verksamhetsansvaret, inte var raderna lagras.
 
-Förslaget för Fas 3b är en separat, snävt avgränsad dokumentgateway som endast skriver **utkast i körningens arbetsyta** och har egen verkställd filpolicy (§5.2). Den kan inte ändra försäkringsdata, gällande dokument eller aktiva instruktioner. Det är ett preciseringsförslag till B-026:s redan avsedda interna utkast, som operatören behöver anta. Dess writes journalförs även vid manuell användning.
+Designen för Fas 3b använder en separat, snävt avgränsad dokumentgateway som endast skriver **utkast i körningens arbetsyta** och har egen verkställd filpolicy (§5.2). Den kan inte ändra försäkringsdata, gällande dokument eller aktiva instruktioner. Dess writes journalförs även vid manuell användning.
 
-Innan gemensamma tjänster för dokumentinförande, ekonomi eller externa kanaler byggs behövs ett explicit utökat kontrakt för **styrande underlag**: produktregel eller godkänd intern policy med id, version, giltighet och ändamål. Produktoperationernas befintliga golv ska bestå. Övriga områden får motsvarande nekande standard och godkänd styrgrund; inga breda undantag för ”intern skrivning”. Detta beslutas och implementeras i tjänstelagerprojektet, inte i harnessutredningen. Fram till dess skickar människan manuellt via kontrollerad kanal och dokumenterar kvittot; harness saknar utskicksverktyg.
+Varje gateway utanför försäkringssystemet deklarerar ett eget litet kontrakt: in-/utdata, sidoeffektsklass, dataklass, tillåtna resurser och destinationer, ansvarigt team, eventuell versionsbunden policy och mänskligt godkännandesteg. Externa handlingar kräver alltid människa enligt §3.5, även om en intern policy medger handlingen. Interna utkast behöver den godkända fil-/körpolicyn; de behöver ingen påhittad produktregel. Ingen utökning med ett generellt policyregelverk krävs i `src/services/`.
+
+Harness använder samma kontrollordning och journalformat men skickar handlingen till rätt adapter. Respektive adapter måste även neka otillåten verkställighet vid direkt användning. Föreslagna externa förslag och deras godkännandereferenser sparas varaktigt av gatewayen eller flödesmotorn enligt §10; försäkringens `approval_requests` används endast för försäkringsoperationer. Operatörens UI kan samla väntande beslut utan att flytta deras ägarskap. Fram till dess att respektive gateway är byggd förbereder agenten underlag och människan utför handlingen manuellt med dokumenterat kvitto.
 
 ## 5. Guardrails utöver verktygslistan
 
@@ -345,7 +355,7 @@ En roll med SELECT på en hel individtabell säkrar inte kundscope. Betrodd resu
 
 Tjänstelagret behöver skriva godkännande- och händelserader även vid vissa läsningar. En helt skrivskyddad anslutning räcker alltså inte för hela `ServiceLayer`. Separera affärsläsrättigheter från snäva rättigheter att lägga till förslag/auditrader; hindra uppdatering/radering av äldre logg och direkt affärs-DML från agentprocessen. Förslag till writes provkörs och rullas tillbaka med betrodd tjänsteidentitet, utan att agenten får anslutningen. Olika dataprofilers tjänstelager ska använda **samma varaktiga godkännandekö** och operatörens beslutsväg, inte isolerade minnesköer.
 
-`bestand` får inte implementeras som ”hämta alla individer och be modellen summera”. Aggregatet beräknas i betrodd kod. Föreslaget startskydd är att dölja celler med färre än **10** individer, grova segment och förbud mot upprepade överlappande urval som kan avslöja en person genom differenser. Talet 10 är ett designval att besluta och testa, ingen garanti för anonymitet. Tills en kontrollerad aggregattjänst finns saknar dessa team beståndsverktyg.
+`bestand` får inte implementeras som ”hämta alla individer och be modellen summera”. Aggregatet beräknas i betrodd kod. Startskyddet är att dölja celler med färre än **10** individer, grova segment och förbud mot upprepade överlappande urval som kan avslöja en person genom differenser. Talet 10 är en vald försiktig startgräns, ingen garanti för anonymitet. Tills en kontrollerad aggregattjänst finns saknar dessa team beståndsverktyg.
 
 Persondata kan komma även i uppdrag, filer och delegerade svar. Kontexten bär därför en dataklass som kan **skärpas men inte sänkas** utan en granskad transformation. Personanknutna födelsedatum, kund-id och löneuppgifter förblir skyddade även om `Operation.pii` är falsk. I första försäkringsprofilen behöver modellen ibland ett fiktivt personnummer, eftersom dagens operationsschema kräver det. Föreslaget senare kontrakt med ogenomskinliga kundreferenser minskar exponeringen; det är inte befintligt stöd.
 
@@ -362,6 +372,8 @@ Gatewayen ska:
 - Begränsa filstorlek, antal filer, lästa utdrag och total kontext. Ingen överskrivning av befintliga versioner, exekverbart innehåll eller fria shellverktyg.
 - Spara id, hash, författande run-id och klassificering; publicera atomiskt. Misslyckad validering får inte skapa ett läsbart ”godkänt” dokument.
 
+Valda startgränser: högst **100 KiB per Markdown-utkast, 10 utkast och totalt 512 KiB per körning**. Ett dokumentutdrag till modellen får vara högst 8 KiB. Större underlag delas i tydligt avgränsade utdrag/paginerade svar inom körprofilens totala kontexttak; en ofullständig läsning måste markeras och får inte presenteras som hela dokumentet. De här gränserna gäller dokumentgatewayen, inte försäkringstjänstelagrets affärskontrakt.
+
 Den allmänna dokumentpodden är utan PII. Den får därför inte skriva personuppgifter eller personanknutna kundreferenser från handläggningen. Kundbrev och känsliga ärendeutkast måste lagras i en separat skyddad kund-/kommunikationsyta med PII-policy. Ett annat team får bara ett handtag om dess profil tillåter både dokumentet och dess dataklass.
 
 ### 5.3 Utdata, eskalering och externa handlingar
@@ -372,7 +384,7 @@ Föreslaget resultatschema innehåller `status`, `summary`, `evidence_refs`, `as
 
 Juridisk osäkerhet, motstridiga giltigheter, negativ rättighetsändring och otillräckligt underlag ska kunna ge `needs_compliance` eller `needs_human`, inte ett gissat sakbeslut. Alla agenter, även specialister, får en smal **eskaleringskanal till compliance** enligt B-011. Den överför bara behöriga referenser och en kort fråga. Om compliance saknas, budgeten är slut eller djupgränsen nås registreras eskaleringen och lämnas till operatören. ”Alltid tillåten” är en rätt att eskalera, inte obegränsade modellanrop eller automatisk delning av PII.
 
-En extern handling godkänns för exakt mottagare, innehåll/version, kanal, bilagor och eventuell summa. Ändring efter beslut kräver nytt godkännande. Inget nätverksverktyg får kringgå kanalgatewayen. Kommunikationsagenten äger kundbrev och utgående kanalhantering; domänteam äger sakkontent och transaktionsmandat (§9.4). Modellens sluttext till operatören är intern. Kundportal/chattbot får inte automatiskt skicka samma svar till kund: deras externa svarsmodell behöver ett separat beslut förenligt med §3.5.
+En extern handling godkänns för exakt mottagare, innehåll/version, kanal, bilagor och eventuell summa. Ändring efter beslut kräver nytt godkännande. Inget nätverksverktyg får kringgå kanalgatewayen. Kommunikationsagenten äger kundbrev och allmänna meddelandekanaler; domänteam äger sina rapport-/transaktions-/releasevägar (§9.4). Modellens sluttext till operatören är intern. Kundportal/chattbot får inte automatiskt skicka samma svar till kund: deras externa svarsmodell behöver ett separat beslut förenligt med §3.5.
 
 Nuvarande databastransaktion kan inte göra mail, mäklaranrop eller driftsättning atomiskt med en loggrad. Före sådana operationer krävs beständig utsändningspost (**outbox**), idempotensnyckel, kvitto och status för ”utfall okänt”. Ett timeout-anrop skickas inte om utan avstämning. Första versionen förbereder utkast och överlämnar till människan.
 
@@ -403,7 +415,22 @@ En grupp av verktyg är **inte en affärstransaktion**. Ett tidigare DONE-result
 
 Ett **steg** är ett anrop till `complete`; varje verktygsanrop räknas dessutom separat. Klassificering, slutlig strukturering och eventuella granskarmodeller räknas också. Tak är minimum av globala, team-, agent-, uppdrags- och rotbudgetgränser. Modellen får inte höja dem. Vid uppnått tak görs inget ytterligare ”bara sammanfatta”-anrop.
 
-Exemplets 12 steg och 0,25 USD är startvärden för utvärdering, inte fastställda driftsbudgetar. En lång godkännandeväntan använder ingen modell och ingen aktiv worker; tidsgränsen gäller aktivt arbete. Återupptagning nollställer inte förbrukningen.
+Operatören har överlåtit val av startgränser. Följande värden väljs för första sandbox-implementationen; de ändras genom granskad konfiguration efter mätning. De öppnar inga nya poddar eller externa handlingar.
+
+| Körprofil | Modellsteg | Verktygsanrop | Kostnadsbudget, USD | Utdata per modellanrop, tokens | Total modellkontext, UTF-8-byte | Aktiv tid, sekunder |
+|---|---:|---:|---:|---:|---:|---:|
+| Handläggare (`forsakring`) | 12 | 18 | 0,50 | 1 500 | 40 000 | 180 |
+| Kommunikation | 8 | 12 | 0,50 | 2 000 | 40 000 | 180 |
+| Kapital | 12 | 18 | 1,00 | 2 000 | 60 000 | 300 |
+| Aktuarie och compliance | 20 | 30 | 2,00 | 3 000 | 120 000 | 600 |
+| Ekonomi och inköp | 12 | 18 | 0,75 | 2 000 | 60 000 | 300 |
+| Utveckling | 20 | 30 | 2,00 | 3 000 | 120 000 | 600 |
+
+Globala tak för en enskild agent är 20 steg, 30 verktygsanrop, 2 USD, 4 000 utdatatokens, 120 000 kontextbyte och 600 sekunders aktiv tid. En specialist ärver högst teamets profil; uppdrag får bara sänka gränserna. En sammanhängande delegerad rotkörning får totalt högst **5 USD, 60 modellsteg, 90 verktygsanrop och 900 sekunders aktiv tid**, högst 3 barn och djup 2 (§10.2). Barn och fortsättningar använder samma budgetbok. Manuellt godkänd budgethöjning kräver ett nytt, journalfört uppdragsmandat; modellen kan inte höja taket.
+
+En lång godkännandeväntan använder ingen modell och ingen aktiv worker; tidsgränsen gäller aktivt arbete. Återupptagning nollställer inte förbrukningen. För första handläggaren är arbetsenheten **en tilldelad försäkrad och ett löneunderlag per körning**, med högst 24 månaders relevant historik. Masshantering kräver en separat granskad profil.
+
+Vid aktiv tidsgräns tar motorn inte emot nya handlingar från ett försenat modellsvar. Dagens synkrona `complete()` kan vara upptaget av SDK-omförsök; deadline kräver avgränsad worker/anropsavbokning i implementationen, inte bara en klockkontroll mellan varven. Ett avbrutet leverantörsanrop kan ändå debiteras, så dess kostnadsreservation behålls tills utfallet stämts av. Ingen verktygsskrivning får starta från ett svar efter deadline.
 
 Att summera `response.cost_usd` efter anrop hindrar fortsatt förbrukning men kan redan ha överskridit budgeten. Före anrop reserveras därför en konservativ uppskattning för indata, högsta utdata, cachekostnad och hela tillåtna reserv-/omförsökskedjan. Pristabellen och kontextstorleken versionsbinds. Saknad kostnad eller osäker indatauppskattning stoppar eller använder full konservativ reserv, aldrig noll.
 
@@ -439,7 +466,7 @@ Testunderlaget är en aktiv försäkrad hos nuvarande arbetsgivare, med ITP1-til
 
 | Steg | Vad sker | Bevis och status |
 |---|---|---|
-| 0 | Betrodd beställare väljer `case_handler`, tilldelat kundscope och max 0,25 USD. Harness skapar `run-demo-001` | Versionsbild, scope-referens och sju effektiva verktyg enligt §3.4; löneoperationen är APPROVAL |
+| 0 | Betrodd beställare väljer `case_handler`, tilldelat kundscope och max 0,50 USD. Harness skapar `run-demo-001` | Versionsbild, scope-referens och sju effektiva verktyg enligt §3.4; löneoperationen är APPROVAL |
 | 1 | `ai.bind(team="forsakring", agent="case_handler", run_id="run-demo-001").complete(…, model="standard", step="1")` föreslår `get_insured_overview` | Dispatcher kontrollerar fixture-personnumret mot ärendet, skapar `Actor.agent`, läser via tjänsten. PII-läsningen loggas; modellen får bara nödvändiga anställnings-/försäkringsfält |
 | 2 | Modellen begär `get_salary_reports` för oktober | Samma scope; inget befintligt underlag. Saknat löneunderlag betyder inte noll. Resultatet append:as som verktygssvar |
 | 3 | Modellen begär `get_premium_history` för den tilldelade försäkringen, oktober | Inga premier. Därmed undviks det byggda blocket mot ny rapport för en redan premierad månad |
@@ -484,14 +511,16 @@ Full PII-indata och verktygsresultat sparas som referenser till skyddat underlag
 
 `AI_LOG_CONTENT` ska vara av i verksamhetsprofiler även om en miljövariabel försöker aktivera den. Dagens AI-lager maskerar inte data. Harness måste därför kontrollera konfigurationen vid start, sanera fel innan publicering och förhindra att en PII-profil kör med rå innehållsloggning.
 
-**Befintlig begränsning:** `ServiceLayer._record` sparar PII-indata och skrivresultat; `approval_requests.input` innehåller utförbara rådata. Harnessjournalens maskering tar inte bort detta. Åtkomst, retention, backup och eventuell fältmaskering för dessa tabeller måste beslutas i tjänstelagerprojektet. Audit ska vara append-only för applikationsroller, men kontrollerad gallring enligt beslutad lagringspolicy måste kunna ske. Föreslaget startvärde är 30 dagar för skyddad konversationshistorik i sandbox; lagringstid för affärsspår beslutas separat.
+**Befintlig begränsning:** `ServiceLayer._record` sparar PII-indata och skrivresultat; `approval_requests.input` innehåller utförbara rådata. Harnessjournalens maskering tar inte bort detta. Åtkomst, retention, backup och eventuell fältmaskering för dessa försäkringstabeller måste hanteras i tjänstelagerprojektet. Audit ska vara append-only för applikationsroller, men kontrollerad gallring enligt beslutad lagringspolicy måste kunna ske.
+
+Vald startgräns för harnessens råa konversationshistorik och återstartspunkter är **30 dagar efter att uppdraget avslutats**. Allmän körjournal innehåller inga råa personuppgifter; skyddad historik är tillgänglig endast för operatören och motorns betrodda lagring. Väntande uppdrag får inte hålla rå konversation obegränsat: efter 30 dagars väntan gallras råhistoriken och fortsatt arbete behöver nytt kontextbygge och förnyad granskning. Godkännandeärende och affärsspår gallras inte av harness. Detta är vald sandboxpolicy för harnessdata; försäkringssystemets journaler, kö och backuper behåller sin egen lagringspolicy tills den fastställts i det projektet.
 
 ### 8.2 Exempelrader från körningen
 
 Detta är representativa, giltiga JSONL-rader; en verklig journal innehåller samtliga modell-/verktygssteg. Hashsträngarna är illustrativa. Uppskattad kostnad i exemplet är påhittad testtelemetri, inte en offert eller uppmätt modellkostnad.
 
 ```jsonl
-{"schema_version":1,"event_id":"evt-01","seq":1,"timestamp":"2026-11-02T09:00:00Z","run_id":"run-demo-001","root_run_id":"run-demo-001","parent_run_id":null,"team":"forsakring","agent":"case_handler","step":0,"type":"run_started","goal":"Kontrollera och förbered oktoberunderlag","scope_ref":"scope-demo-001","versions":{"git":"0a8227c","ecosystem_hash":"example-policy-hash","rule_package":"PR-ITP1 v1.0","valid_from":"2026-11-01"},"limits":{"max_steps":12,"max_cost_usd":0.25}}
+{"schema_version":1,"event_id":"evt-01","seq":1,"timestamp":"2026-11-02T09:00:00Z","run_id":"run-demo-001","root_run_id":"run-demo-001","parent_run_id":null,"team":"forsakring","agent":"case_handler","step":0,"type":"run_started","goal":"Kontrollera och förbered oktoberunderlag","scope_ref":"scope-demo-001","versions":{"git":"0a8227c","ecosystem_hash":"example-policy-hash","rule_package":"PR-ITP1 v1.0","valid_from":"2026-11-01"},"limits":{"max_steps":12,"max_cost_usd":0.5}}
 {"schema_version":1,"event_id":"evt-20","seq":20,"timestamp":"2026-11-02T09:00:30Z","run_id":"run-demo-001","root_run_id":"run-demo-001","team":"forsakring","agent":"case_handler","step":5,"type":"tool_intent","tool_call_id":"call-05","operation":"register_salary_report","input_ref":"protected-demo-input-05","input_hash":"example-input-hash","decision":{"effective":"APPROVAL","policy_ref":"example-policy-hash"},"reason":"Verifierat arbetsgivarunderlag; inga tidigare oktoberposter","evidence_refs":["read-demo-01","read-demo-02","read-demo-03"]}
 {"schema_version":1,"event_id":"evt-21","seq":21,"timestamp":"2026-11-02T09:00:31Z","run_id":"run-demo-001","root_run_id":"run-demo-001","team":"forsakring","agent":"case_handler","step":5,"type":"approval_wait","tool_call_id":"call-05","approval_id":"approval-demo-001","status":"waiting_approval","business_change_executed":false}
 {"schema_version":1,"event_id":"evt-22","seq":22,"timestamp":"2026-11-02T09:00:31Z","run_id":"run-demo-001","root_run_id":"run-demo-001","team":"forsakring","agent":"case_handler","step":5,"type":"run_ended","status":"waiting_approval","cost_estimated_usd":0.012,"cost_unknown_attempts":0,"pending_approvals":["approval-demo-001"]}
@@ -510,7 +539,7 @@ Poddarna här är en målbild att aktivera stegvis. Även en planerad podd kräv
 
 **Mandat:** utreda tilldelade ITP1-ärenden, förbereda stödjande administrativa åtgärder och sakunderlag till svar. Handläggaragenten beslutar inte om godtyckliga rättighetsändringar och skickar inte kundmail.
 
-**Första uppgifter:** förklara försäkringsöversikt och premiehistorik; kontrollera nytt/rättat löneunderlag; förbereda tillåten fribrevsåtgärd när egen profil öppnats för det; identifiera fall som kräver handläggare. Löneexemplet i §7 är första sammanhängande uppgift. En första agent ska kunna avsluta korrekt även när inget skrivverktyg är öppet.
+**Vald första arbetsuppgift i designen:** kontrollera ett nytt löneunderlag för en tilldelad försäkrad, läsa relevant försäkrings-/premiehistorik, visa förhandsberäknad premie och förbereda registrering för människans godkännande, enligt §7. Det är detta ”första handläggaruppdrag” betyder: ett avgränsat användningsfall att bygga och verifiera agenten för, inte ett nytt mandat för hela avdelningen. Fribrevförslag och rättade underlag kommer som efterföljande användningsfall när respektive profil och tester öppnats. En första agent ska kunna avsluta korrekt även när inget skrivverktyg är öppet.
 
 **Poddar:** `kunddata`, `berakning`, `regelverk`; senare kontrollerad ärendehantering, skyddade ärendeutkast och delegering. Allmän `dokument` endast för material utan PII. `bestand` behöver inte monteras på första handläggaren.
 
@@ -546,7 +575,7 @@ Poddarna här är en målbild att aktivera stegvis. Även en planerad podd kräv
 
 **Saknas:** dokument-/tolkningsdiff med källkedja, versionsbundna granskningsgrindar, rätt styrdokument, period-/mottagarspecifika rapportscheman och underlag, tillämplighetskontroll samt kontrollerad extern inlämning. Agentbeskrivningens exempel på QRT/trafikljus är planerade exempel, inte fastställt rapporteringskrav för detta ITP1-sandboxbolag. Tillämpning behöver utredas inom rapportprojektet.
 
-**Guardrails och godkännanden:** varje slutsats har källa, avsnitt, kontrollerad version och osäkerhet. Källändring, tolkning, produktregelbeslut och teknisk release är olika saker. Tolkning och produktregelpaket kräver mänsklig grind före nästa kritiska steg. En agent får inte skriva ett nytt införandebeslut/B-nummer. Rapporteringsagenten sammanställer; kommunikations-/inlämningsgateway och operatör godkänner leveransen (§9.4).
+**Guardrails och godkännanden:** varje slutsats har källa, avsnitt, kontrollerad version och osäkerhet. Källändring, tolkning, produktregelbeslut och teknisk release är olika saker. Tolkning och produktregelpaket kräver mänsklig grind före nästa kritiska steg. En agent får inte skriva ett nytt införandebeslut/B-nummer. Rapporteringsagenten äger sammanställning och myndighetsinlämning genom en smal rapporteringsgateway; operatören godkänner exakt rapport, mottagare och period före verkställighet (§9.4).
 
 ### 9.4 `kommunikation` – kundbrev och utgående leveranser
 
@@ -554,15 +583,15 @@ Poddarna här är en målbild att aktivera stegvis. Även en planerad podd kräv
 
 **Första uppgifter:** skriv ett kundbrevutkast från verifierade sakuppgifter; kontrollera rätt mall, mottagare och sakbeslut; visa förhandsvisning för operatören. Senare en godkänd sändning med kvitto. I flaggskeppet förklarar teamet vad en antagen regeländring innebär och från när.
 
-**Poddar:** `regelverk`, `kommunikation` och en smal föreslagen `mottagare`-podd. Mottagare ska inte innebära att hela `kunddata` monteras. Känsliga brev lagras i skyddad kommunikationsyta, inte allmän dokumentpodd. Specialiserad myndighetsinlämning kan vara en separat kanal i samma betrodda gateway.
+**Poddar:** `regelverk`, `kommunikation` och en smal föreslagen `mottagare`-podd. Mottagare ska inte innebära att hela `kunddata` monteras. Känsliga brev lagras i skyddad kommunikationsyta, inte allmän dokumentpodd. Rapporteringsagentens myndighetsinlämning använder sin egen rapporteringsgateway. Gemensam transportkod får återanvändas utan att teamen får varandras destinationer eller verktyg.
 
 **Befintligt som räcker:** inget utskicks-/mottagarverktyg finns på bascommitten. En text kan bli ett utkast efter harnessens outputkontroll; v1 överlämnar till operatören. Individöversikten är för bred för att bli kommunikationens kontaktuppslag.
 
-**Saknas:** mottagarhandtag, versionsbundna mallar, draft-/sändningskontrakt, styrgrund, godkännande, outbox, idempotens och leveranskvitto. §4.3:s utökning krävs före agentförberedda externa tjänstehandlingar.
+**Saknas:** mottagarhandtag, versionsbundna mallar, draft-/sändningskontrakt, granskad kanalpolicy, godkännande, outbox, idempotens och leveranskvitto. Kommunikationsgatewayen i §4.3 byggs separat från försäkringstjänstelagret.
 
 **Guardrails och godkännanden:** rätt ärende och behörig mottagare; inget löne-/personinnehåll om det inte behövs; inga obekräftade löften eller formuleringar som antyder ett utfört sakbeslut. Godkänn exakt brev/rapport, adress, bilaga och kanal. Mallgodkännande är inte godkännande av varje utskick.
 
-**Precisering att besluta:** ”bolagets enda väg ut” tolkas som ägande av meddelande-/leveranskanaler. Kapitalordrar och driftsättning kräver egna domängateways och mänskliga beslut; de routas inte genom ett generellt mailverktyg. Rapporteringsagenten äger rapportprocessen, kommunikation/gateway äger transporten. Detta löser den överlappning som finns mellan B-026:s kanalbeskrivning och rapporteringsagentens ”lämnar in”. Om operatören avser ett separat rapporteringssändningsmandat måste det skrivas uttryckligt med samma godkännandegolv.
+**Rekommenderad ansvarsfördelning efter operatörens avstämning:** kommunikation äger kundbrev, mail och allmän intressentkommunikation. Rapporteringsagenten äger myndighetsrapportens innehåll, validering och inlämningsprocess. Kapitalteamet äger sina order och utveckling sina releaser. Varje område har en smal gateway och mänskligt godkännande av extern handling; ingen får en allmän sänd-/verkställighetsrätt. ”Bolagets enda väg ut” i B-026 föreslås därför preciseras till **enda väg för kund- och allmän intressentkommunikation**. En sådan precisering bevarar domänansvaret och undviker en extra agentöverlämning för myndighetsrapporter, kapitalorder och releaser. Den föreslås till de gemensamma dokumenten; ingen beslutslogg ändras här.
 
 ### 9.5 `kapital` – placeringsuppföljning och paper trading
 
@@ -640,7 +669,7 @@ Resultatet returnerar samma task-id, barnets run-id, `completed`/`waiting_approv
 
 Barnet använder **sin egen identitet, teamnyckel och profil**; det ärver inte förälderns poddar. Dess resursmandat är det uppdraget får överföra, begränsat av mottagarens profil. Kontexten är en sammanfattning och kontrollerade referenser, inte hela historiken. Barnet får inte läsa en referens bara för att föräldern kunde det, och föräldern får inte läsa barnets känsliga resultat bara för att den beställde uppgiften. Båda riktningarna prövas. Ett team får beställa en tydligt tillåten förmåga hos ett annat team, men aldrig använda delegering för att kringgå ett globalt/uppdragsspecifikt förbud, PII-gräns eller mänsklig grind.
 
-Startförslag: djup högst 2, högst 3 barn totalt per rot, ingen återgång till ett redan aktivt team i samma kedja och sekventiell körning. Varje barn får en reservation från **samma rotbudgetbok**. Budget delas inte genom att kopiera ett maxvärde; reserverad plus förbrukad summa för alla barn/förälder får inte överstiga roten. Ej använd reservation frigörs, okänd förbrukning hålls kvar. Föreslagen rotbegränsning av total modell-/verktygsförbrukning följer samma princip. Parallella barn kräver atomiska reservationer och är inte första leveransen.
+Valda startgränser: djup högst 2, högst 3 barn totalt per rot, ingen återgång till ett redan aktivt team i samma kedja och sekventiell körning. Varje barn får en reservation från **samma rotbudgetbok**, med de samlade taken i §6.3. Budget delas inte genom att kopiera ett maxvärde; reserverad plus förbrukad summa för alla barn/förälder får inte överstiga roten. Ej använd reservation frigörs, okänd förbrukning hålls kvar. Parallella barn kräver atomiska reservationer och är inte första leveransen.
 
 Ett väntande barn returnerar run-/approval-referenser och propagagerar väntan till föräldern/flödet. Inga öppna modellkonversationer står och pollar medan människan granskar. Dubbel beställning med samma task-id ska hitta samma barn eller stoppas för avstämning, inte skapa ett nytt.
 
@@ -670,7 +699,7 @@ Detta behåller agentekosystemets fem steg. Aktuariell/metodmässig förhandsval
 
 Föreslagna stegresultat är `InterpretationProposal`, `ProductRuleProposal`, `ReleaseEvidence`, `PortfolioImpactResult` och `CommunicationDraft`. De bär versioner och referenser, inte gissade nya operationer. Exempelvis behöver insikten låst basbestånd, definierat scenario, beräkningsmotor/-version och saknade mått. Framtida regelversion per affärshändelse och release-/aktiveringsmarkör saknas på 0a8227c; det är tjänste-/domänberoenden till flaggskeppet.
 
-I Fas 3c behövs persisterade flöden, steg och **grindbeslut** (föreslaget `flows`, `flow_steps`, `flow_gate_decisions`), med referenser till befintliga `approval_requests`. Ett UI kan visa alla väntande beslut på en sida. Det skapar inte en ny parallell kö för löne-/fribrevförslag. Tabeller dokumenteras och databaskörningar samordnas innan de byggs.
+I Fas 3c behövs persisterade flöden, steg och **grindbeslut** (föreslaget `flows`, `flow_steps`, `flow_gate_decisions`). För försäkringsförslag länkas befintliga `approval_requests`; övriga gateways har egna versionsbundna handlingsförslag och kvitton, med godkännandet knutet till deras handling. UI och körjournal använder ett gemensamt referensformat med område, förslags-id och status. Det ger en samlad beslutsvy utan en extra kö för löne-/fribrevförslag och utan att myndighetsrapporter eller releaser registreras i försäkringstjänstelagret. Tabeller dokumenteras och databaskörningar samordnas innan de byggs.
 
 ### 10.4 Återstart utan dubbel handling
 
@@ -693,7 +722,8 @@ Testerna ska inte bara kontrollera att ett verktyg saknas i listan: fejkleverant
 | Specialist försöker utöka till teamets alla poddar | Profil avvisas eller verktyget nekas; ingen rättighetsunion |
 | Ny registeroperation utan poddmappning | Oupptaget verktyg är stängt; motorn behöver ingen kodändring för granskad ny mappning |
 | Saknad registerrad, HUMAN_ONLY, saknad/ersatt/kommande regel | Ingen verktygsexponering eller exekvering; prövas även direkt med agentaktör mot tjänstelagret |
-| External satt AGENT, eller write utan godkänd styrgrund | Golvet vinner; ingen sändning, ingen falsk rule-id eller systemidentitet som reserv |
+| Försäkrings-external satt AGENT, eller försäkrings-write utan godkänd produktregel | Tjänstelagrets golv vinner; ingen falsk rule-id eller systemidentitet som reserv |
+| Dokument-, kanal- eller domänhandling försöker kringgå sin gateway | Harness och gateway nekar, extern verkställighet saknar giltigt mänskligt godkännande; handlingen flyttas inte till försäkringstjänstelagret |
 | Datum 2026-10-31 respektive 2026-11-01, cachad regelstatus och indragen policy | Färsk prövning; redan visat verktyg ger inte gammal rättighet |
 | Modellen skickar actor=human/system, team, run-id, session eller godkännare | Förbjudna extrafält nekas; betrodd identitet kan inte överstyras |
 | Annan kund/policy/mottagare, period utanför uppdrag | Nej före dataläsning; inget otillåtet resultat lämnas till modellen |
@@ -747,7 +777,7 @@ Dokumentation nedan **läst 2026-10-12**. Jämförelsen gäller den dokumenterad
 |---|---|---|---|
 | **Egen tunn harness** | Precis loop, profil, dispatcher, journal och väntestatus runt de två befintliga lagren | Använder `ai.bind/complete`, kanonisk historik, FakeProvider och befintlig tjänstekö direkt | Rekommenderas för Fas 3b. Vi måste själva underhålla stopp, fel och journal; håll scope smalt |
 | **Claude Agent SDK** | Claude Codes loop, verktyg, sessions-/kontexthantering, hooks och MCP; Python/TypeScript | Kör Claude Code-binära runtime och dess modellanrop. Den dokumenterade vägen använder inte vår `AIClient`; skulle bryta B-025:s enda modellväg om den införs som gemensam motor | Passar bättre för isolerat utvecklingsarbete än alla bolagsteam. Separat lösning kräver uttryckligt arkitekturbeslut. [Officiell översikt](https://code.claude.com/docs/en/agent-sdk/overview) |
-| **OpenAI Agents SDK** | Runner-loop, agentverktyg, handoffs, sessioner, guardrails och pauser för mänskliga beslut | Stöder provider-/adapterytor för andra modeller. En adapter mot vår `AIClient` måste ändå bevara state, teamnycklar, reservkedja, schema och kostnadslogg; tjänstekön måste fortsatt äga affärsbeslut | Starkaste SDK-alternativet för gemensam agentmotor, men mer integration än att ansluta våra tre befintliga API-krokar. [SDK-översikt](https://developers.openai.com/api/docs/guides/agents/sdk), [modeller/providers](https://developers.openai.com/api/docs/guides/agents/models) |
+| **OpenAI Agents SDK** | Runner-loop, agentverktyg, handoffs, sessioner, guardrails och pauser för mänskliga beslut | Stöder provider-/adapterytor för andra modeller. En adapter mot vår `AIClient` måste ändå bevara state, teamnycklar, reservkedja, schema och kostnadslogg; försäkringens tjänstekö måste fortsatt äga försäkringsgodkännanden | Starkaste SDK-alternativet för gemensam agentmotor, men mer integration än att ansluta våra tre befintliga API-krokar. [SDK-översikt](https://developers.openai.com/api/docs/guides/agents/sdk), [modeller/providers](https://developers.openai.com/api/docs/guides/agents/models) |
 | **LangGraph** | Beständig tillståndsbaserad orkestrering, mix av kod-/agentsteg och mänsklig väntan; kräver inte LangChain | Kan låta noden anropa vår AI-klient och dispatcher. Ersätter då främst delar av Fas 3c, inte mandat eller tjänstelager | Relevant vid mer omfattande flödes-/återstartsbehov. Utvärdera mot det faktiska flaggskeppsflödet innan egen komplex workflowmotor växer. [Officiell översikt](https://docs.langchain.com/oss/python/langgraph/overview) |
 
 Två detaljer påverkar säkerhetsbedömningen. I Claude Agent SDK är `allowed_tools` en regel för automatiskt godkännande, inte en fullständig lista över vilka verktyg som finns. Tidigare allow-/permissionbeslut kan göra att `canUseTool` inte anropas. Därför räcker inte en callback ensam som bolagets säkerhetsgräns. Detta är en slutsats för vår användning av den dokumenterade prioritetsordningen. [Anthropics permissions-dokumentation](https://code.claude.com/docs/en/agent-sdk/permissions)
@@ -780,7 +810,9 @@ Målbilden innebär inte full autonomi. Operatören fattar införande- och verks
 
 **Anta en gemensam tunn harness ovanpå `src/ai/` och tjänstelagret, med samlad `ecosystem.yaml` som körbar team-/agent-/poddpolicy.** MD-filerna är instruktioner. Effektiva förmågor är snittet av tillåtna poddar, mandat och resursgränser, med alla nekanden och tjänstelagrets golv som överordnade begränsningar. Tjänstelagret äger försäkringsgodkännanden; harness äger körning, väntan och journal. Interna isolerade dokumentutkast tillåts genom en snäv gateway; införande av gällande dokument och externa handlingar kräver människa. Data-/filskydd krävs före aktivering av berörd podd. Fas 3b inför stabila kontrakt för Fas 3c men ingen generell workflowmotor. Automatisk återspelning av skrivningar tillåts först efter verifierad idempotens och avstämning. Byggordningen enligt B-028 består.
 
-Beslutet preciserar B-026 och genomför B-025/B-028; det ändrar inte produktpaket, tjänsteregister eller produktregler. Utökning med godkänd intern styrgrund för nya verksamhetsområden, budgetar, retention och rapport-/kanalansvar behöver egna uttryckliga ställningstaganden innan de öppnas.
+Operatören godkände designinriktningen i chatten 2026-10-12 och preciserade avgränsningen: **försäkringstjänstelagret förblir strikt kopplat till försäkringssystemet**. Ingen generell utökning med dokument-, ekonomi-, kommunikations- eller utvecklingsoperationer ska göras där. De områdena får egna avgränsade gateways; harness förenar deras kontroller och spårbarhet. Godkännandeärenden ägs av rätt område och kan samlas i en gemensam UI-vy.
+
+Operatören överlät val av startgränser, vilka nu är angivna i §5.1–5.2, §6.3, §8.1 och §10.2. Första planerade handläggaruppgiften är nytt löneunderlag enligt §7 och §9.1. Rekommenderad kanal-/domänfördelning i §9.4 låter rapporteringsagenten äga myndighetsinlämning och kommunikation äga kund-/allmänna meddelanden. Detta preciserar B-026 och genomför B-025/B-028; produktpaket, tjänsteregister, produktregler och beslutslogg ändras inte genom dokumentuppdateringen.
 
 ### 14.2 Föreslagna textändringar i andra dokument
 
@@ -788,19 +820,19 @@ Inga av dessa ändringar är genomförda i denna leverans; delade dokument och p
 
 | Dokument | Föreslagen ändring |
 |---|---|
-| `agentekosystem.md` §4.1 och §13 | Ange samlad `ecosystem.yaml` som vald körprofil efter operatörens beslut; hänvisa till denna design för nekanden, scopes och versionering. MD-instruktioner ger inga befogenheter |
+| `agentekosystem.md` §4.1 och §13 | Ange samlad `ecosystem.yaml` som vald körprofil enligt operatörens godkända inriktning; hänvisa till denna design för nekanden, scopes och versionering. MD-instruktioner ger inga befogenheter |
 | `agentekosystem.md` §5.2–5.4 | Skilj tjänsteoperation, ren beräkning och isolerat dokumentutkast. Visa full policykedja, smal mottagarpodd och att klass/PII aldrig kan nedklassas av ett omslag |
-| `agentekosystem.md` §4.2–4.3 och §6 | Lägg till explicit väntestatus, ingen automatisk write-replay, RunStore-kontrakt, gemensam rotbudget och versionsbundna flödesgrindar. Affärskön förblir tjänstelagrets |
-| `agentekosystem.md` §8 och §12 | Flytta dataroller och resurskontroll till före första PII-podden. Precisera att olika profiler delar samma kö; klarlägg kommunikationens kanalägande kontra domänverkställighet |
+| `agentekosystem.md` §4.2–4.3 och §6 | Lägg till explicit väntestatus, ingen automatisk write-replay, RunStore-kontrakt, gemensam rotbudget och versionsbundna flödesgrindar. Försäkringens godkännandekö förblir tjänstelagrets; andra gateways äger sina handlingar |
+| `agentekosystem.md` §8 och §12 | Flytta dataroller och resurskontroll till före första PII-podden. Försäkringsprofiler delar försäkringens kö. Precisera kommunikationens ”enda väg ut” till kund-/allmänna meddelanden; rapportering, kapital och utveckling har egna avgränsade verkställighetsvägar |
 | `agentkarta.md` §1, §3 och §5 | Länka `harness.md`, skriv initialt ”design utredd, implementation återstår”; behåll alla agenter som ej byggda. Beskriv teamingång/specialistgräns och femstegsflaggskeppet |
-| `agentkarta.md` §2 | Begränsa första handläggarmandatet till ITP1-scope utan efterlevandeskydd; skilj rapportinnehåll från extern transport. Planerade rapporttyper är inte beslutade skyldigheter |
-| `MASTER_CONTEXT.md` §4b och §7 | Lägg till `02_system/harness.md` som designförslag för gemensam motor, policy och journal, med hänvisning till B-025/B-026/B-028. Efter beslut: ange att podd-/data-/filgränser verkställs och att ingen runtime ännu är byggd |
+| `agentkarta.md` §2 | Begränsa första handläggarmandatet till nytt löneunderlag inom ITP1-scope utan efterlevandeskydd. Rapportering äger myndighetsinlämning; kommunikation äger kund-/allmänna meddelanden. Planerade rapporttyper är inte beslutade skyldigheter |
+| `MASTER_CONTEXT.md` §3.8, §4b och §7 | Förtydliga att det gemensamma tjänstelagret gäller försäkringssystemet. Lägg till `02_system/harness.md` för den godkända designinriktningen om gemensam motor, policy och journal; övriga verksamhetsområden har egna gateways. Runtime är ännu inte byggd och byggordningen består |
 
 Förslag för **ATT_GORA Fas 3b/3c**, med befintliga id kvar:
 
 | Punkt | Föreslagen precisering och klart-kriterium |
 |---|---|
-| 3b-1 | Schema för samlad ecosystem-policy, strikt validering, effektiva profiler/förklaringar, versionsbild, RunRequest/RunResult. Formatfrågan kan markeras avgjord först efter beslut; implementation är fortsatt öppen |
+| 3b-1 | Schema för samlad ecosystem-policy, strikt validering, effektiva profiler/förklaringar, versionsbild, RunRequest/RunResult. Formatfrågan är avgjord i chatten; implementation är fortsatt öppen. Använd startgränserna i harness.md §6.3 |
 | 3b-2 | Upptäck operationer via registry/decision, explicit poddmappning utan jokertecken; generera action-schema med operationens modell och reason, använd execute. Nya operationer öppnas först efter mappning och registerbeslut |
 | 3b-3 | Dispatcherprövning av namn, identitet, scope, klass och PII; OS-/datagränser före poddaktivering; negativa tester även när modellen hittar på ett anrop |
 | 3b-4 | Kontextbygge, append-only kanonisk historik, definierade modell-/verktygssteg, begränsad felrättning, budgetreservation och okänd kostnad; inga extra anrop efter stopp |
@@ -809,22 +841,17 @@ Förslag för **ATT_GORA Fas 3b/3c**, med befintliga id kvar:
 | 3b-7 | Premieförhandsberäkning och tillåtna tjänsteläsningar först; kunddata kräver roller/scope. Kontrollerad regelverksläsning och isolerade dokumentutkast när gateways byggts. Pod-kolumn i skillkatalogen |
 | 3b-8 | FakeProvider-flöden, negativa fall, datum-/policybyte, budget-/journalfel och godkännande/avslag. Isolerade Postgres-/filbehörighetsprov och avgränsat verkligt modellröktest |
 | 3c-1 | Strukturerad delegering via teamledare, egen barnidentitet, dubbelriktad dataprövning, globalt bevarade förbud, task-id, gemensam rotbudget, djup-/antal-/cykeltak och propagagerad väntan |
-| 3c-2 | Persisterad flödes-/stegtillståndsmaskin och versionsbundna grindbeslut; länka befintlig tjänstekö. Före automatisk recovery: invocation-/idempotenskontrakt, policyversion, kvitton och kraschprov. Dokumentera schema före samordnad databasändring |
+| 3c-2 | Persisterad flödes-/stegtillståndsmaskin och versionsbundna grindbeslut; länka försäkringens befintliga tjänstekö och övriga gateways separata handlingsreferenser. Samlad UI-vy utan generellt bolagstjänstelager. Före automatisk recovery: invocation-/idempotenskontrakt, policyversion, kvitton och kraschprov. Dokumentera schema före samordnad databasändring |
 | 3c-3 | Femstegsflaggskeppet med godkänd käll-/PR-version, testad och låst release, aktiveringsbevis, reproducerbar beståndsinsikt och godkänt utskick. Lista saknade domän-/kanaltjänster som beroenden |
 
-Flytta raden ”egen Lakebase-roll för PII-poddar” från **Senare** till beroende för 3b-3/3b-7. Lägg till ”modellutvärdering med facit för försäkring och compliance/aktuarie” och ”godkänd styrgrund för interna/externa tjänster utanför försäkringsoperationer” som separata uppgifter. Utredningen är klar när operatören har ett granskningsbart förslag; implementeringspunkterna ska inte bockas av av detta dokument.
+Flytta raden ”egen Lakebase-roll för PII-poddar” från **Senare** till beroende för 3b-3/3b-7. Lägg till ”modellutvärdering med facit för försäkring och compliance/aktuarie” och ”avgränsade gateways för dokument och senare respektive verksamhetsområde” som separata uppgifter. Första handläggarflödet är ett nytt löneunderlag; fribrevförslag kommer senare. Utredningen har levererat designunderlag och inriktningen är godkänd; implementeringspunkterna ska inte bockas av av detta dokument.
 
-### 14.3 Öppna frågor till operatören
+### 14.3 Kvarstående frågor inför senare implementation
 
-1. Antas rekommendationen om egen tunn motor, samlad YAML och snäv dokumentgateway? Det avgör vilket kontrakt Fas 3b bygger.
-2. Vilket första handläggaruppdrag ska aktiveras: läsning/utredning och löneunderlag enligt exemplet, eller även tillåtna fribrevförslag? Förslaget är löneunderlag först.
-3. Antas kanalgränsen i §9.4: kommunikation äger meddelande-/rapporttransport, domänteam äger kapitalorder och release med egna gateways? Behövs separat rapporteringssändningsmandat?
-4. Ska föreslagna budgetar, djup 2, högst 3 barn och minst 10 individer per aggregatcell användas som första testvärden? Produktions-/driftsvärden beslutas efter mätning.
-5. Vilken lagringstid och åtkomst ska gälla för PII i tjänstekö, affärslogg, backup och skyddad konversationshistorik? Förslag: ingen rå PII i allmän körjournal och 30 dagar för sandbox-konversationshistorik.
-6. Ska tjänstelagret utökas med typad godkänd intern styrgrund för dokumentinförande, ekonomi och kanaler? Fram till dess hålls motsvarande agentverktyg stängda.
-7. När ska oberoende internrevision få egen läsprofil och team? Den ingår inte bland de sju och kan inte granskas oberoende av en agent som även äger förändringarna.
+1. Vilken lagringstid och åtkomst ska gälla för försäkringssystemets PII i tjänstekö, affärslogg och backup? Harnessens råhistorik har fått gränsen 30 dagar; den gallrar inte försäkringsspår.
+2. När ska oberoende internrevision få egen läsprofil och team? Den ingår inte bland de sju och kan inte granskas oberoende av en agent som även äger förändringarna.
 
-Frågorna gäller aktivering och beslut, inte att utredningen måste invänta svar för att vara användbar.
+Motor-/formatvalet och delegeringen av startgränser är redan avstämda. Förslaget att utöka försäkringstjänstelagret till andra verksamhetsområden är borttaget enligt operatörens instruktion. De kvarstående frågorna hindrar inte nästa steg i harnessdesignen.
 
 ### 14.4 Upptäckt dokumentdrift utanför denna leverans
 
@@ -839,3 +866,5 @@ Kontrollerade kodkontrakt: `src/ai/client.py`, `types.py`, `config.py`, `tracing
 Externa primärkällor är länkade vid respektive jämförelse i §12 och lästa 2026-10-12. Alla rekommenderade nya kontrakt, gränser och byggsteg är projektets designförslag; de ska inte läsas som redan implementerade ramverksfunktioner.
 
 **Leveranskontroll 2026-10-12:** YAML-exemplet lästes med kontroll av dubbla nycklar, podd-/team-/agentsamband och gränser. Operationsmappningarna och genererade ToolSpec-scheman kontrollerades mot bascommitten; den exempelprofilen ger sex verktyg 12 oktober och sju 2 november, inklusive de två uttryckligen föreslagna dokumentverktygen. Löneindata validerades mot `SalaryReportInput`, JSON/JSONL lästes och Pythonexemplet syntaxkontrollerades. Premiemotorn bekräftade 4 708,13 kr. De tre Mermaid-diagrammen granskades som text. **35 befintliga tester passerade** i `test_services_access.py`, `test_ai_boundaries.py` och `test_ai_schema.py`, utan nätverk/databas. Pytest använde en separat temporär katalog under worktreens gitignorerade `logs/`. Detta verifierar designens underlag och exempel; den framtida harnessens negativa tester och aktiva guardrails är ännu inte byggda eller körda.
+
+**Avstämningsuppdatering 2026-10-12:** tjänstelagrets försäkringsgräns, första arbetsuppgiften, områdenas verkställighetsansvar och konkreta startgränser är införda i designen enligt operatörens återkoppling. YAML-/JSON-/JSONL-exemplen och Pythonexemplets syntax kontrollerades på nytt; kostnadsgränserna överensstämmer mellan profil, journalexempel och text. Operationsscheman och verktygsantalet sex/sju är oförändrade. Endast detta dokument ändrades.
