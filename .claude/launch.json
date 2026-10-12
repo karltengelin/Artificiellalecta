@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "handlaggare-ui",
+      "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
+      "runtimeArgs": ["scripts/web/start_ui.py", "--db", "demo", "--port", "8765"],
+      "port": 8765
+    },
+    {
+      "name": "handlaggare-ui-svc-test",
+      "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
+      "runtimeArgs": ["scripts/web/start_ui.py", "--db", "svc_test", "--port", "8766"],
+      "port": 8766
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Premier {{ policy_number }}{% endblock %}
+{% block content %}
+{% include "partials/insured_header.html" %}
+
+<section class="panel">
+  <div class="panel__head">
+    <h2>Premiehistorik {{ history.policy_number }}</h2>
+    <form class="filter" action="/forsakringar/{{ policy_number }}/premier" method="get">
+      <label>Från <input type="month" name="fran" value="{{ fran }}"></label>
+      <label>Till <input type="month" name="till" value="{{ till }}"></label>
+      <button type="submit" class="secondary">Visa</button>
+    </form>
+  </div>
+  {% if history.transactions %}
+  <table class="table">
+    <thead>
+      <tr><th>Månad</th><th>Typ</th><th>Förmån</th><th class="num">Lön</th><th class="num">Belopp</th><th>Status</th><th>Betald</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for t in history.transactions | reverse %}
+      <tr class="tx tx--{{ t.transaction_type }}{% if t.status == 'cancelled' %} is-superseded{% endif %}">
+        <td>{{ t.period_month | month }}</td>
+        <td>{{ t.transaction_type | label('transaction_type') }}{% if t.corrects_transaction_id %} <span class="muted small" title="Rättar premieraden {{ t.corrects_transaction_id }}">rättelse</span>{% endif %}</td>
+        <td>{{ t.benefit_type | label('benefit_type') }}</td>
+        <td class="num">{{ t.pensionable_salary_sek | sek(0) if t.pensionable_salary_sek is not none else "–" }}</td>
+        <td class="num">{{ t.amount_sek | sek }}</td>
+        <td><span class="txstatus txstatus--{{ t.status }}">{{ t.status | label('transaction_status') }}</span></td>
+        <td>{{ t.paid_date | iso_date }}</td>
+        <td class="actions">{% block premium_actions scoped %}{% endblock %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="4">{{ history.count }} rader</td><td class="num"><strong>{{ history.total_paid_sek | sek }}</strong></td><td colspan="3" class="muted small">summa betalt i urvalet</td></tr>
+    </tfoot>
+  </table>
+  {% else %}
+  <p class="empty">Inga premietransaktioner i urvalet.</p>
+  {% endif %}
+</section>
+{% endblock %}

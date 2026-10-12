@@ -13,7 +13,8 @@ Det finns ingen separat kodbas per delprojekt eller avdelning (B-015/B-024).
 | skills/calculation | Ren ITP1-premieberäkning, återanvänd av operationer och analyser |
 | ai | Modellroller, leverantörsadaptrar, strukturerade svar, nycklar och anropslogg |
 | analytics | Första scenarioberäkningen och adapter för offline-backup |
-| utils | Databasanslutning, backup/återställning och återanvändbar migrationskod |
+| utils | Databasanslutning, backup/återställning, återanvändbar migrationskod och demobeståndet för handläggar-UI:t |
+| web | Handläggar-UI:t (Fas 4): FastAPI-sidor som bara anropar tjänstelagret, se [handläggar-ui.md](handläggar-ui.md) |
 | agents och övriga skill-mappar | Förberedd struktur; agent-runtime och ytterligare förmågor byggs enligt fasplanen |
 
 ## Var finns körverktygen?
@@ -36,6 +37,7 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | diagnostics | [smoke_test_ai.py](../scripts/diagnostics/smoke_test_ai.py) | Prova leverantörer, strukturerade svar och verktygsloop | Riktiga API-anrop, kostnad och anropslogg |
 | analysis | [analyze_premium_impact.py](../scripts/analysis/analyze_premium_impact.py) | Jämför premieeffekt av hypotetiskt IBB | Ren beräkning på demo eller offline-backup; stdout eller rapportfil |
 | documentation | [list_operations.py](../scripts/documentation/list_operations.py) | Generera operationsförteckning med behörigheter | Skriver Markdown; `--check` jämför utan att skriva. Ingen databas eller AI |
+| web | [start_ui.py](../scripts/web/start_ui.py) | Starta handläggar-UI:t på 127.0.0.1 | `--db demo` (standard) skapar en lokal SQLite med demobestånd; `--db svc_test` ett eget schema i den isolerade testdatabasen; `--db lakebase` läser och skriver beståndet via tjänstelagret |
 
 ## Typiska arbetsflöden
 

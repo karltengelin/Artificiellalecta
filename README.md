@@ -33,5 +33,6 @@ körordning och vilka kommandon som läser eller ändrar data.
 - Python ≥ 3.11
 - Databricks Lakebase (serverless Postgres) via SQLAlchemy (B-018)
 - Modellagnostisk AI-arkitektur (OpenAI + Anthropic) via eget abstraktionslager i `src/ai/`
+- Handläggar-UI: FastAPI + Jinja2 + HTMX ovanpå tjänstelagret, bara lokalt (`python scripts/web/start_ui.py`, se `02_system/handläggar-ui.md`)
 - Markdown som primärt informationsformat
 - Git + GitHub för versionskontroll

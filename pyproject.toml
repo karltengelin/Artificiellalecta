@@ -16,12 +16,20 @@ dependencies = [
     "openai>=3.28,<4",
     "pydantic>=2.7",
     "pyyaml>=6.0",
+    # Handläggar-UI:t (src/web/, Fas 4): serverrenderade sidor med HTMX –
+    # inget Node och inget byggsteg. Bara lokalt (127.0.0.1).
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7",
     "ruff",
+    # FastAPI:s TestClient (starlette.testclient) bygger på httpx2
+    "httpx2",
 ]
 
 [build-system]
@@ -34,6 +42,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 ai = ["*.yaml"]
 services = ["*.yaml"]
+web = ["templates/*.html", "templates/partials/*.html", "static/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

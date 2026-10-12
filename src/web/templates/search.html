@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sök försäkrad{% endblock %}
+{% block content %}
+<section class="search">
+  <h1>Sök försäkrad</h1>
+  <form class="search__form" action="/sok" method="get" role="search">
+    <label for="q">Personnummer eller försäkringsnummer</label>
+    <div class="search__row">
+      <input id="q" name="q" type="search" value="{{ query or '' }}" placeholder="ÅÅÅÅMMDD-NNNN eller AL-000123"
+             autocomplete="off" autofocus required>
+      <button type="submit">Sök</button>
+    </div>
+  </form>
+  {% if message %}<div class="alert alert--invalid" role="alert"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+  {% if settings.database != "lakebase" %}
+  <p class="muted small">Demobeståndet: 19850515-1236 (aktiv), 19720303-4561 (aktiv, hög lön),
+    19900101-7897 (fribrev), 19590420-2461 (pension pågår).</p>
+  {% endif %}
+</section>
+{% endblock %}

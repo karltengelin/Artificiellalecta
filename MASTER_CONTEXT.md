@@ -131,6 +131,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | Programspråk | Python | Primärt för all logik och agenter |
 | Databas | Databricks Lakebase (serverless Postgres, Free Edition) | Postgres-kompatibel, gratis för icke-kommersiellt bruk. Åtkomst via SQLAlchemy ORM. Se B-018 (ersätter B-014/Supabase). |
 | Dokumentlager | Markdown/textfiler | Regler, processer, villkor |
+| Webbgränssnitt | FastAPI + Jinja2 + HTMX | Handläggar-UI:t (Fas 4) ovanpå tjänstelagret, bara lokalt, inget Node eller byggsteg. Se `02_system/handläggar-ui.md` |
 | AI-leverantörer | OpenAI + Anthropic (modellagnostiskt) | Via eget abstraktionslager i `src/ai/` (B-025), se 3.1 och `02_system/ai_abstraktion.md` |
 | AI-arbetsmiljö | Claude API + Claude Cowork | Utveckling och agentkörning |
 | Versionskontroll | Git + GitHub | Repo: [Artificiellalecta](https://github.com/karltengelin/Artificiellalecta.git). Kopplas in via Cowork-connector. |
@@ -187,6 +188,7 @@ Artificiellalecta/
 │   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
 │   ├── tjänstelager.md             ← Operationer för handläggare, agenter och skript (B-028)
 │   ├── tjänstelager_operationer.md ← Genererad förteckning: operationer, agentnivå och skäl (T4)
+│   ├── handläggar-ui.md            ← Handläggar-UI:t: start, databasval, sidor och gränser (Fas 4)
 │   ├── skriptkatalog.md             ← Kodbas, körverktyg, beroenden och körordning
 │   ├── agentkarta.md               ← Översikt över alla agenter
 │   ├── agenter/                    ← En MD-fil per agent (10 st)
@@ -237,6 +239,7 @@ Artificiellalecta/
 │   ├── models/                     ← SQLAlchemy-modeller
 │   ├── ai/                         ← Modellagnostiskt abstraktionslager (ai_config.yaml, providers/)
 │   ├── services/                   ← Tjänstelagret (B-028): kontrakt, access_register.yaml, godkännande, händelselogg
+│   ├── web/                        ← Handläggar-UI:t (Fas 4): sidor, templates/, static/ – anropar bara tjänstelagret
 │   ├── analytics/                  ← Analyser och scenarier (delprojekt 2)
 │   └── utils/                      ← Gemensam kod
 │
@@ -249,7 +252,8 @@ Artificiellalecta/
     ├── migrations/                 ← Schemaändringar; äldre engångsskript i legacy/
     ├── diagnostics/                ← Databas- och AI-kontroller
     ├── analysis/                   ← Manuella analyskörningar
-    └── documentation/              ← Genererade förteckningar
+    ├── documentation/              ← Genererade förteckningar
+    └── web/                        ← Start av handläggar-UI:t
 ```
 
 **Mappnamnskonvention:**

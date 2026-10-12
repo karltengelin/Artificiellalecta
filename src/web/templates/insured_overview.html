@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ o.first_name }} {{ o.last_name }}{% endblock %}
+{% block content %}
+{% include "partials/insured_header.html" %}
+
+<section class="panel">
+  <h2>Försäkringar</h2>
+  {% if o.policies %}
+  <table class="table">
+    <thead>
+      <tr><th>Försäkring</th><th>Produkt</th><th>Tecknad</th><th>Läge</th><th>Förmåner</th><th class="num">Kapital</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in o.policies %}
+      <tr{% if highlight == p.policy_number %} class="is-highlight"{% endif %}>
+        <td><strong>{{ p.policy_number }}</strong></td>
+        <td>{{ p.product_code }}</td>
+        <td>{{ p.signed_date | iso_date }}</td>
+        <td>
+          {% if p.current_state %}
+          <span class="state state--{{ p.current_state.state }}">{{ p.current_state.state | label('policy_state') }}</span>
+          <span class="muted small">från {{ p.current_state.valid_from | iso_date }}</span>
+          {% else %}<span class="muted">Inget pågående läge</span>{% endif %}
+        </td>
+        <td>
+          {% for b in p.benefits %}
+          {{ b.benefit_type | label('benefit_type') }} <span class="muted small">{{ b.start_date | iso_date }}{% if b.end_date %}–{{ b.end_date | iso_date }}{% endif %}</span>{% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+        </td>
+        <td class="num">{{ p.capital_sek | sek }}</td>
+        <td class="actions">
+          <a href="/forsakringar/{{ p.policy_number }}/premier">Premiehistorik</a>
+          {% block policy_actions scoped %}{% endblock %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">Kapital = summan av betalda premietransaktioner per förmån (databasschema §8).</p>
+  {% else %}
+  <p class="muted">Den försäkrade har inga försäkringar.</p>
+  {% endif %}
+</section>
+{% endblock %}

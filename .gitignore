@@ -81,5 +81,7 @@ Thumbs.db
 .ipynb_checkpoints/
 
 # --- Claude / AI-verktyg ---
-.claude/
+# Worktrees och lokala inställningar ignoreras; startkonfigurationen för förhandsgranskning delas
+.claude/*
+!.claude/launch.json
 .cursor/

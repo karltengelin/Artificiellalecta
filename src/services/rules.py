@@ -32,6 +32,7 @@ _FILE_VERSION = re.compile(r"\*\*(?:Filversion|Version):\*\*\s*([0-9][0-9.]*)", 
 _ADOPTION = re.compile(r"\*\*Införandebeslut:\*\*\s*(B-\d{3,})", re.IGNORECASE)
 _VALID_FROM = re.compile(r"\*\*Gäller från:\*\*\s*(\d{4}-\d{2}-\d{2})", re.IGNORECASE)
 _PACKAGE = re.compile(r"\*\*Paket:\*\*\s*([^|\n]+?)\s*(?:\||$)", re.IGNORECASE | re.MULTILINE)
+_TITLE = re.compile(r"\A#\s+[A-Z0-9-]+\s+[–-]\s+(.+)$", re.MULTILINE)
 
 
 class RuleStatus(StrEnum):
@@ -109,6 +110,12 @@ class ProductRuleCatalog:
         path = self._find(rule_id)
         match = _FILE_VERSION.search(path.read_text(encoding="utf-8")) if path else None
         return match.group(1) if match else None
+
+    def title(self, rule_id: str) -> str | None:
+        """Regelns rubrik ur filens första rad, t.ex. 'premieperioder, anställning och fribrev'."""
+        path = self._find(rule_id)
+        match = _TITLE.search(path.read_text(encoding="utf-8")) if path else None
+        return match.group(1).strip() if match else None
 
     def describe(self, rule_ids: tuple[str, ...] | list[str]) -> str:
         """Regelstatus vid en verkställighet, t.ex. för händelseloggen."""

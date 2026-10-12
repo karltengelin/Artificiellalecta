@@ -1,0 +1,22 @@
+{# Personens huvud och flikar – gemensamt för alla vyer av en försäkrad. Kräver `o` (InsuredOverview) och `tab`. #}
+<section class="person">
+  <div class="person__name">
+    <h1>{{ o.first_name }} {{ o.last_name }}</h1>
+    <span class="pnr">{{ o.personal_id_number | pnr }}</span>
+    <span class="badge badge--{{ o.status }}">{{ o.status | label('person_status') }}</span>
+  </div>
+  <dl class="facts">
+    <div><dt>Arbetsgivare</dt><dd>{{ o.employer.name }} <span class="muted">({{ o.employer.org_number }})</span></dd></div>
+    <div><dt>Anställd</dt><dd>{{ o.employment_start_date | iso_date }} – {{ o.employment_end_date | iso_date if o.employment_end_date else "pågår" }}</dd></div>
+    <div><dt>Aktuell månadslön</dt><dd>{{ o.monthly_salary_sek | sek(0) }}{% if o.employment_rate is not none %} <span class="muted">· {{ o.employment_rate | number }} %</span>{% endif %}</dd></div>
+    <div><dt>ITP1 från</dt><dd>{{ o.itp1_start_date | iso_date }}</dd></div>
+    <div><dt>Kapital totalt</dt><dd><strong>{{ o.total_capital_sek | sek }}</strong></dd></div>
+  </dl>
+</section>
+<nav class="tabs" aria-label="Vyer för den försäkrade">
+  <a href="/forsakrade/{{ o.personal_id_number }}" {% if tab == "overview" %}aria-current="page"{% endif %}>Översikt</a>
+  <a href="/forsakrade/{{ o.personal_id_number }}/loneunderlag" {% if tab == "salary" %}aria-current="page"{% endif %}>Löneunderlag</a>
+  {% for p in o.policies %}
+  <a href="/forsakringar/{{ p.policy_number }}/premier" {% if tab == "premiums:" ~ p.policy_number %}aria-current="page"{% endif %}>Premier {{ p.policy_number }}</a>
+  {% endfor %}
+</nav>

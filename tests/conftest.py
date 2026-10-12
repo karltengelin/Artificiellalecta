@@ -9,6 +9,9 @@ anslutning och varje transaktion börjar med BEGIN IMMEDIATE. Används för test
 med samtidiga anrop: databasen serialiserar transaktionerna i stället för att
 alla trådar delar en anslutning. Bevisar inte Postgres radlås – se
 tests/test_services_postgres.py.
+
+`web` – handläggar-UI:t (src/web/) med en TestClient mot demobeståndet
+(src/utils/demo_data.py) i en SQLite-databas i minnet.
 """
 
 from datetime import date
@@ -106,6 +109,40 @@ def insurance_db():
     session_factory = session_factory_for(engine)
     ids = seed_insurance(session_factory)
     yield SimpleNamespace(engine=engine, session_factory=session_factory, ids=ids)
+    engine.dispose()
+
+
+#: Dagen handläggar-UI:ts tester körs (före PR-ITP1 v1.0:s giltighetsdag 2026-11-01)
+WEB_TODAY = date(2026, 10, 12)
+
+
+@pytest.fixture
+def web(monkeypatch):
+    """Handläggar-UI:t mot demobeståndet i en SQLite-databas i minnet (utils/demo_data.py).
+
+    Två agentförslag ligger i godkännandekön. `client` är en FastAPI TestClient;
+    `csrf` är formulärtoken; `session_factory` används bara av testerna för att
+    kontrollera databasen – UI:t själv går genom tjänstelagret.
+    """
+    from fastapi.testclient import TestClient
+
+    from services import ProductRuleCatalog, ServiceLayer
+    from services.operations import common
+    from utils.demo_data import create_demo_database
+    from web import create_app
+    from web.config import WebSettings
+
+    monkeypatch.setattr(common, "today", lambda: WEB_TODAY)
+    engine = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
+    create_demo_database(engine, today=WEB_TODAY)
+    session_factory = session_factory_for(engine)
+    service = ServiceLayer(session_factory=session_factory, rules=ProductRuleCatalog(today=WEB_TODAY))
+    app = create_app(service=service, settings=WebSettings(allowed_hosts=("testserver",)))
+    with TestClient(app) as client:
+        yield SimpleNamespace(
+            client=client, service=service, session_factory=session_factory, engine=engine,
+            csrf=app.state.csrf_token, app=app,
+        )
     engine.dispose()
 
 

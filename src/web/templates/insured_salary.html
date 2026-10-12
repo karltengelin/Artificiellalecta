@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Löneunderlag – {{ o.first_name }} {{ o.last_name }}{% endblock %}
+{% block content %}
+{% include "partials/insured_header.html" %}
+
+<section class="panel">
+  <div class="panel__head">
+    <h2>Löneunderlag</h2>
+  </div>
+  <p class="muted small">Pensionsmedförande lön per utbetalningsmånad (PR-ITP1-014), rapporterad av arbetsgivaren
+    eller registrerad av handläggare. Skiljs från aktuell månadslön på personen och från premien. En månad utan rad
+    saknar rapport; 0,00 kr är en rapporterad noll.</p>
+  {% if groups %}
+  <table class="table">
+    <thead>
+      <tr><th>Månad</th><th>Arbetsgivare</th><th class="num">Lön</th><th>Version</th><th>Ursprung</th><th>Referens</th><th>Mottagen</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for g in groups %}
+      <tr>
+        <td><strong>{{ g.month | month }}</strong></td>
+        <td>{{ g.employer }}</td>
+        <td class="num">{{ g.current.pensionable_salary_sek | sek }}</td>
+        <td>v{{ g.current.version }} <span class="muted small">gällande</span></td>
+        <td>{{ g.current.source | label('salary_source') }}</td>
+        <td>{{ g.current.source_reference or "–" }}</td>
+        <td>{{ g.current.received_date | iso_date }}</td>
+        <td class="actions">{% block salary_actions scoped %}{% endblock %}</td>
+      </tr>
+      {% for h in g.history %}
+      <tr class="is-superseded">
+        <td></td><td></td>
+        <td class="num">{{ h.pensionable_salary_sek | sek }}</td>
+        <td>v{{ h.version }} <span class="muted small">ersatt</span></td>
+        <td>{{ h.source | label('salary_source') }}</td>
+        <td>{{ h.source_reference or "–" }}</td>
+        <td>{{ h.received_date | iso_date }}</td>
+        <td></td>
+      </tr>
+      {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Inget löneunderlag registrerat. Premiehistoriken bygger på lön ur den genererade historiken.</p>
+  {% endif %}
+</section>
+{% endblock %}

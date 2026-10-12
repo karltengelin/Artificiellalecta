@@ -1,0 +1,21 @@
+{% if error %}
+<div class="alert alert--{{ error.kind }}" role="alert">
+  <strong class="alert__title">{{ error.title }}</strong>
+  <p class="alert__message">{{ error.message }}</p>
+  {% if error.field_errors %}
+  <ul class="alert__fields">
+    {% for name, message in error.field_errors.items() %}
+    <li>{{ field_names.get(name, name) if field_names is defined else name }}: {{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if error.rules %}
+  <ul class="alert__rules">
+    {% for rule in error.rules %}
+    <li><code>{{ rule.id }}</code>{% if rule.title %} {{ rule.title }}{% endif %}{% if rule.status %} <span class="muted">({{ rule.status }})</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if error.nothing_changed %}<p class="alert__nochange">Ingenting har ändrats.</p>{% endif %}
+</div>
+{% endif %}
