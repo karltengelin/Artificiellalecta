@@ -11,8 +11,12 @@ simulerade bolaget självt.
 
 ## Status
 
-🔲 Ej påbörjat. Naturligt att bygga i takt med att övriga delprojekt tar form – annars blir
-översikten inaktuell direkt.
+🟡 Första version 2026-10-12: [foretagsoversikt.html](foretagsoversikt.html), läget på main @ 070e6bb.
+Öppnas direkt i webbläsaren. Den innehåller en klickbar bolagskarta, delprojektens status,
+byggordning, tjänstelagrets flöde, regelkedjan, datamodellen, agentekosystemet, kod, skript
+och luckor. Sidan är statisk och uppdateras manuellt; siffror och status gäller per datumet i
+sidhuvudet. Naturligt att uppdatera i takt med att övriga delprojekt tar form – annars blir
+översikten inaktuell.
 
 ## Beroenden
 

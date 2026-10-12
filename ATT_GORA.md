@@ -14,7 +14,7 @@ Hela programmet (visionen om ett AI-native tjänstepensionsbolag) är strukturer
 - Fas 2 (paper trading) → **Delprojekt 5: Kapitalförvaltning**
 - Fas 4/5 (handläggar-UI + handläggaragent) → **Delprojekt 1: Ärendehantering**
 
-Delprojekt 2 (BI & insikter) och 9 (Processkartor) är påbörjade och har sina nästa steg i respektive `projekt/<nr>_<namn>/PROJEKTPLAN.md`. Delprojekt 3 (Kundportal), 6 (Avdelningsfunktioner), 7 (Kundchattbot) och 8 (Företagsöversikt) har ännu inga detaljerade uppgifter. Även de bryts ut till egna listor i sina projektplaner allt eftersom de påbörjas, istället för att trängas in i denna lista.
+Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsoversikt.html`) och 9 (Processkartor) är påbörjade och har sina nästa steg i respektive `projekt/<nr>_<namn>/PROJEKTPLAN.md`. Delprojekt 3 (Kundportal), 6 (Avdelningsfunktioner) och 7 (Kundchattbot) har ännu inga detaljerade uppgifter. Även de bryts ut till egna listor i sina projektplaner allt eftersom de påbörjas, istället för att trängas in i denna lista.
 
 ---
 
