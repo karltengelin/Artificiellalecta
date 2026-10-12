@@ -1,7 +1,7 @@
 # Tjänstelagret
 
 > **Status:** 🟡 Beslutat (**B-028**), byggs i Fas 1f – **T1, T2 och T4 klara**. **T3 klart** för den överenskomna omfattningen: transaktionsgräns, `register_salary_report`, `set_policy_paid_up` och `correct_premium_transaction`, medan `terminate_policy` är uppskjuten (§9.1). Verifierat mot isolerad Postgres och migrerat i Lakebase 2026-10-11. **Fas 4 (handläggar-UI:t):** läsoperationer för godkännandekön och händelseloggen, samt anslutning, stamdata och arbetsgivare (§9.2). Kod: `src/services/`, register: `src/services/access_register.yaml`, förteckning: [tjänstelager_operationer.md](tjänstelager_operationer.md).
-> **Bygger på:** B-017 (människa som fullständig operatör), B-020 (backend för två klienter), B-022 (försäkringsmodellen), B-026 (agentekosystem)
+> **Bygger på:** B-017 (människa som fullständig operatör), B-020 (backend för två klienter), B-022 (försäkringsmodellen), B-026 (agentekosystem). Operationer: B-030 (T3), B-032 (anslutning och stamdata, Fas 4)
 > **Relaterat:** `02_system/agentekosystem.md` (harness, skill-poddar), `01_domän/produktregler/` (reglerna operationerna implementerar), `02_system/databasschema.md`
 
 ---
@@ -251,7 +251,7 @@ Modellbehov och avgränsning stämdes av med operatören 2026-10-11 (**B-030**).
 
 ### 9.2 Anslutning, stamdata och arbetsgivare (Fas 4, S5) – vad som stöds och vad som blockeras
 
-Modellval och avgränsning stämdes av med operatören 2026-10-12 (beslutsförslag i `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md`). Ingen schemaändring.
+Modellval och avgränsning stämdes av med operatören 2026-10-12 (**B-032**, underlag i `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md`). Ingen schemaändring.
 
 **`enroll_insured_person`** (PR-ITP1-012/013) skapar i en transaktion:
 

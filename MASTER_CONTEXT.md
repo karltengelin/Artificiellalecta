@@ -92,7 +92,7 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 |--------|-------------|--------|
 | Kapitalförvaltning | Placering av premiereserver, portföljövervakning | 🔲 Ej påbörjat |
 | Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🟡 Påbörjat – aktuariell grund (SIM-modell) och parameterregister, infört genom B-031; beräkningsmotor och reservberäkning saknas |
-| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026, tjänstelager med läs- och skrivoperationer, inklusive anslutning av ny försäkrad och stamdata (B-028, B-030, Fas 4) |
+| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026, tjänstelager med läs- och skrivoperationer, inklusive anslutning av ny försäkrad och stamdata (B-028, B-030, B-032) |
 | Ärende­hantering | Inkommande ärenden, handläggning, svar | 🟡 Påbörjat – handläggar-UI v1 (Fas 4) med sök, översikt, ändringar, godkännandekö och händelselogg via tjänstelagret; ärenden (`cases`) och handläggaragent saknas |
 | Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🟡 Påbörjat – regelverkskarta, källregister, underlag per regelverk och tio tolkningar (delprojekt 4); styrdokument saknas |
 | Rapportering | FI-rapporter, intern rapportering, revisionsunderlag | 🔲 Ej påbörjat |

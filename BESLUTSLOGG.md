@@ -8,6 +8,51 @@
 
 ## Beslut
 
+### B-032 | 2026-10-12 | Tjänstelagrets operationer för anslutning, stamdata och arbetsgivare (Fas 4)
+
+**Beslut:** Operatören godkände beslutsförslaget `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md` i chatten 2026-10-12. Modellvalen A–D följde rekommendationerna, och operatören bad om att beslutet loggas. Tjänstelagret (B-028) utökas för handläggar-UI:t (Fas 4) med följande operationer:
+
+1. **`enroll_insured_person`** (`write`, PR-ITP1-012/013, `APPROVAL`). Ansluter en ny anställd. Den försäkrade, en försäkring, förmånen ålderspension och läget `premium_paying` skapas i en transaktion. Försäkringens `signed_date` och `start_date` sätts till den dokumenterade ITP1-tillhörighetsdagen. En person under 25 år ansluts med `premium_paying` från tillhörighetens start, och ordinarie premie börjar i 25-årsmånaden (val A). Anslutningen skapar ingen premie och skickar inget försäkringsbesked.
+2. **`update_current_salary`** (`write`, ingen produktregel, `HUMAN_ONLY`). Aktuell lön på personen är stamdata och hålls isär från pensionsmedförande lön (PR-ITP1-014, B-030). Ändringen skapar varken löneunderlag eller premie (val C).
+3. **`update_contact_details`** (`write`, PR-ITP1-031, `HUMAN_ONLY`). Gäller e-post och telefon. Namn och personnummer ändras inte här.
+4. **`register_employer`** (`write`, PR-ITP1-012, `HUMAN_ONLY`) och **`list_employers`** (`read`, `AGENT`, utan kontaktpersoner). Ändring av arbetsgivarens uppgifter skjuts upp (val D).
+5. **Blockeras med skäl och regel** (val B):
+   - återanställning och arbetsgivarbyte, eftersom anställningshistorik saknas;
+   - anslutning av VD, ägare, utlandsanställd eller den som avstått, som kräver uttryckligt beslut;
+   - framtida datum;
+   - anslutning från 66 år (PR-ITP1-016).
+6. **Ingen schemaändring.**
+
+**Motivering:**
+- Handläggar-UI:t får bara anropa tjänstelagret (B-028), och de här åtgärderna behövs för vardaglig handläggning.
+- Modellen bär operationerna utan schemaändring. Det som kräver anställnings- eller lönehistorik blockeras i stället för att skriva över data.
+- Om aktuell lön blandades ihop med pensionsmedförande lön skulle premieunderlaget bli fel, och det avvisade B-030 redan.
+- Byte av kontaktuppgifter och nya försäkringstagare är känsliga respektive avtalsmässiga. De avgörs av en människa tills det finns verklig autentisering och en produktregel.
+
+**Övervägda alternativ:**
+
+*Blockera anslutning under 25 år, eller införa ett nytt läge före premieåldern* – den första varianten strider mot PR-ITP1-012, där avtal får registreras före premieåldern. Den andra kräver schemaändring utan motsvarande nytta, eftersom premiemotorns åldersfönster redan ger noll premie. Avvisat.
+
+*Skriva över arbetsgivare och datum vid återanställning* – historiken skulle tappas. Avvisat.
+
+*Ge aktuell lön en egen regel så att agenter kan uppdatera den* – kräver en dataregel från delprojekt 4. Avvaktar.
+
+**Konsekvenser:**
+- Åtkomstregistret har fått fem rader och förteckningen `tjänstelager_operationer.md` är genererad om. Stödda och blockerade fall står i `02_system/tjänstelager.md` §9.2 och sidorna i `02_system/handläggar-ui.md`.
+- **Verifierat 2026-10-12.** Testat mot SQLite och mot den isolerade Postgres-databasen `svc_test`, inklusive samtidiga anslutningar. Därefter skarpt i Lakebase efter backup `backups/20261012T193537Z`, med verifieringsposten AL-000499.
+- **Läsoperationer för kön och loggen.** I samma leverans byggdes `list_approval_requests`, `count_approval_requests` och `get_operation_events`, alla `HUMAN_ONLY`. Det skedde inom ramen för Fas 4: listor och sökningar i UI:t ska vara läsoperationer med rad i registret.
+- **Följdpunkter i ATT_GORA:**
+  - anställningshistorik
+  - lönehistorik för aktuell lön
+  - namnbyte
+  - ändring och avslut av arbetsgivare
+  - försäkringsbesked vid anslutning
+- Genomfört i commits `7f6cb34`–`244d58a` på branch `claude/handlaggare-ui-v1-1fa1e7`.
+
+**Preciserar:** B-028 (tjänstelagrets operationer och registret) och B-030 (skillnaden mellan aktuell lön och löneunderlag).
+
+---
+
 ### B-031 | 2026-10-12 | Produktpaket PR-ITP1 v1.0 infört, gäller från 2026-11-01
 
 **Beslut:** Operatören antog i chatten 2026-10-12 det samlade införandeförslaget i `projekt/04_produktregelverk/PAKET_BESLUTSFORSLAG.md` (”ja”). Artificiellalectas produktunderlag för traditionell ITP1 ålderspension fastställs som produktpaket PR-ITP1 v1.0:

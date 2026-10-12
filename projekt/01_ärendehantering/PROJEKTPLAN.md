@@ -27,7 +27,7 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 | S1 | Grund, sök, översikt, löneunderlag, premiehistorik | ✅ |
 | S2 | Formulär för de befintliga skrivoperationerna | ✅ |
 | S3 | Godkännandekö och händelselogg | ✅ |
-| S4 | Designstopp: nya operationer, se [OPERATIONER_BESLUTSFORSLAG.md](OPERATIONER_BESLUTSFORSLAG.md) | ✅ Godkänt, beslutsnumret sätts av operatören |
+| S4 | Designstopp: nya operationer, se [OPERATIONER_BESLUTSFORSLAG.md](OPERATIONER_BESLUTSFORSLAG.md) | ✅ Godkänt, B-032 |
 | S5 | Anslutning, aktuell lön, kontaktuppgifter, arbetsgivare | ✅ |
 | S6 | Skarp verifiering i Lakebase | ✅ Backup `20261012T193537Z`. Verifieringsposten AL-000499 anslöts, fick ändrad lön och löneunderlag och sattes i fribrev. Rader och händelselogg stämmer (ATT_GORA) |
 
@@ -46,7 +46,7 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 - Start: `python scripts/web/start_ui.py`, och `.claude/launch.json` i Claude-appen
 - Tester: `tests/test_web_*.py`, plus tjänstelagrets tester
 - Beslut: B-020 (handläggar-UI före kundportal), B-017 (människa som fullständig operatör), B-028 (tjänstelager),
-  B-030 (de första skrivoperationerna)
+  B-030 (de första skrivoperationerna), B-032 (anslutning, stamdata och arbetsgivare)
 - Datamodell: `02_system/databasschema.md`, `src/models/`
 - AI-lager och agentramverk: `02_system/ai_abstraktion.md`, `02_system/agentekosystem.md` (team `forsakring`)
 

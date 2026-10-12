@@ -92,8 +92,8 @@ Design och drift: `02_system/handläggar-ui.md`. Kod: `src/web/` (FastAPI + Jinj
 - [x] **2026-10-12** **S1: Grund** – app, konfiguration (`HANDLAGGARE_ID`, `HANDLAGGARE_DB` = demo/svc_test/lakebase – Lakebase bara uttryckligen), layout, sök på personnummer eller försäkringsnummer, översikt, löneunderlag och premiehistorik. Lokal demodatabas med fiktivt bestånd (`src/utils/demo_data.py`); Host-kontroll och formulärtoken
 - [x] **2026-10-12** **S2: Skrivformulär** för `register_salary_report`, `set_policy_paid_up` och `correct_premium_transaction` – stopp och krockar visas med skäl, regel och *Ingenting har ändrats*; förhandsberäkning av premie
 - [x] **2026-10-12** **S3: Godkännandekö och händelselogg** – lista, godkänn och avslå; händelser totalt och per försäkrad. Nya läsoperationer `list_approval_requests`, `count_approval_requests`, `get_operation_events` (`HUMAN_ONLY`)
-- [x] **2026-10-12** **S4: Designstopp** – beslutsförslag `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md`, godkänt av operatören med valen A–D. *Beslutsnumret loggas av operatören*
-- [x] **2026-10-12** **S5: Nya operationer** – `enroll_insured_person` (`APPROVAL`), `update_current_salary`, `update_contact_details`, `register_employer` (`HUMAN_ONLY`) och `list_employers` (`AGENT`) med formulär och tester; ingen schemaändring (`tjänstelager.md` §9.2)
+- [x] **2026-10-12** **S4: Designstopp** – beslutsförslag `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md`, godkänt av operatören med valen A–D och loggat som **B-032**
+- [x] **2026-10-12** **S5: Nya operationer (B-032)** – `enroll_insured_person` (`APPROVAL`), `update_current_salary`, `update_contact_details`, `register_employer` (`HUMAN_ONLY`) och `list_employers` (`AGENT`) med formulär och tester; ingen schemaändring (`tjänstelager.md` §9.2)
 - [x] **2026-10-12** **S6: Skarp verifiering i Lakebase.** Före körningen:
   - backup `backups/20261012T193537Z`, med 500 försäkrade, 498 försäkringar och 15 097 premietransaktioner;
   - kontroll att T3-schemat redan fanns (`migrate_t3_schema.py --dry-run`);

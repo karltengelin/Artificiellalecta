@@ -1,6 +1,6 @@
 # Beslutsförslag: nya operationer för handläggar-UI:t (Fas 4, S4)
 
-> **Status:** Godkänt av operatören i chatten 2026-10-12, med valen A–D enligt rekommendationerna i §4. `update_employer_details` ingår inte. Byggt i S5 (`tjänstelager.md` §9.2). Beslutsnumret sätts av operatören.
+> **Status:** Godkänt av operatören i chatten 2026-10-12, med valen A–D enligt rekommendationerna i §4, och loggat som **B-032**. `update_employer_details` ingår inte. Byggt i S5 (`tjänstelager.md` §9.2).
 > **Underlag:** PR-ITP1-012 (anslutning), -013 (premieperioder), -014 (löneunderlag), -016 (kompletterande premier), -029 (information), -031 (data och beslut); försäkringsvillkor v2.0 §2–3 och §14; `02_system/databasschema.md` §3–7; `02_system/tjänstelager.md` §4 och §9.1.
 > **Bygger på:** B-017, B-022, B-028, B-030, B-031.
 
@@ -208,7 +208,7 @@ anslutningen.
 - **Försäkringsbesked vid anslutning**, en `external`-handling med kommunikationsagenten.
 - **Premie ur löneunderlag**, som redan finns i ATT_GORA.
 
-## 6. Beslutsförslag (för beslutsloggen – operatören sätter numret)
+## 6. Beslutsförslag (loggat som B-032)
 
 > **Beslut:** Tjänstelagret utökas med operationer för handläggar-UI:t (Fas 4):
 >

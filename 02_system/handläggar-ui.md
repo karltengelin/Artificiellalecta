@@ -1,7 +1,7 @@
 # Handläggar-UI:t
 
 > **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5). **Verifierat skarpt i Lakebase 2026-10-12** (S6, se ATT_GORA): verifieringsposten AL-000499.
-> **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret)
+> **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret), B-032 (anslutning, stamdata och arbetsgivare)
 > **Kod:** `src/web/` · **Start:** `python scripts/web/start_ui.py` · **Tester:** `tests/test_web_*.py`
 > **Relaterat:** [tjänstelager.md](tjänstelager.md), [tjänstelager_operationer.md](tjänstelager_operationer.md), `projekt/01_ärendehantering/PROJEKTPLAN.md`
 
@@ -113,7 +113,7 @@ som väntande och kan avslås. Tider visas i datorns lokala tid, medan tjänstel
 **Kön, loggen och agenterna.** De tre läsoperationerna är `HUMAN_ONLY` i registret
 (se [tjänstelager.md](tjänstelager.md) §9).
 
-**Anslutning, stamdata och arbetsgivare (S5).** Operationerna stämdes av med operatören i
+**Anslutning, stamdata och arbetsgivare (S5, B-032).** Operationerna stämdes av med operatören i
 `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md`. Stödda och blockerade fall står i
 [tjänstelager.md](tjänstelager.md) §9.2.
 
