@@ -40,5 +40,13 @@ operations:
   register_employer: HUMAN_ONLY          # ny försäkringstagare = nytt avtal (PR-ITP1-012)
   list_employers: AGENT                  # referensdata utan kontaktpersoner
 
+  # Ärenden (Fas 5 F5-2, B-033). Skrivningarna saknar produktregel och är HUMAN_ONLY även genom golvet;
+  # harness skriver status efter en agentkörning som systemaktör.
+  create_case: HUMAN_ONLY                # handläggaren registrerar ärendet (B-033 val B)
+  get_case: AGENT                        # ärendet med inrapporterade uppgifter; harness begränsar till körningens ärende
+  list_cases: HUMAN_ONLY                 # handläggarens arbetslista, personuppgifter (loggas)
+  update_case_status: HUMAN_ONLY         # status, handläggare och senaste agentkörning
+  close_case: HUMAN_ONLY                 # utfall; avslag och manuell prövning motiveras (PR-ITP1-031)
+
   # terminate_policy är uppskjuten: slutavräkning (PR-ITP1-027) och dödsfallsavräkning
   # (PR-ITP1-010) kräver uttagsdelar, månadsanspråk och kapitaljournal som modellen saknar.

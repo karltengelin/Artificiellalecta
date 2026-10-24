@@ -140,6 +140,7 @@ class ServiceLayer:
         validated = self._validate_input(op, data)
         if op.kind.changes_state and not (ctx.reason or "").strip():
             raise MissingReasonError(f"'{op.name}' ändrar data och kräver en motivering (reason)")
+        ctx = self._with_case(ctx, validated)
 
         if ctx.actor.is_agent:
             decision = effective_access(op, self.register, self.rules)
@@ -160,11 +161,30 @@ class ServiceLayer:
         with transaction(self._session_factory) as tx:
             output = self._call(op, ctx, validated, tx.session)
             if op.kind.changes_state or op.pii:
+                # Ett nyskapat ärende har sitt nummer först i resultatet (create_case)
+                created = getattr(output, "case_number", None)
+                record_ctx = ctx if ctx.case_id or not isinstance(created, str) else replace(ctx, case_id=created)
                 self._record(
-                    op, ctx, validated, outcome="executed", output=output,
+                    op, record_ctx, validated, outcome="executed", output=output,
                     detail=self._rule_detail(op), session=tx.session,
                 )
         return OperationResult(ResultStatus.DONE, op.name, output=output)
+
+    @staticmethod
+    def _with_case(ctx: OperationContext, data: BaseModel) -> OperationContext:
+        """Ärendet som anropet gäller: kontextens `case_id`, annars indatans `case_number`.
+
+        Så hamnar ärendeoperationerna i händelseloggen med ärendets nummer (B-033: historiken
+        är loggen). Anger både kontext och indata ett ärende måste de vara samma.
+        """
+        case_number = getattr(data, "case_number", None)
+        if not isinstance(case_number, str):
+            return ctx
+        if ctx.case_id is not None and ctx.case_id != case_number:
+            raise InvalidInputError(
+                f"Anropet gäller ärendet {case_number}, men körs i ärendet {ctx.case_id}"
+            )
+        return replace(ctx, case_id=case_number)
 
     def approve(
         self, approval_id: str, ctx: OperationContext, note: str | None = None

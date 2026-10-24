@@ -130,7 +130,7 @@ Varje anrop bär ett `OperationContext`:
 | `actor` | Vem som anropar: `human` (handläggare, t.ex. operatören), `agent` (agent-id + team) eller `system` (skript/batch som operatören startar) |
 | `reason` | Motivering – obligatorisk för `write` och `external` |
 | `run_id` | Agentkörningen (för agenter) – kopplar till körjournal och AI-lagrets anropslogg |
-| `case_id` | Ärendet operationen hör till, när ärenden finns (delprojekt 1) |
+| `case_id` | Ärendet operationen hör till (`CASE-NNNNNN`, §9.3). Sätts av tjänstelagret ur indatans `case_number` om anroparen inte anger det |
 
 `system` behandlas som handläggare i åtkomstkontrollen – i v1 är det alltid operatören som startar skripten – men loggas separat.
 
@@ -298,6 +298,37 @@ Modellval och avgränsning stämdes av med operatören 2026-10-12 (**B-032**, un
 **Regelversioner i de byggda fallen.** Beräkningar använder periodens parametrar: premiemånadens IBB ur `base_amounts`, och en rättelse stoppas om radens sparade IBB avviker. Regelstatus och filversion vid verkställigheten skrivs i händelseloggen (§4). Före giltighetsdagen för PR-ITP1 v1.0 (2026-11-01, B-031) är operationerna handläggarstöd enligt kommande regler. Begränsning: det finns ännu ingen låst regelversion per händelse eller beräkning (t.ex. `PR-ITP1-001 v1.0` i `calculation_basis`) och ingen markering av teknisk driftsättning. Det behövs för flaggskeppsflödet regel → produktion och bör stämmas av med delprojekt 4.
 
 ---
+
+### 9.3 Ärenden (Fas 5, F5-2) – vad som stöds och vad som blockeras
+
+Beslutat av operatören 2026-10-24 (**B-033**, underlag i `projekt/01_ärendehantering/ARENDEN_BESLUTSFORSLAG.md`). Tabellen `cases` (`databasschema.md` §9g). Kod: `src/services/operations/cases.py`.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `create_case` | `write` | Ja | `HUMAN_ONLY` | Registrerar ett ärende med nästa `CASE-NNNNNN` och status `open` |
+| `get_case` | `read` | Ja | `AGENT` | Ärendet med försäkrad, arbetsgivare, månad, mottagning, status och inrapporterade uppgifter |
+| `list_cases` | `read` | Ja | `HUMAN_ONLY` | Handläggarens lista: aktiva (standard), en status, stängda eller alla; urval på typ, handläggare och försäkrad |
+| `update_case_status` | `write` | Nej | `HUMAN_ONLY` | Byter status bland de öppna och vid behov handläggare och senaste agentkörning |
+| `close_case` | `write` | Nej | `HUMAN_ONLY` | Stänger med utfall och anteckning |
+
+Skrivningarna saknar produktregel och är därmed `HUMAN_ONLY` för agenter även genom golvet. Harness skriver status efter en agentkörning som systemaktör (F5-3). Agenten kan bara läsa ärenden; harness begränsar `get_case` till körningens ärende.
+
+**Ärendet i händelseloggen.** Tjänstelagret sätter `case_id` för varje anrop som gäller ett ärende: kontextens `case_id`, annars indatans `case_number`, och för `create_case` resultatets nummer. Anger både kontext och indata ett ärende måste de vara samma, annars stoppas anropet. Ärendets historik är därmed händelserna med dess `case_id` (B-033 val A), och ett agentförslag i ärendet får `case_id` i godkännandekön.
+
+**`create_case`** – ärendetyp `salary_report`, kanal `manual` (v1). Uppgifterna (`details`) valideras som löneunderlag: lön ≥ 0, `new` eller `correction` (med `corrects_version` vid rättelse och bara då) och källa. Periodmånaden rundas till månadsförsta.
+
+- *Stöds:* befintlig försäkrad och arbetsgivare; valfri försäkring som hör till personen; mottagningsdag senast i dag; valfri tidsfrist och handläggare.
+- *Saknas:* personen, arbetsgivaren eller försäkringen (eller försäkringen hör till någon annan).
+- *Blockeras:* mottagningsdag i framtiden.
+- *Konflikt:* samma typ, arbetsgivare och avsändarreferens är redan ett ärende. Två samtidiga registreringar som räknar fram samma nummer stoppas av unikhetsregeln.
+
+**`update_case_status`** byter mellan `open`, `in_progress`, `waiting_approval` och `waiting_info`. Ett stängt ärende ändras inte (konflikt). Stängning görs bara med `close_case`.
+
+**`close_case`** – utfall `approved`, `rejected`, `supplement_requested`, `manual_review` eller `no_action`.
+
+- *Kräver motivering:* `rejected` och `manual_review` (PR-ITP1-031).
+- *Blockeras:* förslag i ärendet väntar i godkännandekön – de avgörs först; `approved` utan genomförd ändring i ärendet, alltså varken ett godkänt agentförslag eller en utförd skrivning med ärendets `case_id`.
+- *Konflikt:* ärendet är redan stängt.
 
 ## 10. Öppna frågor
 

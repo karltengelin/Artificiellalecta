@@ -29,7 +29,7 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 | `register_salary_report` | `kunddata` | `register_salary_report` | write | Ja | APPROVAL | case_handler (Handläggaragent) |
 | `set_policy_paid_up` | `kunddata` | `set_policy_paid_up` | write | Ja | APPROVAL | – |
 
-Operationer utan poddmappning – stängda för alla agenter: `count_approval_requests`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_employers`, `register_employer`, `update_contact_details`, `update_current_salary`.
+Operationer utan poddmappning – stängda för alla agenter: `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_case`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `register_employer`, `update_case_status`, `update_contact_details`, `update_current_salary`.
 <!-- list_skills.py: slut -->
 
 ## Planerade skills (ur ATT_GORA)
