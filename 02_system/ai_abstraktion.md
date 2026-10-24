@@ -119,7 +119,7 @@ Motivering i korthet: lagret blir litet (ca 1 000 rader inklusive typer, konfigu
 | `ai/errors.py` | Leverantörsoberoende felhierarki |
 | `ai/config.py` + `ai/ai_config.yaml` | Leverantörer, modeller (pris + förmågor), roller, loggning |
 | `ai/keys.py` | Namnkonventionen för nycklar och team-nycklar |
-| `ai/schema.py` | Gör Pydantic-scheman strikta (krävs av båda leverantörerna) |
+| `ai/schema.py` | Gör Pydantic-scheman strikta (krävs av båda leverantörerna). Värdegränser som Anthropics strikta läge avvisar (`minimum`, `maxLength` m.fl.) flyttas till fältets beskrivning; anroparen validerar mot Pydantic-modellen |
 | `ai/tracing.py` | Anropsloggen och dess utdata (sinks) |
 | `ai/client.py` | Modellupplösning, reservkedja, kostnad, validering av strukturerade svar |
 | `ai/providers/` | En adapter per leverantör – enda stället där SDK:erna importeras |

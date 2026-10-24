@@ -149,7 +149,8 @@ def pii(insurance_db, tmp_path):
                            rules=ProductRuleCatalog(today=AFTER_RULES))
     scope = scope_for_person(trusted, ref="scope-1", personal_id_number=PERSON,
                              from_month=date(2025, 1, 1), to_month=date(2026, 10, 1), assigned_by="karl")
-    request = RunRequest(task_id="task-2", target_team="forsakring", goal=f"Förbered oktoberlön för {PERSON}",
+    request = RunRequest(task_id="task-2", target_team="forsakring",
+                         goal=f"Förbered oktoberlön för Test Testsson ({PERSON}), född 1990-01-01",
                          execution_scope_ref="scope-1")
     eco = Ecosystem.load()
     skills = SkillRegistry.build(eco, default_registry)
@@ -173,13 +174,15 @@ def test_journalen_har_inga_raa_personuppgifter(pii):
     outcome, (events, corrupt) = waiting_run(pii)
     raw = (pii.dir / "run-a.jsonl").read_text(encoding="utf-8")
     assert not corrupt
-    for secret in (PERSON, "5560000001", "Testsson", "81000"):
+    for secret in (PERSON, "5560000001", "Testsson", "81000", "1990-01-01"):
         assert secret not in raw
     wait = next(e for e in events if e["type"] == "approval_wait")
     assert wait["approval_id"] == outcome.result.pending_approvals[0]
     assert wait["business_change_executed"] is False
     intent = next(e for e in events if e["type"] == "tool_intent" and e["skill"] == "register_salary_report")
-    assert intent["reason"] == "Arbetsgivarens lönefil för oktober ([maskerat])"
+    assert set(intent["reason"]) == {"sha256", "length"}  # fri text från modellen: bara hash och längd
+    started = events[0]
+    assert set(started["goal"]) == {"sha256", "length"}
 
 
 def test_ai_log_content_far_inte_vara_pa_med_pii_verktyg(pii, insurance_db):

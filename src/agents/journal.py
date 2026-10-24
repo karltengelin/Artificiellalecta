@@ -7,11 +7,14 @@ team, agent, steg och typ.
 Händelsetyper i v1: run_started, policy_resolved, model_returned, tool_denied,
 tool_intent, tool_completed, approval_wait, approval_observed, run_ended.
 
-Inga råa personuppgifter: indata och resultat sparas som sha256-hash, modellens text
-som hash och längd, och fri text (mål, motivering, sammanfattning) maskeras – långa
-sifferföljder (personnummer, organisations- och försäkringsnummer) och e-postadresser.
-Leverantörstillstånd och nycklar journalförs aldrig. Råa uppgifter finns i
-tjänstelagrets händelselogg och godkännandekö, som har egen åtkomst.
+Inga råa personuppgifter: indata och resultat sparas som sha256-hash. Fri text från
+uppdraget eller modellen – mål, motiveringar, sammanfattning, anteckningar vid avslag –
+sparas bara som hash och längd (`text_ref`), eftersom den kan innehålla namn och
+födelsedatum som ingen maskering hittar säkert (röktestet 2026-10-24). Systemets egna
+meddelanden (stoppskäl, felklasser) maskeras – långa sifferföljder och e-postadresser.
+Leverantörstillstånd och nycklar journalförs aldrig. Fulltexten finns i resultatet till
+den betrodda anroparen; råa uppgifter i tjänstelagrets händelselogg och godkännandekö,
+som har egen åtkomst.
 
 En skrivare per körning: filen skapas exklusivt, så två körningar kan inte skriva i
 samma journal. Varje rad skrivs och synkas till disk innan motorn går vidare – kan
@@ -52,6 +55,13 @@ def mask(text: str | None) -> str | None:
     if text is None:
         return None
     return _EMAIL.sub("[e-post]", _DIGITS.sub("[maskerat]", text))
+
+
+def text_ref(text: str | None) -> dict[str, Any] | None:
+    """Fri text som kan innehålla personuppgifter: bara hash och längd i journalen."""
+    if text is None:
+        return None
+    return {"sha256": digest(text), "length": len(text)}
 
 
 def digest(value: Any) -> str:

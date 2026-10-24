@@ -37,7 +37,7 @@ from agents.continuation import Continuation
 from agents.dispatcher import CallStatus, Dispatcher, DispatchOutcome
 from agents.ecosystem import REPO_ROOT, Limits
 from agents.errors import HarnessError
-from agents.journal import FileJournal, Journal, JournalError, digest, mask
+from agents.journal import FileJournal, Journal, JournalError, digest, mask, text_ref
 from agents.profile import EffectiveProfile
 from agents.run import RunRequest, RunResult, RunStatus
 from agents.scope import ExecutionScope
@@ -180,7 +180,7 @@ def run_agent(
 
     # Journalen måste kunna skrivas innan något modellanrop görs
     observe(
-        "run_started", task_id=request.task_id, goal=mask(request.goal), scope_ref=request.execution_scope_ref,
+        "run_started", task_id=request.task_id, goal=text_ref(request.goal), scope_ref=request.execution_scope_ref,
         case_id=request.case_id, model_role=profile.model_role, versions=_versions(profile),
         limits=profile.limits.model_dump(), root_limits=root_limits.model_dump(),
     )
@@ -193,7 +193,7 @@ def run_agent(
     )
     for o in continuation.observations if continuation else ():
         observe("approval_observed", approval_id=o.approval_id, operation=o.operation, decision=o.status,
-                decided_by=o.decided_by, decided_at=o.decided_at, note=mask(o.note))
+                decided_by=o.decided_by, decided_at=o.decided_at, note=text_ref(o.note))
 
     def finish(status: RunStatus, summary: str, *, uncertainties: tuple[str, ...] = ()) -> RunOutcome:
         pending = tuple(a for d in dispatches for a in d.pending_approvals)
@@ -204,7 +204,7 @@ def run_agent(
                  "cost_usd": round(budget.cost_usd, 6), "elapsed_seconds": round(budget.elapsed, 3)}
         root_usage = {k: round(v + consumed.get(_LIMIT_OF[k], 0), 6) for k, v in usage.items()}
         try:
-            observe("run_ended", status=status.value, summary=mask(summary), pending_approvals=list(pending),
+            observe("run_ended", status=status.value, summary=text_ref(summary), pending_approvals=list(pending),
                     evidence_refs=list(evidence), uncertainties=[mask(u) for u in uncertainties],
                     usage=usage, root_usage=root_usage)
         except JournalError as exc:
