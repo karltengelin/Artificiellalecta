@@ -14,7 +14,7 @@ Det finns ingen separat kodbas per delprojekt eller avdelning (B-015/B-024).
 | ai | Modellroller, leverantörsadaptrar, strukturerade svar, nycklar och anropslogg |
 | analytics | Första scenarioberäkningen och adapter för offline-backup |
 | design | Digital klarhets tokenfil (B-034) och webbens CSS-variabler som härleds ur den (`web_css.py`) |
-| reporting | Avgränsad exempelrapport om agentnyttjande: fiktiv data, Digital klarhet, PDF/Markdown och diagram. Ingen aktiverad skill |
+| reporting | [Återanvändbar rapportmall i Digital klarhet](../06_design/rapportmall.md) och exempelrapport om agentnyttjande: fiktiv data, PDF/Markdown och diagram. Ingen aktiverad skill |
 | utils | Databasanslutning, backup/återställning, återanvändbar migrationskod och demobeståndet för handläggar-UI:t |
 | web | Handläggar-UI:t (Fas 4): FastAPI-sidor som bara anropar tjänstelagret, se [handläggar-ui.md](handläggar-ui.md) |
 | agents och övriga skill-mappar | Förberedd struktur; agent-runtime och ytterligare förmågor byggs enligt fasplanen |

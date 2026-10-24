@@ -1,1 +1,1 @@
-"""Rapportgenerering och avgränsade exempel, utan aktiverade agentverktyg."""
+"""Återanvändbar rapportmall och avgränsade exempel, utan aktiverade agentverktyg."""

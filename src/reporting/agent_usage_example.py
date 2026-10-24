@@ -12,46 +12,43 @@ import json
 import math
 import re
 from collections import Counter
-from html import escape
 from pathlib import Path
 
-from reportlab.graphics import renderPDF, renderSVG
-from reportlab.graphics.shapes import Drawing, Line, Rect, String
+from reportlab.graphics import renderSVG
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
-from reportlab.platypus import Paragraph, Table, TableStyle
+
+from reporting.template import (
+    CW,
+    DEFAULT_FONTS,
+    NAVY,
+    PURPLE,
+    TOKENS,
+    WHITE,
+    C,
+    ChartStyle,
+    Cover,
+    Report,
+    ReportMetadata,
+    register_dm_sans,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data/examples/agent_usage_2026_09.json"
 SOURCE = ROOT / "06_design/exempel/rapportunderlag_agentnyttjande.md"
 OUT = ROOT / "output/pdf"
 NAME = "agentnyttjande_september_2026"
-TOKENS = json.loads(
-    (ROOT / "src/design/digital_clarity.tokens.json").read_text(encoding="utf-8")
-)
-C = {k: colors.HexColor(v) for k, v in TOKENS["color"].items()}
-NAVY, PURPLE, LIGHT, MID = (
-    C["text"],
-    C["brand"],
-    C["accent_soft"],
-    colors.HexColor("#B6A4ED"),
-)
+# Extra category colors belong to this example, not the shared brand palette.
+MID = colors.HexColor("#B6A4ED")
 GREY = colors.HexColor("#B9B5CD")
 GREEN = colors.HexColor(TOKENS["status"]["success"]["text"])
-WHITE = colors.white
-W, H = A4
-M = 48
-CW = W - 2 * M
 MODES = {
     "manual": "Manuellt",
     "supported": "Agentstöd",
     "internal": "Agentutfört internt",
 }
 MODE_COLORS = [GREY, MID, PURPLE]
+CHART_STYLE = ChartStyle()
 
 
 def num(value, decimals=0):
@@ -504,37 +501,7 @@ def replacements(x):
     return values
 
 
-def text(d, x, y, value, size=9, color=None, anchor="start", bold=False):
-    d.add(
-        String(
-            x,
-            y,
-            str(value),
-            fontName="DMSans-Bold" if bold else "DMSans",
-            fontSize=size,
-            fillColor=color or NAVY,
-            textAnchor=anchor,
-        )
-    )
-
-
-def line(d, x1, y1, x2, y2, color=None, width=0.6):
-    d.add(Line(x1, y1, x2, y2, strokeColor=color or C["border"], strokeWidth=width))
-
-
-def rect(d, x, y, w, h, color):
-    d.add(Rect(x, y, w, h, fillColor=color, strokeColor=None))
-
-
-def legend(d, items, y):
-    x = 0
-    for label, color in items:
-        rect(d, x, y - 1, 8, 8, color)
-        text(d, x + 13, y, label, 9, C["text_muted"])
-        x += pdfmetrics.stringWidth(label, "DMSans", 9) + 29
-
-
-def chart_weekly(x):
+def chart_weekly(x, style=CHART_STYLE):
     d = Drawing(CW, 227)
     left = 35
     bottom = 42
@@ -542,17 +509,17 @@ def chart_weekly(x):
     plotw = CW - 45
     for tick in [0, 200, 400, 600]:
         y = bottom + tick / 650 * (top - bottom)
-        line(d, left, y, CW, y)
-        text(d, left - 8, y - 3, tick, 9, C["text_muted"], "end")
+        style.line(d, left, y, CW, y)
+        style.text(d, left - 8, y - 3, tick, 9, C["text_muted"], "end")
     bw = 48
     for i, w in enumerate(x["d"]["weeks"]):
         xx = left + 25 + i * (plotw / 5)
         y = bottom
         for mode, color in zip(MODES, MODE_COLORS):
             h = w[mode] / 650 * (top - bottom)
-            rect(d, xx, y, bw, h, color)
+            style.rect(d, xx, y, bw, h, color)
             y += h
-        text(
+        style.text(
             d,
             xx + bw / 2,
             y + 6,
@@ -561,45 +528,45 @@ def chart_weekly(x):
             anchor="middle",
             bold=True,
         )
-        text(d, xx + bw / 2, bottom - 17, w["label"], 9, anchor="middle")
-    text(d, 0, 211, "Antal stängda ärenden", 10, bold=True)
-    legend(d, list(zip(MODES.values(), MODE_COLORS)), 3)
+        style.text(d, xx + bw / 2, bottom - 17, w["label"], 9, anchor="middle")
+    style.text(d, 0, 211, "Antal stängda ärenden", 10, bold=True)
+    style.legend(d, list(zip(MODES.values(), MODE_COLORS)), 3)
     return d
 
 
-def chart_process(x):
+def chart_process(x, style=CHART_STYLE):
     d = Drawing(CW, 244)
     left = 160
     width = CW - left - 23
-    legend(d, list(zip(MODES.values(), MODE_COLORS)), 228)
+    style.legend(d, list(zip(MODES.values(), MODE_COLORS)), 228)
     for i, p in enumerate(x["d"]["case_types"]):
         y = 195 - i * 29
-        text(d, 0, y + 4, p["name"], 9)
+        style.text(d, 0, y + 4, p["name"], 9)
         xx = left
         for mode, color in zip(MODES, MODE_COLORS):
             ww = p[mode] / 960 * width
-            rect(d, xx, y, ww, 15, color)
+            style.rect(d, xx, y, ww, 15, color)
             xx += ww
-        text(d, xx + 5, y + 3, num(sum(p[m] for m in MODES)), 9)
+        style.text(d, xx + 5, y + 3, num(sum(p[m] for m in MODES)), 9)
     for tick in [0, 240, 480, 720, 960]:
         xx = left + tick / 960 * width
-        text(d, xx, 12, tick, 9, C["text_muted"], "middle")
-    text(d, left, 0, "Antal ärenden", 9, C["text_muted"])
+        style.text(d, xx, 12, tick, 9, C["text_muted"], "middle")
+    style.text(d, left, 0, "Antal ärenden", 9, C["text_muted"])
     return d
 
 
-def chart_tokens(x):
+def chart_tokens(x, style=CHART_STYLE):
     d = Drawing(CW, 255)
     left = 112
     width = CW - left - 30
-    legend(
+    style.legend(
         d,
         [("Input utan cache", MID), ("Cachelagrad input", PURPLE), ("Output", NAVY)],
         238,
     )
     for i, a in enumerate(sorted(x["agents"], key=lambda a: a["tokens"], reverse=True)):
         y = 212 - i * 18
-        text(d, 0, y + 3, a["short"], 9)
+        style.text(d, 0, y + 3, a["short"], 9)
         xx = left
         for volume, color in [
             (a["input"] - a["cache"], MID),
@@ -607,35 +574,35 @@ def chart_tokens(x):
             (a["output"], NAVY),
         ]:
             ww = volume / 48 * width
-            rect(d, xx, y, ww, 12, color)
+            style.rect(d, xx, y, ww, 12, color)
             xx += ww
-        text(d, xx + 5, y + 2, num(a["tokens"]), 9, bold=True)
+        style.text(d, xx + 5, y + 2, num(a["tokens"]), 9, bold=True)
     for tick in [0, 12, 24, 36, 48]:
-        text(d, left + tick / 48 * width, 26, tick, 9, C["text_muted"], "middle")
-    text(d, left, 9, "Miljoner tokens - cache ingår i input", 9, C["text_muted"])
+        style.text(d, left + tick / 48 * width, 26, tick, 9, C["text_muted"], "middle")
+    style.text(d, left, 9, "Miljoner tokens - cache ingår i input", 9, C["text_muted"])
     return d
 
 
-def chart_role(x):
+def chart_role(x, style=CHART_STYLE):
     d = Drawing(CW, 203)
     left = 80
     width = CW - left - 45
-    legend(d, [("Andel tokens", MID), ("Andel modellkostnad", PURPLE)], 187)
+    style.legend(d, [("Andel tokens", MID), ("Andel modellkostnad", PURPLE)], 187)
     for i, (name, r) in enumerate(x["role"].items()):
         y = 149 - i * 48
-        text(d, 0, y, name, 11, bold=True)
+        style.text(d, 0, y, name, 11, bold=True)
         for yy, share, color in [
             (y + 3, r["tokens"] / x["totals"]["tokens"], MID),
             (y - 13, r["cost"] / x["totals"]["cost"], PURPLE),
         ]:
             ww = share / 0.6 * width
-            rect(d, left, yy, ww, 11, color)
-            text(d, left + ww + 5, yy + 1, pct(share), 9)
-    text(d, left, 3, "Andel inom respektive mått", 9, C["text_muted"])
+            style.rect(d, left, yy, ww, 11, color)
+            style.text(d, left + ww + 5, yy + 1, pct(share), 9)
+    style.text(d, left, 3, "Andel inom respektive mått", 9, C["text_muted"])
     return d
 
 
-def chart_matrix(x):
+def chart_matrix(x, style=CHART_STYLE):
     d = Drawing(CW, 370)
     cell = 32
     left = 135
@@ -643,8 +610,8 @@ def chart_matrix(x):
     values = {(s, t): n for s, t, n in x["d"]["delegations"]}
     for i, a in enumerate(x["agents"]):
         y = bottom + (9 - i) * cell
-        text(d, left - 10, y + 11, a["short"], 9, anchor="end")
-        text(
+        style.text(d, left - 10, y + 11, a["short"], 9, anchor="end")
+        style.text(
             d,
             left + i * cell + cell / 2,
             bottom + 10 * cell + 10,
@@ -657,8 +624,8 @@ def chart_matrix(x):
             xx = left + j * cell
             n = values.get((a["id"], b["id"]), 0)
             if i == j:
-                rect(d, xx, y, cell - 2, cell - 2, C["background"])
-                text(d, xx + 15, y + 10, "-", 9, C["text_muted"], "middle")
+                style.rect(d, xx, y, cell - 2, cell - 2, C["background"])
+                style.text(d, xx + 15, y + 10, "-", 9, C["text_muted"], "middle")
             elif n:
                 weight = 0.12 + 0.88 * (n / 1400)
                 col = colors.Color(
@@ -666,8 +633,8 @@ def chart_matrix(x):
                     1 + (PURPLE.green - 1) * weight,
                     1 + (PURPLE.blue - 1) * weight,
                 )
-                rect(d, xx, y, cell - 2, cell - 2, col)
-                text(
+                style.rect(d, xx, y, cell - 2, cell - 2, col)
+                style.text(
                     d,
                     xx + 15,
                     y + 10,
@@ -677,7 +644,7 @@ def chart_matrix(x):
                     "middle",
                     bold=n >= 650,
                 )
-    text(
+    style.text(
         d,
         left,
         5,
@@ -688,7 +655,7 @@ def chart_matrix(x):
     return d
 
 
-def chart_top(x):
+def chart_top(x, style=CHART_STYLE):
     d = Drawing(CW, 281)
     left = 255
     width = CW - left - 35
@@ -696,15 +663,15 @@ def chart_top(x):
         sorted(x["d"]["delegations"], key=lambda z: z[2], reverse=True)[:8]
     ):
         y = 249 - i * 29
-        text(d, 0, y + 3, x["ids"][s]["short"] + " > " + x["ids"][t]["short"], 9)
-        rect(d, left, y, n / 1400 * width, 15, PURPLE if i < 2 else MID)
-        text(d, left + n / 1400 * width + 5, y + 3, num(n), 9, bold=True)
-    text(d, 0, 270, "Antal riktade delegeringar", 10, bold=True)
-    text(d, left, 0, "Uppdrag, inte enskilda meddelanden", 9, C["text_muted"])
+        style.text(d, 0, y + 3, x["ids"][s]["short"] + " > " + x["ids"][t]["short"], 9)
+        style.rect(d, left, y, n / 1400 * width, 15, PURPLE if i < 2 else MID)
+        style.text(d, left + n / 1400 * width + 5, y + 3, num(n), 9, bold=True)
+    style.text(d, 0, 270, "Antal riktade delegeringar", 10, bold=True)
+    style.text(d, left, 0, "Uppdrag, inte enskilda meddelanden", 9, C["text_muted"])
     return d
 
 
-def chart_outcomes(x):
+def chart_outcomes(x, style=CHART_STYLE):
     d = Drawing(CW, 163)
     left = 140
     width = CW - left - 75
@@ -717,8 +684,8 @@ def chart_outcomes(x):
     }
     for i, (name, n) in enumerate(x["d"]["run_outcomes"].items()):
         y = 133 - i * 27
-        text(d, 0, y + 3, labels[name], 9)
-        rect(
+        style.text(d, 0, y + 3, labels[name], 9)
+        style.rect(
             d,
             left,
             y,
@@ -726,22 +693,22 @@ def chart_outcomes(x):
             13,
             PURPLE if name == "completed" else MID,
         )
-        text(
+        style.text(
             d, CW, y + 2, num(n) + " / " + pct(n / x["totals"]["runs"]), 9, anchor="end"
         )
     return d
 
 
-def chart_quality(x):
+def chart_quality(x, style=CHART_STYLE):
     d = Drawing(CW, 140)
     left = 150
     width = CW - left - 100
     for i, q in enumerate(x["d"]["quality"]):
         y = 106 - i * 35
         rate = q["errors"] / q["sample"]
-        text(d, 0, y + 3, MODES[q["mode"]], 9)
-        rect(d, left, y, rate / 0.12 * width, 17, MODE_COLORS[i])
-        text(
+        style.text(d, 0, y + 3, MODES[q["mode"]], 9)
+        style.rect(d, left, y, rate / 0.12 * width, 17, MODE_COLORS[i])
+        style.text(
             d,
             CW,
             y + 3,
@@ -750,11 +717,13 @@ def chart_quality(x):
             anchor="end",
             bold=True,
         )
-    text(d, 0, 130, "Andel granskade ärenden med minst en avvikelse", 10, bold=True)
+    style.text(
+        d, 0, 130, "Andel granskade ärenden med minst en avvikelse", 10, bold=True
+    )
     return d
 
 
-def chart_capacity(x):
+def chart_capacity(x, style=CHART_STYLE):
     d = Drawing(CW, 211)
     left = 35
     bottom = 38
@@ -762,8 +731,8 @@ def chart_capacity(x):
     maximum = 1800
     for v in [0, 400, 800, 1200, 1600]:
         y = bottom + v / maximum * height
-        line(d, left, y, CW, y)
-        text(d, left - 7, y - 3, num(v), 9, C["text_muted"], "end")
+        style.line(d, left, y, CW, y)
+        style.text(d, left - 7, y - 3, num(v), 9, C["text_muted"], "end")
     vals = [
         ("Baslinje", 0, x["base"], PURPLE, num(x["base"])),
         ("Avlastning", x["actual"], x["gross"], MID, "-" + num(x["gross"])),
@@ -773,10 +742,10 @@ def chart_capacity(x):
     ]
     for i, (label, base, delta, color, value) in enumerate(vals):
         xx = left + 20 + i * 91
-        rect(
+        style.rect(
             d, xx, bottom + base / maximum * height, 49, delta / maximum * height, color
         )
-        text(
+        style.text(
             d,
             xx + 24.5,
             bottom + (base + delta) / maximum * height + 7,
@@ -785,12 +754,12 @@ def chart_capacity(x):
             anchor="middle",
             bold=True,
         )
-        text(d, xx + 24.5, 20, label, 9, anchor="middle")
-    text(d, 0, 199, "Mänskliga timmar - modellerad månad", 10, bold=True)
+        style.text(d, xx + 24.5, 20, label, 9, anchor="middle")
+    style.text(d, 0, 199, "Mänskliga timmar - modellerad månad", 10, bold=True)
     return d
 
 
-def chart_program_cost(x):
+def chart_program_cost(x, style=CHART_STYLE):
     d = Drawing(CW, 127)
     total = (
         x["totals"]["cost"]
@@ -805,13 +774,13 @@ def chart_program_cost(x):
     xx = 0
     for label, value, color in segments:
         ww = value / total * CW
-        rect(d, xx, 71, ww, 26, color)
+        style.rect(d, xx, 71, ww, 26, color)
         xx += ww
     for i, (label, value, color) in enumerate(segments):
-        rect(d, 0, 47 - i * 19, 8, 8, color)
-        text(d, 14, 47 - i * 19, label, 9)
-        text(d, CW, 47 - i * 19, num(value) + " kr", 9, anchor="end")
-    text(
+        style.rect(d, 0, 47 - i * 19, 8, 8, color)
+        style.text(d, 14, 47 - i * 19, label, 9)
+        style.text(d, CW, 47 - i * 19, num(value) + " kr", 9, anchor="end")
+    style.text(
         d,
         0,
         112,
@@ -836,305 +805,86 @@ CHARTS = {
 }
 
 
-def markup(s):
-    s = escape(s)
-    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
+def table_widths(headers):
+    """Editorial column widths for this report's particular tables."""
+    n = len(headers)
+    if n == 6:
+        widths = [132, 64, 64, 70, 82, CW - 412]
+    elif n == 5:
+        widths = [164, 75, 75, 75, CW - 389]
+    elif n == 4:
+        widths = [155, 110, 115, CW - 380]
+        if headers[0] == "Horisont":
+            widths = [61, 179, 112, CW - 352]
+    elif n == 3:
+        widths = [205, 104, CW - 309]
+        if headers[0] == "Illustrativ kalkylpost":
+            widths = [201, 90, CW - 291]
+        if headers[0] == "Fristående alternativ":
+            widths = [143, 210, CW - 353]
+    else:
+        widths = [140, CW - 140]
+    return widths
 
 
-class Report:
-    def __init__(self, path, x):
-        self.c = canvas.Canvas(str(path), pagesize=A4, invariant=1, pageCompression=1)
-        self.c.setTitle("Agentnyttjande - fiktiv exempelrapport - september 2026")
-        self.c.setAuthor("Artificiellalecta")
-        self.c.setSubject("Digital klarhet v1.0 / B-034. Helt fiktivt scenario.")
-        self.x = x
-        self.page = 0
-        self.audit = []
-        self.style = ParagraphStyle(
-            "Body",
-            fontName="DMSans",
-            fontSize=11,
-            leading=15.3,
-            textColor=NAVY,
-            spaceAfter=8,
-        )
-        self.cellstyle = ParagraphStyle(
-            "Cell", parent=self.style, fontSize=9, leading=12
-        )
-        self.y = 0
+def key_figures(x):
+    return [
+        ("Agentberörda ärenden", "74 %", "1 776 av 2 400"),
+        ("Agentutförda internt", "30 %", "720 av 2 400"),
+        ("Modellkostnad", num(x["totals"]["cost"]) + " kr", "Fiktiva rollpriser"),
+        ("Tokenvolym", "168 M", "Inklusive 70 M cache"),
+        ("Nettopotential", num(x["net"]) + " tim", "Efter 136 tim tillägg"),
+        ("Mänskligt arbete", num(x["human"]) + " tim", "Mot 800 tim kapacitet"),
+    ]
 
-    def label(self, x, y, s, size=9, color=None, font="DMSans"):
-        self.c.setFillColor(color or NAVY)
-        self.c.setFont(font, size)
-        self.c.drawString(x, y, s)
 
-    def paragraph(self, s):
-        p = Paragraph(markup(s), self.style)
-        _, hh = p.wrap(CW, 1000)
-        self.place(hh + 8)
-        p.drawOn(self.c, M, self.y - hh)
-        self.y -= hh + 8
+COVER = Cover(
+    eyebrow="EXEMPELRAPPORT / SIMULERAD MÅNAD",
+    title_lines=("När agenterna", "blir en del", "av arbetet."),
+    description="Agentnyttjande, kostnad, kvalitet och samverkan. En ledningsrapport med september 2026 som fiktiv rapportmånad.",
+    highlight_value="74 %",
+    highlight_label="av ärendena berör en agent.",
+    highlight_detail="30 % är agentutförda interna flöden.",
+    highlight_note="Användning är inte samma sak som autonomi.",
+    metrics=(
+        ("2 400", "stängda ärenden"),
+        ("168 M", "tokens totalt"),
+        ("25 820 kr", "modellkostnad"),
+    ),
+    note="Helt påhittade data för ett tänkt moget driftläge. Ingen verklig drift, kunddata eller aktuell leverantörsprislista har använts.",
+    footer="24 oktober 2026 / Rapport 1.0 / Digital klarhet 1.0",
+)
 
-    def place(self, height):
-        if self.y - height < 57:
-            raise ValueError(
-                f"Page {self.page}: content extends below footer by {57 - (self.y - height):.1f} pt"
-            )
 
-    def begin(self, ident, kicker, title):
-        self.page += 1
-        c = self.c
-        c.setFillColor(WHITE)
-        c.rect(0, 0, W, H, fill=1, stroke=0)
-        c.bookmarkPage(ident)
-        c.addOutlineEntry(title, ident, level=0)
-        c.setFillColor(PURPLE)
-        c.roundRect(M, H - 47, 9, 9, 2, fill=1, stroke=0)
-        self.label(M + 16, H - 45, "Artificiellalecta", 11, font="DMSans-Bold")
-        c.setFont("DMSans", 9)
-        c.setFillColor(C["text_muted"])
-        c.drawRightString(W - M, H - 44, "AGENT INSIGHT / SEPTEMBER 2026")
-        self.label(M, H - 85, kicker, 9, PURPLE, "DMSans-Medium")
-        p = Paragraph(
-            markup(title),
-            ParagraphStyle(
-                "Title", fontName="DMSans-Bold", fontSize=27, leading=30, textColor=NAVY
-            ),
-        )
-        _, h = p.wrap(CW, 200)
-        p.drawOn(c, M, H - 103 - h)
-        self.y = H - 103 - h - 21
-        c.setStrokeColor(C["border"])
-        c.setLineWidth(0.5)
-        c.line(M, 48, W - M, 48)
-        self.label(M, 31, "FIKTIVT SCENARIO - EJ DRIFTSTATISTIK", 9, C["text_muted"])
-        c.setFillColor(C["text_muted"])
-        c.setFont("DMSans", 9)
-        c.drawRightString(W - M, 31, f"Digital klarhet 1.0  /  {self.page:02d}")
-
-    def section(self, s):
-        self.place(24)
-        self.y -= 6
-        self.label(M, self.y - 10, s, 12, NAVY, "DMSans-Bold")
-        self.y -= 23
-
-    def table(self, lines):
-        rows = [
-            [s.strip() for s in line.strip().strip("|").split("|")] for line in lines
-        ]
-        rows = [r for r in rows if not all(re.fullmatch(r":?-+:?", z) for z in r)]
-        n = len(rows[0])
-        header = rows[0]
-        if n == 6:
-            widths = [132, 64, 64, 70, 82, CW - 412]
-        elif n == 5:
-            widths = [164, 75, 75, 75, CW - 389]
-        elif n == 4:
-            widths = [155, 110, 115, CW - 380]
-            if header[0] == "Horisont":
-                widths = [61, 179, 112, CW - 352]
-        elif n == 3:
-            widths = [205, 104, CW - 309]
-            if header[0] == "Illustrativ kalkylpost":
-                widths = [201, 90, CW - 291]
-            if header[0] == "Fristående alternativ":
-                widths = [143, 210, CW - 353]
-        else:
-            widths = [140, CW - 140]
-        rendered = []
-        for i, row in enumerate(rows):
-            cells = []
-            for j, cell in enumerate(row):
-                st = ParagraphStyle(
-                    "CellLocal",
-                    parent=self.cellstyle,
-                    fontName="DMSans-Medium" if i == 0 else "DMSans",
-                )
-                # Right-align genuinely numeric columns, not mixed explanatory text.
-                if i and re.match(r"^[+\-]?[\d\s,.]+(?: %| kr)?$", cell):
-                    st.alignment = 2
-                cells.append(Paragraph(markup(cell), st))
-            rendered.append(cells)
-        table = Table(rendered, colWidths=widths, hAlign="LEFT")
-        table.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), LIGHT),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 9),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 9),
-                    ("TOPPADDING", (0, 0), (-1, -1), 7),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
-                    ("LINEBELOW", (0, 1), (-1, -1), 0.35, C["border"]),
-                ]
-            )
-        )
-        _, hh = table.wrap(CW, 1000)
-        self.place(hh + 12)
-        table.drawOn(self.c, M, self.y - hh)
-        self.y -= hh + 12
-
-    def chart(self, drawing):
-        self.place(drawing.height + 12)
-        renderPDF.draw(drawing, self.c, M, self.y - drawing.height)
-        self.y -= drawing.height + 12
-
-    def kpis(self):
-        x = self.x
-        items = [
-            ("Agentberörda ärenden", "74 %", "1 776 av 2 400"),
-            ("Agentutförda internt", "30 %", "720 av 2 400"),
-            ("Modellkostnad", num(x["totals"]["cost"]) + " kr", "Fiktiva rollpriser"),
-            ("Tokenvolym", "168 M", "Inklusive 70 M cache"),
-            ("Nettopotential", num(x["net"]) + " tim", "Efter 136 tim tillägg"),
-            ("Mänskligt arbete", num(x["human"]) + " tim", "Mot 800 tim kapacitet"),
-        ]
-        height = 149
-        self.place(height + 10)
-        gap = 12
-        width = (CW - 2 * gap) / 3
-        for i, (label, value, note) in enumerate(items):
-            xx = M + (i % 3) * (width + gap)
-            yy = self.y - (i // 3) * 77 - 69
-            self.c.setFillColor(LIGHT)
-            self.c.roundRect(xx, yy, width, 69, 8, stroke=0, fill=1)
-            self.label(xx + 12, yy + 50, label, 9, C["text_muted"])
-            self.label(xx + 12, yy + 25, value, 22, NAVY, "DMSans-Bold")
-            self.label(xx + 12, yy + 10, note, 9, C["text_muted"])
-        self.y -= height + 10
-
-    def cover(self):
-        c = self.c
-        self.page += 1
-        c.bookmarkPage("cover")
-        c.addOutlineEntry("Omslag", "cover", 0)
-        c.setFillColor(WHITE)
-        c.rect(0, 0, W, H, fill=1, stroke=0)
-        c.setFillColor(PURPLE)
-        c.roundRect(M, H - 60, 12, 12, 3, fill=1, stroke=0)
-        self.label(M + 22, H - 58, "Artificiellalecta", 14, NAVY, "DMSans-Bold")
-        self.label(
-            M, H - 105, "EXEMPELRAPPORT / SIMULERAD MÅNAD", 10, PURPLE, "DMSans-Medium"
-        )
-        self.label(M, H - 163, "När agenterna", 39, NAVY, "DMSans-Bold")
-        self.label(M, H - 208, "blir en del", 39, NAVY, "DMSans-Bold")
-        self.label(M, H - 253, "av arbetet.", 39, NAVY, "DMSans-Bold")
-        self.y = H - 283
-        self.paragraph(
-            "Agentnyttjande, kostnad, kvalitet och samverkan. En ledningsrapport med september 2026 som fiktiv rapportmånad."
-        )
-        c.setFillColor(LIGHT)
-        c.roundRect(M, 279, CW, 171, 14, fill=1, stroke=0)
-        self.label(M + 24, 395, "74 %", 64, PURPLE, "DMSans-Bold")
-        self.label(
-            M + 24, 368, "av ärendena berör en agent.", 15, NAVY, "DMSans-Medium"
-        )
-        self.label(M + 24, 337, "30 % är agentutförda interna flöden.", 12, NAVY)
-        self.label(
-            M + 24,
-            315,
-            "Användning är inte samma sak som autonomi.",
-            11,
-            C["text_muted"],
-        )
-        c.setFillColor(NAVY)
-        c.roundRect(M, 163, CW, 92, 12, fill=1, stroke=0)
-        for i, (val, label) in enumerate(
-            [
-                ("2 400", "stängda ärenden"),
-                ("168 M", "tokens totalt"),
-                ("25 820 kr", "modellkostnad"),
-            ]
-        ):
-            xx = M + 22 + i * (CW - 20) / 3
-            self.label(xx, 215, val, 22, WHITE, "DMSans-Bold")
-            self.label(xx, 191, label, 10, colors.HexColor("#C4BFD8"))
-        self.y = 137
-        st = ParagraphStyle("CoverNote", parent=self.style, fontSize=9.5, leading=13)
-        p = Paragraph(
-            "Helt påhittade data för ett tänkt moget driftläge. Ingen verklig drift, kunddata eller aktuell leverantörsprislista har använts.",
-            st,
-        )
-        _, hh = p.wrap(CW, 100)
-        p.drawOn(c, M, self.y - hh)
-        self.label(
-            M,
-            51,
-            "24 oktober 2026 / Rapport 1.0 / Digital klarhet 1.0",
-            9,
-            C["text_muted"],
-        )
-        c.showPage()
-        self.audit.append({"page": self.page, "id": "cover", "remaining_pt": 0})
-
-    def body(self, body, drawings):
-        lines = body.strip().splitlines()
-        i = 0
-        while i < len(lines):
-            line0 = lines[i].strip()
-            if not line0:
-                i += 1
-                continue
-            if line0.startswith("<!-- kpis:"):
-                self.kpis()
-                i += 1
-            elif line0.startswith("## "):
-                self.section(line0[3:])
-                i += 1
-            elif line0.startswith("!["):
-                key = re.search(r"figures/(.+?)\.svg", line0).group(1)
-                self.chart(drawings[key])
-                i += 1
-            elif line0.startswith("|"):
-                rows = []
-                while i < len(lines) and lines[i].strip().startswith("|"):
-                    rows.append(lines[i])
-                    i += 1
-                self.table(rows)
-            elif line0.startswith("- "):
-                self.paragraph("• " + line0[2:])
-                i += 1
-            else:
-                para = [line0]
-                i += 1
-                while (
-                    i < len(lines)
-                    and lines[i].strip()
-                    and not lines[i].startswith(("## ", "|", "![", "<!--", "- "))
-                ):
-                    para.append(lines[i].strip())
-                    i += 1
-                self.paragraph(" ".join(para))
-
-    def finish(self, ident):
-        self.audit.append(
-            {"page": self.page, "id": ident, "remaining_pt": round(self.y - 57, 1)}
-        )
-        self.c.showPage()
+def build_report(path, x, content, drawings, *, fonts=DEFAULT_FONTS):
+    report = Report(
+        path,
+        ReportMetadata(
+            title="Agentnyttjande - fiktiv exempelrapport - september 2026",
+            header="AGENT INSIGHT / SEPTEMBER 2026",
+            footer="FIKTIVT SCENARIO - EJ DRIFTSTATISTIK",
+            subject="Digital klarhet v1.0 / B-034. Helt fiktivt scenario.",
+        ),
+        fonts=fonts,
+    )
+    report.render(
+        content,
+        drawings=drawings,
+        kpis=key_figures(x),
+        cover=COVER,
+        table_widths=table_widths,
+    )
+    return report
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--font-dir", type=Path, default=ROOT / "tmp/pdfs/fonts")
     args = parser.parse_args()
-    for weight, filename in [
-        ("", "DM-Sans-Regular.ttf"),
-        ("-Medium", "DM-Sans-Medium.ttf"),
-        ("-Bold", "DM-Sans-Bold.ttf"),
-    ]:
-        path = args.font_dir / filename
-        if not path.exists():
-            raise SystemExit(
-                f"Saknar DM Sans: {path}. Hämta typsnittet för att återskapa rapporten."
-            )
-        pdfmetrics.registerFont(TTFont("DMSans" + weight, str(path)))
-    pdfmetrics.registerFontFamily(
-        "DMSans",
-        normal="DMSans",
-        bold="DMSans-Bold",
-        italic="DMSans",
-        boldItalic="DMSans-Bold",
-    )
+    try:
+        fonts = register_dm_sans(args.font_dir)
+    except FileNotFoundError as exc:
+        raise SystemExit(str(exc)) from exc
     x = metrics(json.loads(DATA.read_text(encoding="utf-8")))
     content = SOURCE.read_text(encoding="utf-8")
     for name, value in replacements(x).items():
@@ -1144,20 +894,10 @@ def main():
     figures = OUT / "figures"
     figures.mkdir(exist_ok=True)
     (OUT / (NAME + ".md")).write_text(content, encoding="utf-8")
-    drawings = {name: func(x) for name, func in CHARTS.items()}
+    drawings = {name: func(x, ChartStyle(fonts)) for name, func in CHARTS.items()}
     for name, drawing in drawings.items():
         renderSVG.drawToFile(drawing, str(figures / (name + ".svg")))
-    report = Report(OUT / (NAME + ".pdf"), x)
-    sections = re.split(r"<!-- page: (.+?) \| (.+?) \| (.+?) -->", content)[1:]
-    for i in range(0, len(sections), 4):
-        ident, kicker, title, body = sections[i : i + 4]
-        if ident == "cover":
-            report.cover()
-            continue
-        report.begin(ident, kicker, title)
-        report.body(body, drawings)
-        report.finish(ident)
-    report.c.save()
+    report = build_report(OUT / (NAME + ".pdf"), x, content, drawings, fonts=fonts)
     audit = {
         "synthetic": True,
         "pages": report.audit,
@@ -1168,6 +908,7 @@ def main():
         "checks": "Case/weekly totals, tokens, root/child run graph, quality totals and cross-team routing validated",
         "fonts": ["DM Sans Regular", "DM Sans Medium", "DM Sans Bold"],
     }
+    (ROOT / "tmp/pdfs").mkdir(parents=True, exist_ok=True)
     (ROOT / "tmp/pdfs/agent_usage_validation.json").write_text(
         json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8"
     )
