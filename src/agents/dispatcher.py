@@ -21,12 +21,17 @@ Ordningen för en grupp anrop i samma modellsvar:
 En grupp är ingen affärstransaktion: ett tidigare utfört anrop står kvar om ett
 senare fallerar. Identiteten (Actor.agent med team) kommer från profilen, aldrig
 från modellen.
+
+`observer` (körjournalen, 3b-6) får `tool_denied`, `tool_intent` *före* anropet till
+tjänstelagret och `tool_completed`/`approval_wait` efteråt. Fallerar den före anropet
+körs ingenting; fallerar den efter är utfallet okänt för journalen och loopen kräver
+avstämning.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
@@ -34,6 +39,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from agents.errors import HarnessError, ScopeError, SkillDeniedError, SkillInputError
+from agents.journal import digest, mask
 from agents.profile import EffectiveProfile, SkillDecision
 from agents.scope import ExecutionScope
 from agents.skills import ServiceSkill
@@ -112,6 +118,7 @@ class Dispatcher:
         run_id: str,
         case_id: str | None = None,
         scope: ExecutionScope | None = None,
+        observer: Callable[..., Any] | None = None,
     ) -> None:
         """`scope` byggs av betrodd kod och måste vara det uppdraget pekar ut."""
         if (scope.ref if scope else None) != profile.execution_scope_ref:
@@ -127,6 +134,7 @@ class Dispatcher:
         self.actor = Actor.agent(profile.agent_id, team=profile.team)
         self.run_id = run_id
         self.case_id = case_id
+        self._observe = observer or (lambda type, **fields: None)
 
     def dispatch(self, calls: Sequence[ToolCall]) -> DispatchOutcome:
         checked: list[_Checked | CallOutcome] = []
@@ -143,6 +151,10 @@ class Dispatcher:
                 checked.append(_denied(call, exc))
 
         if any(isinstance(c, CallOutcome) for c in checked):
+            for c in checked:
+                if isinstance(c, CallOutcome):
+                    self._observe("tool_denied", tool_call_id=c.call_id, skill=c.skill, status=c.status.value,
+                                  error_type=c.error_type, reasons=[mask(r) for r in c.reasons])
             return DispatchOutcome(tuple(
                 c if isinstance(c, CallOutcome)
                 else _outcome(c.call, CallStatus.NOT_EXECUTED, {"status": "not_executed", "message": GROUP_STOPPED})
@@ -156,6 +168,7 @@ class Dispatcher:
                 outcomes.append(_outcome(c.call, CallStatus.NOT_EXECUTED, {"status": "not_executed", "message": WAITING}))
                 continue
             outcome = self._execute(c)
+            self._observe_result(outcome)
             waiting = outcome.status == CallStatus.PENDING_APPROVAL
             outcomes.append(outcome)
         return DispatchOutcome(tuple(outcomes))
@@ -192,6 +205,11 @@ class Dispatcher:
         except SkillDeniedError as exc:
             return _denied(c.call, exc)
         ctx = OperationContext(actor=self.actor, run_id=self.run_id, case_id=self.case_id)
+        self._observe(
+            "tool_intent", tool_call_id=c.call.id, skill=c.skill.name, operation=c.skill.operation.name,
+            kind=c.skill.kind.value, effective=decision.service_level.value,
+            input_hash=digest(c.action.data.model_dump(mode="json")), reason=mask(c.action.reason),
+        )
         try:
             result = c.skill.execute(self.service, ctx, c.action)
         except ServiceError as exc:
@@ -212,6 +230,19 @@ class Dispatcher:
                     error=True, reasons=(str(exc),),
                 )
         return _outcome(c.call, CallStatus.DONE, payload)
+
+
+    def _observe_result(self, outcome: CallOutcome) -> None:
+        if outcome.status == CallStatus.PENDING_APPROVAL:
+            self._observe("approval_wait", tool_call_id=outcome.call_id, skill=outcome.skill,
+                          approval_id=outcome.approval_id, business_change_executed=False)
+        elif outcome.status == CallStatus.DENIED:
+            self._observe("tool_denied", tool_call_id=outcome.call_id, skill=outcome.skill,
+                          status=outcome.status.value, reasons=[mask(r) for r in outcome.reasons])
+        else:
+            self._observe("tool_completed", tool_call_id=outcome.call_id, skill=outcome.skill,
+                          status=outcome.status.value, error_type=outcome.error_type,
+                          output_hash=digest(outcome.result.content))
 
 
 def _denied(call: ToolCall, exc: Exception) -> CallOutcome:

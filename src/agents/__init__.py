@@ -7,7 +7,7 @@ Byggt hittills:
   - effektiv profil med förklaringar och versionsbild (3b-1/3b-2)
   - dispatcher som prövar varje anrop, och resursmandat för personuppgifter (3b-3)
   - agentloopen med kontextbygge, tak och stopp (3b-4)
-Godkännandets fortsättning och körjournalen kommer i 3b-5–3b-6.
+  - länkad fortsättning efter godkännande (3b-5) och körjournal i JSONL (3b-6)
 
     from agents import Dispatcher, Ecosystem, SkillRegistry, compile_profile
     from services import ServiceLayer, default_registry
@@ -17,6 +17,7 @@ Godkännandets fortsättning och körjournalen kommer i 3b-5–3b-6.
     print(profile.explain())
 """
 
+from agents.continuation import Continuation, ContinuationNotReady, prepare_continuation
 from agents.dispatcher import CallOutcome, CallStatus, Dispatcher, DispatchOutcome
 from agents.ecosystem import Ecosystem, Limits
 from agents.errors import (
@@ -27,6 +28,7 @@ from agents.errors import (
     SkillDeniedError,
     SkillInputError,
 )
+from agents.journal import FileJournal, JournalError, MemoryJournal, read_journal
 from agents.loop import RunOutcome, build_context, run_agent
 from agents.profile import (
     EffectiveProfile,
@@ -42,14 +44,19 @@ from agents.skills import ServiceSkill, SkillRegistry
 __all__ = [
     "CallOutcome",
     "CallStatus",
+    "Continuation",
+    "ContinuationNotReady",
     "DispatchOutcome",
     "Dispatcher",
     "Ecosystem",
     "EcosystemConfigError",
     "EffectiveProfile",
     "ExecutionScope",
+    "FileJournal",
     "HarnessError",
+    "JournalError",
     "Limits",
+    "MemoryJournal",
     "Outcome",
     "RunOutcome",
     "RunRequest",
@@ -65,6 +72,8 @@ __all__ = [
     "VersionSnapshot",
     "build_context",
     "compile_profile",
+    "prepare_continuation",
+    "read_journal",
     "run_agent",
     "scope_for_person",
 ]
