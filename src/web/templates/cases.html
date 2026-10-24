@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Ärenden{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>Ärenden</h1>
+    <nav class="filter" aria-label="Urval">
+      {% for key, text in [("aktiva", "Aktiva"), ("stangda", "Stängda"), ("alla", "Alla")] %}
+      <a href="/arenden?status={{ key }}" {% if filter == key %}aria-current="page" class="is-current"{% endif %}>{{ text }}</a>
+      {% endfor %}
+      <a class="button" href="/arenden/ny">Nytt ärende</a>
+    </nav>
+  </div>
+  <p class="muted small">Ett ärende är handläggaragentens arbetsenhet och mandat: agenten når bara ärendets försäkrade,
+    arbetsgivare och period, och kan inte skapa, ändra eller stänga ärenden (B-033).</p>
+  {% if cases.cases %}
+  <table class="table">
+    <thead><tr><th>Ärende</th><th>Typ</th><th>Försäkrad</th><th>Månad</th><th>Mottaget</th><th>Status</th><th>Handläggare</th></tr></thead>
+    <tbody>
+      {% for c in cases.cases %}
+      <tr>
+        <td><a href="/arenden/{{ c.case_number }}">{{ c.case_number }}</a></td>
+        <td>{{ c.case_type | label('case_type') }}</td>
+        <td>{% if c.personal_id_number %}<a href="/forsakrade/{{ c.personal_id_number }}">{{ c.name or c.personal_id_number | pnr }}</a>{% else %}–{% endif %}</td>
+        <td>{{ c.period_month | month }}</td>
+        <td>{{ c.received_date | iso_date }}</td>
+        <td><span class="pill pill--case-{{ c.status }}">{{ c.status | label('case_status') }}</span>{% if c.outcome %} · {{ c.outcome | label('case_outcome') }}{% endif %}</td>
+        <td>{{ c.assigned_to or "–" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Inga ärenden i urvalet.</p>
+  {% endif %}
+</section>
+{% endblock %}

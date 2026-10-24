@@ -11,6 +11,10 @@
     <form method="post" action="/forsakrade/{{ o.personal_id_number }}/loneunderlag" class="form">
       {{ csrf() }}
       <input type="hidden" name="personal_id_number" value="{{ o.personal_id_number }}">
+      {% if values.get("case_number") %}
+      <input type="hidden" name="case_number" value="{{ values.case_number }}">
+      <p class="small">Registreras i ärendet <a href="/arenden/{{ values.case_number }}">{{ values.case_number }}</a> – syns i ärendets historik.</p>
+      {% endif %}
       <fieldset class="choice">
         <legend>Typ</legend>
         <label><input type="radio" name="kind" value="new" {% if values.get("kind", "new") == "new" %}checked{% endif %}> Ny rapport för månaden</label>

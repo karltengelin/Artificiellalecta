@@ -92,6 +92,15 @@ def create_demo_database(engine: Engine, *, with_proposals: bool = True, today: 
         add_demo_proposals(session_factory, today=today)
 
 
+def add_missing_demo_tables(engine: Engine) -> None:
+    """Skapar tabeller som saknas i en befintlig demo- eller testdatabas (t.ex. `cases`, Fas 5).
+
+    Befintliga tabeller och rader rörs inte, och inget bestånd läggs till. Bara för
+    demo- och testdatabaserna – Lakebase-schemat ändras med migrationsskripten.
+    """
+    Base.metadata.create_all(engine)
+
+
 def seed_demo_stock(session_factory) -> None:
     with session_factory() as s:
         s.add_all(BaseAmount(year=y, income_base_amount_sek=Decimal(v)) for y, v in IBB.items())

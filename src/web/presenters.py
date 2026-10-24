@@ -45,6 +45,20 @@ EVENT_OUTCOMES = {"executed": "Utförd", "proposed": "Föreslagen", "rejected": 
 APPROVAL_STATUS = {"pending": "Väntar", "approved": "Godkänd", "rejected": "Avslagen"}
 ACTOR_TYPES = {"human": "Handläggare", "agent": "Agent", "system": "Skript"}
 OPERATION_KINDS = {"read": "Läsning", "compute": "Beräkning", "write": "Ändring", "external": "Extern"}
+CASE_TYPES = {"salary_report": "Löneunderlag"}
+CASE_STATUS = {
+    "open": "Öppet", "in_progress": "Pågår", "waiting_approval": "Väntar på godkännande",
+    "waiting_info": "Väntar på komplettering", "closed": "Stängt",
+}
+CASE_OUTCOMES = {
+    "approved": "Godkänt", "rejected": "Avslaget", "supplement_requested": "Komplettering begärd",
+    "manual_review": "Manuell prövning", "no_action": "Ingen åtgärd",
+}
+RUN_STATUS = {
+    "completed": "Klar", "waiting_approval": "Väntar på godkännande", "needs_compliance": "Behöver compliance",
+    "needs_human": "Handläggaren tar över", "blocked": "Stoppad av harness", "failed": "Misslyckades",
+    "limit_reached": "Tak nått", "reconciliation_required": "Kräver avstämning",
+}
 
 LABELS = {
     "policy_state": POLICY_STATES,
@@ -57,6 +71,10 @@ LABELS = {
     "approval_status": APPROVAL_STATUS,
     "actor_type": ACTOR_TYPES,
     "operation_kind": OPERATION_KINDS,
+    "case_type": CASE_TYPES,
+    "case_status": CASE_STATUS,
+    "case_outcome": CASE_OUTCOMES,
+    "run_status": RUN_STATUS,
 }
 
 
@@ -196,6 +214,14 @@ FIELD_NAMES = {
     "contact_name": "Kontaktperson",
     "contact_email": "Kontaktens e-post",
     "contact_phone": "Kontaktens telefon",
+    "case_type": "Ärendetyp",
+    "case_number": "Ärende",
+    "details": "Inrapporterade uppgifter",
+    "due_date": "Tidsfrist",
+    "assigned_to": "Handläggare",
+    "status": "Status",
+    "outcome": "Utfall",
+    "closing_note": "Motivering till utfallet",
 }
 
 

@@ -19,23 +19,30 @@ from starlette.exceptions import HTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from services import ServiceLayer
+from web.agent import CaseAgent
 from web.config import WebSettings
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.presenters import ErrorView
-from web.routes import changes, enrollment, insured, journal
+from web.routes import cases, changes, enrollment, insured, journal
 
 log = logging.getLogger("web")
 
 
-def create_app(service: ServiceLayer | None = None, settings: WebSettings | None = None) -> FastAPI:
+def create_app(
+    service: ServiceLayer | None = None, settings: WebSettings | None = None, case_agent: CaseAgent | None = None,
+) -> FastAPI:
+    """case_agent: handläggaragenten för ärenden. Byggs med tjänstelagret om inget anges;
+    med ett givet tjänstelager utan agent visas ärendena utan knappen *Starta agent*."""
     settings = settings or WebSettings.from_env()
     if service is None:
-        from web.database import build_service
+        from web.database import build_services
 
-        service = build_service(settings)
+        service, built_agent = build_services(settings)
+        case_agent = case_agent or built_agent
 
     app = FastAPI(title="Artificiellalecta – handläggare", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
+    app.state.case_agent = case_agent
     app.state.settings = settings
     app.state.csrf_token = new_csrf_token()
 
@@ -45,6 +52,7 @@ def create_app(service: ServiceLayer | None = None, settings: WebSettings | None
     app.include_router(insured.router)
     app.include_router(changes.router)
     app.include_router(journal.router)
+    app.include_router(cases.router)
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):

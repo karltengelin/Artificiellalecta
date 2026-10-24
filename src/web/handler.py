@@ -45,9 +45,12 @@ def settings(request: Request) -> WebSettings:
     return request.app.state.settings
 
 
-def handler_ctx(request: Request, reason: str | None = None) -> OperationContext:
-    """Handläggaren som aktör – samma spår i händelseloggen som agenter och skript."""
-    return OperationContext(actor=Actor.human(settings(request).handler_id), reason=reason)
+def handler_ctx(request: Request, reason: str | None = None, case_id: str | None = None) -> OperationContext:
+    """Handläggaren som aktör – samma spår i händelseloggen som agenter och skript.
+
+    case_id: ärendet ändringen görs i (Fas 5), så att den syns i ärendets historik.
+    """
+    return OperationContext(actor=Actor.human(settings(request).handler_id), reason=reason, case_id=case_id)
 
 
 def read(request: Request, operation: str, data: dict[str, Any]) -> BaseModel:

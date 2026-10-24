@@ -155,3 +155,11 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .nowrap { white-space: nowrap; }
 pre.json { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: .5rem; font-size: .78rem; max-width: 420px; overflow-x: auto; white-space: pre-wrap; }
 details summary { cursor: pointer; color: var(--accent); }
+
+/* ärenden och handläggaragenten (Fas 5) */
+.pill--case-open, .pill--case-in_progress { background: var(--accent-soft); border-color: #c4dbea; color: var(--accent); }
+.pill--case-waiting_approval, .pill--case-waiting_info, .pill--run-waiting_approval, .pill--run-limit_reached { background: var(--warn-soft); border-color: #f0d9a4; color: var(--warn); }
+.pill--case-closed, .pill--run-completed { background: var(--ok-soft); border-color: #bfe2cc; color: var(--ok); }
+.pill--run-blocked, .pill--run-failed, .pill--run-needs_human, .pill--run-reconciliation_required { background: var(--bad-soft); border-color: #f1c3c4; color: var(--bad); }
+.agent-summary { white-space: pre-wrap; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: .75rem 1rem; margin: .5rem 0 1rem; }
+ul.plain { margin: 0; padding-left: 1.1rem; }

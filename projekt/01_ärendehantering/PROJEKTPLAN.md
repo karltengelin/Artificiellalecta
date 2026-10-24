@@ -19,6 +19,7 @@ Handläggaren kan i v1:
 - ändra aktuell lön och kontaktuppgifter;
 - registrera löneunderlag, sätta fribrev och rätta premier;
 - godkänna eller avslå agentförslag och läsa händelseloggen.
+- registrera ärenden om inrapporterat löneunderlag och låta handläggaragenten pröva dem (Fas 5, B-033; körs i demo- och testdatabasen, Lakebase efter F5-5).
 
 Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.md`.
 

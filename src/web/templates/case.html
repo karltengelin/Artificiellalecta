@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, csrf with context %}
+{% set fe = error.field_errors if error is defined and error else {} %}
+{% set d = case.details %}
+{% block title %}{{ case.case_number }}{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>{{ case.case_number }} <span class="muted">· {{ case.case_type | label('case_type') }}</span></h1>
+    <span class="pill pill--case-{{ case.status }}">{{ case.status | label('case_status') }}{% if case.outcome %} · {{ case.outcome | label('case_outcome') }}{% endif %}</span>
+  </div>
+
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+
+  <div class="formgrid">
+    <div>
+      <h2>Inrapporterat</h2>
+      <dl class="kv">
+        <dt>Försäkrad</dt><dd>{% if case.personal_id_number %}<a href="/forsakrade/{{ case.personal_id_number }}">{% if o %}{{ o.first_name }} {{ o.last_name }}, {% endif %}{{ case.personal_id_number | pnr }}</a>{% else %}–{% endif %}</dd>
+        <dt>Arbetsgivare</dt><dd>{{ case.employer_org_number or "–" }}</dd>
+        {% if case.policy_number %}<dt>Försäkring</dt><dd><a href="/forsakringar/{{ case.policy_number }}">{{ case.policy_number }}</a></dd>{% endif %}
+        <dt>Månad</dt><dd>{{ case.period_month | month }}</dd>
+        <dt>Lön</dt><dd>{{ d.get("pensionable_salary_sek") | sek }}</dd>
+        <dt>Rapport</dt><dd>{% if d.get("kind") == "correction" %}Rättelse av version {{ d.get("corrects_version") }}{% else %}Ny rapport{% endif %} · {{ d.get("source") | label('salary_source') }}</dd>
+        <dt>Mottaget</dt><dd>{{ case.received_date | iso_date }}{% if case.source_reference %} · referens <code>{{ case.source_reference }}</code>{% endif %}</dd>
+        {% if case.due_date %}<dt>Tidsfrist</dt><dd>{{ case.due_date | iso_date }}</dd>{% endif %}
+        <dt>Handläggare</dt><dd>{{ case.assigned_to or "–" }} · registrerat av <code>{{ case.created_by }}</code></dd>
+        {% if case.status == "closed" %}<dt>Stängt</dt><dd>{{ case.closed_at | iso_date }} av <code>{{ case.closed_by }}</code>{% if case.closing_note %}: {{ case.closing_note }}{% endif %}</dd>{% endif %}
+      </dl>
+      {% if case.status != "closed" and case.personal_id_number %}
+      <p><a class="button secondary" href="/forsakrade/{{ case.personal_id_number }}/loneunderlag/ny?arende={{ case.case_number }}&manad={{ case.period_month.isoformat()[:7] if case.period_month else '' }}&lon={{ d.get('pensionable_salary_sek', '') }}{% if d.get('kind') == 'correction' %}&typ=rattelse&version={{ d.get('corrects_version') }}{% endif %}">Registrera löneunderlaget själv</a>
+        <span class="muted small">i ärendet – syns i historiken</span></p>
+      {% endif %}
+    </div>
+
+    <aside class="opinfo">
+      <h3>Handläggaragenten</h3>
+      {% if agent %}
+      <p class="small">Läser ärendet, den försäkrades översikt, löneunderlag och premiehistorik, förhandsberäknar premien och föreslår registrering.
+        Förslag hamnar i <a href="/godkannanden">godkännandekön</a>. Agenten ändrar aldrig ärendets status själv.</p>
+      <p class="small">Databas: {{ agent.role_label }}{% if agent.simulated_role %} <span class="pill pill--pending">simulerad</span>{% endif %}</p>
+      {% if case.status != "closed" %}
+      <form method="post" action="/arenden/{{ case.case_number }}/agent" hx-confirm="Starta handläggaragenten i {{ case.case_number }}? Körningen gör modellanrop som kostar.">
+        {{ csrf() }}
+        <button type="submit">Starta agent</button>
+      </form>
+      {% endif %}
+      {% if case.last_run_id %}<p class="small muted">Senaste körning <code>{{ case.last_run_id }}</code> · journal <code>logs/agent_runs/{{ case.last_run_id }}.jsonl</code></p>{% endif %}
+      {% else %}
+      <p class="small muted">Agenten är inte konfigurerad i den här instansen.</p>
+      {% endif %}
+    </aside>
+  </div>
+</section>
+
+{% if run %}
+{% set r = run.outcome.result %}
+<section class="panel" id="korning">
+  <div class="panel__head">
+    <h2>Agentens körning <code>{{ r.run_id }}</code></h2>
+    <span class="pill pill--run-{{ r.status.value }}">{{ r.status.value | label('run_status') }}</span>
+  </div>
+  <div class="agent-summary">{{ r.summary }}</div>
+  <dl class="kv">
+    <dt>Förbrukning</dt><dd>{{ run.outcome.steps }} modellsteg, {{ run.outcome.tool_calls }} verktygsanrop, {{ "%.4f" | format(r.cost_usd) }} USD</dd>
+    <dt>Underlag</dt><dd>{% for ref in r.evidence_refs %}<code>{{ ref.split(':', 1)[1] }}</code>{% if not loop.last %}, {% endif %}{% else %}–{% endfor %}</dd>
+    {% if r.pending_approvals %}<dt>Förslag</dt><dd>{% for a in r.pending_approvals %}<a href="/godkannanden#arende-{{ a }}">{{ a }}</a>{% if not loop.last %}, {% endif %}{% endfor %} – väntar på ditt beslut, ingenting är ändrat ännu</dd>{% endif %}
+    {% if r.uncertainties %}<dt>Skäl och osäkerheter</dt><dd><ul class="plain">{% for u in r.uncertainties %}<li>{{ u }}</li>{% endfor %}</ul></dd>{% endif %}
+    <dt>Ärendets status</dt><dd>{{ run.case_status | label('case_status') }}</dd>
+    <dt>Journal</dt><dd><code>logs/agent_runs/{{ r.run_id }}.jsonl</code></dd>
+  </dl>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>Förslag i ärendet</h2>
+  {% if approvals.requests %}
+  <table class="table table--compact">
+    <thead><tr><th>Förslag</th><th>Operation</th><th>Föreslaget av</th><th>Status</th><th>Beslut</th></tr></thead>
+    <tbody>
+      {% for a in approvals.requests %}
+      <tr>
+        <td><a href="/godkannanden?status={{ 'vantar' if a.status == 'pending' else 'alla' }}#arende-{{ a.approval_id }}">{{ a.approval_id[:8] }}…</a></td>
+        <td><code>{{ a.operation }}</code></td>
+        <td><code>{{ a.proposed_by }}</code>{% if a.run_id %} · <code>{{ a.run_id }}</code>{% endif %}</td>
+        <td><span class="pill pill--{{ a.status }}">{{ a.status | label('approval_status') }}</span></td>
+        <td>{% if a.decided_by %}{{ a.decided_by }}{% if a.decision_note %}: {{ a.decision_note }}{% endif %}{% else %}–{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Inga förslag i ärendet.</p>
+  {% endif %}
+</section>
+
+{% if case.status != "closed" %}
+<section class="panel">
+  <h2>Handläggning</h2>
+  <div class="decide">
+    <form method="post" action="/arenden/{{ case.case_number }}/status" class="decide__form">
+      {{ csrf() }}
+      <label for="f-status">Ny status</label>
+      <select id="f-status" name="status">
+        {% for s in open_statuses %}<option value="{{ s }}" {% if s == case.status %}selected{% endif %}>{{ s | label('case_status') }}</option>{% endfor %}
+      </select>
+      <label for="f-assigned">Handläggare (valfri)</label>
+      <input id="f-assigned" name="assigned_to" placeholder="{{ case.assigned_to or '' }}">
+      <label for="f-status-reason">Motivering</label>
+      <input id="f-status-reason" name="reason" required placeholder="T.ex. komplettering begärd från arbetsgivaren">
+      <button type="submit" class="secondary">Byt status</button>
+    </form>
+    <form method="post" action="/arenden/{{ case.case_number }}/stang" class="decide__form">
+      {{ csrf() }}
+      <label for="f-outcome">Utfall</label>
+      <select id="f-outcome" name="outcome">
+        {% for key in ["approved", "rejected", "supplement_requested", "manual_review", "no_action"] %}<option value="{{ key }}">{{ key | label('case_outcome') }}</option>{% endfor %}
+      </select>
+      <label for="f-closing_note">Motivering till utfallet</label>
+      <input id="f-closing_note" name="closing_note" placeholder="Krävs vid avslag och manuell prövning">
+      <label for="f-close-reason">Motivering i loggen</label>
+      <input id="f-close-reason" name="reason" required placeholder="Varför stängs ärendet nu?">
+      <button type="submit" class="ok">Stäng ärendet</button>
+    </form>
+  </div>
+  <p class="muted small">Utfallet <em>Godkänt</em> kräver en genomförd ändring i ärendet – ett godkänt förslag eller din egen registrering.
+    Förslag som väntar måste avgöras först. Avslag och manuell prövning motiveras alltid (PR-ITP1-031).</p>
+</section>
+{% endif %}
+
+<section class="panel">
+  <div class="panel__head">
+    <h2>Historik</h2>
+    <nav class="filter" aria-label="Urval">
+      <a href="/arenden/{{ case.case_number }}" {% if not include_reads %}class="is-current"{% endif %}>Ändringar och förslag</a>
+      <a href="/arenden/{{ case.case_number }}?lasningar=1" {% if include_reads %}class="is-current"{% endif %}>Även läsningar</a>
+    </nav>
+  </div>
+  <p class="muted small">Händelserna med ärendets nummer i tjänstelagrets logg. Agentens steg finns i körjournalen.</p>
+  {% set log = history %}
+  {% include "partials/event_table.html" %}
+</section>
+{% endblock %}

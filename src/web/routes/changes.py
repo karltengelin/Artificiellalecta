@@ -40,8 +40,8 @@ def operation_info(request: Request, name: str) -> dict[str, Any]:
     }
 
 
-async def execute(request: Request, name: str, data: dict[str, Any], reason: str | None):
-    ctx = handler_ctx(request, reason=reason)
+async def execute(request: Request, name: str, data: dict[str, Any], reason: str | None, case_id: str | None = None):
+    ctx = handler_ctx(request, reason=reason, case_id=case_id)
     return await run_in_threadpool(service(request).execute, name, ctx, data)
 
 
@@ -53,7 +53,9 @@ def _form_dict(form) -> dict[str, str]:
 
 
 @router.get("/forsakrade/{pnr}/loneunderlag/ny")
-def salary_form(request: Request, pnr: str, typ: str = "ny", manad: str = "", version: str = "", lon: str = ""):
+def salary_form(
+    request: Request, pnr: str, typ: str = "ny", manad: str = "", version: str = "", lon: str = "", arende: str = "",
+):
     try:
         overview = read(request, "get_insured_overview", {"personal_id_number": pnr})
     except ServiceError as exc:
@@ -66,7 +68,19 @@ def salary_form(request: Request, pnr: str, typ: str = "ny", manad: str = "", ve
         "corrects_version": version,
         "source": "employer",
         "received_date": date.today().isoformat(),
+        "case_number": arende,
     }
+    if arende:  # registrering i ett ärende (Fas 5): referens och mottagning ur ärendet
+        try:
+            case = read(request, "get_case", {"case_number": arende})
+        except ServiceError as exc:
+            return render_error(request, exc)
+        values.update(
+            employer_org_number=case.employer_org_number or values["employer_org_number"],
+            source=case.details.get("source", "employer"),
+            source_reference=case.source_reference or "",
+            received_date=case.received_date.isoformat(),
+        )
     return render(request, "form_salary.html", {
         "o": overview, "tab": "salary", "values": values, "op": operation_info(request, "register_salary_report"),
     })
@@ -91,6 +105,7 @@ async def salary_submit(request: Request, pnr: str):
     return await _submit(
         request, "register_salary_report", data, values,
         form_template="form_salary.html", lookup={"personal_id_number": pnr}, tab="salary",
+        case_id=clean_text(values.get("case_number")),
     )
 
 
@@ -244,11 +259,11 @@ async def premium_preview(request: Request):
 
 async def _submit(
     request: Request, name: str, data: dict[str, Any], values: dict[str, str], *,
-    form_template: str, lookup: dict[str, str], tab: str, **context: Any,
+    form_template: str, lookup: dict[str, str], tab: str, case_id: str | None = None, **context: Any,
 ):
     reason = clean_text(values.get("reason"))
     try:
-        result = await execute(request, name, data, reason)
+        result = await execute(request, name, data, reason, case_id)
     except ServiceError as exc:
         error = describe_error(exc, service(request).rules, write=True)
         page = await _form_context(request, name, lookup, tab, values, context)
