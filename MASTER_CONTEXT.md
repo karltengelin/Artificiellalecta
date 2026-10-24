@@ -90,11 +90,11 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 
 | Område | Beskrivning | Status |
 |--------|-------------|--------|
-| Kapitalförvaltning | Placering av premiereserver, portföljövervakning | 🔲 Ej påbörjat |
+| Kapitalförvaltning | Placering av premiereserver, portföljövervakning | 🟡 Påbörjat – styrdokumentshierarki och placeringsriktlinje framtagna som beslutsutkast (Fas 2a/2b, 2026-10-24); antagande och paper trading-implementation återstår |
 | Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🟡 Påbörjat – aktuariell grund (SIM-modell) och parameterregister, infört genom B-031; beräkningsmotor och reservberäkning saknas |
 | Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026, tjänstelager med läs- och skrivoperationer, inklusive anslutning av ny försäkrad och stamdata (B-028, B-030, B-032) |
 | Ärende­hantering | Inkommande ärenden, handläggning, svar | 🟡 Påbörjat – handläggar-UI v1 (Fas 4) med sök, översikt, ändringar, godkännandekö och händelselogg via tjänstelagret; ärenden (`cases`) och handläggaragent saknas |
-| Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🟡 Påbörjat – regelverkskarta, källregister, underlag per regelverk och tio tolkningar (delprojekt 4); styrdokument saknas |
+| Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🟡 Påbörjat – regelverkskarta, källregister, underlag per regelverk och tio tolkningar (delprojekt 4); minimal styrdokumentshierarki och placeringsriktlinje finns som beslutsutkast, övriga styrdokument återstår |
 | Rapportering | FI-rapporter, intern rapportering, revisionsunderlag | 🔲 Ej påbörjat |
 | Internrevision | Kontroller, granskning, avvikelsehantering | 🔲 Ej påbörjat |
 
@@ -114,7 +114,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 2 | BI & insikter | `projekt/02_bi_insikter/` | Koppla försäkringssystem + databaser till indikatorer/BI; agent som svarar på datafrågor | 🟡 Första analysen byggd (premieeffekt av hypotetiskt IBB); dashboard och Genie beslutade, ej driftsatta | B-018 (Lakebase), B-029, `src/analytics/` |
 | 3 | Kundportal | `projekt/03_kundportal/` | Låtsas-hemsida: se pension, förmåner, pausa/skjuta upp utbetalning | 🔲 Ej påbörjat | Nämnd som senare fas i B-020 |
 | 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟢 Dokumentunderlag klart och infört (B-031, gäller från 2026-11-01); kodbygge separat | `01_domän/`, `04_regulatoriskt/` |
-| 5 | Kapitalförvaltning | `projekt/05_kapitalförvaltning/` | Paper trading-portfölj + gränssnitt för att analysera innehav och styra allokering | 🟡 Utredning klar | Fas 2, B-019 |
+| 5 | Kapitalförvaltning | `projekt/05_kapitalförvaltning/` | Paper trading-portfölj + gränssnitt för att analysera innehav och styra allokering | 🟡 Fas 2a/2b: dokumentutkast klara; antagande och implementation återstår | Fas 2, B-019, `05_styrdokument/` |
 | 6 | Avdelningsfunktioner | `projekt/06_avdelningsfunktioner/` | Funktioner per avdelning, bl.a. en aktuariell modul för premiesättning kopplad till FI-krav | 🔲 Ej påbörjat | — |
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🟡 Första version (statisk, 2026-10-12) | `projekt/08_företagsöversikt/foretagsoversikt.html` |
@@ -211,10 +211,11 @@ Artificiellalecta/
 │   └── 03_bevakning/
 │
 ├── 05_styrdokument/                ← Lager 3: interna styrdokument
-│   ├── styrdokumentshierarki.md    (kommer)
+│   ├── styrdokumentshierarki.md    ← Minimal grund, beslutsutkast (Fas 2a)
 │   ├── 01_styrelse/
 │   ├── 02_policies/
 │   ├── 03_riktlinjer/
+│   │   └── placeringsriktlinje.md ← Beslutsutkast för paper trading (Fas 2b)
 │   └── 04_processer/
 │
 ├── projekt/                         ← Delprojektens PROJEKTPLAN.md (B-024, se §4b)
