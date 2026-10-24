@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="499.27559055118115" height="163" preserveAspectRatio="xMinYMin meet" viewBox="0 0 499 163" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="499.27559055118115" height="163"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-163)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="0" y="136" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,272) scale(1,-1)">Completed</text>
+			<rect x="140" y="133" width="261.5335433070867" height="13" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="437.35559055118114" y="135" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,270) scale(1,-1)">10 120 / 92,0 %</text>
+			<text x="0" y="109" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,218) scale(1,-1)">Waiting approval</text>
+			<rect x="140" y="106" width="14.213779527559069" height="13" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="451.07159055118115" y="108" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,216) scale(1,-1)">550 / 5,0 %</text>
+			<text x="0" y="82" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,164) scale(1,-1)">Needs human</text>
+			<rect x="140" y="79" width="5.685511811023616" height="13" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="451.98959055118115" y="81" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,162) scale(1,-1)">220 / 2,0 %</text>
+			<text x="0" y="55" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,110) scale(1,-1)">Blocked</text>
+			<rect x="140" y="52" width="2.274204724409458" height="13" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="457.2815905511811" y="54" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,108) scale(1,-1)">88 / 0,8 %</text>
+			<text x="0" y="28" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,56) scale(1,-1)">Failed</text>
+			<rect x="140" y="25" width="0.5685511811023503" height="13" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="458.14559055118116" y="27" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,54) scale(1,-1)">22 / 0,2 %</text>
+		</g>
+	</g>
+</svg>

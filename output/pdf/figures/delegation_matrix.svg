@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="499.27559055118115" height="370" preserveAspectRatio="xMinYMin meet" viewBox="0 0 499 370" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="499.27559055118115" height="370"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-370)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="68.70499999999998" y="324" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,648) scale(1,-1)">Handläggning</text>
+			<text x="138.1345" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">HAND</text>
+			<rect x="135" y="313" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="147.5655" y="323" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,646) scale(1,-1)">-</text>
+			<rect x="167" y="313" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="171.101" y="323" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,646) scale(1,-1)">1400</text>
+			<rect x="231" y="313" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(81%,78%,94%); fill-rule: evenodd;"/>
+			<text x="237.18449999999999" y="323" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,646) scale(1,-1)">300</text>
+			<rect x="295" y="313" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(80%,76%,93%); fill-rule: evenodd;"/>
+			<text x="301.5175" y="323" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,646) scale(1,-1)">350</text>
+			<rect x="359" y="313" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(76%,72%,92%); fill-rule: evenodd;"/>
+			<text x="365.4455" y="323" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,646) scale(1,-1)">450</text>
+			<rect x="423" y="313" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(81%,78%,94%); fill-rule: evenodd;"/>
+			<text x="429.1845" y="323" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,646) scale(1,-1)">300</text>
+			<text x="60.26299999999999" y="292" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,584) scale(1,-1)">Kommunikation</text>
+			<text x="172.5465" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">KOM</text>
+			<rect x="135" y="281" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(48%,40%,83%); fill-rule: evenodd;"/>
+			<text x="139.4295" y="291" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,582) scale(1,-1)">1200</text>
+			<rect x="167" y="281" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="179.5655" y="291" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,582) scale(1,-1)">-</text>
+			<rect x="295" y="281" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(91%,89%,97%); fill-rule: evenodd;"/>
+			<text x="304.177" y="291" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,582) scale(1,-1)">50</text>
+			<text x="94.994" y="260" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,520) scale(1,-1)">Portfölj</text>
+			<text x="206.108" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">KAP</text>
+			<rect x="199" y="249" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="211.5655" y="259" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,518) scale(1,-1)">-</text>
+			<rect x="231" y="249" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,81%,94%); fill-rule: evenodd;"/>
+			<text x="237.585" y="259" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,518) scale(1,-1)">250</text>
+			<rect x="295" y="249" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(90%,88%,96%); fill-rule: evenodd;"/>
+			<text x="304.852" y="259" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,518) scale(1,-1)">75</text>
+			<rect x="359" y="249" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(87%,85%,95%); fill-rule: evenodd;"/>
+			<text x="366.773" y="259" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,518) scale(1,-1)">150</text>
+			<text x="90.30499999999999" y="228" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,456) scale(1,-1)">Aktuarie</text>
+			<text x="238.18449999999999" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">AKT</text>
+			<rect x="199" y="217" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,81%,94%); fill-rule: evenodd;"/>
+			<text x="205.585" y="227" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,454) scale(1,-1)">250</text>
+			<rect x="231" y="217" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="243.5655" y="227" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,454) scale(1,-1)">-</text>
+			<rect x="263" y="217" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(59%,53%,87%); fill-rule: evenodd;"/>
+			<text x="268.8065" y="227" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,454) scale(1,-1)">900</text>
+			<rect x="359" y="217" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(89%,87%,96%); fill-rule: evenodd;"/>
+			<text x="366.44" y="227" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,454) scale(1,-1)">100</text>
+			<text x="67.256" y="196" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,392) scale(1,-1)">Data scientist</text>
+			<text x="266.751" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">DATA</text>
+			<rect x="263" y="185" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="275.5655" y="195" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,390) scale(1,-1)">-</text>
+			<text x="75.06799999999998" y="164" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,328) scale(1,-1)">Compliance</text>
+			<text x="297.401" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">COMP</text>
+			<rect x="167" y="153" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,81%,94%); fill-rule: evenodd;"/>
+			<text x="173.585" y="163" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,326) scale(1,-1)">250</text>
+			<rect x="231" y="153" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(89%,87%,96%); fill-rule: evenodd;"/>
+			<text x="238.44" y="163" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,326) scale(1,-1)">100</text>
+			<rect x="295" y="153" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="307.5655" y="163" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,326) scale(1,-1)">-</text>
+			<rect x="327" y="153" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(68%,63%,90%); fill-rule: evenodd;"/>
+			<text x="333.18" y="163" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,326) scale(1,-1)">650</text>
+			<rect x="423" y="153" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(79%,76%,93%); fill-rule: evenodd;"/>
+			<text x="429.4365" y="163" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,326) scale(1,-1)">360</text>
+			<text x="70.505" y="132" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,264) scale(1,-1)">Rapportering</text>
+			<text x="331.444" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">RAPP</text>
+			<rect x="295" y="121" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(91%,89%,97%); fill-rule: evenodd;"/>
+			<text x="304.177" y="131" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,262) scale(1,-1)">50</text>
+			<rect x="327" y="121" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="339.5655" y="131" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,262) scale(1,-1)">-</text>
+			<text x="89.35999999999999" y="100" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,200) scale(1,-1)">Ekonomi</text>
+			<text x="365.91" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">EKO</text>
+			<rect x="135" y="89" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(70%,66%,90%); fill-rule: evenodd;"/>
+			<text x="141.018" y="99" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,198) scale(1,-1)">600</text>
+			<rect x="167" y="89" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(87%,85%,95%); fill-rule: evenodd;"/>
+			<text x="174.773" y="99" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,198) scale(1,-1)">150</text>
+			<rect x="199" y="89" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,81%,94%); fill-rule: evenodd;"/>
+			<text x="205.585" y="99" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,198) scale(1,-1)">250</text>
+			<rect x="295" y="89" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(91%,89%,97%); fill-rule: evenodd;"/>
+			<text x="304.177" y="99" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,198) scale(1,-1)">50</text>
+			<rect x="359" y="89" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="371.5655" y="99" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,198) scale(1,-1)">-</text>
+			<rect x="391" y="89" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(84%,81%,94%); fill-rule: evenodd;"/>
+			<text x="397.5985" y="99" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,198) scale(1,-1)">240</text>
+			<text x="102.221" y="68" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,136) scale(1,-1)">Inköp</text>
+			<text x="399.557" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">INK</text>
+			<rect x="359" y="57" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(89%,87%,96%); fill-rule: evenodd;"/>
+			<text x="366.44" y="67" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,134) scale(1,-1)">100</text>
+			<rect x="391" y="57" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="403.5655" y="67" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,134) scale(1,-1)">-</text>
+			<text x="81.68299999999999" y="36" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,72) scale(1,-1)">Utveckling</text>
+			<text x="430.054" y="355" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,710) scale(1,-1)">UTV</text>
+			<rect x="135" y="25" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(81%,78%,94%); fill-rule: evenodd;"/>
+			<text x="141.18449999999999" y="35" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,70) scale(1,-1)">300</text>
+			<rect x="231" y="25" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(89%,87%,96%); fill-rule: evenodd;"/>
+			<text x="238.44" y="35" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,70) scale(1,-1)">100</text>
+			<rect x="295" y="25" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(92%,90%,97%); fill-rule: evenodd;"/>
+			<text x="304.663" y="35" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,70) scale(1,-1)">25</text>
+			<rect x="423" y="25" width="30" height="30" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(93%,92%,96%); fill-rule: evenodd;"/>
+			<text x="435.5655" y="35" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,70) scale(1,-1)">-</text>
+			<text x="135" y="5" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,10) scale(1,-1)">Mottagare i kolumn / avsändare i rad / antal uppdrag</text>
+		</g>
+	</g>
+</svg>

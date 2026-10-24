@@ -49,6 +49,9 @@ htmlcov/
 .ruff_cache/
 .hypothesis/
 
+# Lokala typsnitt och renderade sidor vid PDF-granskning
+/tmp/pdfs/
+
 # --- Lokal data och databasfiler ---
 *.db
 *.sqlite

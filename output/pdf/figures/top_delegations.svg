@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="499.27559055118115" height="281" preserveAspectRatio="xMinYMin meet" viewBox="0 0 499 281" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="499.27559055118115" height="281"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-281)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="0" y="252" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,504) scale(1,-1)">Handläggning &gt; Kommunikation</text>
+			<rect x="255" y="249" width="209.27559055118115" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="469.27559055118115" y="252" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,504) scale(1,-1)">1 400</text>
+			<text x="0" y="223" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,446) scale(1,-1)">Kommunikation &gt; Handläggning</text>
+			<rect x="255" y="220" width="179.37907761529812" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="439.3790776152981" y="223" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,446) scale(1,-1)">1 200</text>
+			<text x="0" y="194" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,388) scale(1,-1)">Aktuarie &gt; Data scientist</text>
+			<rect x="255" y="191" width="134.53430821147361" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="394.5343082114736" y="194" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,388) scale(1,-1)">900</text>
+			<text x="0" y="165" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,330) scale(1,-1)">Compliance &gt; Rapportering</text>
+			<rect x="255" y="162" width="97.16366704161982" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="357.1636670416198" y="165" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,330) scale(1,-1)">650</text>
+			<text x="0" y="136" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,272) scale(1,-1)">Ekonomi &gt; Handläggning</text>
+			<rect x="255" y="133" width="89.68953880764906" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="349.68953880764906" y="136" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,272) scale(1,-1)">600</text>
+			<text x="0" y="107" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,214) scale(1,-1)">Handläggning &gt; Ekonomi</text>
+			<rect x="255" y="104" width="67.26715410573684" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="327.26715410573684" y="107" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,214) scale(1,-1)">450</text>
+			<text x="0" y="78" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,156) scale(1,-1)">Compliance &gt; Utveckling</text>
+			<rect x="255" y="75" width="53.81372328458946" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="313.81372328458946" y="78" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,156) scale(1,-1)">360</text>
+			<text x="0" y="49" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,98) scale(1,-1)">Handläggning &gt; Compliance</text>
+			<rect x="255" y="46" width="52.31889763779532" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="312.3188976377953" y="49" style="font-family: DMSans-Bold; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,98) scale(1,-1)">350</text>
+			<text x="0" y="270" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,540) scale(1,-1)">Antal riktade delegeringar</text>
+			<text x="255" y="0" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,0) scale(1,-1)">Uppdrag, inte enskilda meddelanden</text>
+		</g>
+	</g>
+</svg>

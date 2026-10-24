@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="499.27559055118115" height="244" preserveAspectRatio="xMinYMin meet" viewBox="0 0 499 244" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="499.27559055118115" height="244"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-244)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="227" width="8" height="8" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<text x="13" y="228" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,456) scale(1,-1)">Manuellt</text>
+			<rect x="64.44200000000001" y="227" width="8.0" height="8" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="77.44200000000001" y="228" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,456) scale(1,-1)">Agentstöd</text>
+			<rect x="137.27200000000002" y="227" width="8.0" height="8" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="150.27200000000002" y="228" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,456) scale(1,-1)">Agentutfört internt</text>
+			<text x="0" y="199" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,398) scale(1,-1)">Löner &amp; premier</text>
+			<rect x="160" y="195" width="47.44133858267716" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="207.44133858267716" y="195" width="142.32401574803148" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="349.76535433070865" y="195" width="126.51023622047245" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="481.2755905511811" y="198" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,396) scale(1,-1)">960</text>
+			<text x="0" y="170" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,340) scale(1,-1)">Stamdata &amp; anslutning</text>
+			<rect x="160" y="166" width="39.53444881889766" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="199.53444881889766" y="166" width="86.97578740157485" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="286.5102362204725" y="166" width="31.627559055118127" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="323.13779527559063" y="169" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,338) scale(1,-1)">480</text>
+			<text x="0" y="141" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,282) scale(1,-1)">Utbetalningsfrågor</text>
+			<rect x="160" y="137" width="35.58100393700789" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="195.5810039370079" y="137" width="59.30167322834646" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="254.88267716535435" y="137" width="23.720669291338567" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="283.6033464566929" y="140" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,280) scale(1,-1)">360</text>
+			<text x="0" y="112" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,224) scale(1,-1)">Avstämning &amp; ekonomi</text>
+			<rect x="160" y="108" width="15.813779527559063" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="175.81377952755906" y="108" width="39.53444881889766" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="215.34822834645672" y="108" width="23.720669291338595" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="244.06889763779532" y="111" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,222) scale(1,-1)">240</text>
+			<text x="0" y="83" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,166) scale(1,-1)">Regelverk &amp; rapportering</text>
+			<rect x="160" y="79" width="31.627559055118127" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="191.62755905511813" y="79" width="15.813779527559063" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="207.4413385826772" y="79" width="15.813779527559063" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="228.25511811023625" y="82" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,164) scale(1,-1)">192</text>
+			<text x="0" y="54" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,108) scale(1,-1)">Övriga kundärenden</text>
+			<rect x="160" y="50" width="35.58100393700789" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="195.5810039370079" y="50" width="3.953444881889766" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="199.53444881889766" y="50" width="15.813779527559063" height="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="220.34822834645672" y="53" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,106) scale(1,-1)">168</text>
+			<text x="156.922" y="12" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,24) scale(1,-1)">0</text>
+			<text x="230.6673976377953" y="12" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,24) scale(1,-1)">240</text>
+			<text x="309.5922952755906" y="12" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,24) scale(1,-1)">480</text>
+			<text x="389.13369291338586" y="12" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,24) scale(1,-1)">720</text>
+			<text x="467.54559055118114" y="12" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,24) scale(1,-1)">960</text>
+			<text x="160" y="0" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,0) scale(1,-1)">Antal ärenden</text>
+		</g>
+	</g>
+</svg>

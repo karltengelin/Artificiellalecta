@@ -14,6 +14,7 @@ Det ska kännas modernt, professionellt och lugnt, med informationen i centrum.
 - [Gemensamma designvärden](../src/design/digital_clarity.tokens.json) – färger, typografi, avstånd och former för kommande implementationer.
 - [Beslutslogg](../BESLUTSLOGG.md) – B-034 fastställer valet.
 - [Införandeplan](../ATT_GORA.md) – se Grafisk identitet och designsystem.
+- [Utförlig exempelrapport om agentnyttjande](exempel/README.md) – PDF och Markdown med fiktiva analyser, diagram och tabeller i Digital klarhet.
 
 Designspecifikationen är den normativa beskrivningen. Tokenfilen är den gemensamma
 källan till de maskinläsbara grundvärdena. Den visuella referensen är en bevarad

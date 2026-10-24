@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="499.27559055118115" height="211" preserveAspectRatio="xMinYMin meet" viewBox="0 0 499 211" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="499.27559055118115" height="211"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-211)" style="clip-path: url(#clip)">
+		<g transform="">
+			<path d="M 35,38 L 499.275591,38 Z" style="stroke: rgb(87%,86%,92%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="21.844" y="35.0" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,70) scale(1,-1)">0</text>
+			<path d="M 35,70.222222 L 499.275591,70.222222 Z" style="stroke: rgb(87%,86%,92%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="10.224999999999998" y="67.22222222222223" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,134) scale(1,-1)">400</text>
+			<path d="M 35,102.444444 L 499.275591,102.444444 Z" style="stroke: rgb(87%,86%,92%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="10.215999999999998" y="99.44444444444444" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,198) scale(1,-1)">800</text>
+			<path d="M 35,134.666667 L 499.275591,134.666667 Z" style="stroke: rgb(87%,86%,92%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="5.301999999999996" y="131.66666666666666" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,263) scale(1,-1)">1 200</text>
+			<path d="M 35,166.888889 L 499.275591,166.888889 Z" style="stroke: rgb(87%,86%,92%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="4.833999999999996" y="163.88888888888889" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,327) scale(1,-1)">1 600</text>
+			<rect x="55" y="38.0" width="49" height="130.6288888888889" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="67.565" y="175.6288888888889" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,351) scale(1,-1)">1 622</text>
+			<text x="63.7635" y="20" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,40) scale(1,-1)">Baslinje</text>
+			<rect x="146" y="104.66777777777777" width="49" height="63.961111111111094" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="158.51" y="175.6288888888889" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,351) scale(1,-1)">-794</text>
+			<text x="148.909" y="20" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,40) scale(1,-1)">Avlastning</text>
+			<rect x="237" y="104.66777777777777" width="49" height="7.733333333333334" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="252.26" y="119.4011111111111" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,238) scale(1,-1)">+96</text>
+			<text x="245.516" y="20" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,40) scale(1,-1)">Kontroll</text>
+			<rect x="328" y="112.4011111111111" width="49" height="3.2222222222222285" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="342.835" y="122.62333333333333" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,245) scale(1,-1)">+40</text>
+			<text x="333.0375" y="20" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,40) scale(1,-1)">Plattform</text>
+			<rect x="419" y="38.0" width="49" height="77.62333333333333" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(14%,14%,25%); fill-rule: evenodd;"/>
+			<text x="433.905" y="122.62333333333333" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,245) scale(1,-1)">964</text>
+			<text x="426.2515" y="20" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,40) scale(1,-1)">Kvarstår</text>
+			<text x="0" y="199" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,398) scale(1,-1)">Mänskliga timmar - modellerad månad</text>
+		</g>
+	</g>
+</svg>
