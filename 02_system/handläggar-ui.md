@@ -139,7 +139,7 @@ som väntande och kan avslås. Tider visas i datorns lokala tid, medan tjänstel
 | `/arenden/{nummer}/stang` (POST) | Stäng med utfall och motivering | `close_case` |
 
 - **Agenten körs synkront**, en körning åt gången i processen (B-033 val D). Knappen frågar först, eftersom körningen gör modellanrop som kostar. Modellklienten skapas vid första körningen – UI:t startar utan API-nycklar.
-- **Databasrollen per läge** (B-033 val H): i `demo` och `svc_test` simuleras agentens roll och sidan visar *simulerad*; mot `lakebase` används den riktiga rollen `agent_forsakring`, vars läsrätt på `cases` verkställs i F5-5.
+- **Databasrollen per läge** (B-033 val H): i `demo` och `svc_test` simuleras agentens roll och sidan visar *simulerad*; mot `lakebase` används den riktiga rollen `agent_forsakring`, vars läsrätt på `cases` verkställdes i Lakebase 2026-10-24 (F5-5).
 - **Efter körningen** skriver harness ärendets status: *Väntar på godkännande* om ett förslag lagts, annars *Pågår*. Förslaget avgörs i `/godkannanden`, där det länkar till ärendet.
 - **Egen registrering i ärendet.** *Registrera löneunderlaget själv* öppnar löneunderlagsformuläret med ärendets uppgifter och ärendenumret medskickat (`?arende=`). Registreringen hamnar då i ärendets historik, och ärendet kan stängas som *Godkänt*.
 - **Demo- och testdatabasen** får nya tabeller, som `cases`, när UI:t startar mot en befintlig fil eller ett befintligt schema. Befintliga tabeller och rader rörs inte, och Lakebase ändras aldrig härifrån.
