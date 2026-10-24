@@ -18,7 +18,9 @@ def test_demokorningen_gar_hela_vagen_och_andrar_ingenting(tmp_path):
     result = demo_run(ai_client(fake), journal_dir=tmp_path, run_id="demo-1")
     assert result.ok, result.checks
     assert result.proposals == 0
-    assert (tmp_path / "demo-1.jsonl").exists()
+    raw = (tmp_path / "demo-1.jsonl").read_text(encoding="utf-8")
+    for secret in (DEMO_PERSON, "Anna", "Andersson", "2 025,00 kr"):  # mål och modellens svar journalförs inte
+        assert secret not in raw
     # Bara läsning och beräkning – skrivverktygen visas inte för modellen
     tools = {t.name for t in fake.requests[0].tools}
     assert "calculate_premium_preview" in tools and "get_insured_overview" in tools

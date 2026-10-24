@@ -1,7 +1,7 @@
 # Agentekosystem
 
 > **Typ:** Tvärgående arkitekturramverk (MASTER_CONTEXT §4b, B-024) – inte ett delprojekt utan det sätt alla delprojekt bygger agenter på
-> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Harness byggs i Fas 3b: körpolicyn `src/agents/ecosystem.yaml`, skill-registret, dispatchern med resursmandat och agentloopen finns sedan 2026-10-24 (3b-1–3b-6, inklusive körjournalen i `logs/agent_runs/` och fortsättning efter godkännande); skillkatalogen har pod-kolumn (3b-7); röktestet mot riktig modell (3b-8) är förberett men inte kört; flödesmotorn (3c) återstår – se byggordningen i §12 och `harness.md`.
+> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Harness byggs i Fas 3b: körpolicyn `src/agents/ecosystem.yaml`, skill-registret, dispatchern med resursmandat och agentloopen finns sedan 2026-10-24 (3b-1–3b-6, inklusive körjournalen i `logs/agent_runs/` och fortsättning efter godkännande); skillkatalogen har pod-kolumn (3b-7); röktestet mot riktig modell (3b-8) gick igenom hos båda leverantörerna 2026-10-24; flödesmotorn (3c) återstår – se byggordningen i §12 och `harness.md`.
 > **Vidareutvecklar:** B-006, B-007, B-008, B-009, B-011, B-016, B-017
 
 ---

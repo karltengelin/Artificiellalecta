@@ -50,6 +50,24 @@ class TestStriktSchema:
         assert "title" in schema["properties"]  # egenskapen finns kvar
         assert "default" not in schema["properties"]["taggar"]
 
+    def test_vardegranser_flyttas_till_beskrivningen(self):
+        """Anthropics strikta läge avvisar t.ex. minimum (400 i röktestet 2026-10-24)."""
+
+        class Lon(BaseModel):
+            belopp: float = Field(ge=0, description="Månadslön i kronor")
+            andel: float = Field(gt=0, le=100)
+            referens: str = Field(min_length=3, max_length=20, pattern=r"^[A-Z]")
+            rader: list[str] = Field(min_length=2)
+
+        props = strict_json_schema(Lon)["properties"]
+        dumped = repr(props)
+        for keyword in ("minimum", "maximum", "exclusiveMinimum", "minLength", "maxLength"):
+            assert keyword not in dumped
+        assert props["belopp"]["description"] == "Månadslön i kronor (minst 0)"
+        assert props["andel"]["description"] == "Större än 0, högst 100"
+        assert props["referens"]["pattern"] == "^[A-Z]"  # mönster godtas
+        assert props["rader"]["minItems"] == 1
+
     def test_schemanamn_ar_ascii(self):
         class Bedömning(BaseModel):
             ok: bool

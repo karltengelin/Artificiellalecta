@@ -39,7 +39,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from agents.errors import HarnessError, ScopeError, SkillDeniedError, SkillInputError
-from agents.journal import digest, mask
+from agents.journal import digest, mask, text_ref
 from agents.profile import EffectiveProfile, SkillDecision
 from agents.scope import ExecutionScope
 from agents.skills import ServiceSkill
@@ -208,7 +208,7 @@ class Dispatcher:
         self._observe(
             "tool_intent", tool_call_id=c.call.id, skill=c.skill.name, operation=c.skill.operation.name,
             kind=c.skill.kind.value, effective=decision.service_level.value,
-            input_hash=digest(c.action.data.model_dump(mode="json")), reason=mask(c.action.reason),
+            input_hash=digest(c.action.data.model_dump(mode="json")), reason=text_ref(c.action.reason),
         )
         try:
             result = c.skill.execute(self.service, ctx, c.action)
