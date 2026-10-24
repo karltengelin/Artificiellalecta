@@ -47,7 +47,7 @@ Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsov
 - [x] **2026-07-12** Skriva `03_skills/skillkatalog.md` – första versionen skapad i Fas 1c med premiemotorn + planerade skills. Underhålls löpande
 - [x] **2026-10-11** **Bygga ut produktnära `04_regulatoriskt/`** – källregister, tolkningar och underlag per regelverk för ITP, LTF, FFFS, FAL, skatt, GDPR, DORA, distribution, SFDR, AI och AML (delprojekt 4). Bolagets fullständiga policies och rapportering hör till egna verksamhetsprojekt
 - [x] **2026-10-11** **Delprojekt 4: sammanhängande produktpaket** – PR-ITP1 v1.0 (34 regler), villkor v2.0, tio tolkningar och leveranskontroll; infört genom B-031, gäller från 2026-11-01. Regelkod, migrationer och automatiserade regeltester görs i senare sessioner
-- [ ] **Skapa styrdokumentsstruktur** i `05_styrdokument/` – skriva `styrdokumentshierarki.md` som definierar struktur, ägarskap, revisionscykel och standardmetadata för alla styrdokument
+- [ ] **Fullständig styrdokumentsstruktur** i `05_styrdokument/` – minimal grund för kapitalförvaltningen finns sedan 2026-10-24 (Fas 2a), med struktur, ägarskap, revisionscykel och standardmetadata. Antagande, fullständigt styrdokumentsregister, övriga policies och bolagets samlade kontrollsystem återstår
 - [x] **2026-05-16** Definiera databasschema – `02_system/databasschema.md` + SQLAlchemy-modeller för `employers` och `insured_persons`. Övriga tabeller (policies, premium_transactions, portfolio_holdings, cases) skjuts upp till de behövs.
 - [x] **2026-05-16** Sätta upp Google-konto för det fiktiva bolaget – Artificiellalecta@gmail.com
 - [x] **2026-05-16** Skapa Supabase-konto och projekt – Artificiellalecta-projektet, region Europe *(databasval ersatt av B-018, se Arkiv)*
@@ -56,8 +56,8 @@ Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsov
 
 ## 🟠 Fas 2 – Kapitalförvaltning (paper trading)
 
-- [ ] **Fas 2a: Minimal `05_styrdokument/styrdokumentshierarki.md`** – bara det som krävs för att kunna anta placeringsriktlinjen (fullständig version kvarstår under Hög prioritet)
-- [ ] **Fas 2b: Placeringsriktlinje** i `05_styrdokument/03_riktlinjer/` – tillgångsslag, allokeringslimiter, rebalanseringsregler; skriven som om ett verkligt tjänstepensionsbolag (LTF/Solvens II-anda, aktsamhetsprincipen)
+- [x] **2026-10-24** **Fas 2a: Minimal [styrdokumentshierarki](05_styrdokument/styrdokumentshierarki.md)** – dokumentleverans klar som beslutsutkast (SD-STYR-001 v0.1): struktur, ägarskap, revisionscykel och standardmetadata. Antagande och giltighetsdag återstår; fullständig version kvarstår under Hög prioritet
+- [x] **2026-10-24** **Fas 2b: [Placeringsriktlinje](05_styrdokument/03_riktlinjer/placeringsriktlinje.md)** – dokumentleverans klar som beslutsutkast (SD-KAP-001 v0.1): tillgångsslag, målvikter 55 % räntor/35 % aktier/10 % kassa, allokerings- och risklimiter, likviditet, ALM, stress och rebalansering. LTF är huvudregim, Solvens II-anda används för riskstyrning; all förvaltning är simulerad. Antagande och giltighetsdag återstår; ingen förvaltningsfunktion är implementerad
 - [ ] **Fas 2c: Tabeller `portfolios`, `portfolio_holdings`, `trades`** – wallet = portfölj med startkassa (t.ex. 1 000 kr simulerade)
 - [ ] **Fas 2d: Marknadsdata-skill** – gratis-API (t.ex. yfinance), hämta kurser för riktlinjens tillgångsslag
 - [ ] **Fas 2e: Förvaltningslogik** – regelstyrd i första versionen (ingen LLM förrän Fas 3): allokera enligt riktlinjen, rebalansera vid avvikelse, logga varje beslut med motivering. Koppla premieinflödet från Fas 1 till portföljen
