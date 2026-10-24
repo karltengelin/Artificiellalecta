@@ -1,6 +1,6 @@
 # Beslutsförslag: ärenden (`cases`) och handläggaragentens första flöde (Fas 5)
 
-> **Status:** Förslag – väntar på operatörens beslut om valen A–H i §6. Inget är byggt, och ingen tabell är skapad.
+> **Status:** Godkänt av operatören i chatten 2026-10-24, med valen A–H enligt rekommendationerna i §6, och loggat som **B-033**. Byggs i stegen F5-1–F5-6 (§7).
 > **Datum:** 2026-10-24, på `main` `ed56114` (harness 3b-1–3b-8 klar).
 > **Underlag:** regelpaketets ingång `01_domän/produktregler/README.md` (utfall och manuella ärenden), PR-ITP1-014 (löneunderlag), -017 (avvikelser och ärenden vid saknad lön), -030 (klagomål och tidsfrister), -031 (data, mänsklig prövning och gallring); `02_system/harness.md` §5.1, §7, §9.1 och §10.1; `02_system/tjänstelager.md` §5; `02_system/databasschema.md`.
 > **Bygger på:** B-017, B-020, B-026, B-028, B-030, B-031, B-032.
@@ -173,7 +173,7 @@ i harness, inte i databasen.
 - Kommunikationsagentens besked till kund från ett ärende (`external`, kräver godkännande).
 - Lagringspolicy och gallring för ärendenas uppgifter (PR-ITP1-031).
 
-## 9. Beslutsförslag (att loggas som nästa B-nummer efter godkännande)
+## 9. Beslutsförslag (loggat som B-033)
 
 > **Beslut:** Ärenden införs i försäkringssystemet (Fas 5) som tabellen `cases` med typ, status, utfall,
 > berörd försäkrad, försäkring och arbetsgivare, period, kanal, mottagningsdag, referens och typens uppgifter

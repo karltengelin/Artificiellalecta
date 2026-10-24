@@ -8,6 +8,46 @@
 
 ## Beslut
 
+### B-033 | 2026-10-24 | Ärenden (`cases`) som handläggaragentens arbetsenhet och mandat (Fas 5)
+
+**Beslut:** Operatören godkände beslutsförslaget `projekt/01_ärendehantering/ARENDEN_BESLUTSFORSLAG.md` i chatten 2026-10-24, med valen A–H enligt rekommendationerna, och bad om att beslutet loggas. Ärenden införs i försäkringssystemet:
+
+1. **Tabellen `cases`** med typ, status (`open`, `in_progress`, `waiting_approval`, `waiting_info`, `closed`), utfall (`approved`, `rejected`, `supplement_requested`, `manual_review`, `no_action`), berörd försäkrad, försäkring och arbetsgivare, period, kanal, mottagningsdag, referens, tidsfrist och typens uppgifter. Ärendenumret `CASE-NNNNNN` är det som står i `case_id` i tjänstelagrets kontext, godkännandekö och händelselogg.
+2. **Historiken** står i `operation_events` via `case_id`; ingen separat händelsetabell (val A).
+3. **Typens uppgifter** lagras i `details` (JSONB) och valideras mot en Pydantic-modell per typ (val F). Första och enda typen i v1 är `salary_report` (val C).
+4. **Operationer i tjänstelagret:** `create_case`, `list_cases`, `update_case_status` och `close_case` är `HUMAN_ONLY`; handläggaren skapar ärenden i UI:t (val B). `get_case` är `AGENT` och når bara körningens ärende (val G). Agenten kan inte skapa, ändra eller stänga ärenden; harness skriver status efter en körning som systemaktör.
+5. **Ärendet är agentens mandat.** Resursmandatet byggs ur ärendet (`scope_for_case`): dess person, försäkringar och arbetsgivare och högst 24 månader. En körning gäller ett ärende.
+6. **Första flödet, nytt löneunderlag:** handläggaren registrerar ärendet och startar agenten med en knapp; körningen går synkront i UI:t (val D). Agenten läser, räknar och föreslår registrering. Handläggaren godkänner i kön och stänger ärendet; agentens sammanfattning efter beslutet är en valfri fortsättning (val E).
+7. **Demoläget.** Agenten får köras mot UI:ts demobestånd med simulerad databasroll, tydligt märkt (val H).
+
+**Motivering:**
+- Agenten behöver en avgränsad arbetsenhet med strukturerade uppgifter i stället för fri text, och handläggningen behöver status och utfall.
+- Mandatet ur ärendet gör kundscopet spårbart till ett registrerat underlag.
+- Spåren finns redan (`case_id` i kö och logg), så bara tabellen och operationerna tillkommer.
+- Utfallen följer regelpaketets ingång (godkänd, avslagen med regelgrund, komplettering, manuell prövning), och avslag och negativa beslut avgörs av handläggaren (PR-ITP1-031).
+
+**Övervägda alternativ:**
+
+*Egen tabell `case_events`* – mer läsbar historik i UI:t, men en andra logg att hålla i synk med `operation_events`. Avvisat i v1.
+
+*Agenten skapar ärenden som förslag, eller automatisk import av arbetsgivarfil* – kräver filformat och inkommande kanal. Senare.
+
+*Agenten startas automatiskt eller i en bakgrundsarbetare* – behövs för flera användare och för att kunna avbryta pågående modellanrop (`harness.md` §6.3). Senare.
+
+*Egna kolumner eller tabell per ärendetyp* – starkare databaskontroll men en schemaändring per ny typ. Avvisat.
+
+*Ärendets uppgifter i uppdragstexten i stället för verktyget `get_case`* – uppgifterna skulle bli fri text i stället för strukturerat verktygssvar. Avvisat.
+
+**Konsekvenser:**
+- Byggsteg F5-1–F5-6 enligt förslagets §7: tabell och migration, operationer, harness (`scope_for_case`, `case_number` i resurskontrollen, uppdragsmall), UI-sidor `/arenden`, rättigheter för `agent_forsakring` på `cases` och skarp verifiering i Lakebase, röktest av hela flödet.
+- Schemaändringen körs mot Lakebase först efter backup och operatörens OK (AGENTS.md §4.5).
+- `databasschema.md`, `tjänstelager.md`, `harness.md`, `handläggar-ui.md`, skillkatalogen och operationsförteckningen uppdateras när respektive steg byggs.
+- Ärendetyperna `complaint` och `general`, inkommande kanaler, regelstyrda ärenden (PR-ITP1-017), bakgrundsarbetare, besked till kund och lagringspolicy för ärendenas uppgifter läggs i ATT_GORA.
+
+**Preciserar:** B-020 (handläggar-UI före kundportal), B-026 (handläggaragenten) och B-028 (tjänstelagret).
+
+---
+
 ### B-032 | 2026-10-12 | Tjänstelagrets operationer för anslutning, stamdata och arbetsgivare (Fas 4)
 
 **Beslut:** Operatören godkände beslutsförslaget `projekt/01_ärendehantering/OPERATIONER_BESLUTSFORSLAG.md` i chatten 2026-10-12. Modellvalen A–D följde rekommendationerna, och operatören bad om att beslutet loggas. Tjänstelagret (B-028) utökas för handläggar-UI:t (Fas 4) med följande operationer:

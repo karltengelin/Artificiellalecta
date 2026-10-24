@@ -59,7 +59,7 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
   - arbetsgivarens uppgifter och avslut
   - försäkringsbesked
   - interna id:n i adresserna
-- `cases`-tabell och ärendeflöde, tillsammans med handläggaragenten (Fas 5): designstopp i [ARENDEN_BESLUTSFORSLAG.md](ARENDEN_BESLUTSFORSLAG.md), väntar på operatörens val A–H.
+- `cases`-tabell och ärendeflöde, tillsammans med handläggaragenten (Fas 5): designstopp i [ARENDEN_BESLUTSFORSLAG.md](ARENDEN_BESLUTSFORSLAG.md), godkänt och loggat som B-033; byggs i stegen F5-1–F5-6.
 - Inbyggd Claude efter harness (Fas 3b).
 
 ## Öppna designfrågor
