@@ -16,6 +16,12 @@ minimal styrdokumentshierarki (SD-STYR-001 v0.1) och placeringsriktlinje
 (datamodell, marknadsdata och förvaltningslogik) samt analysgränssnittet
 återstår; ingen paper trading-funktion är implementerad.
 
+**Fas 2c, designstopp 2026-10-24:** [Datamodellens beslutsförslag](DATAMODELL_BESLUTSFORSLAG.md)
+är framtaget med modellval A–F för kassa, innehav, avslut/godkännande,
+prisunderlag, värdering/avveckling och senare premieinsättningar. Operatörens
+uttryckliga OK krävs före steg 2 (schema, SQLAlchemy-modeller och lokala tester).
+Ingen implementation eller Lakebase-körning är gjord.
+
 ## Beroenden
 
 - Placeringsriktlinjen finns som beslutsutkast; före tillämpning krävs antagna

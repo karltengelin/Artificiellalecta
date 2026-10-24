@@ -58,7 +58,7 @@ Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsov
 
 - [x] **2026-10-24** **Fas 2a: Minimal [styrdokumentshierarki](05_styrdokument/styrdokumentshierarki.md)** – dokumentleverans klar som beslutsutkast (SD-STYR-001 v0.1): struktur, ägarskap, revisionscykel och standardmetadata. Antagande och giltighetsdag återstår; fullständig version kvarstår under Hög prioritet
 - [x] **2026-10-24** **Fas 2b: [Placeringsriktlinje](05_styrdokument/03_riktlinjer/placeringsriktlinje.md)** – dokumentleverans klar som beslutsutkast (SD-KAP-001 v0.1): tillgångsslag, målvikter 55 % räntor/35 % aktier/10 % kassa, allokerings- och risklimiter, likviditet, ALM, stress och rebalansering. LTF är huvudregim, Solvens II-anda används för riskstyrning; all förvaltning är simulerad. Antagande och giltighetsdag återstår; ingen förvaltningsfunktion är implementerad
-- [ ] **Fas 2c: Tabeller `portfolios`, `portfolio_holdings`, `trades`** – wallet = portfölj med startkassa (t.ex. 1 000 kr simulerade)
+- [ ] **Fas 2c: Tabeller `portfolios`, `portfolio_holdings`, `trades`** – wallet = portfölj med startkassa (t.ex. 1 000 kr simulerade). **Designstopp 2026-10-24:** [beslutsförslag](projekt/05_kapitalförvaltning/DATAMODELL_BESLUTSFORSLAG.md) framtaget; modellval A–F inväntar operatörens OK före schema, modeller och tester. Ingen implementation eller Lakebase-körning gjord
 - [ ] **Fas 2d: Marknadsdata-skill** – gratis-API (t.ex. yfinance), hämta kurser för riktlinjens tillgångsslag
 - [ ] **Fas 2e: Förvaltningslogik** – regelstyrd i första versionen (ingen LLM förrän Fas 3): allokera enligt riktlinjen, rebalansera vid avvikelse, logga varje beslut med motivering. Koppla premieinflödet från Fas 1 till portföljen
 
