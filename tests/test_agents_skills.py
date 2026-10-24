@@ -35,6 +35,7 @@ from services import (
     default_registry,
     operation,
 )
+from services.db import AGENT_ROLES
 
 
 class NoteRef(BaseModel):
@@ -136,6 +137,7 @@ POLICY = {
 }
 
 AGENT_CTX = OperationContext(actor=Actor.agent("lead", team="t1"), run_id="run-1")
+NO_ROLE = "personuppgifter: tjänstelagret ansluter inte med teamets begränsade databasroll (harness.md §5.1)"
 
 
 @pytest.fixture
@@ -179,22 +181,26 @@ class TestUtfall:
         profile = profile_for(setup)
         assert any("HUMAN_ONLY i åtkomstregistret" in r for r in profile.decision("close_case").reasons)
         assert any("PR-T-UTKAST" in r for r in profile.decision("draft_rule_write").reasons)
-        assert profile.decision("lookup").reasons == (
-            "personuppgifter kräver execution_scope i uppdraget",
-            "personuppgifter: egen databasroll och Postgres-prov för PII-podden saknas (harness.md §5.1)",
-        )
+        assert profile.decision("lookup").reasons == ("personuppgifter kräver execution_scope i uppdraget", NO_ROLE)
 
-    def test_pii_forblir_dold_aven_med_scope_tills_databasrollen_finns(self, setup):
+    def test_pii_forblir_dold_aven_med_scope_utan_databasroll(self, setup):
         profile = profile_for(setup, request=request(execution_scope_ref="scope-1"))
-        assert profile.decision("lookup").reasons == (
-            "personuppgifter: egen databasroll och Postgres-prov för PII-podden saknas (harness.md §5.1)",
-        )
+        assert profile.decision("lookup").reasons == (NO_ROLE,)
 
-    def test_pii_oppnas_med_scope_nar_databasrollen_finns(self, setup, monkeypatch):
-        monkeypatch.setattr("agents.profile.PII_DATABASE_ROLE_READY", True)
+    def test_pii_oppnas_med_scope_och_teamets_databasroll(self, setup, monkeypatch):
+        monkeypatch.setitem(AGENT_ROLES, "t1", ("agent_t1", "AGENT_T1_DATABASE_URL"))
+        _, _, service = setup
+        service.agent_role = "agent_t1"  # i drift: services.db.agent_service_layer
         assert profile_for(setup).decision("lookup").outcome == Outcome.HIDDEN  # utan scope
         profile = profile_for(setup, request=request(execution_scope_ref="scope-1"))
         assert profile.decision("lookup").outcome == Outcome.EXECUTE
+
+    def test_ett_annat_teams_roll_oppnar_inte(self, setup, monkeypatch):
+        monkeypatch.setitem(AGENT_ROLES, "t1", ("agent_t1", "AGENT_T1_DATABASE_URL"))
+        _, _, service = setup
+        service.agent_role = "agent_forsakring"
+        profile = profile_for(setup, request=request(execution_scope_ref="scope-1"))
+        assert profile.decision("lookup").reasons == (NO_ROLE,)
 
     def test_omappad_operation_blir_inget_verktyg(self, setup):
         profile = profile_for(setup)

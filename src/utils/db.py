@@ -24,18 +24,22 @@ except ImportError:  # pragma: no cover
     pass
 
 
-def _get_database_url() -> str:
-    url = os.environ.get("DATABASE_URL")
+def _get_database_url(url_env: str = "DATABASE_URL") -> str:
+    url = os.environ.get(url_env)
     if not url:
         raise RuntimeError(
-            "DATABASE_URL saknas. Lägg in den i .env (se .env.example för mall)."
+            f"{url_env} saknas. Lägg in den i .env (se .env.example för mall)."
         )
     return url
 
 
-def make_engine(echo: bool = False) -> Engine:
-    """Skapar en SQLAlchemy-engine. `echo=True` loggar all SQL till stdout."""
-    return create_engine(_get_database_url(), echo=echo, future=True)
+def make_engine(echo: bool = False, url_env: str = "DATABASE_URL") -> Engine:
+    """Skapar en SQLAlchemy-engine. `echo=True` loggar all SQL till stdout.
+
+    `url_env` väljer anslutning, t.ex. AGENT_FORSAKRING_DATABASE_URL för agentens
+    begränsade databasroll (harness.md §5.1).
+    """
+    return create_engine(_get_database_url(url_env), echo=echo, future=True)
 
 
 def make_session_factory(engine: Engine | None = None) -> sessionmaker[Session]:

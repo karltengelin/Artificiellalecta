@@ -4,9 +4,9 @@ Fejkade modellsvar anropar verktyg direkt – även dolda, påhittade och sådan
 pekar på fel person. Beviset är att tjänstelagret aldrig nåddes: inga händelser,
 inga förslag i kön och inga anrop till testoperationerna.
 
-PII-poddarna är spärrade tills operatören har satt upp en egen databasroll
-(`PII_DATABASE_ROLE_READY`). Här öppnas spärren i testerna för att pröva
-resurskontrollen i kod mot testdatabasen.
+PII-verktyg visas bara när tjänstelagret ansluter med teamets begränsade databasroll
+(`agent_role`). SQLite har inga roller, så här anges rollen som i drift men med samma
+anslutning för båda – databasrättigheterna prövas i tests/test_agents_postgres_role.py.
 """
 
 import json
@@ -38,6 +38,7 @@ from services import (
     default_registry,
     operation,
 )
+from services.db import AGENT_ROLES
 
 PERSON = "199001011234"  # testbeståndet i conftest
 OTHER = "198505055678"
@@ -71,13 +72,12 @@ def payload(outcome):
 
 
 @pytest.fixture
-def harness(insurance_db, monkeypatch):
+def harness(insurance_db):
     """Handläggaragenten mot testbeståndet, med ett resursmandat för den försäkrade."""
-    monkeypatch.setattr("agents.profile.PII_DATABASE_ROLE_READY", True)
     events = MemoryEventLog()
     service = ServiceLayer(
-        session_factory=insurance_db.session_factory, events=events,
-        rules=ProductRuleCatalog(today=AFTER_RULES),
+        session_factory=insurance_db.session_factory, validation_session_factory=insurance_db.session_factory,
+        agent_role="agent_forsakring", events=events, rules=ProductRuleCatalog(today=AFTER_RULES),
     )
     scope = scope_for_person(
         service, ref="scope-1", personal_id_number=PERSON,
@@ -289,10 +289,11 @@ FAKE_POLICY = {
 
 @pytest.fixture
 def fake(monkeypatch):
-    monkeypatch.setattr("agents.profile.PII_DATABASE_ROLE_READY", True)
+    monkeypatch.setitem(AGENT_ROLES, "t1", ("agent_t1", "AGENT_T1_DATABASE_URL"))
     eco = Ecosystem.from_dict(FAKE_POLICY)
     service = ServiceLayer(registry=fake_registry, events=MemoryEventLog(),
                            register=AccessRegister.from_dict({"leaky_lookup": "AGENT", "plain_lookup": "AGENT"}))
+    service.agent_role = "agent_t1"  # ingen databas här; i drift sätts rollen av agent_service_layer
     request = RunRequest(task_id="t", target_team="t1", goal="g", execution_scope_ref="s")
     profile = compile_profile(eco, SkillRegistry.build(eco, fake_registry), service, request=request)
     scope = ExecutionScope(ref="s", persons=frozenset({PERSON}), from_month=date(2025, 1, 1),

@@ -12,7 +12,8 @@ En skill är öppen bara om varje villkor håller – ett nej vinner alltid:
   1. podden är monterad på teamet och finns i agentens poddar
   2. skillen är inte nekad globalt, för teamet, agenten eller uppdraget
   3. sidoeffekten finns i snittet av defaults, podd, team, agent och uppdrag
-  4. personuppgifter: uppdraget har execution_scope och PII-podden har sin databasroll
+  4. personuppgifter: uppdraget har execution_scope och tjänstelagret ansluter med teamets
+     begränsade databasroll
   5. tjänstelagrets effektiva nivå (register + golv) är inte HUMAN_ONLY
 Nivån AGENT ger "utföra", APPROVAL ger "föreslå". Profilen listar samtliga skäl
 när en skill är dold, inte bara det första.
@@ -32,12 +33,11 @@ from agents.run import RunRequest
 from agents.skills import ServiceSkill, SkillRegistry
 from ai import ToolSpec
 from services import AgentAccess, OperationKind, ServiceLayer
+from services.db import AGENT_ROLES
 
-#: Resurskontrollen i kod finns (agents.scope, prövas av dispatchern). Men harness.md §5.1
-#: kräver dessutom en egen, minimal databasroll och prov mot isolerad Postgres innan första
-#: PII-podden aktiveras – det sätter operatören upp. Till dess visas inga PII-verktyg.
-#: Ändras genom granskad commit, inte genom konfiguration.
-PII_DATABASE_ROLE_READY = False
+# Resurskontrollen i kod (agents.scope, dispatchern) räcker inte ensam: harness.md §5.1
+# kräver att agentens tjänstelager ansluter med teamets begränsade databasroll
+# (services.db.agent_service_layer). Annars visas inga verktyg med personuppgifter.
 
 
 class Outcome(StrEnum):
@@ -217,9 +217,11 @@ def compile_profile(
         if skill.pii or pod.pii:
             if ecosystem.defaults.require_execution_scope_for_pii and not has_scope:
                 reasons.append("personuppgifter kräver execution_scope i uppdraget")
-            if not PII_DATABASE_ROLE_READY:
+            team_role = AGENT_ROLES.get(agent.team, (None, None))[0]
+            if team_role is None or service.agent_role != team_role:
                 reasons.append(
-                    "personuppgifter: egen databasroll och Postgres-prov för PII-podden saknas (harness.md §5.1)"
+                    "personuppgifter: tjänstelagret ansluter inte med teamets begränsade databasroll "
+                    "(harness.md §5.1)"
                 )
 
         decision = service.decision(skill.operation.name)

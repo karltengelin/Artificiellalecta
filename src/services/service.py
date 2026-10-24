@@ -77,11 +77,22 @@ class ServiceLayer:
         events: EventLog | None = None,
         approvals: ApprovalStore | None = None,
         session_factory: SessionFactory | None = None,
+        validation_session_factory: SessionFactory | None = None,
+        agent_role: str | None = None,
     ) -> None:
         """
         session_factory: öppnar en databastransaktion per anrop (services.db). Med den
         hamnar händelselogg och godkännandekö i databasen om inget annat anges; utan den
         körs operationerna utan session och loggen hamnar i fil/minne.
+
+        validation_session_factory: betrodd anslutning för provkörning av agentförslag –
+        transaktionen rullas alltid tillbaka. Behövs när session_factory är agentens
+        begränsade databasroll, som inte får ändra affärsdata (harness.md §5.1).
+        Standard: session_factory.
+
+        agent_role: den begränsade databasroll som session_factory ansluter som. Sätts av
+        betrodd kod (services.db.agent_service_layer); harness visar verktyg med
+        personuppgifter för agenter först när tjänstelagret körs med en sådan roll.
         """
         self.registry = registry if registry is not None else default_registry
         self.register = register if register is not None else AccessRegister.load()
@@ -95,8 +106,16 @@ class ServiceLayer:
             raise ServiceConfigError("Händelselogg i databasen kräver session_factory (gemensam transaktion)")
         if session_factory is None and isinstance(approvals, DatabaseApprovalStore):
             raise ServiceConfigError("Godkännandekö i databasen kräver session_factory (gemensam transaktion)")
+        if validation_session_factory is not None and session_factory is None:
+            raise ServiceConfigError("validation_session_factory kräver session_factory")
+        if agent_role is not None and validation_session_factory is None:
+            raise ServiceConfigError(
+                "En begränsad agentroll kan inte provköra förslag – ange validation_session_factory"
+            )
         self.events = events
         self.approvals = approvals
+        self.agent_role = agent_role
+        self._validation_session_factory = validation_session_factory
         self._session_factory = session_factory
 
     # --- insyn -------------------------------------------------------------
@@ -222,7 +241,7 @@ class ServiceLayer:
         if op.kind != OperationKind.WRITE or self._session_factory is None:
             return
         try:
-            with transaction(self._session_factory) as tx:
+            with transaction(self._validation_session_factory or self._session_factory) as tx:
                 self._call(op, ctx, data, tx.session)
                 raise _ValidationRun
         except _ValidationRun:
