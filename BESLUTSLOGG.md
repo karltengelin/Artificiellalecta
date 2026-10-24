@@ -8,6 +8,44 @@
 
 ## Beslut
 
+### B-034 | 2026-10-24 | Digital klarhet som bolagets gemensamma grafiska design
+
+**Beslut:** Operatören valde i chatten 2026-10-24 förslaget **Digital klarhet**
+efter en jämförelse av fyra grafiska riktningar och bad uttryckligen att
+designspråket sparas i projektet och valet förs in i beslutsloggen.
+
+1. Digital klarhet är bolagets gemensamma grafiska riktning för hemsidor,
+   kundportal, handläggargränssnitt, rapporter, dokumentation och presentationer.
+2. Uttrycket bygger på indigo, ljusa innehållsytor, DM Sans, tydlig typografisk
+   hierarki och mjukare former. Mörka indigoytor kan användas i presentationer.
+3. Designgrunden dokumenteras i `06_design/designsprak.md`, med den valda
+   visuella referensen i `06_design/digital_klarhet.html`. Första gemensamma
+   designvärden finns i `src/design/digital_clarity.tokens.json`.
+4. Kommande mallar och gemensamma dokument-/presentationsskills återanvänder
+   samma grund oavsett team. Innehåll och detaljnivå anpassas till uppgiften.
+5. Införandet sker stegvis. Befintliga gränssnitt anpassas när de vidareutvecklas;
+   teknisk webbarkitektur och övrig byggordning består.
+
+**Motivering:**
+- Operatören föredrog Digital klarhet bland Nordisk precision, Redaktionell
+  elegans, Digital klarhet och Arkitektonisk minimalism.
+- Bolaget behöver ett professionellt, modernt och sammanhållet uttryck i alla
+  kanaler, även när olika människor eller agenter producerar materialet.
+- En dokumenterad grund med gemensamma designvärden minskar risken att varje
+  gränssnitt, rapport och presentation får egna stilar.
+
+**Konsekvenser:**
+- Designspecifikation v1.0, tokenfil och visuell referens sparas i repot.
+- MASTER_CONTEXT, README, agentekosystemets dokumentationsförmåga och ATT_GORA
+  hänvisar till den valda grunden.
+- Produktionsmallar, gemensamma skills, fullständigt logotyppaket och införande
+  i befintliga ytor återstår. Referensen innehåller endast exempeldata.
+- B-012 (Markdown som arbetsformat), B-015 (mappstruktur), B-026 (delade poddar)
+  och B-029 (Databricks-dashboard) kvarstår; inga externa publiceringar eller
+  ändringar i det aktiva handläggargränssnittet görs genom detta beslut.
+
+---
+
 ### B-033 | 2026-10-24 | Ärenden (`cases`) som handläggaragentens arbetsenhet och mandat (Fas 5)
 
 **Beslut:** Operatören godkände beslutsförslaget `projekt/01_ärendehantering/ARENDEN_BESLUTSFORSLAG.md` i chatten 2026-10-24, med valen A–H enligt rekommendationerna, och bad om att beslutet loggas. Ärenden införs i försäkringssystemet:

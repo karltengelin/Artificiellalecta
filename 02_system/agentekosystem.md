@@ -247,6 +247,12 @@ samma grafiska identitet och gemensam struktur. Två centralt underhållna skill
 De kopieras inte till varje podd eller team: varje skill har en implementation och
 återanvänder gemensamma, versionsstyrda mallar och designvärden (B-007/B-008/B-026).
 
+Grafisk grund är **Digital klarhet** (B-034), dokumenterad i
+[`06_design/designsprak.md`](../06_design/designsprak.md). Kommande mallar och
+genereringsskills ska använda samma designversion och grundvärden från
+`src/design/digital_clarity.tokens.json`. Vald design innebär inte att skillsen
+eller färdiga mallar redan är implementerade.
+
 Domänagenten ansvarar för innehåll, beräkningar och källor. Kommunikation äger de
 gemensamma mallarna; utveckling äger den tekniska genereringen. Vid en sakfråga från
 operatören används rapport-/dokumentationsskillen som standard, med längd anpassad
