@@ -50,6 +50,11 @@ class AIClient:
         self._providers: dict[tuple[str, str | None], tuple[Provider, str | None]] = {}
         self._lock = threading.Lock()
 
+    @property
+    def log_content(self) -> bool:
+        """Om anropsloggen sparar promptar och svar i klartext (AI_LOG_CONTENT, B-006)."""
+        return self._log_content
+
     def bind(
         self,
         *,

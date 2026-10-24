@@ -12,6 +12,7 @@ import pytest
 from agents import (
     Ecosystem,
     HarnessError,
+    MemoryJournal,
     RunRequest,
     RunStatus,
     SkillRegistry,
@@ -73,7 +74,9 @@ def run(make, script, *, clock=None, **request_overrides):
     fake = FakeProvider(script)
     sink = MemoryTraceSink()
     kwargs = {"clock": clock} if clock else {}
-    outcome = run_agent(ai_client(fake, sink), profile, service, request, run_id="run-1", **kwargs)
+    journal = MemoryJournal(run_id="run-1", team="forsakring", agent="case_handler")
+    outcome = run_agent(ai_client(fake, sink), profile, service, request, run_id="run-1", journal=journal,
+                        **kwargs)
     return outcome, fake, sink
 
 
@@ -221,7 +224,7 @@ class TestMedPersonuppgifter:
         profile = compile_profile(eco, SkillRegistry.build(eco, default_registry), service, request=request)
         return profile, service, request, scope
 
-    def test_forslag_avslutar_med_vantan_och_utan_fler_modellanrop(self, pii):
+    def test_forslag_avslutar_med_vantan_och_utan_fler_modellanrop(self, pii, tmp_path):
         profile, service, request, scope = pii
         salary = {
             "data": {"personal_id_number": PERSON, "employer_org_number": "5560000001",
@@ -236,7 +239,8 @@ class TestMedPersonuppgifter:
             tool_call_result("register_salary_report", salary, call_id="call_2"),
             text_result("borde aldrig efterfrågas"),
         ])
-        outcome = run_agent(ai_client(fake), profile, service, request, scope=scope, run_id="run-2")
+        outcome = run_agent(ai_client(fake), profile, service, request, scope=scope, run_id="run-2",
+                            journal_dir=tmp_path)
         result = outcome.result
         assert result.status == RunStatus.WAITING_APPROVAL
         assert "Ingen ändring är gjord ännu" in result.summary
@@ -245,13 +249,13 @@ class TestMedPersonuppgifter:
         (pending,) = service.approvals.list("pending")
         assert (pending.id, pending.proposed_by, pending.run_id) == (approval_id, "case_handler", "run-2")
 
-    def test_annan_person_blockerar(self, pii):
+    def test_annan_person_blockerar(self, pii, tmp_path):
         profile, service, request, scope = pii
         fake = FakeProvider([
             tool_call_result("get_insured_overview",
                              {"data": {"personal_id_number": "198505055678", "policy_number": None}, "reason": None}),
             text_result("x"),
         ])
-        outcome = run_agent(ai_client(fake), profile, service, request, scope=scope)
+        outcome = run_agent(ai_client(fake), profile, service, request, scope=scope, journal_dir=tmp_path)
         assert outcome.result.status == RunStatus.BLOCKED
         assert any("personen ingår inte" in u for u in outcome.result.uncertainties)

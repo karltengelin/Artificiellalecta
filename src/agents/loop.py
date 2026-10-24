@@ -19,7 +19,8 @@ En körning:
   6. Ett slutsvar utan verktyg avslutar som `completed`. `refusal` ger `needs_human`,
      avklippt eller okänt slut ger `failed` – aldrig ett "färdigt" resultat.
 
-Körjournalen (3b-6) byggs på `RunOutcome`: historik, utfall per verktygsgrupp och förbrukning.
+Varje steg journalförs (agents.journal, 3b-6) – utan råa personuppgifter. Går journalen
+inte att skriva görs inget modellanrop eller verktygsanrop efter det.
 """
 
 from __future__ import annotations
@@ -29,10 +30,14 @@ import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
+from agents.continuation import Continuation
 from agents.dispatcher import CallStatus, Dispatcher, DispatchOutcome
 from agents.ecosystem import REPO_ROOT, Limits
 from agents.errors import HarnessError
+from agents.journal import FileJournal, Journal, JournalError, digest, mask
 from agents.profile import EffectiveProfile
 from agents.run import RunRequest, RunResult, RunStatus
 from agents.scope import ExecutionScope
@@ -99,7 +104,9 @@ class RunOutcome:
     elapsed_seconds: float
 
 
-def build_context(profile: EffectiveProfile, request: RunRequest) -> tuple[str, Message]:
+def build_context(
+    profile: EffectiveProfile, request: RunRequest, continuation: Continuation | None = None
+) -> tuple[str, Message]:
     """Systeminstruktion och första användarmeddelande (harness.md §6.1)."""
     instruction = (REPO_ROOT / profile.instruction).read_text(encoding="utf-8").strip()
     day = profile.snapshot.rules_date.isoformat()
@@ -117,6 +124,8 @@ def build_context(profile: EffectiveProfile, request: RunRequest) -> tuple[str, 
         parts.append("Referenser: " + ", ".join(request.references))
     if request.expected_output:
         parts.append(f"Förväntat resultat: {request.expected_output}")
+    if continuation is not None:
+        parts.append(continuation.note())
     return system, Message.user("\n\n".join(parts))
 
 
@@ -128,28 +137,78 @@ def run_agent(
     *,
     scope: ExecutionScope | None = None,
     run_id: str | None = None,
+    journal: Journal | None = None,
+    journal_dir: Path | None = None,
+    continuation: Continuation | None = None,
     clock: Callable[[], float] = time.monotonic,
 ) -> RunOutcome:
-    """Kör agenten tills den är klar, väntar, stoppas eller når ett tak."""
+    """Kör agenten tills den är klar, väntar, stoppas eller når ett tak.
+
+    Körjournalen skrivs till `journal_dir` (standard logs/agent_runs/) om ingen
+    `journal` anges. En fortsättning (3b-5) tar sitt uppdrag från `continuation`.
+    """
     if profile.team != request.target_team:
         raise HarnessError(f"Profilen gäller teamet '{profile.team}', uppdraget '{request.target_team}'")
     if profile.execution_scope_ref != request.execution_scope_ref:
         raise HarnessError("Profilen är inte byggd för det här uppdraget (execution_scope_ref)")
+    if continuation is not None and request != continuation.request:
+        raise HarnessError("En fortsättning körs med fortsättningens uppdrag (Continuation.request)")
+    if ai.log_content and any(d.visible and d.pii for d in profile.decisions):
+        # Rå innehållsloggning får inte vara på när agenten hanterar personuppgifter (harness.md §8.1)
+        raise HarnessError("AI_LOG_CONTENT är på – stäng av den innan agenten får verktyg med personuppgifter")
     run_id = run_id or f"run-{uuid.uuid4().hex[:12]}"
-    dispatcher = Dispatcher(profile, service, run_id=run_id, case_id=request.case_id, scope=scope)
+    root_run_id = continuation.root_run_id if continuation else (request.root_run_id or run_id)
+    if journal is None:
+        journal = FileJournal(
+            journal_dir, run_id=run_id, team=profile.team, agent=profile.agent_id, root_run_id=root_run_id,
+            continuation_of=request.continuation_of, parent_run_id=request.parent_run_id,
+        )
+    budget = _Budget(profile.limits, clock)
+    consumed = continuation.consumed if continuation else {}
+    root_limits = continuation.root_limits if continuation else profile.limits
+
+    def observe(type: str, **fields: Any) -> None:
+        journal.append(type, step=budget.steps, **fields)
+
+    dispatcher = Dispatcher(profile, service, run_id=run_id, case_id=request.case_id, scope=scope, observer=observe)
     bound = ai.bind(team=profile.team, agent=profile.agent_id, run_id=run_id)
     tools = profile.tool_specs()
-    system, first = build_context(profile, request)
+    system, first = build_context(profile, request, continuation)
     history: list[Message] = [first]
     dispatches: list[DispatchOutcome] = []
-    budget = _Budget(profile.limits, clock)
     corrections: dict[str, int] = {}
+
+    # Journalen måste kunna skrivas innan något modellanrop görs
+    observe(
+        "run_started", task_id=request.task_id, goal=mask(request.goal), scope_ref=request.execution_scope_ref,
+        case_id=request.case_id, model_role=profile.model_role, versions=_versions(profile),
+        limits=profile.limits.model_dump(), root_limits=root_limits.model_dump(),
+    )
+    observe(
+        "policy_resolved",
+        tools=[{"skill": d.skill, "outcome": d.outcome.value, "level": d.service_level.value}
+               for d in profile.visible()],
+        hidden=[{"skill": d.skill, "reasons": list(d.reasons)} for d in profile.decisions if not d.visible],
+        unmapped_operations=list(profile.unmapped_operations),
+    )
+    for o in continuation.observations if continuation else ():
+        observe("approval_observed", approval_id=o.approval_id, operation=o.operation, decision=o.status,
+                decided_by=o.decided_by, decided_at=o.decided_at, note=mask(o.note))
 
     def finish(status: RunStatus, summary: str, *, uncertainties: tuple[str, ...] = ()) -> RunOutcome:
         pending = tuple(a for d in dispatches for a in d.pending_approvals)
         evidence = tuple(
             f"{c.call_id}:{c.skill}" for d in dispatches for c in d.calls if c.status == CallStatus.DONE
         )
+        usage = {"steps": budget.steps, "tool_calls": budget.tool_calls,
+                 "cost_usd": round(budget.cost_usd, 6), "elapsed_seconds": round(budget.elapsed, 3)}
+        root_usage = {k: round(v + consumed.get(_LIMIT_OF[k], 0), 6) for k, v in usage.items()}
+        try:
+            observe("run_ended", status=status.value, summary=mask(summary), pending_approvals=list(pending),
+                    evidence_refs=list(evidence), uncertainties=[mask(u) for u in uncertainties],
+                    usage=usage, root_usage=root_usage)
+        except JournalError as exc:
+            uncertainties = (*uncertainties, f"Körjournalen kunde inte avslutas: {exc}")
         result = RunResult(
             task_id=request.task_id, run_id=run_id, status=status, summary=summary,
             evidence_refs=evidence, uncertainties=uncertainties, pending_approvals=pending,
@@ -180,11 +239,23 @@ def run_agent(
                           uncertainties=(_sanitize(exc),))
         budget.steps += 1
         history.append(response.to_message())
+        if response.cost_usd is not None:
+            budget.cost_usd += response.cost_usd
+        try:
+            observe(
+                "model_returned", model_ref=response.model_ref, provider=response.provider, model=response.model,
+                stop_reason=response.stop_reason, usage=response.usage.model_dump(), cost_usd=response.cost_usd,
+                fallback_from=list(response.fallback_from),
+                tool_calls=[{"tool_call_id": c.id, "skill": c.name} for c in response.tool_calls],
+                text_hash=digest(response.text), text_length=len(response.text),
+            )
+        except JournalError as exc:
+            return finish(RunStatus.FAILED, "Körjournalen kunde inte sparas – inga verktyg kördes.",
+                          uncertainties=(str(exc),))
 
         if response.cost_usd is None:
             # Okänd kostnad räknas inte som noll – budgeten går inte att hålla (§6.3)
             return finish(RunStatus.LIMIT_REACHED, "Körningen stoppades: modellanropets kostnad är okänd.")
-        budget.cost_usd += response.cost_usd
         if budget.elapsed > profile.limits.max_wall_seconds:
             return finish(RunStatus.LIMIT_REACHED, "Körningen stoppades: svaret kom efter tidstaket. Inga verktyg kördes.")
         if budget.cost_usd > profile.limits.max_cost_usd:
@@ -206,6 +277,19 @@ def run_agent(
             continue
 
         return _final(response, finish)
+
+
+_LIMIT_OF = {"steps": "max_steps", "tool_calls": "max_tool_calls", "cost_usd": "max_cost_usd",
+             "elapsed_seconds": "max_wall_seconds"}
+
+
+def _versions(profile: EffectiveProfile) -> dict[str, Any]:
+    snap = profile.snapshot
+    return {
+        "policy_id": snap.policy_id, "ecosystem_sha256": snap.ecosystem_sha256,
+        "access_register_sha256": snap.access_register_sha256, "instruction_sha256": snap.instruction_sha256,
+        "product_rules_sha256": snap.product_rules_sha256, "rules_date": snap.rules_date.isoformat(),
+    }
 
 
 _Stop = tuple[RunStatus, str, tuple[str, ...]]
