@@ -2,7 +2,7 @@
 
 Översikten i [foretagsoversikt.html](foretagsoversikt.html) har jämförts med den
 bifogade äldre HTML-versionen och uppdaterats mot senaste hämtade `main`,
-commit `fb38590`. Sidans upplägg och klickbara karta är bevarade.
+commit `a2cfc60`. Sidans upplägg och klickbara karta är bevarade.
 Detta dokument är uppdateringens Markdown-underlag; HTML är den visuella leveransen.
 
 ## Vad som ändrats
@@ -12,10 +12,10 @@ Detta dokument är uppdateringens Markdown-underlag; HTML är den visuella lever
 - Tjänstelagrets tabell visar samtliga 15 operationer, inklusive anslutning,
   stamdata, arbetsgivare, kö och händelselogg. Registrets nivå skiljs från
   effektiv nivå före och från 1 november och från harness ytterligare begränsningar.
-- Harness 3b-1–4 visas som byggda: körpolicy, skill-register, profil, dispatcher,
-  resursmandat och agentloop. En agentprofil och två poddar är konfigurerade.
-  Loopen är testad med FakeProvider och stannar vid godkännande. Fortsättning
-  efter godkännande, varaktig körjournal och modellröktest återstår.
+- Harness 3b-1–6 visas som byggda: körpolicy, skill-register, profil, dispatcher,
+  resursmandat, agentloop, körjournal och länkad fortsättning. En agentprofil
+  och två poddar är konfigurerade. Journalen sparas i JSONL utan råa personuppgifter.
+  Modellröktest, kompletta användningsfall och admin-sida för körgränser återstår.
 - Rollen `agent_forsakring` är dokumenterat införd i Lakebase. Kunddata kräver
   dessutom `ExecutionScope` och att agentens tjänstelager använder teamets roll.
 - Kapitalförvaltningen har styrdokumentshierarki och placeringsriktlinje som
@@ -47,15 +47,18 @@ och ska säkerhetskopieras.
 
 Testantalet kommer från `python -m pytest --collect-only -q -p no:cacheprovider`
 i projektets befintliga Pythonmiljö, körd från denna worktree den 24 oktober.
-645 testfall samlades in i 32 filer utan insamlingsfel. Detta är en inventering;
-hela testsviten har inte körts som del av dokumentuppdateringen. Agentloopens
-21 tester kördes efter synk med den nya main-leveransen och passerade
-(`python -m pytest tests/test_agents_loop.py -q -p no:cacheprovider`).
+661 testfall samlades in i 33 filer utan insamlingsfel. Detta är en inventering;
+hela testsviten har inte körts som del av dokumentuppdateringen. Agentloopens och körjournalens
+37 tester kördes efter synk med den nya main-leveransen och passerade
+(`python -m pytest tests/test_agents_loop.py tests/test_agents_journal.py -q
+-p no:cacheprovider --basetemp=<ny skrivbar testmapp>`). Den första körningen
+hindrades av behörigheten till pytest-standardmappen; en ny tom testmapp
+i uppdragets skrivbara artefaktmapp löste miljöfelet.
 
 | Område | Insamlade testfall |
 |---|---:|
 | Tjänstelagret | 184 |
-| Harness och agentroll | 134 |
+| Harness och agentroll | 150 |
 | Kapitalmodeller | 100 |
 | AI-lagret | 83 |
 | Handläggar-UI | 77 |
@@ -63,7 +66,7 @@ hela testsviten har inte körts som del av dokumentuppdateringen. Agentloopens
 | Skriptens ingångar | 20 |
 | Premiemotorn | 17 |
 | Backup och migration | 9 |
-| **Summa** | **645** |
+| **Summa** | **661** |
 
 29 av dessa testfall kräver isolerad Postgres: 9 för tjänstelagret och 20 för
 agentrollen. Inga anrop till delad Lakebase eller riktiga modell-API:er har gjorts

@@ -225,19 +225,19 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
 </nav>
 
 <header class="hero wrap" id="lage">
-  <p class="eyebrow">Företagsöversikt · läget 24 oktober 2026 · main @ fb38590</p>
+  <p class="eyebrow">Företagsöversikt · läget 24 oktober 2026 · main @ a2cfc60</p>
   <h1>Artificiellalecta</h1>
   <p class="lede">Ett simulerat tjänstepensionsbolag som administrerar en enda produkt, ITP1 ålderspension, och som ska kunna drivas av en person med hjälp av AI-agenter.</p>
   <div class="prose">
     <p><strong>Var står bygget?</strong> Grunden är lagd. Försäkringssystemet med premiemotor och demodata ligger i Lakebase. Tjänstelagret, som alla ändringar i försäkringsdata ska gå igenom, är byggt och testat. AI-lagret är byggt. Produktregelverket är infört genom B-031 och gäller från 1 november 2026. Handläggar-UI:t är byggt i en första version ovanpå tjänstelagret och verifierat mot Lakebase.</p>
-    <p>Handläggar-UI v1 är byggt och verifierat i Lakebase. Harness har nu körpolicy, skill-register, verktygsfilter, resursmandat och agentloop. Loopen är testad lokalt med FakeProvider; rollen agent_forsakring är införd i Lakebase. Nästa steg är fortsättning efter godkännande, körjournal och röktest mot riktig modell. Kapitalförvaltningen har styrdokumentsutkast och tre lokalt testade datamodeller; handelsfunktionen och kundportalen återstår.</p>
+    <p>Handläggar-UI v1 är byggt och verifierat i Lakebase. Harness har nu körpolicy, skill-register, verktygsfilter, resursmandat, agentloop, körjournal och länkad fortsättning efter godkännande. Loopen och journalen är testade lokalt med FakeProvider; rollen agent_forsakring är införd i Lakebase. Nästa steg är kompletta användningsfall, modellröktest och admin-sida för körgränser. Kapitalförvaltningen har styrdokumentsutkast och tre lokalt testade datamodeller; handelsfunktionen och kundportalen återstår.</p>
   </div>
   <dl class="facts">
     <div><dt>32</dt><dd>beslut i beslutsloggen</dd></div>
     <div><dt>34</dt><dd>produktregler, gäller från 1 november</dd></div>
     <div><dt>10</dt><dd>tabeller i Lakebase</dd></div>
     <div><dt>15</dt><dd>operationer i tjänstelagret</dd></div>
-    <div><dt>645</dt><dd>insamlade testfall · inte en ny testkörning</dd></div>
+    <div><dt>661</dt><dd>insamlade testfall · inte en ny testkörning</dd></div>
     <div><dt>1 av 10</dt><dd>agentprofiler konfigurerade · loop testad lokalt</dd></div>
   </dl>
   <p class="demo">Senast dokumenterade Lakebase-kontroll, 24 oktober: 20 arbetsgivare · 501 försäkrade · 499 försäkringar · 15 097 premietransaktioner. Grundbeståndet är genererat (39,0 Mkr i betalda premier); därutöver finns verifieringsposten AL-000499. Journaler och manuella ändringar kräver backup. Ingen Lakebase-anslutning har gjorts vid denna uppdatering.</p>
@@ -277,7 +277,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
       <div class="layer">
         <div class="layer-name">Agentlager<span>Fas 3b pågår · 3c senare</span></div>
         <div class="layer-row">
-          <button class="blk st-part" data-k="harness" aria-pressed="false"><b>Harness</b><small>3b-1–4 klara · loop testad lokalt</small></button>
+          <button class="blk st-part" data-k="harness" aria-pressed="false"><b>Harness</b><small>3b-1–6 klara · loop testad lokalt</small></button>
           <button class="blk st-plan" data-k="teams" aria-pressed="false"><b>7 team, 10 agenter</b><small>avdelningarna</small></button>
           <button class="blk st-part" data-k="pods" aria-pressed="false"><b>Skill-poddar</b><small>kunddata och berakning konfigurerade</small></button>
           <button class="blk st-plan" data-k="flow" aria-pressed="false"><b>Flödesmotor</b><small>flöden över flera team</small></button>
@@ -375,8 +375,8 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
       <header><div><span class="card-no">Fas 3b–3c · B-026</span><h4>Agentekosystemet</h4></div><span class="chip st-part">Delvis byggt</span></header>
       <div class="track" role="img" aria-label="Plan och design klara, bygge delvis"><i class="on"></i><i class="on"></i><i class="half"></i><i></i></div>
       <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
-      <dl><dt>Finns</dt><dd>Tio agentbeskrivningar, en körprofil, två poddar, dispatcher och agentloop testad med FakeProvider. Begränsad databasroll för kunddata införd i Lakebase.</dd>
-      <dt>Saknas</dt><dd>Fortsättning efter godkännande, varaktig körjournal och modellröktest. Därefter delegering och flödesmotor.</dd>
+      <dl><dt>Finns</dt><dd>Tio agentbeskrivningar, en körprofil, två poddar, dispatcher, agentloop, JSONL-journal och länkad fortsättning efter godkännande. Begränsad databasroll för kunddata införd i Lakebase.</dd>
+      <dt>Saknas</dt><dd>Kompletta användningsfall, modellröktest och admin-sida för körgränser. Därefter delegering och flödesmotor.</dd>
       <dt>Kopplas in via</dt><dd>Tjänstelagret och AI-lagret.</dd></dl>
     </article>
   </div>
@@ -468,7 +468,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
   </div>
   <figure>
     <div class="diagram">
-      <svg viewBox="0 0 1092 372" role="img" aria-label="Byggordningen: Fas 1 och 1f är klara, handläggar-UI:t är byggt i en första version, harness har en agentloop och återstår att komplettera med körjournal och godkännandefortsättning, därefter handläggaragent, flödesmotor och flaggskeppet. Produktregler, AI-lagret och BI matar in i kedjan ovanifrån; kundportal, chattbot och kapitalförvaltning hänger på nedifrån.">
+      <svg viewBox="0 0 1092 372" role="img" aria-label="Byggordningen: Fas 1 och 1f är klara, handläggar-UI:t är byggt i en första version, harness har agentloop, körjournal och godkännandefortsättning men återstår att röktesta mot riktig modell, därefter handläggaragent, flödesmotor och flaggskeppet. Produktregler, AI-lagret och BI matar in i kedjan ovanifrån; kundportal, chattbot och kapitalförvaltning hänger på nedifrån.">
         <defs>
           <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
         </defs>
@@ -880,7 +880,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
   <div class="sec-head">
     <h2>Agentekosystemet</h2>
     <div class="prose">
-      <p>Målbilden i B-026 är sju team som speglar ett riktigt bolags avdelningar. Varje team har en ledande agent som tar emot uppdrag och fördelar arbetet. Vad en agent kan göra styrs av vilka skill-poddar som är monterade på teamet, inte av vad prompten säger. Körpolicy, skill-register, effektiv profil, dispatcher, resursmandat och agentloop är byggda. Bara forsakring/case_handler har en konfigurerad profil, med kunddata och berakning. Rollen agent_forsakring är införd i Lakebase. Loopen är lokalt testad med FakeProvider. Fortsättning efter godkännande, körjournal och röktest mot riktig modell återstår; övriga team och poddar nedan är målbilden.</p>
+      <p>Målbilden i B-026 är sju team som speglar ett riktigt bolags avdelningar. Varje team har en ledande agent som tar emot uppdrag och fördelar arbetet. Vad en agent kan göra styrs av vilka skill-poddar som är monterade på teamet, inte av vad prompten säger. Körpolicy, skill-register, effektiv profil, dispatcher, resursmandat och agentloop är byggda. Bara forsakring/case_handler har en konfigurerad profil, med kunddata och berakning. Rollen agent_forsakring är införd i Lakebase. Loopen har nu körjournal i JSONL och länkad fortsättning efter godkännande. Lokala tester finns; röktest mot riktig modell och kompletta användningsfall återstår; övriga team och poddar nedan är målbilden.</p>
     </div>
   </div>
 
@@ -906,7 +906,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
   <h3>Hur agenterna kopplas in</h3>
   <figure style="margin-top:14px">
     <div class="diagram">
-      <svg viewBox="0 0 1040 310" role="img" aria-label="Harness har policy, skill-register, dispatcher, resursmandat och agentloop mellan AI-lagret och tjänstelagret. Fortsättning efter godkännande, körjournal och modellröktest återstår.">
+      <svg viewBox="0 0 1040 310" role="img" aria-label="Harness har policy, skill-register, dispatcher, resursmandat och agentloop mellan AI-lagret och tjänstelagret. Körjournal i JSONL och länkad fortsättning efter godkännande finns. Modellröktest återstår.">
         <defs>
           <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
         </defs>
@@ -923,7 +923,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
         <text class="t-sub" x="270" y="144">✓  skill-register och verktygsfilter</text>
         <text class="t-sub" x="270" y="170">✓  dispatcher och kundavgränsning</text>
         <text class="t-sub" x="270" y="196">✓  modellloop och stopp vid godkännande</text>
-        <text class="t-sub" x="270" y="222">→  körjournal och röktest återstår</text>
+        <text class="t-sub" x="270" y="222">✓  journal och länkad fortsättning</text>
         <text class="t-sub" x="270" y="248">steg-, kostnads-, tids- och kontexttak</text>
 
         <g class="n-ok"><rect x="640" y="30" width="190" height="64" rx="6"/></g>
@@ -948,14 +948,14 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
         <text class="t-sub" x="950" y="186" text-anchor="middle">10 tabeller</text>
         <path class="edge" d="M830,172 H878" marker-end="url(#ah)"/>
 
-        <g class="n-plan"><rect x="640" y="236" width="190" height="56" rx="6"/></g>
-        <text class="t-b" x="735" y="259" text-anchor="middle">Körjournal, saknas</text>
+        <g class="n-ok"><rect x="640" y="236" width="190" height="56" rx="6"/></g>
+        <text class="t-b" x="735" y="259" text-anchor="middle">Körjournal, byggd</text>
         <text class="t-sub t-mono" x="735" y="278" text-anchor="middle" style="font-size:11px">logs/agent_runs/</text>
         <path class="edge" d="M550,262 H638" marker-end="url(#ah)"/>
         <text class="t-lbl" x="594" y="254" text-anchor="middle">varje steg</text>
       </svg>
     </div>
-    <figcaption>Harness 3b-1–4 är byggd i <code>src/agents/</code>. Dispatchern prövar verktyg, aktuell policy och ett avgränsat kunduppdrag före körning. Kunddata kräver både <code>ExecutionScope</code> och anslutning med teamets begränsade databasroll. Utan dessa visas bara premieförhandsberäkningen. Agentloopen finns och stannar vid väntande förslag. Fortsättning efter godkännande och varaktig körjournal återstår. Försäkringsverktyg går via tjänstelagret; dokument, kapital och kommunikation får egna avgränsade gateways.</figcaption>
+    <figcaption>Harness 3b-1–6 är byggd i <code>src/agents/</code>. Dispatchern prövar verktyg, aktuell policy och ett avgränsat kunduppdrag före körning. Kunddata kräver både <code>ExecutionScope</code> och anslutning med teamets begränsade databasroll. Utan dessa visas bara premieförhandsberäkningen. Agentloopen journalför sina steg i JSONL och stannar vid väntande förslag. Operatören kan efter beslut starta en länkad fortsättning med rotkörningens kvarvarande budget. Försäkringsverktyg går via tjänstelagret; dokument, kapital och kommunikation får egna avgränsade gateways.</figcaption>
   </figure>
 
   <h3>Flaggskeppsscenariot</h3>
@@ -1035,8 +1035,8 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
       <tbody>
         <tr><td><code>src/services/</code></td><td>15 försäkringsoperationer, åtkomst, regler, godkännanden, händelselogg och transaktioner</td><td class="num">3 393</td><td><span class="chip st-ok">Byggt</span></td></tr>
         <tr><td><code>src/web/</code></td><td>FastAPI, Jinja2 och HTMX: lokalt handläggar-UI via tjänstelagret; HTML/CSS ingår inte i radantalet</td><td class="num">1 355</td><td><span class="chip st-ok">v1 byggd</span></td></tr>
-        <tr><td><code>src/ai/</code></td><td>Modellroller, leverantörsadaptrar, reserv, teamnycklar och anropslogg</td><td class="num">1 667</td><td><span class="chip st-ok">Byggt</span></td></tr>
-        <tr><td><code>src/agents/</code></td><td>Körpolicy, profil, skill-register, dispatcher, resursmandat och agentloop; körjournal återstår</td><td class="num">1 806</td><td><span class="chip st-part">Delvis byggt</span></td></tr>
+        <tr><td><code>src/ai/</code></td><td>Modellroller, leverantörsadaptrar, reserv, teamnycklar och anropslogg</td><td class="num">1 672</td><td><span class="chip st-ok">Byggt</span></td></tr>
+        <tr><td><code>src/agents/</code></td><td>Körpolicy, profil, skill-register, dispatcher, agentloop, resursmandat, fortsättning och JSONL-journal</td><td class="num">2 232</td><td><span class="chip st-part">Delvis byggt</span></td></tr>
         <tr><td><code>src/models/</code></td><td>13 tabellmodeller: 10 i Lakebase, 3 portföljmodeller enbart lokalt</td><td class="num">1 169</td><td><span class="chip st-ok">Modeller byggda</span></td></tr>
         <tr><td><code>src/utils/</code></td><td>Databas, agentrollens rättigheter, backup, migration och lokalt demobestånd</td><td class="num">644</td><td><span class="chip st-ok">Byggt</span></td></tr>
         <tr><td><code>src/analytics/</code></td><td>IBB-scenarioanalys och läsning av offline-backup</td><td class="num">285</td><td><span class="chip st-part">Första analysen</span></td></tr>
@@ -1099,7 +1099,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
         <text class="t-lbl" x="329" y="247" text-anchor="middle">metadata</text>
       </svg>
     </div>
-    <figcaption>AI-lagret och tjänstelagret känner inte till varandra. Agentloopen run_agent binder nu ihop modellanrop och kontrollerad verktygskörning. Varaktig körjournal och fortsättning efter godkännande återstår. Premiemotorn är en ren funktion utan databas, och därför kan både tjänstelagret, demogeneratorn och analysen använda samma beräkning.</figcaption>
+    <figcaption>AI-lagret och tjänstelagret känner inte till varandra. Agentloopen run_agent binder nu ihop modellanrop och kontrollerad verktygskörning. Körjournalen sparas lokalt i JSONL; en länkad fortsättning efter godkännande använder kvarvarande budget. Journal i Lakebase hör till senare fas. Premiemotorn är en ren funktion utan databas, och därför kan både tjänstelagret, demogeneratorn och analysen använda samma beräkning.</figcaption>
   </figure>
 
   <h3>Skripten</h3>
@@ -1172,10 +1172,10 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
   </div>
 
   <h3>Testerna</h3>
-  <p class="note" style="margin:8px 0 14px; max-width:80ch">645 testfall i 32 filer, räknade med pytest --collect-only den 24 oktober. Insamling verifierar vilka testfall som finns; hela sviten har inte körts i denna dokumentuppdatering. Tjänstelager, UI och kapitalmodeller har lokala tester. 29 testfall kräver isolerad Postgres (9 för tjänstelagret, 20 för agentrollen). AI-testerna använder fejkleverantör utan nätverk. Agentloopens 21 tester har dessutom körts i denna uppdatering och passerar.</p>
-  <div class="bars" role="img" aria-label="Insamlade testfall per område: Tjänstelagret 184, Harness och agentroll 134, Kapitalmodeller 100, AI-lagret 83, Handläggar-UI 77, Analys 21, Skriptens ingångar 20, Premiemotorn 17, Backup och migration 9">
+  <p class="note" style="margin:8px 0 14px; max-width:80ch">661 testfall i 33 filer, räknade med pytest --collect-only den 24 oktober. Insamling verifierar vilka testfall som finns; hela sviten har inte körts i denna dokumentuppdatering. Tjänstelager, UI och kapitalmodeller har lokala tester. 29 testfall kräver isolerad Postgres (9 för tjänstelagret, 20 för agentrollen). AI-testerna använder fejkleverantör utan nätverk. 37 tester för agentloop och körjournal har dessutom körts efter synk med main och passerar.</p>
+  <div class="bars" role="img" aria-label="Insamlade testfall per område: Tjänstelagret 184, Harness och agentroll 150, Kapitalmodeller 100, AI-lagret 83, Handläggar-UI 77, Analys 21, Skriptens ingångar 20, Premiemotorn 17, Backup och migration 9">
     <div class="bar-row"><span>Tjänstelagret</span><div class="bar"><span style="width:100.0%"></span></div><span class="num">184</span></div>
-    <div class="bar-row"><span>Harness och agentroll</span><div class="bar"><span style="width:72.8%"></span></div><span class="num">134</span></div>
+    <div class="bar-row"><span>Harness och agentroll</span><div class="bar"><span style="width:81.5%"></span></div><span class="num">150</span></div>
     <div class="bar-row"><span>Kapitalmodeller</span><div class="bar"><span style="width:54.3%"></span></div><span class="num">100</span></div>
     <div class="bar-row"><span>AI-lagret</span><div class="bar"><span style="width:45.1%"></span></div><span class="num">83</span></div>
     <div class="bar-row"><span>Handläggar-UI</span><div class="bar"><span style="width:41.8%"></span></div><span class="num">77</span></div>
@@ -1204,7 +1204,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
         <tr><td>Premie ur löneunderlag</td><td><code>salary_reports</code> → premiemotorn → <code>premium_transactions</code>, enligt PR-ITP1-001, 015 och 017.</td><td>Eget steg i Fas 1f</td></tr>
         <tr><td>Uttag, paus, garanti, pensionsbelopp och avslut</td><td>Nya <code>@operation</code>-funktioner med rader i <code>access_register.yaml</code>. Kräver att premieläge och pensionsläge skiljs åt, och uttagsdelar och kapitaljournal i datamodellen.</td><td>Modellbeslut. Reglerna är införda: PR-ITP1-002–010 och 024–028</td></tr>
         <tr><td>Låst regelversion per händelse</td><td>Beräkningsunderlaget och händelseloggen får t.ex. <code>PR-ITP1-001 v1.0</code>.</td><td>Avstämning med delprojekt 4. Behövs för flaggskeppet</td></tr>
-        <tr><td>Fortsättning efter godkännande och körjournal</td><td>Bygger vidare på befintliga ecosystem.yaml, skill-register, dispatcher och run_agent i <code>src/agents/</code>.</td><td>3b-5–3b-6; därefter komplett användningsfall, modellröktest och Fas 5</td></tr>
+        <tr><td>Kompletta agentfall och modellröktest</td><td>Bygger vidare på befintlig loop, JSONL-journal och länkad fortsättning i <code>src/agents/</code>. Admin-sida för körgränser återstår också.</td><td>3b-7–3b-9; därefter Fas 5</td></tr>
         <tr><td>Fler skills</td><td>Tjänsteomslag för kunddata och premieberäkning finns i skill-registret. Kvar: dokument-/regelgateway, utskick, complianceöversyn och marknadsdata.</td><td>Respektive gateway, kontrakt och behörigheter</td></tr>
         <tr><td>Flödesmotor och delegering</td><td>Harness plus tabeller för flöden och körjournal. Första flödet är regelförändringsflödet i <code>02_system/Agentsystem/</code>.</td><td>Harness</td></tr>
         <tr><td>Kapitalförvaltningens körande funktion</td><td>Tre modeller finns lokalt. Kvar: tabeller i Lakebase, kapitalgateway, marknadsdata, saldo-/innehavsberäkning, förvaltningslogik och premiekoppling.</td><td>Antagna styrdokument och instrumentlista, kontroller och koordinerad databasändring. Parallellt spår</td></tr>
@@ -1229,7 +1229,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
 </main>
 
 <footer class="wrap">
-  <p>Sammanställt mot main @ fb38590 den 24 oktober 2026: MASTER_CONTEXT, BESLUTSLOGG, ATT_GORA, projektplaner, systemdokumentation och faktisk kod. Pythonrader inkluderar tomrader och kommentarer; testantal kommer från pytest-insamling. Lakebase-uppgifter är dokumenterade verifieringar, inte livevärden. Källor, avgränsningar och ändringar finns i UPPDATERING_2026-10-24.md bredvid denna fil. Sidan är en statisk ögonblicksbild.</p>
+  <p>Sammanställt mot main @ a2cfc60 den 24 oktober 2026: MASTER_CONTEXT, BESLUTSLOGG, ATT_GORA, projektplaner, systemdokumentation och faktisk kod. Pythonrader inkluderar tomrader och kommentarer; testantal kommer från pytest-insamling. Lakebase-uppgifter är dokumenterade verifieringar, inte livevärden. Källor, avgränsningar och ändringar finns i UPPDATERING_2026-10-24.md bredvid denna fil. Sidan är en statisk ögonblicksbild.</p>
 </footer>
 
 <script>
@@ -1240,7 +1240,7 @@ footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
     bi:{t:'Dashboard och Genie',s:'part',l:'Första analysen byggd',a:'Ytor · Delprojekt 2 · B-029',d:'En Databricks AI/BI-dashboard med gemensamma mått, och Genie för frågor i datat. Samma underlag ska försörja dashboarden, agenternas analyser och rapporteringen.',h:['Analys av premieeffekt vid hypotetiskt IBB','Designförslag med frågor, mått och dataflöde'],m:['Lakebase registrerat i Unity Catalog','Mått som metric views, själva dashboarden och Genie-kopplingen','Pod bestand för agenter'],f:['projekt/02_bi_insikter/DASHBOARD_DESIGN.md','src/analytics/'],x:['#delprojekt','Delprojektet']},
     portal:{t:'Kundportal',s:'none',l:'Ej påbörjat',a:'Ytor · Delprojekt 3',d:'Låtsashemsida där en försäkrad ser sin ålderspension och kan pausa eller skjuta upp utbetalning.',h:['Projektplan','Beslut B-020: samma backend som handläggar-UI:t'],m:['Allt bygge','Uttags- och utbetalningsoperationer i tjänstelagret','Kundinloggning'],f:['projekt/03_kundportal/PROJEKTPLAN.md'],x:['#ordning','Byggordningen']},
     chat:{t:'Kundchattbot',s:'none',l:'Ej påbörjat',a:'Ytor · Delprojekt 7',d:'Chattbot i kundportalen som svarar på vad kunden får och inte får göra med sin försäkring.',h:['Projektplan','Kunskapskällan: 34 produktregler och villkor v2.0'],m:['Kundportalen att visas i','Pod regelverk för uppslag i regler och villkor'],f:['projekt/07_kundchattbot/PROJEKTPLAN.md'],x:['#regler','Regelkedjan']},
-    harness:{"t":"Harness","s":"part","l":"3b-1–4 byggda","a":"Agentlager · Fas 3b · B-026","d":"Körpolicy, skill-register, dispatcher, kundavgränsning och agentloop är byggda. run_agent anropar AI-lagret, kör tillåtna verktyg, håller historiken och stannar vid väntande godkännande eller nådda gränser.","h":["ecosystem.yaml: forsakring/case_handler med kunddata och berakning","Strikt skill-schema, effektiv profil, policykontroll och versionsbild","Dispatcher och ExecutionScope: avgränsat kunduppdrag","agent_forsakring införd i Lakebase 24 oktober","Agentloop med steg-, kostnads-, tids- och kontexttak; 21 lokala tester gröna"],"m":["3b-5 fortsättning efter godkännande och 3b-6 varaktig körjournal","3b-7–8 komplett användningsfall och röktest mot riktig modell","3b-9 admin-sida för körgränser"],"f":["02_system/harness.md","src/agents/","src/agents/ecosystem.yaml","src/agents/loop.py"],"x":["#agenter","Hur agenterna kopplas in"]},
+    harness:{"t":"Harness","s":"part","l":"3b-1–6 byggda","a":"Agentlager · Fas 3b · B-026","d":"Körpolicy, skill-register, dispatcher, kundavgränsning, agentloop, körjournal och länkad fortsättning är byggda. run_agent journalför varje steg i JSONL och stannar vid väntande godkännande eller nådda gränser. Efter handläggarens beslut kan operatören starta en fortsättning med kvarvarande budget.","h":["ecosystem.yaml: forsakring/case_handler med kunddata och berakning","Strikt skill-schema, effektiv profil, policykontroll och versionsbild","Dispatcher och ExecutionScope: avgränsat kunduppdrag","agent_forsakring införd i Lakebase 24 oktober","Agentloop, körjournal och fortsättning: 37 lokala tester gröna","JSONL-journal i logs/agent_runs/ utan råa personuppgifter"],"m":["3b-7–8 kompletta användningsfall och röktest mot riktig modell","3b-9 admin-sida för körgränser","Fas 3c: delegering, flödesmotor och journal i Lakebase"],"f":["02_system/harness.md","src/agents/","src/agents/ecosystem.yaml","src/agents/loop.py","src/agents/journal.py","src/agents/continuation.py"],"x":["#agenter","Hur agenterna kopplas in"]},
     teams:{"t":"7 team, 10 agenter","s":"plan","l":"Målbild + en körprofil","a":"Agentlager · B-026","d":"Avdelningar med en ledande agent som orkestrerare: försäkring, kommunikation, kapital, aktuarie, compliance, ekonomi och utveckling. Du är högsta orkestrerare; det finns ingen VD-agent.","h":["Tio mandatbeskrivningar och sju planerade team","En konfigurerad profil: forsakring/case_handler","Poddarna kunddata och berakning monterade i profilen"],"m":["Komplett ärendeflöde och röktest mot riktig modell","Körprofiler och verktyg för resterande team","Oberoende internrevisionsteam"],"f":["02_system/agentkarta.md","02_system/agenter/"],"x":["#agenter","Teamen"]},
     pods:{"t":"Skill-poddar","s":"part","l":"2 poddar konfigurerade","a":"Agentlager · B-026","d":"Poddarna kunddata och berakning är konfigurerade för försäkringsteamet. Kunddata kräver avgränsat uppdrag och teamets begränsade databasanslutning. Tre läsverktyg kan då öppnas. Skrivningar begränsas dessutom av datum, tjänstelagret och agentens nekanden.","h":["kunddata: sex mappade tjänsteoperationer, med ytterligare spärrar","berakning: calculate_premium_preview","SkillRegistry bygger verktygsschema ur operationens kontrakt","Agentloop testad med verktygsanrop mot FakeProvider"],"m":["Kompletta användningsfall och verifiering mot riktig modell","Dokument-/regelgateway och övriga domänpoddar"],"f":["src/agents/ecosystem.yaml","src/agents/skills.py","src/agents/scope.py"],"x":["#agenter","Teamen och poddarna"]},
     flow:{t:'Flödesmotor',s:'plan',l:'Designat',a:'Agentlager · Fas 3c · B-016',d:'Deterministiska flöden över flera team med godkännandesteg och sparat tillstånd, eftersom ett godkännande kan dröja i dagar. Ledande agenter kan också delegera till andra team.',h:['Design i agentekosystem.md §6','Regelförändringsflödet beskrivet i 02_system/Agentsystem/'],m:['Kod och tabeller för flöden och körjournal'],f:['02_system/Agentsystem/regelförändringsflöde.md'],x:['#agenter','Flaggskeppsscenariot']},
