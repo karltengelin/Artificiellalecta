@@ -11,12 +11,19 @@ simulerade bolaget självt.
 
 ## Status
 
-🟡 Första version 2026-10-12: [foretagsoversikt.html](foretagsoversikt.html), läget på main @ 070e6bb.
+🟡 Första version 2026-10-12; uppdaterad 2026-10-24:
+[foretagsoversikt.html](foretagsoversikt.html), läget på main @ fb38590.
 Öppnas direkt i webbläsaren. Den innehåller en klickbar bolagskarta, delprojektens status,
 byggordning, tjänstelagrets flöde, regelkedjan, datamodellen, agentekosystemet, kod, skript
 och luckor. Sidan är statisk och uppdateras manuellt; siffror och status gäller per datumet i
 sidhuvudet. Naturligt att uppdatera i takt med att övriga delprojekt tar form – annars blir
 översikten inaktuell.
+
+Uppdateringen 24 oktober omfattar handläggar-UI v1, samtliga 15 tjänsteoperationer,
+harness 3b-1–4 och den införda databasrollen, kapitalets beslutsutkast och lokala
+modeller samt kod- och testinventeringen. Byggt lokalt, infört i Lakebase och
+återstående arbete anges separat. Källor och avgränsningar finns i
+[uppdateringsunderlaget](UPPDATERING_2026-10-24.md).
 
 ## Beroenden
 
