@@ -50,6 +50,14 @@ python scripts/web/start_ui.py --db svc_test --port 8766
 
 I Claude-appen finns startkonfigurationerna `handlaggare-ui` och `handlaggare-ui-svc-test` i `.claude/launch.json`.
 
+**Skrivbordsgenväg (Windows).** Kör `python scripts/web/install_desktop_shortcut.py` en gång från
+huvudcheckouten. Det lägger genvägen *Artificiellalecta – handläggare* på skrivbordet, med märket
+som ikon: den indigofärgade rutan ur `src/design/icon.py`, med färgen ur tokenfilen. Genvägen kör
+`scripts/web/open_ui.ps1`. Skriptet startar servern i ett eget minimerat fönster om den inte redan
+kör, väntar tills UI:t svarar och öppnar `http://127.0.0.1:8765` i webbläsaren. Stäng serverfönstret
+för att stoppa UI:t. Genvägen använder demodatabasen. `--db lakebase` ger en separat genväg mot
+beståndet, och lägger man inte till den finns ingen genväg till Lakebase.
+
 | Variabel / flagga | Standard | Innehåll |
 |---|---|---|
 | `HANDLAGGARE_ID` | `karl` | Handläggarens id i händelseloggen |
