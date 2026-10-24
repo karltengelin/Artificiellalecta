@@ -34,8 +34,8 @@ defaults:
     max_wall_seconds: 600
 
 pods:
-  # Kunddata via tjänstelagret. PII: verktygen visas först när resurskontrollen för
-  # tilldelat ärende är byggd (3b-3) – till dess döljer harness dem med skäl.
+  # Kunddata via tjänstelagret. PII: kräver execution_scope i uppdraget (dispatchern prövar
+  # varje anrop mot det) och en egen databasroll innan verktygen visas (harness.md §5.1).
   kunddata:
     owner_team: forsakring
     mountable_by: [forsakring]

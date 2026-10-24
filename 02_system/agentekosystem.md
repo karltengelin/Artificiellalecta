@@ -1,7 +1,7 @@
 # Agentekosystem
 
 > **Typ:** Tvärgående arkitekturramverk (MASTER_CONTEXT §4b, B-024) – inte ett delprojekt utan det sätt alla delprojekt bygger agenter på
-> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Harness byggs i Fas 3b: körpolicyn `src/agents/ecosystem.yaml` och skill-registret finns sedan 2026-10-24 (3b-1, 3b-2); agentloop, dispatcher med resurskontroll, körjournal och flödesmotor återstår – se byggordningen i §12 och `harness.md`.
+> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Harness byggs i Fas 3b: körpolicyn `src/agents/ecosystem.yaml`, skill-registret och dispatchern med resursmandat finns sedan 2026-10-24 (3b-1–3b-3); agentloop, körjournal och flödesmotor återstår – se byggordningen i §12 och `harness.md`.
 > **Vidareutvecklar:** B-006, B-007, B-008, B-009, B-011, B-016, B-017
 
 ---
@@ -354,7 +354,9 @@ Byggs efter harness (§12).
 | **1f** | Tjänstelagret (`tjänstelager.md`): operationskontrakt, agentåtkomst inkl. *endast handläggare*, godkännandekö, händelselogg, första läs- och skrivoperationerna | Fas 4 och alla agentverktyg |
 | **3b** | Harness v1 (efter Fas 4): `ecosystem.yaml`, skill-register ovanpå tjänstelagret, behörighetsfilter, agentloop, körjournal (JSONL), första poddarna | Fas 5 – handläggaragenten |
 | **3c** | Delegering mellan team, flödesmotor med persisterat tillstånd (Lakebase-tabeller), regelförändringsflödet | Flaggskeppsscenariot |
-| Senare | MCP-exponering av poddar, databas-sink för anropsloggen, kostnadsindikatorer, egen Lakebase-roll för PII-poddar | B-017/B-024 fullt ut, BI |
+| Senare | MCP-exponering av poddar, databas-sink för anropsloggen, kostnadsindikatorer | B-017/B-024 fullt ut, BI |
+
+Egen Lakebase-roll för PII-poddar är flyttad från *Senare* till före aktiveringen av första PII-podden (`harness.md` §5.1, `ATT_GORA.md` under 3b-3).
 
 ---
 

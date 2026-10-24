@@ -12,7 +12,7 @@ En skill är öppen bara om varje villkor håller – ett nej vinner alltid:
   1. podden är monterad på teamet och finns i agentens poddar
   2. skillen är inte nekad globalt, för teamet, agenten eller uppdraget
   3. sidoeffekten finns i snittet av defaults, podd, team, agent och uppdrag
-  4. personuppgifter: uppdraget har execution_scope och resurskontrollen finns
+  4. personuppgifter: uppdraget har execution_scope och PII-podden har sin databasroll
   5. tjänstelagrets effektiva nivå (register + golv) är inte HUMAN_ONLY
 Nivån AGENT ger "utföra", APPROVAL ger "föreslå". Profilen listar samtliga skäl
 när en skill är dold, inte bara det första.
@@ -33,9 +33,11 @@ from agents.skills import ServiceSkill, SkillRegistry
 from ai import ToolSpec
 from services import AgentAccess, OperationKind, ServiceLayer
 
-#: Resurskontrollen för tilldelat ärende (rätt person/försäkring före anrop och innan
-#: resultat lämnas ut) byggs i 3b-3. Till dess visas inga PII-verktyg (harness.md §5.1).
-PII_SCOPE_ENFORCED = False
+#: Resurskontrollen i kod finns (agents.scope, prövas av dispatchern). Men harness.md §5.1
+#: kräver dessutom en egen, minimal databasroll och prov mot isolerad Postgres innan första
+#: PII-podden aktiveras – det sätter operatören upp. Till dess visas inga PII-verktyg.
+#: Ändras genom granskad commit, inte genom konfiguration.
+PII_DATABASE_ROLE_READY = False
 
 
 class Outcome(StrEnum):
@@ -82,6 +84,7 @@ class EffectiveProfile:
     limits: Limits
     decisions: tuple[SkillDecision, ...]
     unmapped_operations: tuple[str, ...]  # operationer som ingen podd mappar – stängda
+    execution_scope_ref: str | None  # uppdragets resursmandat – dispatchern kräver samma scope
     snapshot: VersionSnapshot
     _skills: SkillRegistry
 
@@ -214,8 +217,10 @@ def compile_profile(
         if skill.pii or pod.pii:
             if ecosystem.defaults.require_execution_scope_for_pii and not has_scope:
                 reasons.append("personuppgifter kräver execution_scope i uppdraget")
-            if not PII_SCOPE_ENFORCED:
-                reasons.append("personuppgifter: resurskontrollen för tilldelat ärende är inte byggd (3b-3)")
+            if not PII_DATABASE_ROLE_READY:
+                reasons.append(
+                    "personuppgifter: egen databasroll och Postgres-prov för PII-podden saknas (harness.md §5.1)"
+                )
 
         decision = service.decision(skill.operation.name)
         if decision.effective == AgentAccess.HUMAN_ONLY:
@@ -234,7 +239,7 @@ def compile_profile(
                 pod=skill.pod,
                 operation=skill.operation.name,
                 kind=skill.kind,
-                pii=skill.pii,
+                pii=skill.pii or pod.pii,
                 service_level=decision.effective,
                 outcome=outcome,
                 reasons=tuple(reasons),
@@ -251,6 +256,7 @@ def compile_profile(
         decisions=tuple(decisions),
         unmapped_operations=tuple(ecosystem.unmapped_operations(service.registry)),
         snapshot=_snapshot(ecosystem, agent.instruction, service),
+        execution_scope_ref=request.execution_scope_ref if request is not None else None,
         _skills=skills,
     )
 

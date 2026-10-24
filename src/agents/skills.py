@@ -88,16 +88,19 @@ class ServiceSkill:
     def invoke(
         self, service: ServiceLayer, ctx: OperationContext, arguments: dict[str, Any]
     ) -> OperationResult:
-        """Kör operationen som agenten i `ctx`.
+        """Validerar och kör operationen som agenten i `ctx`.
 
         Förutsätter att dispatchern redan har prövat skillen mot agentens profil
         (EffectiveProfile.require) – tjänstelagret prövar dessutom själv nivå och golv.
         """
+        return self.execute(service, ctx, self.parse(arguments))
+
+    def execute(self, service: ServiceLayer, ctx: OperationContext, action: BaseModel) -> OperationResult:
+        """Kör ett redan validerat anrop (från `parse`) som agenten i `ctx`."""
         if not ctx.actor.is_agent:
             raise HarnessError(
                 "Skills anropas bara för agenter – handläggare och skript använder tjänstelagret direkt"
             )
-        action = self.parse(arguments)
         return service.execute(self.operation.name, replace(ctx, reason=action.reason), action.data)
 
     @staticmethod
