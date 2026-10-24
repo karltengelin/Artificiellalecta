@@ -25,6 +25,11 @@ modeller samt kod- och testinventeringen. Byggt lokalt, infört i Lakebase och
 återstående arbete anges separat. Källor och avgränsningar finns i
 [uppdateringsunderlaget](UPPDATERING_2026-10-24.md).
 
+En fristående leveranskopia finns även i projektroten:
+[foretagsoversikt.html](../../foretagsoversikt.html), på operatörens begäran.
+Vid kommande uppdateringar ska båda HTML-filerna hållas synkroniserade;
+rotkopians hänvisning till uppdateringsunderlaget utgår från projektroten.
+
 ## Beroenden
 
 Ingen hård beroende, men innehållet blir mer värdefullt ju fler av projekt 1–7 som är igång.

@@ -1,0 +1,1285 @@
+<!doctype html>
+<html lang="sv">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<title>Artificiellalecta företagsöversikt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: ett driftsdokument i en kolumn med fast sektionsmeny; diagram får full bredd, löptext hålls kring 68 tecken */
+:root{
+  --bg:#F3F5F7; --surface:#FFFFFF; --ink:#152130; --muted:#566376; --line:#D4DAE2;
+  --accent:#0B6480; --accent-soft:#DCEEF3;
+  --ok:#2D7A4C; --ok-bg:#E2F1E7;
+  --part:#985F00; --part-bg:#FBEFD6;
+  --plan:#4A59B3; --plan-bg:#E8EBFA;
+  --none:#8A93A2; --none-bg:#EEF0F3;
+  --stop:#AE3E34; --stop-bg:#F8E3E0;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F141B; --surface:#171F29; --ink:#E5EAF0; --muted:#9BA7B6; --line:#2B3543;
+    --accent:#5BB8D6; --accent-soft:#163440;
+    --ok:#5DC28A; --ok-bg:#16301F;
+    --part:#E2A949; --part-bg:#36290F;
+    --plan:#93A0F2; --plan-bg:#212748;
+    --none:#727D8E; --none-bg:#1C2430;
+    --stop:#E57D72; --stop-bg:#3A1C19;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F141B; --surface:#171F29; --ink:#E5EAF0; --muted:#9BA7B6; --line:#2B3543;
+  --accent:#5BB8D6; --accent-soft:#163440;
+  --ok:#5DC28A; --ok-bg:#16301F;
+  --part:#E2A949; --part-bg:#36290F;
+  --plan:#93A0F2; --plan-bg:#212748;
+  --none:#727D8E; --none-bg:#1C2430;
+  --stop:#E57D72; --stop-bg:#3A1C19;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:64px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15.5px; line-height:1.6; -webkit-font-smoothing:antialiased}
+a{color:var(--accent); text-underline-offset:2px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+code{font-family:var(--f-mono); font-size:.86em; background:var(--none-bg); padding:.05em .35em; border-radius:3px; overflow-wrap:anywhere}
+h1,h2,h3{font-family:var(--f-display); font-stretch:85%; text-wrap:balance; line-height:1.15; margin:0}
+h2{font-size:1.85rem; font-weight:750; letter-spacing:-.01em}
+h3{font-size:1.2rem; font-weight:700; margin-top:2.2rem}
+p{margin:0}
+.wrap{max-width:1140px; margin-inline:auto; padding-inline:20px}
+.prose{max-width:68ch; display:grid; gap:.8em}
+
+/* Meny */
+.nav{position:sticky; top:env(safe-area-inset-top,0px); z-index:10; background:var(--bg); border-bottom:1px solid var(--line)}
+.nav-inner{display:flex; align-items:center; gap:20px; max-width:1140px; margin-inline:auto; padding-inline:20px}
+.nav-brand{font-family:var(--f-display); font-stretch:80%; font-weight:750; font-size:1rem; white-space:nowrap}
+.nav ul{list-style:none; margin:0; padding:0; display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; min-width:0}
+.nav ul::-webkit-scrollbar{display:none}
+.nav a{display:block; padding:14px 10px; font-size:13.5px; color:var(--muted); text-decoration:none; white-space:nowrap; border-bottom:2px solid transparent}
+.nav a:hover{color:var(--ink)}
+.nav a.active{color:var(--ink); border-bottom-color:var(--accent)}
+@media (max-width:640px){.nav-brand{display:none}}
+
+/* Inledning */
+.hero{padding-block:44px 28px; display:grid; gap:22px}
+.eyebrow{font-family:var(--f-mono); font-size:12.5px; color:var(--muted); letter-spacing:.02em}
+h1{font-size:clamp(2.4rem,6vw,3.6rem); font-weight:800; letter-spacing:-.02em}
+.lede{font-size:1.15rem; max-width:60ch; color:var(--ink)}
+.facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin:0}
+.facts div{background:var(--surface); padding:14px 16px; display:grid; gap:2px}
+.facts dt{font-family:var(--f-display); font-stretch:85%; font-size:1.9rem; font-weight:750; font-variant-numeric:tabular-nums; line-height:1.1}
+.facts dd{margin:0; font-size:13px; color:var(--muted)}
+.demo{font-size:13.5px; color:var(--muted)}
+.legend{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 18px; font-size:13px}
+.legend li{display:flex; align-items:center; gap:8px}
+.swatch{width:22px; height:14px; border-radius:3px; display:inline-block}
+
+/* Statusformer: färg + kantlinje bär betydelsen */
+.st-ok{background:var(--ok-bg); border:1.5px solid var(--ok)}
+.st-part{background:var(--part-bg); border:1.5px solid var(--part)}
+.st-plan{background:var(--plan-bg); border:1.5px dashed var(--plan)}
+.st-none{background:var(--surface); border:1.5px dotted var(--none)}
+.chip{display:inline-block; font-size:12px; font-weight:600; padding:1px 9px; border-radius:20px; white-space:nowrap}
+.chip.st-ok{color:var(--ok)} .chip.st-part{color:var(--part)} .chip.st-plan{color:var(--plan)} .chip.st-none{color:var(--muted)}
+
+/* Sektioner */
+section{padding-block:56px 8px}
+.sec-head{display:grid; gap:14px; margin-bottom:26px}
+
+/* Bolagskartan */
+.map{display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:18px; align-items:start}
+.map-main{display:grid; gap:8px; min-width:0}
+.layer{display:grid; grid-template-columns:118px minmax(0,1fr); gap:12px; align-items:stretch}
+.layer-name{font-family:var(--f-display); font-stretch:85%; font-weight:700; font-size:1rem; padding-top:8px; display:grid; align-content:start; gap:2px}
+.layer-name span{font-family:var(--f-body); font-weight:400; font-size:12px; color:var(--muted); line-height:1.35}
+.layer-row{display:flex; flex-wrap:wrap; gap:8px; min-width:0}
+.blk{flex:1 1 150px; min-width:0; text-align:left; font:inherit; color:var(--ink); padding:9px 12px; border-radius:6px; cursor:pointer; display:grid; gap:1px; transition:transform .12s ease}
+.blk:hover{transform:translateY(-1px)}
+.blk b{font-size:14px; font-weight:600}
+.blk small{font-size:12px; color:var(--muted); line-height:1.35}
+.blk-wide{flex-basis:100%}
+.blk[aria-pressed="true"]{outline:2.5px solid var(--accent); outline-offset:2px}
+.conn{margin-left:130px; font-size:12.5px; color:var(--muted); display:flex; gap:8px; align-items:baseline}
+.conn::before{content:"↓"; color:var(--accent); font-weight:700}
+.map-side{display:grid; gap:14px}
+.side-group{display:grid; gap:8px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+.side-name{font-family:var(--f-display); font-stretch:85%; font-weight:700}
+.side-conn{font-size:12.5px; color:var(--muted)}
+.side-conn::before{content:"⟵ "; color:var(--accent); font-weight:700}
+@media (max-width:860px){
+  .map{grid-template-columns:minmax(0,1fr)}
+  .layer{grid-template-columns:minmax(0,1fr); gap:6px}
+  .layer-name{padding-top:0; grid-auto-flow:column; justify-content:start; align-items:baseline; gap:8px}
+  .conn{margin-left:0}
+}
+@media (prefers-reduced-motion: reduce){.blk{transition:none}.blk:hover{transform:none}}
+.detail{margin-top:18px; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:20px 22px; display:grid; gap:12px}
+.detail-head{display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:13px; color:var(--muted)}
+.detail h3{margin:0; font-size:1.35rem}
+.detail-cols{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:16px 28px}
+.detail h4{margin:0 0 4px; font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted)}
+.detail ul{margin:0; padding-left:18px; display:grid; gap:3px; font-size:14.5px}
+.detail-files{font-size:13px; color:var(--muted)}
+
+/* Kort */
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr)); gap:14px}
+.cards.four{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px 18px; display:grid; gap:12px; align-content:start; min-width:0}
+.card header{display:flex; gap:10px; align-items:baseline; justify-content:space-between}
+.card h4{margin:0; font-family:var(--f-display); font-stretch:85%; font-size:1.06rem; font-weight:700; line-height:1.25}
+.card-no{font-family:var(--f-mono); font-size:12px; color:var(--muted); display:block}
+.track{display:grid; grid-template-columns:repeat(4,1fr); gap:3px}
+.track i{height:7px; border-radius:2px; background:var(--none-bg); border:1px solid var(--line)}
+.track i.on{background:var(--accent); border-color:var(--accent)}
+.track i.half{background:linear-gradient(90deg,var(--accent) 50%,var(--none-bg) 50%); border-color:var(--accent)}
+.track-labels{display:grid; grid-template-columns:repeat(4,1fr); gap:3px; font-size:11px; color:var(--muted); margin-top:-8px}
+.card dl{margin:0; display:grid; gap:6px; font-size:14px}
+.card dt{font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted)}
+.card dd{margin:0 0 4px}
+.note{font-size:13px; color:var(--muted)}
+
+/* Diagram */
+figure{margin:0; display:grid; gap:10px}
+.diagram{overflow-x:auto; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px}
+.diagram svg{display:block; width:100%; height:auto; min-width:760px}
+figcaption{font-size:13.5px; color:var(--muted); max-width:80ch}
+svg text{fill:var(--ink); font-family:var(--f-body); font-size:13px}
+svg .t-b{font-weight:600}
+svg .t-sub{fill:var(--muted); font-size:11.5px}
+svg .t-cap{fill:var(--muted); font-size:10.5px; letter-spacing:.06em}
+svg .t-mono{font-family:var(--f-mono); font-size:12px}
+svg .t-lbl{fill:var(--muted); font-size:11px}
+svg .t-acc{fill:var(--accent); font-weight:600; font-size:12px}
+svg .edge{stroke:var(--muted); stroke-width:1.4; fill:none}
+svg .edge.dash{stroke-dasharray:5 4}
+svg .edge.dot{stroke-dasharray:2 3}
+svg .edge.acc{stroke:var(--accent); stroke-width:2}
+svg .head{fill:var(--muted)}
+svg .head-acc{fill:var(--accent)}
+svg .n-ok rect,svg .n-ok polygon{fill:var(--ok-bg); stroke:var(--ok); stroke-width:1.5}
+svg .n-part rect{fill:var(--part-bg); stroke:var(--part); stroke-width:1.5}
+svg .n-plan rect{fill:var(--plan-bg); stroke:var(--plan); stroke-width:1.5; stroke-dasharray:6 4}
+svg .n-none rect{fill:var(--surface); stroke:var(--none); stroke-width:1.5; stroke-dasharray:2 3}
+svg .n-stop rect{fill:var(--stop-bg); stroke:var(--stop); stroke-width:1.5}
+svg .n-neutral rect,svg .n-neutral polygon{fill:var(--surface); stroke:var(--muted); stroke-width:1.3}
+svg .n-goal rect{fill:var(--surface); stroke:var(--ink); stroke-width:2.2}
+svg .n-next rect{stroke:var(--accent); stroke-width:2.6}
+svg .note-box{fill:none; stroke:var(--line); stroke-width:1.3; stroke-dasharray:4 3}
+svg .gate{fill:var(--accent); stroke:none}
+
+/* Tabeller */
+.table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+.lvl{font-family:var(--f-mono); font-size:12px; font-weight:500; white-space:nowrap}
+.lvl-agent{color:var(--ok)} .lvl-approval{color:var(--part)} .lvl-human{color:var(--stop)}
+
+/* Övrigt */
+.split{display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:22px; align-items:start}
+@media (max-width:860px){.split{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:18px 20px; display:grid; gap:10px}
+.panel h4{margin:0; font-family:var(--f-display); font-stretch:85%; font-size:1.05rem}
+.calc{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 14px; font-size:14px; font-variant-numeric:tabular-nums}
+.calc .r{text-align:right; font-family:var(--f-mono); font-size:13px}
+.calc .tot{border-top:1px solid var(--line); padding-top:6px; font-weight:600}
+.bars{display:grid; gap:8px}
+.bar-row{display:grid; grid-template-columns:170px minmax(0,1fr) 44px; gap:12px; align-items:center; font-size:14px}
+.bar{height:14px; background:var(--none-bg); border-radius:3px; overflow:hidden}
+.bar span{display:block; height:100%; background:var(--accent)}
+.bar-row .num{text-align:right; font-variant-numeric:tabular-nums; font-family:var(--f-mono); font-size:13px}
+@media (max-width:520px){.bar-row{grid-template-columns:110px minmax(0,1fr) 36px; font-size:13px}}
+.todo{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+.todo li{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:6px; padding:12px 16px; font-size:14.5px}
+.todo b{display:block; margin-bottom:2px}
+footer{padding-block:48px 64px; font-size:13px; color:var(--muted)}
+</style>
+
+<nav class="nav" aria-label="Sektioner">
+  <div class="nav-inner">
+    <span class="nav-brand">Artificiellalecta</span>
+    <ul>
+      <li><a href="#lage">Läget</a></li>
+      <li><a href="#karta">Karta</a></li>
+      <li><a href="#delprojekt">Delprojekt</a></li>
+      <li><a href="#ordning">Byggordning</a></li>
+      <li><a href="#tjanstelagret">Tjänstelagret</a></li>
+      <li><a href="#regler">Regler</a></li>
+      <li><a href="#data">Data</a></li>
+      <li><a href="#agenter">Agenter</a></li>
+      <li><a href="#kod">Kod och skript</a></li>
+      <li><a href="#luckor">Luckor</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero wrap" id="lage">
+  <p class="eyebrow">Företagsöversikt · läget 24 oktober 2026 · main @ fb38590</p>
+  <h1>Artificiellalecta</h1>
+  <p class="lede">Ett simulerat tjänstepensionsbolag som administrerar en enda produkt, ITP1 ålderspension, och som ska kunna drivas av en person med hjälp av AI-agenter.</p>
+  <div class="prose">
+    <p><strong>Var står bygget?</strong> Grunden är lagd. Försäkringssystemet med premiemotor och demodata ligger i Lakebase. Tjänstelagret, som alla ändringar i försäkringsdata ska gå igenom, är byggt och testat. AI-lagret är byggt. Produktregelverket är infört genom B-031 och gäller från 1 november 2026. Handläggar-UI:t är byggt i en första version ovanpå tjänstelagret och verifierat mot Lakebase.</p>
+    <p>Handläggar-UI v1 är byggt och verifierat i Lakebase. Harness har nu körpolicy, skill-register, verktygsfilter, resursmandat och agentloop. Loopen är testad lokalt med FakeProvider; rollen agent_forsakring är införd i Lakebase. Nästa steg är fortsättning efter godkännande, körjournal och röktest mot riktig modell. Kapitalförvaltningen har styrdokumentsutkast och tre lokalt testade datamodeller; handelsfunktionen och kundportalen återstår.</p>
+  </div>
+  <dl class="facts">
+    <div><dt>32</dt><dd>beslut i beslutsloggen</dd></div>
+    <div><dt>34</dt><dd>produktregler, gäller från 1 november</dd></div>
+    <div><dt>10</dt><dd>tabeller i Lakebase</dd></div>
+    <div><dt>15</dt><dd>operationer i tjänstelagret</dd></div>
+    <div><dt>645</dt><dd>insamlade testfall · inte en ny testkörning</dd></div>
+    <div><dt>1 av 10</dt><dd>agentprofiler konfigurerade · loop testad lokalt</dd></div>
+  </dl>
+  <p class="demo">Senast dokumenterade Lakebase-kontroll, 24 oktober: 20 arbetsgivare · 501 försäkrade · 499 försäkringar · 15 097 premietransaktioner. Grundbeståndet är genererat (39,0 Mkr i betalda premier); därutöver finns verifieringsposten AL-000499. Journaler och manuella ändringar kräver backup. Ingen Lakebase-anslutning har gjorts vid denna uppdatering.</p>
+  <ul class="legend" aria-label="Statusförklaring">
+    <li><span class="swatch st-ok"></span>Byggt eller i drift</li>
+    <li><span class="swatch st-part"></span>Delvis byggt</li>
+    <li><span class="swatch st-plan"></span>Utrett eller designat, ej byggt</li>
+    <li><span class="swatch st-none"></span>Ej påbörjat</li>
+  </ul>
+</header>
+
+<main>
+
+<!-- KARTA -->
+<section id="karta" class="wrap">
+  <div class="sec-head">
+    <h2>Bolagets karta</h2>
+    <div class="prose">
+      <p>Bolaget byggs i lager. Människor och agenter kommer in uppifrån, allt som rör försäkringsdata passerar tjänstelagret, och längst ner ligger beräkningarna och databasen. Vid sidan av finns två stödlager: regelverket som dokument och AI-lagret som agenterna når modellerna genom.</p>
+      <p>Klicka på en del för att se vad som finns, vad som saknas och var i repot den ligger.</p>
+    </div>
+  </div>
+
+  <div class="map" id="map">
+    <div class="map-main">
+      <div class="layer">
+        <div class="layer-name">Ytor<span>där människor och AI kommer in</span></div>
+        <div class="layer-row">
+          <button class="blk st-ok" data-k="operator" aria-pressed="false"><b>Operatören</b><small>Cowork, Claude Code, Codex</small></button>
+          <button class="blk st-part" data-k="ui" aria-pressed="false"><b>Handläggar-UI</b><small>v1 byggd · lokalt · Fas 4</small></button>
+          <button class="blk st-part" data-k="bi" aria-pressed="false"><b>Dashboard och Genie</b><small>Delprojekt 2</small></button>
+          <button class="blk st-none" data-k="portal" aria-pressed="false"><b>Kundportal</b><small>Delprojekt 3</small></button>
+          <button class="blk st-none" data-k="chat" aria-pressed="false"><b>Kundchattbot</b><small>Delprojekt 7</small></button>
+        </div>
+      </div>
+      <p class="conn">Människor och skript anropar tjänstelagret direkt. Agenter går via harness.</p>
+      <div class="layer">
+        <div class="layer-name">Agentlager<span>Fas 3b pågår · 3c senare</span></div>
+        <div class="layer-row">
+          <button class="blk st-part" data-k="harness" aria-pressed="false"><b>Harness</b><small>3b-1–4 klara · loop testad lokalt</small></button>
+          <button class="blk st-plan" data-k="teams" aria-pressed="false"><b>7 team, 10 agenter</b><small>avdelningarna</small></button>
+          <button class="blk st-part" data-k="pods" aria-pressed="false"><b>Skill-poddar</b><small>kunddata och berakning konfigurerade</small></button>
+          <button class="blk st-plan" data-k="flow" aria-pressed="false"><b>Flödesmotor</b><small>flöden över flera team</small></button>
+        </div>
+      </div>
+      <p class="conn">Försäkringsverktygen är tjänstelagrets operationer, filtrerade per team.</p>
+      <div class="layer">
+        <div class="layer-name">Kärna<span>Fas 1f</span></div>
+        <div class="layer-row">
+          <button class="blk blk-wide st-ok" data-k="services" aria-pressed="true"><b>Tjänstelagret</b><small>src/services · 15 operationer · åtkomstregister · godkännandekö · händelselogg</small></button>
+        </div>
+      </div>
+      <p class="conn">Anropar rena beräkningar och läser och skriver databasen, en transaktion per anrop.</p>
+      <div class="layer">
+        <div class="layer-name">Beräkning<span>rena funktioner</span></div>
+        <div class="layer-row">
+          <button class="blk st-ok" data-k="engine" aria-pressed="false"><b>Premiemotorn</b><small>skills/calculation</small></button>
+          <button class="blk st-part" data-k="analytics" aria-pressed="false"><b>Analys</b><small>IBB-scenario</small></button>
+          <button class="blk st-none" data-k="payout" aria-pressed="false"><b>Pension och betalning</b><small>uttag, garanti, utbetalning</small></button>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-name">Data<span>Databricks</span></div>
+        <div class="layer-row">
+          <button class="blk blk-wide st-ok" data-k="lakebase" aria-pressed="false"><b>Lakebase</b><small>serverless Postgres · 10 tabeller · backup till JSONL</small></button>
+        </div>
+      </div>
+    </div>
+    <div class="map-side">
+      <div class="side-group">
+        <p class="side-name">Kunskap</p>
+        <button class="blk st-ok" data-k="docs" aria-pressed="false"><b>Regelverk och produktregler</b><small>04_regulatoriskt · 01_domän</small></button>
+        <p class="side-conn">tjänstelagret läser reglernas status härifrån</p>
+        <button class="blk st-part" data-k="styr" aria-pressed="false"><b>Styrdokument</b><small>05_styrdokument · beslutsutkast</small></button>
+      </div>
+      <div class="side-group">
+        <p class="side-name">Modellåtkomst</p>
+        <button class="blk st-ok" data-k="ai" aria-pressed="false"><b>AI-lagret</b><small>src/ai · Anthropic och OpenAI</small></button>
+        <p class="side-conn">harness anropar modellerna härigenom</p>
+      </div>
+      <div class="side-group">
+        <p class="side-name">Kapitalspår</p>
+        <button class="blk st-part" data-k="capital" aria-pressed="false"><b>Kapitalförvaltning</b><small>modeller lokalt · ingen handelsfunktion</small></button>
+        <p class="side-conn">egen gateway planeras; premiekoppling återstår</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail" id="detail" aria-live="polite">
+    <div class="detail-head"><span class="chip st-ok">Byggt</span><span>Kärna · Fas 1f · B-028</span></div>
+    <h3>Tjänstelagret</h3>
+    <p>Den enda vägen in till försäkringssystemet. Samma operation används av handläggare, agenter och skript. Ett register bestämmer vad agenter får göra, och varje ändring loggas med vem som gjorde den och varför.</p>
+    <div class="detail-cols"><div><h4>Finns</h4><ul><li>15 operationer: 8 läsande eller beräknande, 7 skrivande</li><li>Åtkomstregister med AGENT, APPROVAL och HUMAN_ONLY plus golv</li><li>Godkännandekö och händelselogg i Lakebase, en transaktion per anrop</li><li>184 insamlade testfall; tidigare Postgres-verifiering dokumenterad</li></ul></div><div><h4>Saknas</h4><ul><li>Regelstyrda operationer: uttag, paus, garanti, pensionsbelopp, avslut</li><li>Premie ur löneunderlag (fakturering)</li><li>Anställningshistorik för återanställning och arbetsgivarbyte</li></ul></div></div>
+    <p class="detail-files">I repot: <code>src/services/</code> <code>src/services/access_register.yaml</code> <code>02_system/tjänstelager.md</code></p>
+    <p><a href="#tjanstelagret">Så går ett anrop genom tjänstelagret</a></p>
+  </div>
+</section>
+
+<!-- DELPROJEKT -->
+<section id="delprojekt" class="wrap">
+  <div class="sec-head">
+    <h2>Delprojekten</h2>
+    <div class="prose">
+      <p>Programmet är uppdelat i nio delprojekt (B-024 samt delprojekt 9 som senare tillägg) som vilar på en gemensam grund. Spåret på varje kort visar hur långt arbetet kommit: plan, utredning eller design, bygge och i bruk. Ett halvfyllt steg betyder att en första del finns.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:0">Grunden som alla delprojekt bygger på</h3>
+  <div class="cards four" style="margin-top:14px">
+    <article class="card">
+      <header><div><span class="card-no">Fas 1a–1e</span><h4>Försäkringssystemet</h4></div><span class="chip st-ok">I drift</span></header>
+      <div class="track" role="img" aria-label="Plan, design, bygge och i bruk klara"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Datamodell för arbetsgivare, försäkrade, försäkringar, förmåner, lägen och premier. Premiemotor. Premiehistorik 2023–2026 i Lakebase.</dd>
+      <dt>Saknas</dt><dd>Pensions-, uttags- och betalningsdelen.</dd>
+      <dt>Kopplas in via</dt><dd>Tjänstelagret, som är enda vägen in.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Fas 1f · B-028</span><h4>Tjänstelagret</h4></div><span class="chip st-ok">Byggt</span></header>
+      <div class="track" role="img" aria-label="Plan, design och bygge klara, delvis i bruk"><i class="on"></i><i class="on"></i><i class="on"></i><i class="half"></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Steg T1–T4 klara. 15 operationer, varav 8 tillkom med handläggar-UI:t (B-032). Kö och logg i Lakebase.</dd>
+      <dt>Saknas</dt><dd>Regelstyrda operationer och premie ur löneunderlag. Agenters skrivningar är spärrade till 1 november, när reglerna börjar gälla.</dd>
+      <dt>Kopplas in via</dt><dd>Försäkrings-UI, harness och verksamhetsskript.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Fas 3 · B-025</span><h4>AI-lagret</h4></div><span class="chip st-ok">Byggt</span></header>
+      <div class="track" role="img" aria-label="Plan, design och bygge klara, delvis i bruk"><i class="on"></i><i class="on"></i><i class="on"></i><i class="half"></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Klient med rollerna fast, standard och deep, leverantörsreserv, kostnad och anropslogg. B-025 dokumenterar godkänt API-röktest 11 oktober.</dd>
+      <dt>Saknas</dt><dd>Röktest av agentkörningen mot riktig modell. ATT_GORA listar även ett API-röktest; status behöver stämmas av.</dd>
+      <dt>Kopplas in via</dt><dd>Harness (Fas 3b).</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Fas 3b–3c · B-026</span><h4>Agentekosystemet</h4></div><span class="chip st-part">Delvis byggt</span></header>
+      <div class="track" role="img" aria-label="Plan och design klara, bygge delvis"><i class="on"></i><i class="on"></i><i class="half"></i><i></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Tio agentbeskrivningar, en körprofil, två poddar, dispatcher och agentloop testad med FakeProvider. Begränsad databasroll för kunddata införd i Lakebase.</dd>
+      <dt>Saknas</dt><dd>Fortsättning efter godkännande, varaktig körjournal och modellröktest. Därefter delegering och flödesmotor.</dd>
+      <dt>Kopplas in via</dt><dd>Tjänstelagret och AI-lagret.</dd></dl>
+    </article>
+  </div>
+
+  <h3>Delprojekt 1–9</h3>
+  <div class="cards" style="margin-top:14px">
+    <article class="card">
+      <header><div><span class="card-no">Delprojekt 1</span><h4>Ärendehantering och handläggar-UI</h4></div><span class="chip st-part">v1 byggd</span></header>
+      <div class="track" role="img" aria-label="Plan, design och bygge av v1 klara, i bruk lokalt"><i class="on"></i><i class="on"></i><i class="on"></i><i class="half"></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Handläggar-UI v1 i <code>src/web/</code>: sök, översikt, ändringar, anslutning, godkännandekö och händelselogg. Verifierat i Lakebase. Beslut B-017, B-020 och B-032.</dd>
+      <dt>Nästa</dt><dd>Tabellen <code>cases</code> och ärendeflöde, inbyggd Claude efter harness, anställningshistorik.</dd>
+      <dt>Kopplas in via</dt><dd><code>ServiceLayer.execute</code>, <code>approve</code> och <code>reject</code>.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Delprojekt 2</span><h4>BI och insikter</h4></div><span class="chip st-part">Delvis</span></header>
+      <div class="track" role="img" aria-label="Plan och design klara, bygge delvis"><i class="on"></i><i class="on"></i><i class="half"></i><i></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Analys av premieeffekt vid hypotetiskt IBB. Dashboarddesign. B-029: Databricks AI/BI och Genie.</dd>
+      <dt>Nästa</dt><dd>Måttkatalog, verifiera Databricks-miljön, första vyerna för bestånd och premier.</dd>
+      <dt>Kopplas in via</dt><dd>Planerad Databricks-koppling och pod <code>bestand</code>; miljöstöd och integration återstår att verifiera.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Delprojekt 3</span><h4>Kundportal</h4></div><span class="chip st-none">Plan</span></header>
+      <div class="track" role="img" aria-label="Endast plan"><i class="on"></i><i></i><i></i><i></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Projektplan.</dd>
+      <dt>Nästa</dt><dd>Byggs efter handläggar-UI:t (B-020).</dd>
+      <dt>Kopplas in via</dt><dd>Samma backend som delprojekt 1. Uttag och paus behöver nya operationer.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Delprojekt 4</span><h4>Produktregelverk och villkor</h4></div><span class="chip st-ok">Infört</span></header>
+      <div class="track" role="img" aria-label="Plan, utredning, leverans och införande klara"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Leverans</span><span>Infört</span></div>
+      <dl><dt>Finns</dt><dd>34 produktregler, villkor v2.0, aktuariell grund, parameterregister, 10 tolkningar, regelverkskarta. Infört genom B-031, gäller från 1 november 2026.</dd>
+      <dt>Nästa</dt><dd>Kodbygget av de regelstyrda operationerna sker i senare sessioner.</dd>
+      <dt>Kopplas in via</dt><dd><code>services/rules.py</code> läser status. Operationer anger vilka regler de implementerar.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Delprojekt 5 · Fas 2</span><h4>Kapitalförvaltning</h4></div><span class="chip st-part">Delvis byggt</span></header>
+      <div class="track" role="img" aria-label="Plan och design klara, bygge delvis"><i class="on"></i><i class="on"></i><i class="half"></i><i></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Fas 2a/2b: styrdokumentshierarki och placeringsriktlinje som beslutsutkast. Fas 2c: portfolios, portfolio_holdings och trades byggda och testade lokalt.</dd>
+      <dt>Nästa</dt><dd>Anta styrdokument, samordna tabellskapande i Lakebase, bygg gateway, marknadsdata och förvaltningslogik.</dd>
+      <dt>Kopplas in via</dt><dd>Planerad koppling: betalda premier som insättningar och portföljdata till BI. Ingen premiekoppling eller handel är byggd.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Delprojekt 6</span><h4>Avdelningsfunktioner</h4></div><span class="chip st-none">Plan</span></header>
+      <div class="track" role="img" aria-label="Endast plan"><i class="on"></i><i></i><i></i><i></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Projektplan.</dd>
+      <dt>Nästa</dt><dd>Avgränsning. Först en aktuariell modul för premiesättning mot FI:s krav.</dd>
+      <dt>Kopplas in via</dt><dd>Teamen <code>aktuarie</code> och <code>ekonomi</code>. Överlappar delprojekt 4.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Delprojekt 7</span><h4>Kundchattbot</h4></div><span class="chip st-none">Plan</span></header>
+      <div class="track" role="img" aria-label="Endast plan"><i class="on"></i><i></i><i></i><i></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Projektplan. Kunskapskällan finns redan i delprojekt 4.</dd>
+      <dt>Nästa</dt><dd>Byggs när kundportalen finns.</dd>
+      <dt>Kopplas in via</dt><dd>Kundportalen som yta. Pod <code>regelverk</code> för uppslag i regler och villkor.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Delprojekt 8</span><h4>Företagsöversikt</h4></div><span class="chip st-ok">I bruk</span></header>
+      <div class="track" role="img" aria-label="Plan, design, bygge och i bruk klara"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Denna klickbara HTML-översikt, uppdaterad mot main 24 oktober 2026.</dd>
+      <dt>Nästa</dt><dd>Hålla översikten aktuell. Automatisk generering är en öppen designfråga.</dd>
+      <dt>Kopplas in via</dt><dd>Läser <code>02_system/</code>, beslutsloggen och projektplanerna.</dd></dl>
+    </article>
+    <article class="card">
+      <header><div><span class="card-no">Delprojekt 9</span><h4>Processkartor</h4></div><span class="chip st-plan">Påbörjat</span></header>
+      <div class="track" role="img" aria-label="Plan klar, design delvis"><i class="on"></i><i class="half"></i><i></i><i></i></div>
+      <div class="track-labels"><span>Plan</span><span>Design</span><span>Bygge</span><span>I bruk</span></div>
+      <dl><dt>Finns</dt><dd>Plan och ett första målflöde för dashboard och rapportering.</dd>
+      <dt>Nästa</dt><dd>Kartor för regeländring och handläggningsärende.</dd>
+      <dt>Kopplas in via</dt><dd>Tjänstelagret och agentekosystemet som källor. Matar delprojekt 8.</dd></dl>
+    </article>
+  </div>
+</section>
+
+<!-- BYGGORDNING -->
+<section id="ordning" class="wrap">
+  <div class="sec-head">
+    <h2>Byggordning och beroenden</h2>
+    <div class="prose">
+      <p>Byggordningen fastställdes i B-028: försäkringssystemet först, sedan handläggar-UI:t ovanpå tjänstelagret, och agentlagret sist. Skälet är att agenternas verktyg ska vara operationer som redan finns och används av människor, inte gissade kontrakt. Kapitalförvaltningen är oberoende och kan byggas parallellt.</p>
+    </div>
+  </div>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 1092 372" role="img" aria-label="Byggordningen: Fas 1 och 1f är klara, handläggar-UI:t är byggt i en första version, harness har en agentloop och återstår att komplettera med körjournal och godkännandefortsättning, därefter handläggaragent, flödesmotor och flaggskeppet. Produktregler, AI-lagret och BI matar in i kedjan ovanifrån; kundportal, chattbot och kapitalförvaltning hänger på nedifrån.">
+        <defs>
+          <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <!-- ingångar ovanifrån -->
+        <g class="n-ok"><rect x="170" y="36" width="136" height="56" rx="6"/></g>
+        <text class="t-cap" x="238" y="58" text-anchor="middle">DELPROJEKT 4</text>
+        <text class="t-b" x="238" y="78" text-anchor="middle">Produktregler</text>
+        <path class="edge" d="M238,92 V168" marker-end="url(#ao)"/>
+        <text class="t-lbl" x="230" y="136" text-anchor="end">regelstatus</text>
+
+        <g class="n-ok"><rect x="478" y="36" width="136" height="56" rx="6"/></g>
+        <text class="t-cap" x="546" y="58" text-anchor="middle">FAS 3 · KLAR</text>
+        <text class="t-b" x="546" y="78" text-anchor="middle">AI-lagret</text>
+        <path class="edge" d="M546,92 V168" marker-end="url(#ao)"/>
+        <text class="t-lbl" x="538" y="136" text-anchor="end">modellanrop</text>
+
+        <g class="n-part"><rect x="940" y="36" width="136" height="56" rx="6"/></g>
+        <text class="t-cap" x="1008" y="58" text-anchor="middle">DELPROJEKT 2</text>
+        <text class="t-b" x="1008" y="78" text-anchor="middle">BI och insikter</text>
+        <path class="edge" d="M1008,92 V168" marker-end="url(#ao)"/>
+        <text class="t-lbl" x="1000" y="136" text-anchor="end">beståndsinsikt</text>
+
+        <!-- huvudspåret -->
+        <g class="n-ok"><rect x="16" y="170" width="136" height="64" rx="6"/></g>
+        <text class="t-cap" x="84" y="194" text-anchor="middle">FAS 1</text>
+        <text class="t-b" x="84" y="215" text-anchor="middle" style="font-size:12px">Försäkringssystem</text>
+
+        <g class="n-ok"><rect x="170" y="170" width="136" height="64" rx="6"/></g>
+        <text class="t-cap" x="238" y="194" text-anchor="middle">FAS 1F</text>
+        <text class="t-b" x="238" y="215" text-anchor="middle">Tjänstelagret</text>
+
+        <g class="n-part"><rect x="324" y="170" width="136" height="64" rx="6"/></g>
+        <text class="t-cap" x="392" y="194" text-anchor="middle">FAS 4 · DP 1</text>
+        <text class="t-b" x="392" y="215" text-anchor="middle">Handläggar-UI</text>
+
+        <g class="n-part n-next"><rect x="478" y="170" width="136" height="64" rx="6"/></g>
+        <text class="t-cap" x="546" y="194" text-anchor="middle">FAS 3B · PÅGÅR</text>
+        <text class="t-b" x="546" y="215" text-anchor="middle">Harness</text>
+
+        <g class="n-none"><rect x="632" y="170" width="136" height="64" rx="6"/></g>
+        <text class="t-cap" x="700" y="194" text-anchor="middle">FAS 5</text>
+        <text class="t-b" x="700" y="215" text-anchor="middle">Handläggaragent</text>
+
+        <g class="n-plan"><rect x="786" y="170" width="136" height="64" rx="6"/></g>
+        <text class="t-cap" x="854" y="194" text-anchor="middle">FAS 3C</text>
+        <text class="t-b" x="854" y="215" text-anchor="middle">Flödesmotor</text>
+
+        <g class="n-goal"><rect x="940" y="170" width="136" height="64" rx="6"/></g>
+        <text class="t-cap" x="1008" y="194" text-anchor="middle">MÅLET</text>
+        <text class="t-b" x="1008" y="215" text-anchor="middle">Flaggskeppet</text>
+
+        <path class="edge" d="M152,202 H168" marker-end="url(#ao)"/>
+        <path class="edge" d="M306,202 H322" marker-end="url(#ao)"/>
+        <path class="edge" d="M460,202 H476" marker-end="url(#ao)"/>
+        <path class="edge" d="M614,202 H630" marker-end="url(#ao)"/>
+        <path class="edge" d="M768,202 H784" marker-end="url(#ao)"/>
+        <path class="edge" d="M922,202 H938" marker-end="url(#ao)"/>
+
+        <!-- 3b pågår -->
+        <line class="edge acc" x1="469" y1="150" x2="469" y2="252"/>
+        <text class="t-acc" x="463" y="144" text-anchor="end">3b pågår</text>
+
+        <!-- grenar nedåt -->
+        <g class="n-part"><rect x="16" y="300" width="200" height="56" rx="6"/></g>
+        <text class="t-cap" x="116" y="322" text-anchor="middle">FAS 2 · DELPROJEKT 5</text>
+        <text class="t-b" x="116" y="342" text-anchor="middle">Kapitalförvaltning</text>
+        <path class="edge" d="M84,234 V298" marker-end="url(#ao)"/>
+        <text class="t-lbl" x="92" y="272">betalda premier</text>
+
+        <g class="n-none"><rect x="324" y="300" width="136" height="56" rx="6"/></g>
+        <text class="t-cap" x="392" y="322" text-anchor="middle">DELPROJEKT 3</text>
+        <text class="t-b" x="392" y="342" text-anchor="middle">Kundportal</text>
+        <path class="edge" d="M392,234 V298" marker-end="url(#ao)"/>
+        <text class="t-lbl" x="400" y="272">samma backend</text>
+
+        <g class="n-none"><rect x="520" y="300" width="136" height="56" rx="6"/></g>
+        <text class="t-cap" x="588" y="322" text-anchor="middle">DELPROJEKT 7</text>
+        <text class="t-b" x="588" y="342" text-anchor="middle">Kundchattbot</text>
+        <path class="edge" d="M460,328 H518" marker-end="url(#ao)"/>
+        <text class="t-lbl" x="489" y="320" text-anchor="middle">bygger på</text>
+      </svg>
+    </div>
+    <figcaption>Huvudspåret går från vänster till höger; pilarna betyder ”krävs före”. Delprojekt 8 och 9 är översikt och processdokumentation. Delprojekt 6 omfattar även beräkningsfunktioner och behöver sina respektive data- och regelunderlag. Chattboten behöver också produktreglerna från delprojekt 4 som kunskapskälla.</figcaption>
+  </figure>
+</section>
+
+<!-- TJÄNSTELAGRET -->
+<section id="tjanstelagret" class="wrap">
+  <div class="sec-head">
+    <h2>Tjänstelagret: en väg in</h2>
+    <div class="prose">
+      <p>Allt som läser eller ändrar försäkringsdata går genom <code>ServiceLayer.execute</code> i <code>src/services/service.py</code>. Handläggare, agenter och skript anropar samma operation. Här avgörs om en agent får utföra operationen, bara föreslå den eller inte röra den alls.</p>
+    </div>
+  </div>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 1040 560" role="img" aria-label="Flödet i ServiceLayer.execute: indata valideras, ändringar kräver motivering. Människor och skript kör direkt i en transaktion. För agenter räknas en effektiv nivå fram: HUMAN_ONLY nekas, AGENT körs direkt och APPROVAL provkörs och läggs i godkännandekön tills en handläggare godkänner.">
+        <defs>
+          <marker id="ae" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <!-- vänsterkolumn -->
+        <g class="n-neutral"><rect x="20" y="20" width="200" height="56" rx="6"/></g>
+        <text class="t-mono" x="120" y="44" text-anchor="middle">execute(namn, ctx, data)</text>
+        <text class="t-sub" x="120" y="63" text-anchor="middle">handläggare · agent · skript</text>
+        <path class="edge" d="M120,76 V108" marker-end="url(#ae)"/>
+
+        <g class="n-neutral"><rect x="20" y="110" width="200" height="56" rx="6"/></g>
+        <text class="t-b" x="120" y="134" text-anchor="middle">Validera indata</text>
+        <text class="t-sub" x="120" y="153" text-anchor="middle">mot operationens Pydantic-modell</text>
+        <path class="edge" d="M120,166 V198" marker-end="url(#ae)"/>
+
+        <g class="n-neutral"><rect x="20" y="200" width="200" height="56" rx="6"/></g>
+        <text class="t-b" x="120" y="224" text-anchor="middle">Kräv motivering</text>
+        <text class="t-sub" x="120" y="243" text-anchor="middle">om operationen ändrar data</text>
+        <path class="edge" d="M120,256 V282" marker-end="url(#ae)"/>
+
+        <g class="n-neutral"><polygon points="120,284 190,320 120,356 50,320"/></g>
+        <text class="t-b" x="120" y="325" text-anchor="middle">Agent?</text>
+
+        <path class="edge" d="M120,356 V408" marker-end="url(#ae)"/>
+        <text class="t-lbl" x="128" y="388">nej</text>
+
+        <g class="n-ok"><rect x="20" y="410" width="200" height="60" rx="6"/></g>
+        <text class="t-b" x="120" y="435" text-anchor="middle">Kör i en transaktion</text>
+        <text class="t-sub" x="120" y="455" text-anchor="middle">ändring + loggrad ”executed”</text>
+        <path class="edge" d="M120,470 V498" marker-end="url(#ae)"/>
+
+        <g class="n-ok"><rect x="20" y="500" width="200" height="44" rx="6"/></g>
+        <text class="t-b" x="120" y="527" text-anchor="middle">Resultat</text>
+
+        <!-- agentgren -->
+        <path class="edge" d="M190,320 H268" marker-end="url(#ae)"/>
+        <text class="t-lbl" x="229" y="312" text-anchor="middle">ja</text>
+
+        <rect class="note-box" x="270" y="150" width="200" height="112" rx="6"/>
+        <text class="t-b" x="284" y="174">Tre golv</text>
+        <text class="t-sub" x="284" y="196">saknas i registret → HUMAN_ONLY</text>
+        <text class="t-sub" x="284" y="216">external → minst APPROVAL</text>
+        <text class="t-sub" x="284" y="236">regel ej godkänd → HUMAN_ONLY</text>
+        <line class="edge dot" x1="370" y1="262" x2="370" y2="292"/>
+
+        <g class="n-neutral"><rect x="270" y="292" width="200" height="56" rx="6"/></g>
+        <text class="t-b" x="370" y="316" text-anchor="middle">Effektiv nivå</text>
+        <text class="t-sub" x="370" y="335" text-anchor="middle">register + golv, strängast vinner</text>
+
+        <!-- HUMAN_ONLY -->
+        <path class="edge" d="M470,306 H520 V178 H598" marker-end="url(#ae)"/>
+        <text class="t-lbl t-mono" x="560" y="170" text-anchor="middle" style="font-size:11px">HUMAN_ONLY</text>
+        <g class="n-stop"><rect x="600" y="150" width="200" height="56" rx="6"/></g>
+        <text class="t-b" x="700" y="174" text-anchor="middle">Nekas</text>
+        <text class="t-sub" x="700" y="193" text-anchor="middle">loggrad ”denied” · fel till agenten</text>
+
+        <!-- APPROVAL -->
+        <path class="edge" d="M470,320 H598" marker-end="url(#ae)"/>
+        <text class="t-lbl t-mono" x="534" y="312" text-anchor="middle" style="font-size:11px">APPROVAL</text>
+        <g class="n-part"><rect x="600" y="292" width="200" height="56" rx="6"/></g>
+        <text class="t-b" x="700" y="316" text-anchor="middle">Provkörs, rullas tillbaka</text>
+        <text class="t-sub" x="700" y="335" text-anchor="middle">ogiltigt förslag avvisas direkt</text>
+        <path class="edge" d="M800,320 H838" marker-end="url(#ae)"/>
+
+        <g class="n-part"><rect x="840" y="292" width="180" height="56" rx="6"/></g>
+        <text class="t-mono" x="930" y="315" text-anchor="middle">approval_requests</text>
+        <text class="t-sub" x="930" y="335" text-anchor="middle">pending · loggrad ”proposed”</text>
+        <path class="edge" d="M930,348 V408" marker-end="url(#ae)"/>
+        <text class="t-lbl" x="938" y="384">en människa</text>
+
+        <g class="n-neutral"><rect x="840" y="410" width="180" height="60" rx="6"/></g>
+        <text class="t-b" x="930" y="434" text-anchor="middle">Handläggaren beslutar</text>
+        <text class="t-sub" x="930" y="454" text-anchor="middle">approve() eller reject()</text>
+
+        <!-- tillbaka till körning -->
+        <path class="edge" d="M370,348 V440 H222" marker-end="url(#ae)"/>
+        <text class="t-lbl t-mono" x="296" y="432" text-anchor="middle" style="font-size:11px">AGENT</text>
+        <path class="edge" d="M840,456 H222" marker-end="url(#ae)"/>
+        <text class="t-lbl" x="600" y="448" text-anchor="middle">approve: körs om mot aktuellt läge</text>
+        <text class="t-lbl" x="930" y="492" text-anchor="middle">reject: loggrad ”rejected”</text>
+      </svg>
+    </div>
+    <figcaption>Ändringen och dess loggrad sparas alltid i samma transaktion. Ett godkännande tar ett radlås på ärendet, så samma förslag kan aldrig verkställas två gånger. Utan databasanslutning hamnar loggen i fil och kön i minnet, vilket testerna utnyttjar.</figcaption>
+  </figure>
+
+  <h3>De 15 operationerna</h3>
+  <p class="note" style="margin:8px 0 12px; max-width:80ch">Registret ger register_salary_report, set_policy_paid_up och enroll_insured_person nivån APPROVAL. Produktpaketet är infört (B-031) men gäller först från 1 november, så fram till dess är den effektiva nivån för agenter HUMAN_ONLY. Från 1 november gäller registrets nivå i tjänstelagret. Harness kan begränsa åtkomsten ytterligare: anslutning är ännu inte poddmappad och fribrev är nekat för case_handler. Handläggare får utföra samtliga implementerade operationer.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Operation</th><th>Gör</th><th>Typ</th><th>Produktregler</th><th>I registret</th><th>Tjänstelager 24 okt</th><th>Tjänstelager från 1 nov</th></tr></thead>
+      <tbody>
+        <tr><td><code>calculate_premium_preview</code></td><td>Förhandsberäknar premie utan att spara</td><td>compute</td><td>001</td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td></tr>
+        <tr><td><code>correct_premium_transaction</code></td><td>Skapar länkad rättelse; minskning av mottagen premie blockeras</td><td>write</td><td>001, 014, 017, 019, 032</td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td></tr>
+        <tr><td><code>count_approval_requests</code></td><td>Räknar godkännandeärenden per status</td><td>read</td><td>–</td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td></tr>
+        <tr><td><code>enroll_insured_person</code></td><td>Ansluter person med försäkring, förmån och läge; ingen premie</td><td>write</td><td>012, 013</td><td><span class="lvl lvl-approval">APPROVAL</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-approval">APPROVAL</span></td></tr>
+        <tr><td><code>get_insured_overview</code></td><td>Visar person, försäkringar, lägen och premiebaserat kapital</td><td>read</td><td>–</td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td></tr>
+        <tr><td><code>get_operation_events</code></td><td>Visar händelselogg med aktör, motivering och regler</td><td>read</td><td>–</td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td></tr>
+        <tr><td><code>get_premium_history</code></td><td>Visar premier och betalda belopp per månad</td><td>read</td><td>–</td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td></tr>
+        <tr><td><code>get_salary_reports</code></td><td>Visar löneunderlag med alla versioner</td><td>read</td><td>–</td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td></tr>
+        <tr><td><code>list_approval_requests</code></td><td>Listar agentförslag och beslut</td><td>read</td><td>–</td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td></tr>
+        <tr><td><code>list_employers</code></td><td>Listar arbetsgivare utan kontaktpersoner</td><td>read</td><td>–</td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td><td><span class="lvl lvl-agent">AGENT</span></td></tr>
+        <tr><td><code>register_employer</code></td><td>Registrerar arbetsgivare</td><td>write</td><td>012</td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td></tr>
+        <tr><td><code>register_salary_report</code></td><td>Versionerat pensionsmedförande löneunderlag; ingen premie</td><td>write</td><td>013, 014, 017</td><td><span class="lvl lvl-approval">APPROVAL</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-approval">APPROVAL</span></td></tr>
+        <tr><td><code>set_policy_paid_up</code></td><td>Avanmälan och fribrev från dagen efter</td><td>write</td><td>013</td><td><span class="lvl lvl-approval">APPROVAL</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-approval">APPROVAL</span></td></tr>
+        <tr><td><code>update_contact_details</code></td><td>Ändrar e-post och telefon</td><td>write</td><td>031</td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td></tr>
+        <tr><td><code>update_current_salary</code></td><td>Ändrar aktuell lön och tjänstgöringsgrad; inget löneunderlag</td><td>write</td><td>–</td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td><td><span class="lvl lvl-human">HUMAN_ONLY</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- REGLER -->
+<section id="regler" class="wrap">
+  <div class="sec-head">
+    <h2>Från lag till kod</h2>
+    <div class="prose">
+      <p>Delprojekt 4 har skrivit hela kedjan från extern källa till försäkringsvillkor. Kedjan är mer än dokumentation: tjänstelagret läser reglernas status direkt ur filerna, och varje operation anger vilka regler den implementerar. Det är så regelarbetet och koden sitter ihop.</p>
+    </div>
+  </div>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 1040 330" role="img" aria-label="Regelkedjan: källor tolkas till tolkningar, som preciseras i produktregler, som speglas i villkoren. Tjänstelagret läser produktreglernas status, och ett införandebeslut släpper golvet så att agenter får föreslå skrivoperationer.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head-acc" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <g class="n-ok"><rect x="20" y="30" width="200" height="64" rx="6"/></g>
+        <text class="t-b" x="120" y="56" text-anchor="middle">Källor</text>
+        <text class="t-sub" x="120" y="76" text-anchor="middle">ITP-planen, LTF, FFFS, FAL, skatt</text>
+
+        <g class="n-ok"><rect x="290" y="30" width="200" height="64" rx="6"/></g>
+        <text class="t-b" x="390" y="56" text-anchor="middle">Tolkningar</text>
+        <text class="t-sub t-mono" x="390" y="76" text-anchor="middle" style="font-size:11px">T-ITP1-001 – 010</text>
+
+        <g class="n-ok"><rect x="560" y="30" width="200" height="64" rx="6"/></g>
+        <text class="t-b" x="660" y="56" text-anchor="middle">Produktregler</text>
+        <text class="t-sub t-mono" x="660" y="76" text-anchor="middle" style="font-size:11px">PR-ITP1-001 – 034</text>
+
+        <g class="n-ok"><rect x="830" y="30" width="200" height="64" rx="6"/></g>
+        <text class="t-b" x="930" y="56" text-anchor="middle">Försäkringsvillkor v2.0</text>
+        <text class="t-sub" x="930" y="76" text-anchor="middle">kundens rättigheter</text>
+
+        <path class="edge" d="M220,62 H288" marker-end="url(#ar)"/>
+        <text class="t-lbl" x="254" y="54" text-anchor="middle">tolkas</text>
+        <path class="edge" d="M490,62 H558" marker-end="url(#ar)"/>
+        <text class="t-lbl" x="524" y="54" text-anchor="middle">preciseras</text>
+        <path class="edge" d="M760,62 H828" marker-end="url(#ar)"/>
+        <text class="t-lbl" x="794" y="54" text-anchor="middle">speglas</text>
+
+        <!-- grinden -->
+        <path class="edge" d="M660,94 V148" marker-end="url(#ar)"/>
+        <text class="t-lbl" x="670" y="126">status läses</text>
+        <g class="n-ok n-next"><rect x="560" y="150" width="200" height="64" rx="6"/></g>
+        <text class="t-b" x="660" y="176" text-anchor="middle">Införandebeslut B-031</text>
+        <text class="t-sub" x="660" y="196" text-anchor="middle">gäller från 2026-11-01</text>
+        <path class="edge acc" d="M660,214 V248" marker-end="url(#ara)"/>
+        <text class="t-lbl" x="670" y="236">släpper golvet</text>
+
+        <g class="n-ok"><rect x="560" y="250" width="200" height="64" rx="6"/></g>
+        <text class="t-b" x="660" y="276" text-anchor="middle">Tjänstelagret</text>
+        <text class="t-sub" x="660" y="296" text-anchor="middle">effektiv nivå per operation</text>
+
+        <!-- operationer i kod -->
+        <g class="n-ok"><rect x="290" y="250" width="200" height="64" rx="6"/></g>
+        <text class="t-b" x="390" y="276" text-anchor="middle">Operationer i kod</text>
+        <text class="t-sub t-mono" x="390" y="296" text-anchor="middle" style="font-size:11px">@operation(rules=[…])</text>
+        <path class="edge" d="M490,282 H558" marker-end="url(#ar)"/>
+        <text class="t-lbl" x="524" y="274" text-anchor="middle">registreras</text>
+        <path class="edge dash" d="M440,250 V128 H600 V96" marker-end="url(#ar)"/>
+        <text class="t-lbl" x="520" y="120" text-anchor="middle">anger regel</text>
+
+        <!-- efter införande -->
+        <g class="n-plan"><rect x="830" y="250" width="200" height="64" rx="6"/></g>
+        <text class="t-b" x="930" y="276" text-anchor="middle">Agenter får föreslå</text>
+        <text class="t-sub" x="930" y="296" text-anchor="middle">registrets APPROVAL gäller</text>
+        <path class="edge" d="M760,282 H828" marker-end="url(#ar)"/>
+        <text class="t-lbl" x="794" y="274" text-anchor="middle">från 1 nov</text>
+      </svg>
+    </div>
+    <figcaption>Paketet infördes 12 oktober 2026 genom raden <code>**Införandebeslut:** B-031 | **Gäller från:** 2026-11-01</code> i <code>01_domän/produktregler/README.md</code>. Tjänstelagret läser raden: de 34 reglerna är ”kommande” till och med 31 oktober och godkända från 1 november.</figcaption>
+  </figure>
+
+  <div class="split" style="margin-top:26px">
+    <div class="prose">
+      <h3 style="margin-top:0">Var regelverket ligger</h3>
+      <p><code>04_regulatoriskt/</code> håller regelverkskartan, källregistret och korta underlag per regelverk: ITP-planen, LTF, FFFS och FAL som huvudregim, och GDPR, DORA, distribution, SFDR, skatt, penningtvätt och AI-förordningen som tvärgående krav. Där ligger också de tio tolkningarna.</p>
+      <p><code>01_domän/</code> håller det som är bolagets egna val: produktreglerna, försäkringsvillkoren, den aktuariella grunden med garantimodellen från B-027 och parameterregistret med SCB:s dödlighetstabell.</p>
+      <p><code>05_styrdokument/</code> har nu en minimal styrdokumentshierarki och placeringsriktlinje som beslutsutkast (SD-STYR-001 och SD-KAP-001 v0.1). Antagande och giltighetsdag återstår; övriga policies och det samlade kontrollsystemet är ännu inte byggda.</p>
+    </div>
+    <aside class="panel" aria-label="Räkneexempel premietrappan">
+      <h4>Premietrappan i siffror</h4>
+      <p class="note">PR-ITP1-001, lön 80 000 kr i månaden 2026, inkomstbasbelopp 83 400 kr.</p>
+      <div class="calc">
+        <span>4,5 % upp till 7,5 IBB/12 = 52 125 kr</span><span class="r">2 345,63</span>
+        <span>30 % på 27 875 kr mellan brytpunkterna</span><span class="r">8 362,50</span>
+        <span class="tot">Månadspremie</span><span class="r tot">10 708,13 kr</span>
+      </div>
+      <p class="note">Samma belopp gav tjänstelagrets förhandsberäkning när den verifierades mot Lakebase. Över 30 IBB/12 (208 500 kr) ger lönen ingen premie.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- DATA -->
+<section id="data" class="wrap">
+  <div class="sec-head">
+    <h2>Datamodellen</h2>
+    <div class="prose">
+      <p>Tio tabeller finns enligt senaste dokumenterade Lakebase-kontroll. Tre ytterligare portföljmodeller är byggda och testade lokalt men inte skapade där. Kedjan går från person till försäkring, förmån och premie, och försäkringens läge ligger som en egen tidsaxel (B-022). Det kapital som visas i försäkrings-UI:t är summan av betalda premier, spårbar till premieradernas beräkningsunderlag. Det är ännu inget marknadsvärderat pensionskapital med avkastning, avgifter och garanti.</p>
+    </div>
+  </div>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 1030 480" role="img" aria-label="Tabellerna i Lakebase och hur de hänger ihop: arbetsgivare har försäkrade, som har försäkringar med förmåner och premietransaktioner. Försäkringens läge ligger i policy_states. Löneunderlag pekar på person och arbetsgivare. Händelselogg och godkännandekö är tjänstelagrets journal. Ärenden och körjournal är planerade; tre portföljmodeller är byggda lokalt men saknas i Lakebase.">
+        <defs>
+          <marker id="ad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <!-- översta raden -->
+        <g class="n-ok"><rect x="20" y="30" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="120" y="56" text-anchor="middle">employers</text>
+        <text class="t-sub" x="120" y="76" text-anchor="middle">arbetsgivare · 20</text>
+
+        <g class="n-ok"><rect x="280" y="30" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="380" y="56" text-anchor="middle">salary_reports</text>
+        <text class="t-sub" x="380" y="76" text-anchor="middle">löneunderlag · minst 1 verifierat</text>
+
+        <g class="n-ok"><rect x="800" y="30" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="900" y="56" text-anchor="middle">base_amounts</text>
+        <text class="t-sub" x="900" y="76" text-anchor="middle">IBB per år · 2023–2026</text>
+
+        <!-- kärnkedjan -->
+        <g class="n-ok"><rect x="20" y="160" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="120" y="186" text-anchor="middle">insured_persons</text>
+        <text class="t-sub" x="120" y="206" text-anchor="middle">försäkrade · 501 · fiktiva uppgifter</text>
+
+        <g class="n-ok"><rect x="280" y="160" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="380" y="186" text-anchor="middle">policies</text>
+        <text class="t-sub" x="380" y="206" text-anchor="middle">försäkringar · 499</text>
+
+        <g class="n-ok"><rect x="540" y="160" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="640" y="186" text-anchor="middle">policy_benefits</text>
+        <text class="t-sub" x="640" y="206" text-anchor="middle">förmåner · ålderspension</text>
+
+        <g class="n-ok"><rect x="800" y="160" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="900" y="186" text-anchor="middle">premium_transactions</text>
+        <text class="t-sub" x="900" y="206" text-anchor="middle">15 097 rader · 39,0 Mkr</text>
+
+        <!-- andra raden -->
+        <g class="n-ok"><rect x="280" y="290" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="380" y="316" text-anchor="middle">policy_states</text>
+        <text class="t-sub" x="380" y="336" text-anchor="middle">läge över tid, t.ex. fribrev</text>
+
+        <g class="n-ok"><rect x="540" y="290" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="640" y="316" text-anchor="middle">operation_events</text>
+        <text class="t-sub" x="640" y="336" text-anchor="middle">händelselogg, append-only</text>
+
+        <g class="n-ok"><rect x="800" y="290" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="900" y="316" text-anchor="middle">approval_requests</text>
+        <text class="t-sub" x="900" y="336" text-anchor="middle">godkännandekö</text>
+
+        <!-- förklaring -->
+        <rect x="24" y="296" width="26" height="16" rx="3" style="fill:var(--ok-bg); stroke:var(--ok); stroke-width:1.5"/>
+        <text class="t-lbl" x="60" y="309">finns i Lakebase</text>
+        <rect x="24" y="324" width="26" height="16" rx="3" style="fill:var(--surface); stroke:var(--none); stroke-width:1.5; stroke-dasharray:2 3"/>
+        <text class="t-lbl" x="60" y="337">planerad</text>
+
+        <!-- planerade -->
+        <g class="n-none"><rect x="20" y="400" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="120" y="426" text-anchor="middle">cases</text>
+        <text class="t-sub" x="120" y="446" text-anchor="middle">ärenden · delprojekt 1</text>
+
+        <g class="n-none"><rect x="540" y="400" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="640" y="426" text-anchor="middle">agent_runs · flows</text>
+        <text class="t-sub" x="640" y="446" text-anchor="middle">körjournal och flöden · Fas 3c</text>
+
+        <g class="n-part"><rect x="800" y="400" width="200" height="64" rx="6"/></g>
+        <text class="t-mono t-b" x="900" y="426" text-anchor="middle">portfolios · trades</text>
+        <text class="t-sub" x="900" y="446" text-anchor="middle">+ holdings · lokalt byggda</text>
+
+        <!-- kanter -->
+        <path class="edge" d="M120,94 V158" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="128" y="131">anställer</text>
+        <path class="edge" d="M220,192 H278" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="249" y="184" text-anchor="middle">1:N</text>
+        <path class="edge" d="M480,192 H538" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="509" y="184" text-anchor="middle">1:N</text>
+        <path class="edge" d="M740,192 H798" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="769" y="184" text-anchor="middle">per månad</text>
+        <path class="edge" d="M380,224 V288" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="388" y="260">tidsperioder</text>
+        <path class="edge" d="M280,52 H222" marker-end="url(#ad)"/>
+        <path class="edge" d="M280,76 H250 V176 H222" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="258" y="131">pekar på</text>
+        <path class="edge dot" d="M900,94 V158" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="908" y="131">IBB vid beräkning</text>
+        <path class="edge" d="M930,224 C930,258 975,258 975,226" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="922" y="270" text-anchor="end">rättelse länkas</text>
+        <path class="edge" d="M740,322 H798" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="769" y="314" text-anchor="middle" style="font-size:10.5px">approval_id</text>
+
+        <path class="edge dash" d="M220,432 H500 V322 H538" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="360" y="424" text-anchor="middle">case_id finns redan i loggen</text>
+        <path class="edge dash" d="M640,400 V356" marker-end="url(#ad)"/>
+        <text class="t-lbl" x="648" y="382">run_id</text>
+        <path class="edge dash" d="M1000,432 H1016 V192 H1002" marker-end="url(#ad)"/>
+      </svg>
+    </div>
+    <figcaption>Kärnkedjans pilar visar samband från arbetsgivare till premier; löneunderlagets pilar visar referenser till person och arbetsgivare. Löneunderlaget pekar på både person och arbetsgivare och versioneras: en rättelse är en ny rad. Premierader ändras aldrig; en rättelse är en ny länkad rad. Portföljmodellerna är lokalt byggda och testade, ännu utan handel, saldo-/innehavsberäkning eller premiekoppling. De tio gröna tabellerna beskriver senast dokumenterade Lakebase-läget, inte en ny databasavläsning.</figcaption>
+  </figure>
+</section>
+
+<!-- AGENTER -->
+<section id="agenter" class="wrap">
+  <div class="sec-head">
+    <h2>Agentekosystemet</h2>
+    <div class="prose">
+      <p>Målbilden i B-026 är sju team som speglar ett riktigt bolags avdelningar. Varje team har en ledande agent som tar emot uppdrag och fördelar arbetet. Vad en agent kan göra styrs av vilka skill-poddar som är monterade på teamet, inte av vad prompten säger. Körpolicy, skill-register, effektiv profil, dispatcher, resursmandat och agentloop är byggda. Bara forsakring/case_handler har en konfigurerad profil, med kunddata och berakning. Rollen agent_forsakring är införd i Lakebase. Loopen är lokalt testad med FakeProvider. Fortsättning efter godkännande, körjournal och röktest mot riktig modell återstår; övriga team och poddar nedan är målbilden.</p>
+    </div>
+  </div>
+
+  <div class="cards four">
+    <article class="card"><header><div><span class="card-no">forsakring</span><h4>Försäkring och kund</h4></div></header>
+      <dl><dt>Ledande agent</dt><dd>Handläggaragent</dd><dt>Konfigurerade poddar</dt><dd><code>kunddata</code> <code>berakning</code></dd><dt>Delprojekt</dt><dd>1, 3, 7</dd></dl></article>
+    <article class="card"><header><div><span class="card-no">kommunikation</span><h4>Kommunikation</h4></div></header>
+      <dl><dt>Ledande agent</dt><dd>Kommunikationsagent, bolagets enda väg ut</dd><dt>Egna poddar</dt><dd><code>kommunikation</code></dd><dt>Delprojekt</dt><dd>1, 7</dd></dl></article>
+    <article class="card"><header><div><span class="card-no">kapital</span><h4>Kapitalförvaltning</h4></div></header>
+      <dl><dt>Ledande agent</dt><dd>Portföljförvaltningsagent</dd><dt>Egna poddar</dt><dd><code>marknadsdata</code> <code>portfolj</code></dd><dt>Delprojekt</dt><dd>5</dd></dl></article>
+    <article class="card"><header><div><span class="card-no">aktuarie</span><h4>Aktuarie och analys</h4></div></header>
+      <dl><dt>Ledande agent</dt><dd>Aktuarieagent, med Data scientist-agent som specialist</dd><dt>Egna poddar</dt><dd><code>marknadsdata</code></dd><dt>Delprojekt</dt><dd>2, 6</dd></dl></article>
+    <article class="card"><header><div><span class="card-no">compliance</span><h4>Regelefterlevnad och rapportering</h4></div></header>
+      <dl><dt>Ledande agent</dt><dd>Compliance-agent, med Rapporteringsagent som specialist</dd><dt>Egna poddar</dt><dd>delade poddar räcker</dd><dt>Delprojekt</dt><dd>4, 6</dd></dl></article>
+    <article class="card"><header><div><span class="card-no">ekonomi</span><h4>Ekonomi och inköp</h4></div></header>
+      <dl><dt>Ledande agent</dt><dd>Ekonomiagent, med Inköpsagent som specialist</dd><dt>Egna poddar</dt><dd>inga definierade än</dd><dt>Delprojekt</dt><dd>6</dd></dl></article>
+    <article class="card"><header><div><span class="card-no">utveckling</span><h4>Utveckling och plattform</h4></div></header>
+      <dl><dt>Ledande agent</dt><dd>Utvecklaragent</dd><dt>Egna poddar</dt><dd>delade poddar räcker</dd><dt>Delprojekt</dt><dd>alla</dd></dl></article>
+    <article class="card"><header><div><span class="card-no">alla team</span><h4>Delade poddar</h4></div></header>
+      <dl><dt>Planerade gemensamma poddar</dt><dd><code>berakning</code> <code>regelverk</code> <code>bestand</code> <code>dokument</code></dd><dt>Ledande agenter</dt><dd><code>delegering</code></dd><dt>Saknas</dt><dd>Internrevision har inget team än. Den ska vara oberoende.</dd></dl></article>
+  </div>
+
+  <h3>Hur agenterna kopplas in</h3>
+  <figure style="margin-top:14px">
+    <div class="diagram">
+      <svg viewBox="0 0 1040 310" role="img" aria-label="Harness har policy, skill-register, dispatcher, resursmandat och agentloop mellan AI-lagret och tjänstelagret. Fortsättning efter godkännande, körjournal och modellröktest återstår.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <g class="n-neutral"><rect x="20" y="122" width="170" height="64" rx="6"/></g>
+        <text class="t-b" x="105" y="148" text-anchor="middle">Uppdrag</text>
+        <text class="t-sub" x="105" y="168" text-anchor="middle">från dig, ett flöde, ett team</text>
+        <path class="edge" d="M190,154 H248" marker-end="url(#ah)"/>
+        <text class="t-lbl" x="219" y="146" text-anchor="middle">startar</text>
+
+        <g class="n-part"><rect x="250" y="40" width="300" height="230" rx="8"/></g>
+        <text class="t-b" x="270" y="68">Harness, delvis byggd</text>
+        <text class="t-cap" x="270" y="88">EN MOTOR, KONFIGURERAD PER TEAM</text>
+        <text class="t-sub" x="270" y="118">✓  policy och instruktionens versionsbild</text>
+        <text class="t-sub" x="270" y="144">✓  skill-register och verktygsfilter</text>
+        <text class="t-sub" x="270" y="170">✓  dispatcher och kundavgränsning</text>
+        <text class="t-sub" x="270" y="196">✓  modellloop och stopp vid godkännande</text>
+        <text class="t-sub" x="270" y="222">→  körjournal och röktest återstår</text>
+        <text class="t-sub" x="270" y="248">steg-, kostnads-, tids- och kontexttak</text>
+
+        <g class="n-ok"><rect x="640" y="30" width="190" height="64" rx="6"/></g>
+        <text class="t-b" x="735" y="56" text-anchor="middle">AI-lagret</text>
+        <text class="t-sub t-mono" x="735" y="76" text-anchor="middle" style="font-size:11px">ai.bind(team, agent, run_id)</text>
+        <path class="edge" d="M550,62 H638" marker-start="url(#ah)" marker-end="url(#ah)"/>
+        <text class="t-lbl" x="594" y="54" text-anchor="middle">complete()</text>
+
+        <g class="n-neutral"><rect x="880" y="30" width="140" height="64" rx="6"/></g>
+        <text class="t-b" x="950" y="56" text-anchor="middle">Anthropic, OpenAI</text>
+        <text class="t-sub" x="950" y="76" text-anchor="middle">fast · standard · deep</text>
+        <path class="edge" d="M830,62 H878" marker-end="url(#ah)"/>
+
+        <g class="n-ok"><rect x="640" y="140" width="190" height="64" rx="6"/></g>
+        <text class="t-b" x="735" y="166" text-anchor="middle">Tjänstelagret</text>
+        <text class="t-sub t-mono" x="735" y="186" text-anchor="middle" style="font-size:11px">execute(actor=agent)</text>
+        <path class="edge" d="M550,172 H638" marker-start="url(#ah)" marker-end="url(#ah)"/>
+        <text class="t-lbl" x="594" y="164" text-anchor="middle">verktygsanrop</text>
+
+        <g class="n-ok"><rect x="880" y="140" width="140" height="64" rx="6"/></g>
+        <text class="t-b" x="950" y="166" text-anchor="middle">Lakebase</text>
+        <text class="t-sub" x="950" y="186" text-anchor="middle">10 tabeller</text>
+        <path class="edge" d="M830,172 H878" marker-end="url(#ah)"/>
+
+        <g class="n-plan"><rect x="640" y="236" width="190" height="56" rx="6"/></g>
+        <text class="t-b" x="735" y="259" text-anchor="middle">Körjournal, saknas</text>
+        <text class="t-sub t-mono" x="735" y="278" text-anchor="middle" style="font-size:11px">logs/agent_runs/</text>
+        <path class="edge" d="M550,262 H638" marker-end="url(#ah)"/>
+        <text class="t-lbl" x="594" y="254" text-anchor="middle">varje steg</text>
+      </svg>
+    </div>
+    <figcaption>Harness 3b-1–4 är byggd i <code>src/agents/</code>. Dispatchern prövar verktyg, aktuell policy och ett avgränsat kunduppdrag före körning. Kunddata kräver både <code>ExecutionScope</code> och anslutning med teamets begränsade databasroll. Utan dessa visas bara premieförhandsberäkningen. Agentloopen finns och stannar vid väntande förslag. Fortsättning efter godkännande och varaktig körjournal återstår. Försäkringsverktyg går via tjänstelagret; dokument, kapital och kommunikation får egna avgränsade gateways.</figcaption>
+  </figure>
+
+  <h3>Flaggskeppsscenariot</h3>
+  <p class="note" style="margin:8px 0 14px; max-width:80ch">Det programmet ska kunna visa när det är klart: en regelverksändring, till exempel ett nytt inkomstbasbelopp, går hela vägen till produktion med en människa som godkänner de kritiska stegen. Nedre raden visar vad som redan finns för varje steg.</p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 1090 250" role="img" aria-label="Flaggskeppsflödet i fem steg: compliance tolkar ändringen och ändrar produktregeln, utveckling ändrar koden, aktuarie tar fram beståndsinsikt och kommunikation skriver kundinformation. Steg 1, 2, 3 och 5 kräver godkännande.">
+        <defs>
+          <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <g class="n-neutral"><rect x="20" y="30" width="170" height="90" rx="6"/></g>
+        <text class="t-cap" x="105" y="54" text-anchor="middle">1 · COMPLIANCE</text>
+        <text class="t-b" x="105" y="78" text-anchor="middle">Tolka ändringen</text>
+        <text class="t-sub" x="105" y="100" text-anchor="middle">ny tolkning T-ITP1</text>
+
+        <g class="n-neutral"><rect x="240" y="30" width="170" height="90" rx="6"/></g>
+        <text class="t-cap" x="325" y="54" text-anchor="middle">2 · COMPLIANCE</text>
+        <text class="t-b" x="325" y="78" text-anchor="middle">Ändra produktregel</text>
+        <text class="t-sub" x="325" y="100" text-anchor="middle">PR-ITP1 och villkor</text>
+
+        <g class="n-neutral"><rect x="460" y="30" width="170" height="90" rx="6"/></g>
+        <text class="t-cap" x="545" y="54" text-anchor="middle">3 · UTVECKLING</text>
+        <text class="t-b" x="545" y="78" text-anchor="middle">Ändra kod och tester</text>
+        <text class="t-sub" x="545" y="100" text-anchor="middle">t.ex. premiemotorn</text>
+
+        <g class="n-neutral"><rect x="680" y="30" width="170" height="90" rx="6"/></g>
+        <text class="t-cap" x="765" y="54" text-anchor="middle">4 · AKTUARIE</text>
+        <text class="t-b" x="765" y="78" text-anchor="middle">Beståndsinsikt</text>
+        <text class="t-sub" x="765" y="100" text-anchor="middle">vilka berörs, hur mycket</text>
+
+        <g class="n-neutral"><rect x="900" y="30" width="170" height="90" rx="6"/></g>
+        <text class="t-cap" x="985" y="54" text-anchor="middle">5 · KOMMUNIKATION</text>
+        <text class="t-b" x="985" y="78" text-anchor="middle">Kundinformation</text>
+        <text class="t-sub" x="985" y="100" text-anchor="middle">utkast, godkänns före utskick</text>
+
+        <path class="edge" d="M190,75 H238" marker-end="url(#af)"/>
+        <rect class="gate" x="207" y="68" width="14" height="14" transform="rotate(45 214 75)"/>
+        <text class="t-lbl" x="215" y="136" text-anchor="middle">godkänn</text>
+        <path class="edge" d="M410,75 H458" marker-end="url(#af)"/>
+        <rect class="gate" x="427" y="68" width="14" height="14" transform="rotate(45 434 75)"/>
+        <text class="t-lbl" x="435" y="136" text-anchor="middle">godkänn</text>
+        <path class="edge" d="M630,75 H678" marker-end="url(#af)"/>
+        <rect class="gate" x="647" y="68" width="14" height="14" transform="rotate(45 654 75)"/>
+        <text class="t-lbl" x="655" y="136" text-anchor="middle">godkänn</text>
+        <path class="edge" d="M850,75 H898" marker-end="url(#af)"/>
+        <text class="t-lbl" x="875" y="136" text-anchor="middle">rapport</text>
+
+        <text class="t-cap" x="20" y="168">FINNS I DAG</text>
+        <g class="n-ok"><rect x="20" y="180" width="170" height="50" rx="6"/></g>
+        <text class="t-sub" x="105" y="210" text-anchor="middle" style="fill:var(--ink)">10 tolkningar</text>
+        <g class="n-ok"><rect x="240" y="180" width="170" height="50" rx="6"/></g>
+        <text class="t-sub" x="325" y="210" text-anchor="middle" style="fill:var(--ink)">34 produktregler</text>
+        <g class="n-ok"><rect x="460" y="180" width="170" height="50" rx="6"/></g>
+        <text class="t-sub" x="545" y="210" text-anchor="middle" style="fill:var(--ink)">premiemotor, operationer</text>
+        <g class="n-part"><rect x="680" y="180" width="170" height="50" rx="6"/></g>
+        <text class="t-sub" x="765" y="210" text-anchor="middle" style="fill:var(--ink)">IBB-scenarioanalys</text>
+        <g class="n-none"><rect x="900" y="180" width="170" height="50" rx="6"/></g>
+        <text class="t-sub" x="985" y="210" text-anchor="middle">inget än</text>
+      </svg>
+    </div>
+    <figcaption>Romberna markerar godkännandesteg. Flödet ska köras av flödesmotorn i Fas 3c som deterministisk kod, inte av en modell som väljer ordning. Arbetsunderlaget i dag är dokumenten och koden; agenterna som ska göra stegen saknas.</figcaption>
+  </figure>
+</section>
+
+<!-- KOD -->
+<section id="kod" class="wrap">
+  <div class="sec-head">
+    <h2>Kod, skript och tester</h2>
+    <div class="prose">
+      <p>All återanvändbar kod ligger under den gemensamma paketroten <code>src/</code>, med engelska modulnamn (B-015). Skripten i <code>scripts/</code> är kommandoradsingångar som anropar <code>src/</code> eller förbereder miljö och startdata. Det finns ingen separat kodbas per delprojekt; ny kod för ett delprojekt hamnar i samma träd.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Mapp</th><th>Innehåll</th><th style="text-align:right">Rader</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><code>src/services/</code></td><td>15 försäkringsoperationer, åtkomst, regler, godkännanden, händelselogg och transaktioner</td><td class="num">3 393</td><td><span class="chip st-ok">Byggt</span></td></tr>
+        <tr><td><code>src/web/</code></td><td>FastAPI, Jinja2 och HTMX: lokalt handläggar-UI via tjänstelagret; HTML/CSS ingår inte i radantalet</td><td class="num">1 355</td><td><span class="chip st-ok">v1 byggd</span></td></tr>
+        <tr><td><code>src/ai/</code></td><td>Modellroller, leverantörsadaptrar, reserv, teamnycklar och anropslogg</td><td class="num">1 667</td><td><span class="chip st-ok">Byggt</span></td></tr>
+        <tr><td><code>src/agents/</code></td><td>Körpolicy, profil, skill-register, dispatcher, resursmandat och agentloop; körjournal återstår</td><td class="num">1 806</td><td><span class="chip st-part">Delvis byggt</span></td></tr>
+        <tr><td><code>src/models/</code></td><td>13 tabellmodeller: 10 i Lakebase, 3 portföljmodeller enbart lokalt</td><td class="num">1 169</td><td><span class="chip st-ok">Modeller byggda</span></td></tr>
+        <tr><td><code>src/utils/</code></td><td>Databas, agentrollens rättigheter, backup, migration och lokalt demobestånd</td><td class="num">644</td><td><span class="chip st-ok">Byggt</span></td></tr>
+        <tr><td><code>src/analytics/</code></td><td>IBB-scenarioanalys och läsning av offline-backup</td><td class="num">285</td><td><span class="chip st-part">Första analysen</span></td></tr>
+        <tr><td><code>src/skills/calculation/</code></td><td>Ren ITP1-premieberäkning</td><td class="num">135</td><td><span class="chip st-ok">Byggt</span></td></tr>
+        <tr><td><code>src/skills/</code> övriga</td><td>Förberedd struktur för fler data-, kommunikations-, regelverks- och utvecklingsskills</td><td class="num">–</td><td><span class="chip st-none">Ej byggt</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Hur modulerna använder varandra</h3>
+  <figure style="margin-top:14px">
+    <div class="diagram">
+      <svg viewBox="0 0 960 300" role="img" aria-label="Beroenden mellan modulerna i src: services använder models, premiemotorn och utils. Analytics använder premiemotorn. Utils använder models. AI-lagret är fristående. Web använder services. Agents använder services för verktyg och AI-lagret för modellanrop via run_agent.">
+        <defs>
+          <marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <g class="n-part"><rect x="60" y="20" width="220" height="50" rx="6"/></g>
+        <text class="t-mono t-b" x="170" y="41" text-anchor="middle">agents/</text>
+        <text class="t-sub" x="170" y="59" text-anchor="middle">policy, verktyg, loop · Fas 3b</text>
+        <g class="n-ok"><rect x="380" y="20" width="220" height="50" rx="6"/></g>
+        <text class="t-mono t-b" x="490" y="41" text-anchor="middle">web/</text>
+        <text class="t-sub" x="490" y="59" text-anchor="middle">handläggar-UI · Fas 4</text>
+
+        <g class="n-ok"><rect x="60" y="120" width="220" height="50" rx="6"/></g>
+        <text class="t-mono t-b" x="170" y="141" text-anchor="middle">ai/</text>
+        <text class="t-sub" x="170" y="159" text-anchor="middle">fristående, inga interna beroenden</text>
+        <g class="n-ok"><rect x="380" y="120" width="220" height="50" rx="6"/></g>
+        <text class="t-mono t-b" x="490" y="141" text-anchor="middle">services/</text>
+        <text class="t-sub" x="490" y="159" text-anchor="middle">tjänstelagret</text>
+        <g class="n-part"><rect x="700" y="120" width="220" height="50" rx="6"/></g>
+        <text class="t-mono t-b" x="810" y="141" text-anchor="middle">analytics/</text>
+        <text class="t-sub" x="810" y="159" text-anchor="middle">IBB-scenario</text>
+
+        <g class="n-ok"><rect x="60" y="230" width="220" height="50" rx="6"/></g>
+        <text class="t-mono t-b" x="170" y="251" text-anchor="middle">utils/</text>
+        <text class="t-sub" x="170" y="269" text-anchor="middle">db, backup, migration</text>
+        <g class="n-ok"><rect x="380" y="230" width="220" height="50" rx="6"/></g>
+        <text class="t-mono t-b" x="490" y="251" text-anchor="middle">models/</text>
+        <text class="t-sub" x="490" y="269" text-anchor="middle">13 modeller · 10 i Lakebase</text>
+        <g class="n-ok"><rect x="700" y="230" width="220" height="50" rx="6"/></g>
+        <text class="t-mono t-b" x="810" y="251" text-anchor="middle">skills/calculation/</text>
+        <text class="t-sub" x="810" y="269" text-anchor="middle">premiemotorn</text>
+
+        <path class="edge" d="M170,70 V118" marker-end="url(#am)"/>
+        <text class="t-lbl" x="178" y="98">ai.bind()</text>
+        <path class="edge" d="M280,52 L420,118" marker-end="url(#am)"/>
+        <text class="t-lbl" x="318" y="102" text-anchor="middle">execute()</text>
+        <path class="edge" d="M490,70 V118" marker-end="url(#am)"/>
+        <text class="t-lbl" x="498" y="98">execute, approve</text>
+
+        <path class="edge" d="M490,170 V228" marker-end="url(#am)"/>
+        <text class="t-lbl" x="498" y="203">SQLAlchemy</text>
+        <path class="edge" d="M600,160 L700,236" marker-end="url(#am)"/>
+        <text class="t-lbl" x="618" y="214" text-anchor="end">premie</text>
+        <path class="edge" d="M810,170 V228" marker-end="url(#am)"/>
+        <text class="t-lbl" x="818" y="203">återanvänder</text>
+        <path class="edge" d="M380,160 L280,236" marker-end="url(#am)"/>
+        <text class="t-lbl" x="300" y="192">DATABASE_URL</text>
+        <path class="edge" d="M280,255 H378" marker-end="url(#am)"/>
+        <text class="t-lbl" x="329" y="247" text-anchor="middle">metadata</text>
+      </svg>
+    </div>
+    <figcaption>AI-lagret och tjänstelagret känner inte till varandra. Agentloopen run_agent binder nu ihop modellanrop och kontrollerad verktygskörning. Varaktig körjournal och fortsättning efter godkännande återstår. Premiemotorn är en ren funktion utan databas, och därför kan både tjänstelagret, demogeneratorn och analysen använda samma beräkning.</figcaption>
+  </figure>
+
+  <h3>Skripten</h3>
+  <p class="note" style="margin:8px 0 14px; max-width:80ch">Skripten nedan körs från repots rot och stöder <code>--help</code> utan databas eller modellanrop. De som skriver mot den delade Lakebase-databasen körs aldrig av två AI-verktyg samtidigt (AGENTS.md §4.5). Setup-, demo- och underhållsskript har avgränsad direkt databasåtkomst; löpande försäkringsarbete går genom tjänstelagret. Så här byggs en demomiljö upp från tomt:</p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 1000 236" role="img" aria-label="Uppbyggnad av en demomiljö: create_tables och seed_base_amounts lägger grunden, generate_mock_data och seed_mock_data skapar personer, och generate_premium_history skapar försäkringar och premier med premiemotorn.">
+        <defs>
+          <marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <g class="n-ok"><rect x="20" y="20" width="220" height="60" rx="6"/></g>
+        <text class="t-mono" x="130" y="45" text-anchor="middle" style="font-size:11.5px">setup/create_tables.py</text>
+        <text class="t-sub" x="130" y="65" text-anchor="middle">skapar tabeller som saknas</text>
+        <g class="n-ok"><rect x="280" y="20" width="220" height="60" rx="6"/></g>
+        <text class="t-mono" x="390" y="45" text-anchor="middle" style="font-size:11.5px">setup/seed_base_amounts.py</text>
+        <text class="t-sub" x="390" y="65" text-anchor="middle">IBB 2023–2026</text>
+        <path class="edge" d="M240,50 H278" marker-end="url(#ap)"/>
+
+        <g class="n-ok"><rect x="20" y="130" width="220" height="60" rx="6"/></g>
+        <text class="t-mono" x="130" y="155" text-anchor="middle" style="font-size:11.5px">demo/generate_mock_data.py</text>
+        <text class="t-sub" x="130" y="175" text-anchor="middle">CSV i data/, ingen databas</text>
+        <g class="n-ok"><rect x="280" y="130" width="220" height="60" rx="6"/></g>
+        <text class="t-mono" x="390" y="155" text-anchor="middle" style="font-size:11.5px">demo/seed_mock_data.py</text>
+        <text class="t-sub" x="390" y="175" text-anchor="middle">20 arbetsgivare, 500 personer</text>
+        <path class="edge" d="M240,160 H278" marker-end="url(#ap)"/>
+        <text class="t-lbl" x="259" y="152" text-anchor="middle">CSV</text>
+
+        <g class="n-ok"><rect x="560" y="75" width="250" height="60" rx="6"/></g>
+        <text class="t-mono" x="685" y="100" text-anchor="middle" style="font-size:11px">demo/generate_premium_history.py</text>
+        <text class="t-sub" x="685" y="120" text-anchor="middle">498 försäkringar, 15 097 premier</text>
+        <path class="edge" d="M500,56 L558,96" marker-end="url(#ap)"/>
+        <path class="edge" d="M500,154 L558,116" marker-end="url(#ap)"/>
+
+        <g class="n-neutral"><rect x="585" y="176" width="200" height="44" rx="6"/></g>
+        <text class="t-b" x="685" y="203" text-anchor="middle">Premiemotorn</text>
+        <path class="edge" d="M685,176 V137" marker-end="url(#ap)"/>
+        <text class="t-lbl" x="693" y="160">varje premie</text>
+
+        <g class="n-ok"><rect x="860" y="75" width="120" height="60" rx="6"/></g>
+        <text class="t-b" x="920" y="100" text-anchor="middle">Lakebase</text>
+        <text class="t-sub" x="920" y="120" text-anchor="middle">demomiljö klar</text>
+        <path class="edge" d="M810,105 H858" marker-end="url(#ap)"/>
+      </svg>
+    </div>
+    <figcaption>Detta är startdata, inte löpande drift. Ordinarie ändringar går genom tjänstelagret. Vid schemaändringar är ordningen backup, provkörning med <code>--dry-run</code>, sedan migration.</figcaption>
+  </figure>
+
+  <div class="table-wrap" style="margin-top:18px">
+    <table>
+      <thead><tr><th>Kategori</th><th>Skript</th><th>Gör</th><th>Använder i src</th></tr></thead>
+      <tbody>
+        <tr><td>setup</td><td><code>create_tables.py</code></td><td>Skapar tabeller som saknas, nu även 3 portföljmodeller; inte kört mot Lakebase efter Fas 2c</td><td>models, utils</td></tr>
+        <tr><td>setup</td><td><code>seed_base_amounts.py</code></td><td>Lägger in inkomstbasbelopp 2023–2026</td><td>models, utils</td></tr>
+        <tr><td>demo</td><td><code>generate_mock_data.py</code></td><td>Fiktiva personer och arbetsgivare till CSV</td><td>–</td></tr>
+        <tr><td>demo</td><td><code>seed_mock_data.py</code></td><td>Läser in CSV till Lakebase</td><td>models, utils</td></tr>
+        <tr><td>demo</td><td><code>generate_premium_history.py</code></td><td>Försäkringar och premiehistorik 2023–2026</td><td>models, premiemotorn, utils</td></tr>
+        <tr><td>maintenance</td><td><code>backup_database.py</code></td><td>Sparar schema och alla tabeller till <code>backups/</code></td><td>utils</td></tr>
+        <tr><td>maintenance</td><td><code>restore_database.py</code></td><td>Återställer en backup till tom databas</td><td>utils</td></tr>
+        <tr><td>migrations</td><td><code>migrate_t3_schema.py</code></td><td>Uppgraderar till T3-schemat, körd 2026-10-11</td><td>utils</td></tr>
+        <tr><td>migrations/legacy</td><td><code>rebuild_insurance_tables.py</code></td><td>Historisk ombyggnad för B-022, används inte längre</td><td>models, utils</td></tr>
+        <tr><td>diagnostics</td><td><code>test_db_connection.py</code></td><td>Kontrollerar anslutningen med SELECT 1</td><td>utils</td></tr>
+        <tr><td>diagnostics</td><td><code>smoke_test_ai.py</code></td><td>Riktiga modellanrop, verktygsloop och reserv. Kostar några ören</td><td>ai, premiemotorn</td></tr>
+        <tr><td>analysis</td><td><code>analyze_premium_impact.py</code></td><td>Premieeffekt av ett hypotetiskt IBB</td><td>analytics</td></tr>
+        <tr><td>documentation</td><td><code>list_operations.py</code></td><td>Genererar <code>tjänstelager_operationer.md</code></td><td>services</td></tr>
+        <tr><td>setup</td><td><code>grant_agent_role.py</code></td><td>Torrkörning som standard; --apply ger avgränsade databasrättigheter. Infört 24 oktober</td><td>utils</td></tr>
+        <tr><td>documentation</td><td><code>show_agent_profile.py</code></td><td>Visar effektiva verktyg, dolda verktyg och skäl utan databas eller AI</td><td>agents, services</td></tr>
+        <tr><td>web</td><td><code>start_ui.py</code></td><td>Startar lokalt UI; demo som standard, Lakebase väljs uttryckligen</td><td>web</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Testerna</h3>
+  <p class="note" style="margin:8px 0 14px; max-width:80ch">645 testfall i 32 filer, räknade med pytest --collect-only den 24 oktober. Insamling verifierar vilka testfall som finns; hela sviten har inte körts i denna dokumentuppdatering. Tjänstelager, UI och kapitalmodeller har lokala tester. 29 testfall kräver isolerad Postgres (9 för tjänstelagret, 20 för agentrollen). AI-testerna använder fejkleverantör utan nätverk. Agentloopens 21 tester har dessutom körts i denna uppdatering och passerar.</p>
+  <div class="bars" role="img" aria-label="Insamlade testfall per område: Tjänstelagret 184, Harness och agentroll 134, Kapitalmodeller 100, AI-lagret 83, Handläggar-UI 77, Analys 21, Skriptens ingångar 20, Premiemotorn 17, Backup och migration 9">
+    <div class="bar-row"><span>Tjänstelagret</span><div class="bar"><span style="width:100.0%"></span></div><span class="num">184</span></div>
+    <div class="bar-row"><span>Harness och agentroll</span><div class="bar"><span style="width:72.8%"></span></div><span class="num">134</span></div>
+    <div class="bar-row"><span>Kapitalmodeller</span><div class="bar"><span style="width:54.3%"></span></div><span class="num">100</span></div>
+    <div class="bar-row"><span>AI-lagret</span><div class="bar"><span style="width:45.1%"></span></div><span class="num">83</span></div>
+    <div class="bar-row"><span>Handläggar-UI</span><div class="bar"><span style="width:41.8%"></span></div><span class="num">77</span></div>
+    <div class="bar-row"><span>Analys</span><div class="bar"><span style="width:11.4%"></span></div><span class="num">21</span></div>
+    <div class="bar-row"><span>Skriptens ingångar</span><div class="bar"><span style="width:10.9%"></span></div><span class="num">20</span></div>
+    <div class="bar-row"><span>Premiemotorn</span><div class="bar"><span style="width:9.2%"></span></div><span class="num">17</span></div>
+    <div class="bar-row"><span>Backup och migration</span><div class="bar"><span style="width:4.9%"></span></div><span class="num">9</span></div>
+  </div>
+</section>
+
+<!-- LUCKOR -->
+<section id="luckor" class="wrap">
+  <div class="sec-head">
+    <h2>Det som saknas och var det kopplas in</h2>
+    <div class="prose">
+      <p>Det mesta som saknas har redan en kontaktpunkt i det som finns. Tabellen visar varje lucka, vilken befintlig del den kopplas till och vad den väntar på. Ordningen följer ungefär byggordningen.</p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Saknas</th><th>Kopplas in i</th><th>Väntar på</th></tr></thead>
+      <tbody>
+        <tr><td>Inbyggd Claude i handläggar-UI:t</td><td>Chattyta i <code>src/web/</code> som anropar AI-lagret med tjänstelagrets operationer som verktyg.</td><td>Harness</td></tr>
+        <tr><td>Anställningshistorik</td><td>Tabell <code>employments</code> för återanställning, arbetsgivarbyte och löneunderlag efter avslutad anställning (PR-ITP1-013). I dag blockeras de fallen.</td><td>Schemaändring enligt T3-mönstret</td></tr>
+        <tr><td>Ärenden</td><td><code>case_id</code> finns redan i <code>OperationContext</code>, händelseloggen och godkännandekön. En tabell <code>cases</code> behövs.</td><td>Delprojekt 1, Fas 5</td></tr>
+        <tr><td>Premie ur löneunderlag</td><td><code>salary_reports</code> → premiemotorn → <code>premium_transactions</code>, enligt PR-ITP1-001, 015 och 017.</td><td>Eget steg i Fas 1f</td></tr>
+        <tr><td>Uttag, paus, garanti, pensionsbelopp och avslut</td><td>Nya <code>@operation</code>-funktioner med rader i <code>access_register.yaml</code>. Kräver att premieläge och pensionsläge skiljs åt, och uttagsdelar och kapitaljournal i datamodellen.</td><td>Modellbeslut. Reglerna är införda: PR-ITP1-002–010 och 024–028</td></tr>
+        <tr><td>Låst regelversion per händelse</td><td>Beräkningsunderlaget och händelseloggen får t.ex. <code>PR-ITP1-001 v1.0</code>.</td><td>Avstämning med delprojekt 4. Behövs för flaggskeppet</td></tr>
+        <tr><td>Fortsättning efter godkännande och körjournal</td><td>Bygger vidare på befintliga ecosystem.yaml, skill-register, dispatcher och run_agent i <code>src/agents/</code>.</td><td>3b-5–3b-6; därefter komplett användningsfall, modellröktest och Fas 5</td></tr>
+        <tr><td>Fler skills</td><td>Tjänsteomslag för kunddata och premieberäkning finns i skill-registret. Kvar: dokument-/regelgateway, utskick, complianceöversyn och marknadsdata.</td><td>Respektive gateway, kontrakt och behörigheter</td></tr>
+        <tr><td>Flödesmotor och delegering</td><td>Harness plus tabeller för flöden och körjournal. Första flödet är regelförändringsflödet i <code>02_system/Agentsystem/</code>.</td><td>Harness</td></tr>
+        <tr><td>Kapitalförvaltningens körande funktion</td><td>Tre modeller finns lokalt. Kvar: tabeller i Lakebase, kapitalgateway, marknadsdata, saldo-/innehavsberäkning, förvaltningslogik och premiekoppling.</td><td>Antagna styrdokument och instrumentlista, kontroller och koordinerad databasändring. Parallellt spår</td></tr>
+        <tr><td>Dashboard och Genie</td><td>Lakebase registreras i Unity Catalog, mått som metric views, pod <code>bestand</code> för agenter.</td><td>Verifiering av Databricks-miljön</td></tr>
+        <tr><td>Kundportal och chattbot</td><td>Samma FastAPI-backend som handläggar-UI:t. Chattboten får pod <code>regelverk</code> över regler och villkor.</td><td>Uttagsoperationer och kundinloggning</td></tr>
+        <tr><td>Antagande och fullständiga styrdokument</td><td>Minimal hierarki och placeringsriktlinje finns som beslutsutkast. Övriga policies, register och samlat kontrollsystem återstår.</td><td>Operatörens antagande och giltighetsdag för utkasten</td></tr>
+        <tr><td>MCP-exponering av poddar</td><td>Samma skill-funktioner som harness använder, en MCP-server per pod.</td><td>Harness</td></tr>
+        <tr><td>Schemamigrationer med Alembic</td><td>Ersätter enskilda skript som <code>migrate_t3_schema.py</code>.</td><td>Eget beslut, nytt beroende</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Väntar på dig</h3>
+  <ul class="todo" style="margin-top:14px">
+    <li><b>1 november: produktreglerna börjar gälla</b>Generera om operationsförteckningen med <code>python scripts/documentation/list_operations.py</code> och committa, annars fallerar ett test från den dagen. Punkten står i ATT_GORA.</li>
+    <li><b>Styrdokumentsutkasten</b>Minimal styrdokumentshierarki och placeringsriktlinje behöver antas med giltighetsdag innan de tillämpas. Portföljmodellerna är ännu inte skapade i Lakebase.</li>
+    <li><b>Stäm av API-röktestets status</b>B-025 dokumenterar ett godkänt test 11 oktober, medan ATT_GORA fortfarande listar nycklar och röktest som öppet. Ett nytt test kan verifiera den aktuella miljön. Inga nycklar eller modell-API:er har använts i denna uppdatering.</li>
+    <li><b>Schemalagd backup</b>Händelseloggen och godkännandena kan inte genereras fram igen. ATT_GORA föreslår Windows Schemaläggaren för <code>backup_database.py</code>.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>Sammanställt mot main @ fb38590 den 24 oktober 2026: MASTER_CONTEXT, BESLUTSLOGG, ATT_GORA, projektplaner, systemdokumentation och faktisk kod. Pythonrader inkluderar tomrader och kommentarer; testantal kommer från pytest-insamling. Lakebase-uppgifter är dokumenterade verifieringar, inte livevärden. Källor, avgränsningar och ändringar finns i projekt/08_företagsöversikt/UPPDATERING_2026-10-24.md. Sidan är en statisk ögonblicksbild.</p>
+</footer>
+
+<script>
+(function(){
+  var B = {
+    operator:{t:'Operatören',s:'ok',l:'I bruk',a:'Ytor',d:'Du styr bolaget i dag genom Cowork, Claude Code och Codex: bygger, kör skript och fattar beslut. Vardagsarbetet med försäkrade görs i handläggar-UI:t.',h:['Skript för setup, demo, backup, migration, analys och dokumentation','CLAUDE.md och AGENTS.md styr hur AI-verktygen arbetar parallellt i egna brancher','Beslutsloggen med 32 beslut'],m:['Inloggning, när fler än operatören ska arbeta i systemet'],f:['CLAUDE.md','AGENTS.md','scripts/'],x:['#kod','Skripten']},
+    ui:{t:'Handläggar-UI',s:'part',l:'v1 byggd',a:'Ytor · Delprojekt 1 · Fas 4 · B-020, B-032',d:'Lokalt webbgränssnitt (FastAPI, Jinja2 och HTMX) ovanpå tjänstelagret. Handläggaren söker försäkrade, ansluter nya, ändrar lön och kontaktuppgifter, registrerar löneunderlag, sätter fribrev, rättar premier och avgör agentförslag – genom samma operationer som agenterna ska använda. Verifierat i Lakebase 12 oktober.',h:['Sök, översikt, löneunderlag, premiehistorik och händelser per försäkrad','Skrivformulär med motivering; stopp visas med skäl och regel','Godkännandekö och händelselogg','Anslutning av ny försäkrad och arbetsgivare (B-032)'],m:['Inbyggd Claude, efter harness','Inloggning – v1 körs bara lokalt','Tabellen cases och ärendeflöde','Anställningshistorik för återanställning och arbetsgivarbyte'],f:['src/web/','02_system/handläggar-ui.md','projekt/01_ärendehantering/PROJEKTPLAN.md'],x:['#luckor','Vad som saknas']},
+    bi:{t:'Dashboard och Genie',s:'part',l:'Första analysen byggd',a:'Ytor · Delprojekt 2 · B-029',d:'En Databricks AI/BI-dashboard med gemensamma mått, och Genie för frågor i datat. Samma underlag ska försörja dashboarden, agenternas analyser och rapporteringen.',h:['Analys av premieeffekt vid hypotetiskt IBB','Designförslag med frågor, mått och dataflöde'],m:['Lakebase registrerat i Unity Catalog','Mått som metric views, själva dashboarden och Genie-kopplingen','Pod bestand för agenter'],f:['projekt/02_bi_insikter/DASHBOARD_DESIGN.md','src/analytics/'],x:['#delprojekt','Delprojektet']},
+    portal:{t:'Kundportal',s:'none',l:'Ej påbörjat',a:'Ytor · Delprojekt 3',d:'Låtsashemsida där en försäkrad ser sin ålderspension och kan pausa eller skjuta upp utbetalning.',h:['Projektplan','Beslut B-020: samma backend som handläggar-UI:t'],m:['Allt bygge','Uttags- och utbetalningsoperationer i tjänstelagret','Kundinloggning'],f:['projekt/03_kundportal/PROJEKTPLAN.md'],x:['#ordning','Byggordningen']},
+    chat:{t:'Kundchattbot',s:'none',l:'Ej påbörjat',a:'Ytor · Delprojekt 7',d:'Chattbot i kundportalen som svarar på vad kunden får och inte får göra med sin försäkring.',h:['Projektplan','Kunskapskällan: 34 produktregler och villkor v2.0'],m:['Kundportalen att visas i','Pod regelverk för uppslag i regler och villkor'],f:['projekt/07_kundchattbot/PROJEKTPLAN.md'],x:['#regler','Regelkedjan']},
+    harness:{"t":"Harness","s":"part","l":"3b-1–4 byggda","a":"Agentlager · Fas 3b · B-026","d":"Körpolicy, skill-register, dispatcher, kundavgränsning och agentloop är byggda. run_agent anropar AI-lagret, kör tillåtna verktyg, håller historiken och stannar vid väntande godkännande eller nådda gränser.","h":["ecosystem.yaml: forsakring/case_handler med kunddata och berakning","Strikt skill-schema, effektiv profil, policykontroll och versionsbild","Dispatcher och ExecutionScope: avgränsat kunduppdrag","agent_forsakring införd i Lakebase 24 oktober","Agentloop med steg-, kostnads-, tids- och kontexttak; 21 lokala tester gröna"],"m":["3b-5 fortsättning efter godkännande och 3b-6 varaktig körjournal","3b-7–8 komplett användningsfall och röktest mot riktig modell","3b-9 admin-sida för körgränser"],"f":["02_system/harness.md","src/agents/","src/agents/ecosystem.yaml","src/agents/loop.py"],"x":["#agenter","Hur agenterna kopplas in"]},
+    teams:{"t":"7 team, 10 agenter","s":"plan","l":"Målbild + en körprofil","a":"Agentlager · B-026","d":"Avdelningar med en ledande agent som orkestrerare: försäkring, kommunikation, kapital, aktuarie, compliance, ekonomi och utveckling. Du är högsta orkestrerare; det finns ingen VD-agent.","h":["Tio mandatbeskrivningar och sju planerade team","En konfigurerad profil: forsakring/case_handler","Poddarna kunddata och berakning monterade i profilen"],"m":["Komplett ärendeflöde och röktest mot riktig modell","Körprofiler och verktyg för resterande team","Oberoende internrevisionsteam"],"f":["02_system/agentkarta.md","02_system/agenter/"],"x":["#agenter","Teamen"]},
+    pods:{"t":"Skill-poddar","s":"part","l":"2 poddar konfigurerade","a":"Agentlager · B-026","d":"Poddarna kunddata och berakning är konfigurerade för försäkringsteamet. Kunddata kräver avgränsat uppdrag och teamets begränsade databasanslutning. Tre läsverktyg kan då öppnas. Skrivningar begränsas dessutom av datum, tjänstelagret och agentens nekanden.","h":["kunddata: sex mappade tjänsteoperationer, med ytterligare spärrar","berakning: calculate_premium_preview","SkillRegistry bygger verktygsschema ur operationens kontrakt","Agentloop testad med verktygsanrop mot FakeProvider"],"m":["Kompletta användningsfall och verifiering mot riktig modell","Dokument-/regelgateway och övriga domänpoddar"],"f":["src/agents/ecosystem.yaml","src/agents/skills.py","src/agents/scope.py"],"x":["#agenter","Teamen och poddarna"]},
+    flow:{t:'Flödesmotor',s:'plan',l:'Designat',a:'Agentlager · Fas 3c · B-016',d:'Deterministiska flöden över flera team med godkännandesteg och sparat tillstånd, eftersom ett godkännande kan dröja i dagar. Ledande agenter kan också delegera till andra team.',h:['Design i agentekosystem.md §6','Regelförändringsflödet beskrivet i 02_system/Agentsystem/'],m:['Kod och tabeller för flöden och körjournal'],f:['02_system/Agentsystem/regelförändringsflöde.md'],x:['#agenter','Flaggskeppsscenariot']},
+    services:{"t":"Tjänstelagret","s":"ok","l":"Byggt","a":"Kärna · Fas 1f · B-028","d":"Den enda vägen in till försäkringssystemet. Samma operation används av handläggare, agenter och skript. Ett register bestämmer vad agenter får göra, och varje ändring loggas med vem som gjorde den och varför.","h":["15 operationer: 8 läsande eller beräknande, 7 skrivande","Åtkomstregister med AGENT, APPROVAL och HUMAN_ONLY plus golv","Godkännandekö och händelselogg i Lakebase, en transaktion per anrop","184 insamlade testfall; tidigare Postgres-verifiering dokumenterad"],"m":["Regelstyrda operationer: uttag, paus, garanti, pensionsbelopp, avslut","Premie ur löneunderlag (fakturering)","Anställningshistorik för återanställning och arbetsgivarbyte"],"f":["src/services/","src/services/access_register.yaml","02_system/tjänstelager.md"],"x":["#tjanstelagret","Så går ett anrop genom tjänstelagret"]},
+    engine:{t:'Premiemotorn',s:'ok',l:'Byggd',a:'Beräkning · Fas 1c',d:'En ren funktion som räknar ITP1-premien ur lön och inkomstbasbelopp enligt premietrappan, med åldersfönstret 25–66 år och ett sparat beräkningsunderlag för revision.',h:['calculate_itp1_premium','17 tester mot handräknade exempel','Används av tjänstelagret, demogeneratorn och analysen'],m:[],f:['src/skills/calculation/calculate_itp1_premium.py','03_skills/beräkning/beräkna-itp1-premie.md'],x:['#regler','Räkneexempel']},
+    analytics:{t:'Analys',s:'part',l:'Första analysen byggd',a:'Beräkning · Delprojekt 2',d:'Jämför premierna för en vald månad med ett hypotetiskt inkomstbasbelopp. Läser en offline-backup, inte databasen direkt, och skriver en Markdownrapport. Ändrar ingenting i beståndet.',h:['premium_impact.py och snapshot.py','21 tester','Kommandot scripts/analysis/analyze_premium_impact.py'],m:['Läsning via gemensamma tjänster','Hela beståndet, månadstrender, historisk arbetsgivare per premie'],f:['src/analytics/','projekt/02_bi_insikter/ANALYSDESIGN.md'],x:['#delprojekt','Delprojekt 2']},
+    payout:{t:'Pension och betalning',s:'none',l:'Ej påbörjat',a:'Beräkning',d:'Uttag, paus, garanti, pensionsbelopp, slutavräkning och dödsfall. Reglerna är införda och gäller från 1 november, men ingen kod finns.',h:['Produktreglerna PR-ITP1-002–010 och 024–028','Aktuariell grund och parameterregister'],m:['Uttagsdelar, månadsanspråk, betalningsskuld och kapitaljournal i datamodellen','Separat premieläge och pensionsläge','Operationen terminate_policy'],f:['01_domän/produktregler/UTTAG_GEMENSAMT.md','01_domän/aktuariell_grund.md'],x:['#luckor','Vad som saknas']},
+    lakebase:{"t":"Lakebase","s":"ok","l":"I drift","a":"Data · B-018","d":"Operativ Postgres i Databricks. Tio tabeller finns enligt dokumenterade kontroller. Grundbeståndet kompletteras av manuella verifieringsändringar; journalerna kräver backup.","h":["Senast dokumenterad kontroll 24 oktober: 501 försäkrade, 499 försäkringar, 15 097 premier","Tio tabeller och backup/återställning","agent_forsakring införd med begränsade rättigheter"],"m":["Tre portföljtabeller: modeller byggda lokalt, ej skapade i Lakebase","cases samt framtida flödes-/journallagring","Schemalagd backup och migrationsramverk"],"f":["02_system/databasschema.md","src/models/","src/utils/db.py"],"x":["#data","Datamodellen"]},
+    docs:{t:'Regelverk och produktregler',s:'ok',l:'Infört, gäller från 1 november',a:'Kunskap · Delprojekt 4 · B-031',d:'Kedjan källa → tolkning → produktregel → villkor, som dokument. Paketet PR-ITP1 v1.0 infördes genom B-031 och gäller från 2026-11-01. Tjänstelagret läser reglernas status direkt ur filerna, så från den dagen gäller registrets nivåer för agenter.',h:['Regelverkskarta och källregister','10 tolkningar T-ITP1-001–010','34 produktregler PR-ITP1-001–034','Försäkringsvillkor v2.0, aktuariell grund, parameterregister','Införandebeslut B-031 i paketets README'],m:['Kod för de regelstyrda operationerna: uttag, paus, garanti, pensionsbelopp, avslut'],f:['04_regulatoriskt/','01_domän/produktregler/README.md'],x:['#regler','Från lag till kod']},
+    styr:{"t":"Styrdokument","s":"part","l":"Beslutsutkast finns","a":"Kunskap · lager 3 i B-010","d":"Minimal styrdokumentshierarki och placeringsriktlinje är framtagna 24 oktober som beslutsutkast, ännu utan antagande eller giltighetsdag.","h":["SD-STYR-001 v0.1: struktur, ägarskap, revisionscykel och metadata","SD-KAP-001 v0.1: målvikter, risklimiter, likviditet, ALM, stress och rebalansering"],"m":["Antagande och giltighetsdag","Fullständigt register, övriga policies och samlat kontrollsystem"],"f":["05_styrdokument/styrdokumentshierarki.md","05_styrdokument/03_riktlinjer/placeringsriktlinje.md"],"x":["#luckor","Vad som saknas"]},
+    ai:{"t":"AI-lagret","s":"ok","l":"Byggt","a":"Tvärgående · Fas 3 · B-025","d":"Egen tunn wrapper ovanpå Anthropics och OpenAIs SDK:er. Agenter väljer en roll, fast, standard eller deep, aldrig en modell, och varje roll har reserv hos den andra leverantören.","h":["Modellroller, leverantörsreserv, teamnycklar och anropslogg","83 insamlade testfall mot fejkleverantör","B-025 dokumenterar godkänt API-röktest 11 oktober","Används av run_agent via ai.bind och modellroll"],"m":["Röktest av agentloopen mot riktig modell","Nytt API-röktest kvarstår i ATT_GORA; status behöver stämmas av"],"f":["src/ai/","src/ai/ai_config.yaml","02_system/ai_abstraktion.md"],"x":["#agenter","Hur agenterna kopplas in"]},
+    capital:{"t":"Kapitalförvaltning","s":"part","l":"Modeller lokalt byggda","a":"Delprojekt 5 · Fas 2 · B-019","d":"Paper trading utan riktigt kapital. Dokumentutkast och datamodell finns; ingen handel, marknadsdata eller förvaltningsfunktion är aktiverad.","h":["Minimal styrdokumentshierarki och placeringsriktlinje som beslutsutkast","Portfolio, PortfolioHolding och Trade i src/models/","100 insamlade testfall för portföljmodellerna"],"m":["Antagande av styrdokument och godkänd instrumentlista","Tabellskapande i Lakebase efter samordning","Kapitalgateway, saldo-/innehavsberäkning, marknadsdata och förvaltningslogik","Premiekoppling och BI-underlag"],"f":["projekt/05_kapitalförvaltning/PROJEKTPLAN.md","src/models/portfolio.py","src/models/portfolio_holding.py","src/models/trade.py"],"x":["#data","Datamodellen"]}
+  };
+  var esc = function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  var list = function(a){return a.length ? '<ul>'+a.map(function(i){return '<li>'+esc(i)+'</li>';}).join('')+'</ul>' : '<p class="note">Inget utestående.</p>';};
+  var detail = document.getElementById('detail');
+  function show(k){
+    var b = B[k]; if(!b) return;
+    detail.innerHTML =
+      '<div class="detail-head"><span class="chip st-'+b.s+'">'+esc(b.l)+'</span><span>'+esc(b.a)+'</span></div>'+
+      '<h3>'+esc(b.t)+'</h3><p>'+esc(b.d)+'</p>'+
+      '<div class="detail-cols"><div><h4>Finns</h4>'+list(b.h)+'</div><div><h4>Saknas</h4>'+list(b.m)+'</div></div>'+
+      '<p class="detail-files">I repot: '+b.f.map(function(f){return '<code>'+esc(f)+'</code>';}).join(' ')+'</p>'+
+      '<p><a href="'+b.x[0]+'">'+esc(b.x[1])+'</a></p>';
+    document.querySelectorAll('.blk').forEach(function(el){el.setAttribute('aria-pressed', el.dataset.k===k ? 'true':'false');});
+  }
+  document.querySelectorAll('.blk').forEach(function(el){
+    el.addEventListener('click', function(){ show(el.dataset.k); });
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+  var ids = links.map(function(a){return a.getAttribute('href').slice(1);});
+  if('IntersectionObserver' in window){
+    var current = null;
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ current = e.target.id; } });
+      links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href') === '#'+current); });
+    }, {rootMargin:'-30% 0px -60% 0px'});
+    ids.forEach(function(id){ var el = document.getElementById(id); if(el) obs.observe(el); });
+  }
+})();
+</script>
