@@ -89,8 +89,9 @@ DM Sans och mjukare former. Webb, handläggargränssnitt, rapporter, dokumentati
 och presentationer ska använda samma grund, även när de skapas av olika agenter.
 Specifikation och visuell referens finns i [`06_design/`](06_design/README.md);
 gemensamma designvärden i `src/design/digital_clarity.tokens.json`.
-Designgrunden är dokumenterad; mallar, genereringsskills och införande i befintliga
-ytor byggs stegvis enligt ATT_GORA. Designspråket ändrar inte tjänstelagrets
+Designgrunden är dokumenterad och tillämpad i handläggar-UI:t, som är pilotytan.
+Webbens CSS-variabler genereras där ur tokenfilen. Mallar, genereringsskills och
+införande i övriga ytor byggs stegvis enligt ATT_GORA. Designspråket ändrar inte tjänstelagrets
 behörigheter eller den beslutade webbarkitekturen.
 
 ---
@@ -258,7 +259,7 @@ Artificiellalecta/
 │   ├── services/                   ← Tjänstelagret (B-028): kontrakt, access_register.yaml, godkännande, händelselogg
 │   ├── web/                        ← Handläggar-UI:t (Fas 4): sidor, templates/, static/ – anropar bara tjänstelagret
 │   ├── analytics/                  ← Analyser och scenarier (delprojekt 2)
-│   ├── design/                     ← Gemensamma designvärden (digital_clarity.tokens.json)
+│   ├── design/                     ← Gemensamma designvärden (digital_clarity.tokens.json) och webbens CSS-variabler ur dem
 │   └── utils/                      ← Gemensam kod
 │
 ├── tests/                          ← Tester

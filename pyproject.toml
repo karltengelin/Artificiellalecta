@@ -41,6 +41,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 ai = ["*.yaml"]
+design = ["*.json"]
 services = ["*.yaml"]
 web = ["templates/*.html", "templates/partials/*.html", "static/*"]
 

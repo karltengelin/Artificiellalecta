@@ -13,6 +13,7 @@ Det finns ingen separat kodbas per delprojekt eller avdelning (B-015/B-024).
 | skills/calculation | Ren ITP1-premieberäkning, återanvänd av operationer och analyser |
 | ai | Modellroller, leverantörsadaptrar, strukturerade svar, nycklar och anropslogg |
 | analytics | Första scenarioberäkningen och adapter för offline-backup |
+| design | Digital klarhets tokenfil (B-034) och webbens CSS-variabler som härleds ur den (`web_css.py`) |
 | reporting | Avgränsad exempelrapport om agentnyttjande: fiktiv data, Digital klarhet, PDF/Markdown och diagram. Ingen aktiverad skill |
 | utils | Databasanslutning, backup/återställning, återanvändbar migrationskod och demobeståndet för handläggar-UI:t |
 | web | Handläggar-UI:t (Fas 4): FastAPI-sidor som bara anropar tjänstelagret, se [handläggar-ui.md](handläggar-ui.md) |
@@ -44,6 +45,7 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | documentation | [list_skills.py](../scripts/documentation/list_skills.py) | Uppdatera körpolicyns skills i skillkatalogen | Skriver tabellen i `03_skills/skillkatalog.md`; `--check` jämför utan att skriva. Ingen databas eller AI |
 | documentation | [show_agent_profile.py](../scripts/documentation/show_agent_profile.py) | Visa en agents effektiva verktyg enligt `src/agents/ecosystem.yaml`, med skäl för dolda | Skriver till stdout; `--date` prövar regelstatus mot ett datum. Ingen databas eller AI |
 | documentation | [build_agent_usage_example.py](../scripts/documentation/build_agent_usage_example.py) | Bygg den fiktiva rapporten om agentnyttjande i Digital klarhet | Läser enbart exempel-JSON, Markdown och designvärden; skriver PDF, Markdown och SVG i `output/pdf/` samt lokal kontroll i `tmp/pdfs/`. Kräver `reportlab` och lokala DM Sans-TTF-filer; se [exemplet](../06_design/exempel/README.md). Ingen databas eller AI |
+| web | [build_design_tokens.py](../scripts/web/build_design_tokens.py) | Generera handläggar-UI:ts CSS-variabler ur Digital klarhets tokenfil | Skriver `src/web/static/tokens.css`; `--check` jämför utan att skriva. Ingen databas eller AI |
 | web | [start_ui.py](../scripts/web/start_ui.py) | Starta handläggar-UI:t på 127.0.0.1 | `--db demo` (standard) skapar en lokal SQLite med demobestånd; `--db svc_test` ett eget schema i den isolerade testdatabasen; `--db lakebase` läser och skriver beståndet via tjänstelagret |
 
 ## Typiska arbetsflöden
