@@ -22,6 +22,8 @@ dependencies = [
     "uvicorn>=0.30",
     "jinja2>=3.1",
     "python-multipart>=0.0.9",
+    # Rapportmall och vektordiagram i Digital klarhet (src/reporting/).
+    "reportlab>=4.4,<5",
 ]
 
 [project.optional-dependencies]
@@ -43,6 +45,7 @@ where = ["src"]
 ai = ["*.yaml"]
 services = ["*.yaml"]
 web = ["templates/*.html", "templates/partials/*.html", "static/*"]
+design = ["*.json"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

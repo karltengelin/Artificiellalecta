@@ -15,11 +15,13 @@ Det ska kännas modernt, professionellt och lugnt, med informationen i centrum.
 - [Beslutslogg](../BESLUTSLOGG.md) – B-034 fastställer valet.
 - [Införandeplan](../ATT_GORA.md) – se Grafisk identitet och designsystem.
 - [Utförlig exempelrapport om agentnyttjande](exempel/README.md) – PDF och Markdown med fiktiva analyser, diagram och tabeller i Digital klarhet.
+- [Återanvändbar rapportmall](rapportmall.md) – A4-komponenter för sidhuvud, rubriker, nyckeltal, tabeller och vektordiagram; används av exempelrapporten.
 
 Designspecifikationen är den normativa beskrivningen. Tokenfilen är den gemensamma
 källan till de maskinläsbara grundvärdena. Den visuella referensen är en bevarad
 ögonblicksbild av det valda förslaget, med exempeldata och skisser av komponenter.
 Den är inte en kopia av dagens handläggar-UI eller en färdig rapport-/PPTX-mall.
 
-Designgrunden är dokumenterad. Införande i befintliga ytor, färdiga dokument- och
-presentationsmallar samt de gemensamma genereringsskillsen återstår enligt backloggen.
+Designgrunden och en första återanvändbar A4-rapportmall finns. Införande i
+befintliga ytor, övriga dokument- och presentationsmallar samt de gemensamma
+genereringsskillsen återstår enligt backloggen.

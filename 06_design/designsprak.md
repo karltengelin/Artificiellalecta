@@ -128,8 +128,9 @@ historiska referensen inte blir en andra källa för dagens värden.
 
 ## Införande och kvarstående arbete
 
-Vald riktning, specifikation v1.0 och första tokenfil är dokumenterade. Färdiga
-mallar, genereringskod, gemensamma skills, fullständigt logotyppaket och anpassning
+Vald riktning, specifikation v1.0 och första tokenfil är dokumenterade. En första
+[återanvändbar A4-rapportmall](rapportmall.md) med exempelrapport finns.
+Övriga mallar, gemensamma skills, fullständigt logotyppaket och anpassning
 av befintliga gränssnitt återstår i `ATT_GORA.md`. Införandet sker stegvis med
 en representativ handläggarvy, en rapport och en presentation som gemensam kontroll.
 
