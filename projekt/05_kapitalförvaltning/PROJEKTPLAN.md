@@ -12,9 +12,19 @@ regelstyrt. Kapitaldata ska lagras så BI (projekt 2) kan ta ut insikter ur den.
 
 🟡 Fas 2a och 2b:s dokumentleveranser klara som beslutsutkast 2026-10-24:
 minimal styrdokumentshierarki (SD-STYR-001 v0.1) och placeringsriktlinje
-(SD-KAP-001 v0.1). Antagande och giltighetsdag återstår. Fas 2c–2e
-(datamodell, marknadsdata och förvaltningslogik) samt analysgränssnittet
-återstår; ingen paper trading-funktion är implementerad.
+(SD-KAP-001 v0.1). Antagande och giltighetsdag återstår. Fas 2c:s datamodell
+är byggd och testad lokalt; tabellerna är inte skapade i Lakebase.
+Marknadsdata och förvaltningslogik (2d/2e) samt analysgränssnittet återstår;
+ingen paper trading-funktion är aktiverad.
+
+**Fas 2c, steg 1 och 2 klara 2026-10-24:** [Modellval A–F](DATAMODELL_BESLUTSFORSLAG.md)
+har tillämpats inom operatörens mandat att välja modell och fortsätta efter
+designstoppet. `Portfolio`, `PortfolioHolding` och `Trade` finns i `src/models/`,
+dokumenterade i databasschemat §§9d–9f. Separat startkassa, härledda saldon
+(beräkningskod senare), kompletta affärskvittenser och bevarade prisunderlag.
+Lokala SQLite-tester samt kompilering av Postgres-DDL utan anslutning;
+ingen gateway, extern handelsplattform, seed eller Lakebase-körning ingår.
+Modellerna registreras automatiskt för befintligt `create_tables.py`, som inte körts.
 
 ## Beroenden
 

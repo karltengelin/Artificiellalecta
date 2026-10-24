@@ -19,10 +19,11 @@
 | `salary_reports` | Löneunderlag – pensionsmedförande lön per person, arbetsgivare och månad, versionerat | 🟢 Skapad i Lakebase 2026-10-11 (Fas 1f T3, §8b) – tom tills underlag registreras |
 | `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟢 I drift (seedad 2023–2026) |
 | `operation_events` / `approval_requests` | Tjänstelagrets händelselogg och godkännandekö (§9b–9c) | 🟡 Fas 1f T3a |
+| `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
 
 **Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för försäkringens läge. Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
-**Planerade tabeller (ej i denna omgång):** `portfolios`/`portfolio_holdings`/`trades` (Fas 2, B-019), `cases` (ärenden, Fas 5).
+**Planerade tabeller (ej i denna omgång):** `cases` (ärenden, Fas 5). Kapitalets kassaflödesjournal och premiekoppling byggs senare; se §9d.
 
 ---
 
@@ -315,6 +316,157 @@ Tabellen är **append-only**: en rättelse är en ny version som pekar på den d
 
 ---
 
+## 9d. Tabell: `portfolios` – Simulerade portföljscenarier
+
+**Domän:** En kollektiv, fristående testportfölj enligt B-003/B-019/B-021.
+Operatören gav 2026-10-24 mandat att välja modell och fortsätta efter designstoppet;
+modellval A–F i [beslutsunderlaget](../projekt/05_kapitalförvaltning/DATAMODELL_BESLUTSFORSLAG.md)
+tillämpas. Inget nytt beslut är infört i BESLUTSLOGG. SD-KAP-001 v0.1 är fortsatt
+ett ej antaget utkast. Modellerna ger inga handelsbehörigheter.
+
+| Kolumn | Datatyp | Constraints / betydelse |
+|---|---|---|
+| `id` | UUID | PK, Python-default `uuid4` |
+| `scenario_code` | VARCHAR(64) | NOT NULL, UNIQUE, ej blank |
+| `name`, `scenario_description` | VARCHAR(200), TEXT | NOT NULL, ej blanka |
+| `mode` | VARCHAR(20) | NOT NULL, default och CHECK `paper` |
+| `scenario_type` | VARCHAR(20) | NOT NULL, default och CHECK `standalone` |
+| `base_currency` | VARCHAR(3) | NOT NULL, default och CHECK `SEK` |
+| `settlement_model` | VARCHAR(30) | NOT NULL, default och CHECK `instant_simulated` |
+| `starts_at` | TIMESTAMPTZ | NOT NULL, scenariots starttid |
+| `opening_cash_sek` | NUMERIC(18,2) | NOT NULL, ≥ 0, ingen standardinsättning |
+| `funding_basis` | JSONB | NOT NULL; källa, belopp, tid och mänskligt finansieringsbeslut |
+| `guideline_reference`, `guideline_version` | VARCHAR(200), VARCHAR(40) | NOT NULL, ej blanka; styrgrundens identitet/version |
+| `guideline_hash` | VARCHAR(64) | NOT NULL, längd 64; underlagets SHA-256 |
+| `scenario_basis` | JSONB | NOT NULL; scenario, godkänd uppbyggnadsplan och antaganden |
+| `created_at`, `updated_at` | TIMESTAMPTZ | Basmodellens standardfält |
+
+Startkassan är ett uttryckligt finansieringsfaktum, inte ett ändringsbart saldo.
+Det ska låsas efter scenariostart av den framtida kapitalgatewayen.
+Inga ingående värdepapper, insättningar eller uttag stöds i denna version.
+Portföljen ska märkas **fristående portföljtest, inte åtagandetäckning**.
+
+**Saldokontrakt för senare kod:** antal andelar = utförda köp minus utförda
+försäljningar; kassa = startkassa minus köpens bruttolikvid plus försäljningarnas
+bruttolikvid minus samtliga avslutskostnader. Endast `executed` räknas.
+Fri kassa drar dessutom av `max_cash_sek` för `approved` köp; fri säljbar kvantitet
+drar av `quantity` för `approved` sälj. Förslag reserverar inget. Avslag frigör
+reservationen; utförande ersätter den med faktisk effekt i en transaktion.
+Härledningen, reservationerna och saldokontrollen implementeras i ett senare steg.
+
+NAV, aktuella saldon, avkastning och anskaffningsvärden lagras inte. Full §6-NAV
+kräver aktuella priser, kassa, säkra fordringar, skulder och upplupna kostnader;
+saknade komponenter är **ej beräknade**. `instant_simulated` betyder samtidig
+simulerad leverans av andelar och likvid; fonders verkliga avveckling och
+fördröjningsstress kräver senare utbyggnad. Godkända försäljningar är inte fri likvid.
+
+**Senare premieinsättningar:** separat planerad kassaflödesjournal med avstämda,
+mänskligt godkända batcher. Bara faktiskt betalda och tilldelade premieflöden,
+inte en okontrollerad kopia av försäkringskapitalet. En försäkringsnära avstämning
+hindrar överlappande källtransaktioner; kapitaldelen får aggregat och unik,
+ogenomskinlig källreferens utan individdata. Premier är externa avkastningsflöden.
+PR-ITP1-028:s kapitaländamål, finansiering och ALM måste vara avstämda före
+beståndskoppling. Ingen import eller sådan journal byggs i Fas 2c.
+
+## 9e. Tabell: `portfolio_holdings` – Portföljens instrument
+
+**Domän:** Instrumentregistrering per portfölj, även vid noll andelar. Antal
+och marknadsvärde härleds senare; en registrering bevisar inte köpbehörighet.
+
+| Kolumn | Datatyp | Constraints / betydelse |
+|---|---|---|
+| `id` | UUID | PK, Python-default `uuid4` |
+| `portfolio_id` | UUID | NOT NULL, FK → `portfolios(id)` ON DELETE RESTRICT |
+| `instrument_key`, `name` | VARCHAR(100), VARCHAR(200) | NOT NULL, ej blanka; entydig andelsklass, normalt ISIN |
+| `market_symbol`, `market_reference` | VARCHAR(100), VARCHAR(100) | NULL; ticker är inte ensam identitet |
+| `allocation_bucket` | VARCHAR(30) | NOT NULL, CHECK `sek_fixed_income` / `global_equity` / `swedish_equity` |
+| `price_currency` | VARCHAR(3) | NOT NULL, längd 3; handels-/prisvaluta, inte bevis på underliggande valutarisk |
+| `instrument_basis_reference` | VARCHAR(200) | NOT NULL, ej blank |
+| `instrument_basis_hash` | VARCHAR(64) | NOT NULL, längd 64 |
+| `instrument_basis` | JSONB | NOT NULL; mandat, prövning, godkännande, genomlysningskälla/-datum och version |
+| `created_at`, `updated_at` | TIMESTAMPTZ | Basmodellens standardfält |
+
+**Unikhet:** `(portfolio_id, instrument_key)`; indexet stöder även portföljuppslag.
+Kassa har ingen instrumentrad. Identitet och allokeringsdel ska låsas efter
+första affärsförslaget; gamla trades bevarar eget versionsbundet underlag.
+
+Koderna motsvarar mål 55/25/10 % och kassa 10 %. Intervall och övriga limiter
+ägs av riktlinjen, inte ändringsbara modellstandarder: räntor 45–70 %, aktier
+totalt 25–45 %, globaldel 20–35 %, svensk del 5–15 %, kassa 5–20 %.
+Någon limitmotor, instrumentlista eller genomlysning skapas inte i 2c.
+Underlag för bl.a. UCITS, fysisk replikering, rating, duration, emittent/grupp,
+fondtak, valuta och likviditet behövs före köp. Saknad/för gammal data är
+**ej verifierad**, aldrig noll eller antaget godkänt.
+
+## 9f. Tabell: `trades` – Affärsförslag och simulerade avslut
+
+**Domän:** Ett låst köp-/säljförslag med separata kvittenser som fylls i en gång.
+Ingen återanvändning av försäkringens `approval_requests` eller `operation_events`.
+Livscykel: `proposed → approved → executed`, `proposed → rejected` eller
+`approved → rejected`. Utfört/avslaget är slutligt. Agenten får föreslå;
+människa måste godkänna även simulerade portföljändringar (harness §9.5).
+
+| Kolumn | Datatyp | Constraints / betydelse |
+|---|---|---|
+| `id` | UUID | PK, Python-default `uuid4` |
+| `portfolio_holding_id` | UUID | NOT NULL, FK → `portfolio_holdings(id)` ON DELETE RESTRICT; portfölj via instrumentet |
+| `side`, `status` | VARCHAR(10), VARCHAR(20) | NOT NULL; CHECK `buy`/`sell`, respektive `proposed`/`approved`/`executed`/`rejected`; default `proposed` |
+| `quantity`, `limit_price` | NUMERIC(24,10) | NOT NULL, > 0; exakt kvantitet, högsta köppris/lägsta säljpris i prisvalutan |
+| `max_cost_sek` | NUMERIC(18,2) | NOT NULL, ≥ 0; kostnadstak |
+| `max_cash_sek`, `min_proceeds_sek` | NUMERIC(18,2) | Köp: bara `max_cash_sek`, > 0 inkl. kostnader; sälj: bara `min_proceeds_sek`, ≥ 0 efter kostnader |
+| `proposed_at`, `valid_until` | TIMESTAMPTZ | NOT NULL, `valid_until > proposed_at` |
+| `proposed_by`, `proposer_type`, `reason` | VARCHAR(100), VARCHAR(10), TEXT | NOT NULL, ej blank aktör/motivering; typ `human`/`agent` |
+| `run_reference`, `order_group_reference` | VARCHAR(100), VARCHAR(100) | NULL; gruppreferens ger inte gruppgodkännande |
+| `proposal_hash` | VARCHAR(64) | NOT NULL, längd 64; exakt förslag, prisvillkor och versioner |
+| `proposal_price_basis`, `proposal_basis` | JSONB | NOT NULL; prisunderlag respektive versionsbundet kontroll-/beslutsunderlag |
+| `approved_at`, `approved_by`, `approval_role` | TIMESTAMPTZ, VARCHAR(100), VARCHAR(100) | Alla tillsammans med nedanstående godkännandefält; ej blank aktör/roll |
+| `approved_proposal_hash`, `approval_basis` | VARCHAR(64), JSONB | Matchande `proposal_hash` och godkännandekvitto |
+| `executed_at`, `execution_price`, `execution_fx_rate` | TIMESTAMPTZ, NUMERIC(24,10), NUMERIC(24,10) | Komplett utförandekvitto tillsammans med nedanstående; pris/faktor > 0 |
+| `gross_sek`, `cost_sek` | NUMERIC(18,2) | Utförandets positiva bruttolikvid och kostnad ≥ 0 |
+| `execution_price_basis`, `execution_basis` | JSONB | Utförandets pris-/valutakälla och bokningskvitto |
+| `rejected_at`, `rejected_by`, `rejection_reason` | TIMESTAMPTZ, VARCHAR(100), TEXT | Komplett avslagskvitto; ej blank aktör/motivering |
+| `supersedes_trade_id`, `corrects_trade_id` | UUID | NULL, själv-FK ON DELETE RESTRICT; inte eget id |
+| `created_at`, `updated_at` | TIMESTAMPTZ | Basmodellens standardfält |
+
+**CHECK-kontrakt:** varje kvittensgrupp är helt NULL eller helt ifylld (inklusive
+JSON-kolumner). `proposed` saknar kvittenser; `approved` har bara godkännandet;
+`executed` har godkännande och utförande; `rejected` har avslaget och kan bevara
+ett tidigare komplett godkännande, men inget utförande. Godkännandets hash
+måste matcha förslagets. `proposed_at ≤ approved_at ≤ executed_at ≤ valid_until`
+gäller där respektive tid finns; avslag ligger tidigast vid förslag/godkännande
+och får ske efter giltighetstidens slut. Utförandets kostnad får inte överstiga
+taket. Pris och SEK-totallikvid måste hålla köp-/säljvillkoren.
+
+**Index:** `(portfolio_holding_id, executed_at)` och `(status, proposed_at)`.
+Ett id kan bära högst ett utförande. Delavslut eller upprepad godkännandeomgång
+stöds inte. Ändrat förslag ger en ny länkad rad; ett utfört avslut rättas med
+ny mänskligt godkänd kompensation, inte omskriven historik.
+
+**Pris- och valutaunderlag:** för prövning och utförande sparas skilda
+ögonblicksbilder med instrument/andelsklass, leverantör, källreferens, kurstyp,
+marknad/kalender, observationstid, hämtningstid, pris och prisvaluta samt
+valutafaktor (SEK per enhet prisvaluta) med egen källa/tid. SEK har faktor 1,
+märkt som identitet. Typade utförandekolumner och JSON måste stämma överens.
+Bruttolikvid = kvantitet × avslutspris × valutafaktor, `Decimal`, avrundat
+till ören med `ROUND_HALF_UP`; kostnaden dras exakt en gång. UTC används för
+tidpunkter; kursfärskhet avser relevant handelsdag, inte ett 24-timmarsfönster.
+
+**Begränsning:** CHECK säkrar radens struktur, inte tidigare övergångar,
+autentiserad mänsklig identitet, JSON-innehållets schema eller oföränderlighet.
+Framtida kapitalgateway ska säkra dessa, kanonisering/hash, länkar inom rätt
+portfölj, idempotens, portföljlåsning och reservationer, positiva saldon,
+pris-/valutavalidering, färskhet, limiter/stress och revisionsspår även för
+passiva brott eller beslut att avstå. Ingen sådan operation byggs i 2c.
+
+**Portabilitet:** generiska constraints, UUID och `JSON(none_as_null=True)` med
+JSONB-variant i Postgres. Python-`None` blir SQL NULL, så kvittensgrupperna kan
+kontrolleras. SQLite-tester körs med FK-kontroll, men ger inte Postgres
+precision, tidszonsskydd eller samtidighetsbevis. Postgres-DDL kompileras lokalt;
+ingen extern databas ansluts. `src/models/__init__.py` registrerar tabellerna
+för befintligt `scripts/setup/create_tables.py`; skriptet har inte körts.
+
+---
+
 ## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**
@@ -362,8 +514,9 @@ Tabellen är **append-only**: en rättelse är en ny version som pekar på den d
 - **B-015** – mappstruktur och namnkonvention (engelska i kod, svenska i dokumentation)
 - **B-021** – produktförenklingar (kapitalavgift som `fee`-transaktion m.m.)
 - **B-022** – försäkringsmodell: flera försäkringar per person, förmåner och tillståndsperioder (ersätter B-021:s ett-avtal-regel)
+- **B-003/B-019** – simulerad kapitalförvaltning; modellval i `projekt/05_kapitalförvaltning/DATAMODELL_BESLUTSFORSLAG.md`, tillämpade inom operatörens mandat 2026-10-24, ingen ny beslutsloggspost
 - **MASTER_CONTEXT §6** – dataarki­tektur (övergripande)
 - Domänregler: `01_domän/ITP1_regelverk.md` (premietrappa, åldersfönster), `01_domän/försäkringsvillkor.md` (livscykel, fakturering)
-- SQLAlchemy-modeller: `src/models/employer.py`, `insured_person.py`, `policy.py`, `policy_state.py`, `policy_benefit.py`, `premium_transaction.py`, `salary_report.py`, `base_amount.py`, `operation_event.py`, `approval_request.py`
+- SQLAlchemy-modeller: `src/models/employer.py`, `insured_person.py`, `policy.py`, `policy_state.py`, `policy_benefit.py`, `premium_transaction.py`, `salary_report.py`, `base_amount.py`, `operation_event.py`, `approval_request.py`, `portfolio.py`, `portfolio_holding.py`, `trade.py`
 - Mockdatagenerering: `scripts/demo/generate_mock_data.py`
 - Databas-seed: `scripts/demo/seed_mock_data.py` *(seedar Lakebase via `DATABASE_URL`)*
