@@ -44,3 +44,17 @@ def test_app_css_har_inga_egna_fargvarden_och_bara_kanda_variabler():
 def test_basmallen_laddar_tokens_fore_stilarket():
     base = (STATIC_DIR.parent / "templates" / "base.html").read_text(encoding="utf-8")
     assert base.index("/static/tokens.css") < base.index("/static/app.css")
+
+
+def test_stilarken_lankas_med_innehallsversion_sa_att_gammal_cache_inte_anvands():
+    from web.handler import static_version, templates
+
+    version = templates.env.globals["static_version"]
+    assert version == static_version() and len(version) == 12
+    html = templates.env.get_template("base.html").render(
+        request=type("R", (), {"url": type("U", (), {"path": "/"})()})(),
+        settings=type("S", (), {"is_production": False, "database": "demo", "database_label": "Demo", "handler_id": "karl"})(),
+        pending_approvals=0,
+    )
+    assert f'href="/static/app.css?v={version}"' in html
+    assert f'href="/static/tokens.css?v={version}"' in html

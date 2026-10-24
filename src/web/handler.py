@@ -7,6 +7,7 @@ Allt som rör data går genom `ServiceLayer`: läsoperationer med `read()`,
 
 from __future__ import annotations
 
+import hashlib
 import json
 import secrets
 from pathlib import Path
@@ -35,6 +36,18 @@ templates.env.filters.update(
     pretty_json=lambda value: json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True),
 )
 templates.env.globals["field_names"] = presenters.FIELD_NAMES
+
+
+def static_version() -> str:
+    """Kort innehållshash för stilarken. Läggs som ?v= på länkarna, så att webbläsaren
+    hämtar nya filer efter en ändring i stället för en cachad gammal version."""
+    digest = hashlib.sha256()
+    for path in sorted(STATIC_DIR.glob("*.css")):
+        digest.update(path.name.encode() + b"\0" + path.read_bytes())
+    return digest.hexdigest()[:12]
+
+
+templates.env.globals["static_version"] = static_version()
 
 
 def service(request: Request) -> ServiceLayer:
