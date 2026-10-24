@@ -1,6 +1,6 @@
 # Beslutsförslag: datamodell för paper trading (Fas 2c)
 
-> **Status:** Förslag för operatörens beslut. Steg 1 levererat; steg 2 inväntar uttryckligt OK.
+> **Status:** Modellval A–F tillämpade efter operatörens mandat i chatten 2026-10-24 att välja modell och fortsätta. Steg 2 byggt och testat lokalt; ingen Lakebase-körning. Inget nytt beslut loggat.
 > **Datum:** 2026-10-24 | **Bas:** `origin/main` vid `6445074`, hämtad 2026-10-24; harness 3b-1/3b-2 ingår.
 > **Underlag:** [SD-KAP-001 v0.1](../../05_styrdokument/03_riktlinjer/placeringsriktlinje.md), särskilt §§2–8 och 10; [harness](../../02_system/harness.md) §§1, 4.3 och 9.5; [databasschema](../../02_system/databasschema.md) §§2 och 8.
 > **Bygger på:** B-003, B-019, B-021/B-022 och B-028; PR-ITP1-020/028 i produktpaketet B-031.
@@ -236,7 +236,7 @@ batchjournal och mottagnings-/rättelsekontrakt är uttryckliga senare beroenden
 
 ## 4. Föreslaget kolumnkontrakt för steg 2
 
-Detta är modellförslaget; det aktuella databasschemat ändras först efter OK.
+Detta kontrakt är implementerat i steg 2 och dokumenterat i `02_system/databasschema.md` §§9d–9f.
 Alla tre tabeller får UUID-nyckel och basmodellens `created_at`/`updated_at`.
 FK:er använder `ON DELETE RESTRICT`. Pengar är `Numeric(18,2)`, kvantitet/pris
 och SEK-valutafaktor `Numeric(24,10)`, beräknat med `Decimal`. Belopp i SEK

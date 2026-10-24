@@ -13,8 +13,11 @@ from .operation_event import OperationEventRecord
 from .policy import Policy
 from .policy_benefit import PolicyBenefit
 from .policy_state import PolicyState
+from .portfolio import Portfolio
+from .portfolio_holding import PortfolioHolding
 from .premium_transaction import PremiumTransaction
 from .salary_report import SalaryReport
+from .trade import Trade
 
 __all__ = [
     "ApprovalRequestRecord",
@@ -26,6 +29,9 @@ __all__ = [
     "Policy",
     "PolicyBenefit",
     "PolicyState",
+    "Portfolio",
+    "PortfolioHolding",
     "PremiumTransaction",
     "SalaryReport",
+    "Trade",
 ]
