@@ -28,7 +28,15 @@ class SkillDeniedError(HarnessError):
 
 
 class SkillInputError(HarnessError):
-    """Modellens anrop validerar inte mot skillens schema – inklusive okända fält."""
+    """Modellens anrop validerar inte mot skillens schema.
+
+    `security` när anropet har okända fält (t.ex. en påhittad aktör eller godkännare) –
+    ett försök att ta sig förbi schemat, inte ett vanligt fel som modellen kan rätta.
+    """
+
+    def __init__(self, message: str, *, security: bool = False):
+        super().__init__(message)
+        self.security = security
 
 
 class ScopeError(HarnessError):

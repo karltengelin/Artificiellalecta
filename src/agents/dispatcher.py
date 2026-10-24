@@ -10,8 +10,9 @@ personnummer eller återanvända ett anrop som var tillåtet tidigare.
 
 Ordningen för en grupp anrop i samma modellsvar:
   1. Hela gruppen prövas först: dubbla call-id, okänt eller dolt verktyg, okända
-     fält, ogiltiga argument, ändrad policy och resursmandat. Ett enda nej stoppar
-     gruppen innan något körs – alla anrop får ett svar med skälet.
+     fält, ändrad policy och resursmandat är säkerhetsbrott (DENIED); ett ogiltigt
+     värde är ett vanligt fel som modellen kan rätta (INVALID). Båda stoppar gruppen
+     innan något körs – alla anrop får ett svar med skälet.
   2. Giltiga anrop körs sekventiellt via tjänstelagret, som agenten. Policyn prövas
      igen före varje anrop.
   3. Första förslaget som väntar på godkännande stoppar resten; de får svaret
@@ -39,7 +40,7 @@ from agents.skills import ServiceSkill
 from ai import ToolCall, ToolResult
 from services import Actor, OperationContext, ServiceError, ServiceLayer
 
-GROUP_STOPPED = "Inte utfört: ett annat anrop i samma svar nekades, så inget i gruppen kördes."
+GROUP_STOPPED = "Inte utfört: ett annat anrop i samma svar avvisades, så inget i gruppen kördes."
 WAITING = "Inte utfört: ett tidigare anrop i samma svar väntar på handläggarens godkännande."
 
 
@@ -47,6 +48,7 @@ class CallStatus(StrEnum):
     DONE = "done"
     PENDING_APPROVAL = "pending_approval"
     DENIED = "denied"  # nekat av harness före tjänstelagret – säkerhetsgräns
+    INVALID = "invalid"  # ogiltigt värde i argumenten – modellen kan rätta; ingenting kört
     ERROR = "error"  # tjänstelagret avböjde (stopp, krock, saknas) – ingenting ändrat
     WITHHELD = "withheld"  # utfört, men resultatet låg utanför scopet och lämnades inte ut
     NOT_EXECUTED = "not_executed"
@@ -60,6 +62,7 @@ class CallOutcome:
     result: ToolResult
     approval_id: str | None = None
     reasons: tuple[str, ...] = ()
+    error_type: str | None = None  # vid INVALID/ERROR: felklassen, t.ex. "BlockedError"
 
 
 @dataclass(frozen=True)
@@ -82,6 +85,15 @@ class DispatchOutcome:
     @property
     def denied(self) -> bool:
         return any(c.status == CallStatus.DENIED for c in self.calls)
+
+    @property
+    def withheld(self) -> bool:
+        return any(c.status == CallStatus.WITHHELD for c in self.calls)
+
+    @property
+    def error_types(self) -> tuple[str, ...]:
+        """Felklasser för anrop som avvisades som ogiltiga eller avböjdes av tjänstelagret."""
+        return tuple(c.error_type for c in self.calls if c.error_type)
 
 
 @dataclass(frozen=True)
@@ -125,7 +137,9 @@ class Dispatcher:
                     raise SkillDeniedError(f"Dubbelt call-id '{call.id}'", skill=call.name)
                 seen.add(call.id)
                 checked.append(self._check(call))
-            except (SkillDeniedError, SkillInputError, ScopeError) as exc:
+            except SkillInputError as exc:
+                checked.append(_denied(call, exc) if exc.security else _invalid(call, exc))
+            except (SkillDeniedError, ScopeError) as exc:
                 checked.append(_denied(call, exc))
 
         if any(isinstance(c, CallOutcome) for c in checked):
@@ -181,7 +195,10 @@ class Dispatcher:
         try:
             result = c.skill.execute(self.service, ctx, c.action)
         except ServiceError as exc:
-            return _outcome(c.call, CallStatus.ERROR, {"status": "error", "message": str(exc)}, error=True)
+            return _outcome(
+                c.call, CallStatus.ERROR, {"status": "error", "message": str(exc)},
+                error=True, error_type=type(exc).__name__,
+            )
 
         payload = ServiceSkill.result_payload(result)
         if result.pending:
@@ -202,6 +219,13 @@ def _denied(call: ToolCall, exc: Exception) -> CallOutcome:
     return _outcome(call, CallStatus.DENIED, {"status": "denied", "message": str(exc)}, error=True, reasons=reasons)
 
 
+def _invalid(call: ToolCall, exc: SkillInputError) -> CallOutcome:
+    return _outcome(
+        call, CallStatus.INVALID, {"status": "invalid", "message": str(exc)},
+        error=True, error_type="InvalidInput",
+    )
+
+
 def _outcome(
     call: ToolCall,
     status: CallStatus,
@@ -210,6 +234,7 @@ def _outcome(
     error: bool = False,
     approval_id: str | None = None,
     reasons: tuple[str, ...] = (),
+    error_type: str | None = None,
 ) -> CallOutcome:
     content = json.dumps(payload, ensure_ascii=False, default=str)
     return CallOutcome(
@@ -219,4 +244,5 @@ def _outcome(
         result=ToolResult(call_id=call.id, content=content, is_error=error),
         approval_id=approval_id,
         reasons=reasons,
+        error_type=error_type,
     )

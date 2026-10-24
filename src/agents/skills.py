@@ -79,7 +79,7 @@ class ServiceSkill:
         schema = strict_json_schema(self.action_model)
         unknown = _unknown_fields(arguments, schema, schema.get("$defs", {}), "")
         if unknown:
-            raise SkillInputError(f"'{self.name}': okända fält {', '.join(unknown)}")
+            raise SkillInputError(f"'{self.name}': okända fält {', '.join(unknown)}", security=True)
         try:
             return self.action_model.model_validate(arguments)
         except ValidationError as exc:

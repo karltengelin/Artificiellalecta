@@ -6,7 +6,8 @@ Byggt hittills:
   - skill-kontrakt och skill-register runt tjänstelagrets operationer (3b-2)
   - effektiv profil med förklaringar och versionsbild (3b-1/3b-2)
   - dispatcher som prövar varje anrop, och resursmandat för personuppgifter (3b-3)
-Agentloop, godkännandehantering i loopen och körjournal kommer i 3b-4–3b-6.
+  - agentloopen med kontextbygge, tak och stopp (3b-4)
+Godkännandets fortsättning och körjournalen kommer i 3b-5–3b-6.
 
     from agents import Dispatcher, Ecosystem, SkillRegistry, compile_profile
     from services import ServiceLayer, default_registry
@@ -26,6 +27,7 @@ from agents.errors import (
     SkillDeniedError,
     SkillInputError,
 )
+from agents.loop import RunOutcome, build_context, run_agent
 from agents.profile import (
     EffectiveProfile,
     Outcome,
@@ -49,6 +51,7 @@ __all__ = [
     "HarnessError",
     "Limits",
     "Outcome",
+    "RunOutcome",
     "RunRequest",
     "RunRequestError",
     "RunResult",
@@ -60,6 +63,8 @@ __all__ = [
     "SkillInputError",
     "SkillRegistry",
     "VersionSnapshot",
+    "build_context",
     "compile_profile",
+    "run_agent",
     "scope_for_person",
 ]
