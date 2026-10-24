@@ -70,6 +70,21 @@ def test_demofilen_skapas_en_gang_och_ateranvands(tmp_path):
     second.dispose()
 
 
+def test_ny_tabell_laggs_till_i_befintlig_demofil(tmp_path):
+    """En demofil från före Fas 5 får tabellen cases; beståndet och kön är kvar."""
+    from sqlalchemy import inspect
+
+    path = tmp_path / "demo.db"
+    first = demo_engine(path)
+    with first.begin() as conn:
+        conn.exec_driver_sql("DROP TABLE cases")
+    first.dispose()
+    second = demo_engine(path)
+    assert "cases" in inspect(second).get_table_names()
+    assert counts(second)[0] == 4
+    second.dispose()
+
+
 def test_svc_test_kraver_isolerad_databas(monkeypatch):
     monkeypatch.delenv("SERVICES_TEST_POSTGRES_URL", raising=False)
     with pytest.raises(WebConfigError, match="saknas"):

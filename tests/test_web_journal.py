@@ -97,7 +97,7 @@ def test_godkannande_som_krockar_med_aktuellt_lage_rullas_tillbaka(web):
     response = post(web, f"/godkannanden/{request_id}/godkann")
     assert response.status_code == 409
     assert "Krock med aktuellt läge" in response.text
-    assert f"Gäller ärende <code>{request_id}</code>" in response.text
+    assert f"Gäller förslaget <code>{request_id}</code>" in response.text
     assert "Ingenting har ändrats" in response.text
     assert proposals(web)["register_salary_report"].status == "pending"
     assert len(salary_reports(web)) == 1

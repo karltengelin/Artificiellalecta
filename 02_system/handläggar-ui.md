@@ -107,7 +107,7 @@ Rättas lönen för en månad som har premie, länkar resultatsidan direkt till 
 
 Antalet väntande förslag visas i menyn. Det hämtas med `count_approval_requests`, som inte läser
 personuppgifter och därför inte loggas. Ett godkännande som krockar med dagens läge, till exempel för
-att handläggaren redan har registrerat underlaget, rullas tillbaka i sin helhet. Ärendet ligger då kvar
+att handläggaren redan har registrerat underlaget, rullas tillbaka i sin helhet. Förslaget ligger då kvar
 som väntande och kan avslås. Tider visas i datorns lokala tid, medan tjänstelagret sparar UTC.
 
 **Kön, loggen och agenterna.** De tre läsoperationerna är `HUMAN_ONLY` i registret
@@ -126,6 +126,24 @@ som väntande och kan avslås. Tider visas i datorns lokala tid, medan tjänstel
 | `/arbetsgivare/ny` | Ny arbetsgivare (ITP) | `register_employer` |
 
 Översikten har knappar för löneunderlag, aktuell lön och kontaktuppgifter. Startsidan har en knapp för att ansluta en ny försäkrad.
+
+**Ärenden och handläggaragenten (Fas 5 F5-4, B-033).** Ärendet är agentens arbetsenhet och mandat. Operationerna står i [tjänstelager.md](tjänstelager.md) §9.3 och agentkörningen i `src/agents/case_runs.py`.
+
+| Adress | Innehåll | Operation |
+|---|---|---|
+| `/arenden?status=aktiva\|stangda\|alla` | Handläggarens lista med typ, försäkrad, månad, mottagning, status och handläggare | `list_cases` |
+| `/arenden/ny` (`?pnr=`) → `/arenden` | Registrera ett ärende om inrapporterat löneunderlag; med `?pnr=` förifylls personen och arbetsgivaren | `create_case` |
+| `/arenden/{nummer}` (`?lasningar=1`) | Ärendet: inrapporterade uppgifter, agentens senaste körning, förslag i ärendet, statusbyte, stängning och historik (ändringar och förslag, läsningar på begäran) | `get_case`, `list_approval_requests`, `get_operation_events` |
+| `/arenden/{nummer}/agent` (POST) | *Starta agent*: handläggaragenten körs i ärendet. Resultatet visar status, sammanfattning, förbrukning, underlag, förslag och journalens sökväg | `run_case` |
+| `/arenden/{nummer}/status` (POST) | Byt status bland de öppna, och vid behov handläggare | `update_case_status` |
+| `/arenden/{nummer}/stang` (POST) | Stäng med utfall och motivering | `close_case` |
+
+- **Agenten körs synkront**, en körning åt gången i processen (B-033 val D). Knappen frågar först, eftersom körningen gör modellanrop som kostar. Modellklienten skapas vid första körningen – UI:t startar utan API-nycklar.
+- **Databasrollen per läge** (B-033 val H): i `demo` och `svc_test` simuleras agentens roll och sidan visar *simulerad*; mot `lakebase` används den riktiga rollen `agent_forsakring`, vars läsrätt på `cases` verkställdes i Lakebase 2026-10-24 (F5-5).
+- **Efter körningen** skriver harness ärendets status: *Väntar på godkännande* om ett förslag lagts, annars *Pågår*. Förslaget avgörs i `/godkannanden`, där det länkar till ärendet.
+- **Egen registrering i ärendet.** *Registrera löneunderlaget själv* öppnar löneunderlagsformuläret med ärendets uppgifter och ärendenumret medskickat (`?arende=`). Registreringen hamnar då i ärendets historik, och ärendet kan stängas som *Godkänt*.
+- **Demo- och testdatabasen** får nya tabeller, som `cases`, när UI:t startar mot en befintlig fil eller ett befintligt schema. Befintliga tabeller och rader rörs inte, och Lakebase ändras aldrig härifrån.
+- Godkännandekön kallar sina poster *förslag*, så att de inte blandas ihop med ärenden.
 
 ## 5. Felvisning
 

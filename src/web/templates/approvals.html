@@ -13,10 +13,10 @@
   </div>
   <p class="muted small">Agenter lägger förslag för operationer med nivån <code>APPROVAL</code>. Bara en handläggare kan avgöra dem.
     Vid godkännande körs operationen på nytt mot aktuellt läge, med agenten som förslagsställare i händelseloggen.
-    Stoppas den rullas allt tillbaka och ärendet är kvar som väntande (tjänstelager.md §6).</p>
+    Stoppas den rullas allt tillbaka och förslaget är kvar som väntande (tjänstelager.md §6).</p>
 
   {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
-  {% if error and focus %}<p class="small">Gäller ärende <code>{{ focus }}</code>.</p>{% endif %}
+  {% if error and focus %}<p class="small">Gäller förslaget <code>{{ focus }}</code>.</p>{% endif %}
   {% include "partials/error_box.html" %}
 
   {% for r in queue.requests %}
@@ -26,7 +26,7 @@
         <strong><code>{{ r.operation }}</code></strong>
         <span class="pill pill--{{ r.status }}">{{ r.status | label('approval_status') }}</span>
       </div>
-      <span class="muted small">Ärende {{ r.approval_id }}</span>
+      <span class="muted small">Förslag {{ r.approval_id }}{% if r.case_id %} · ärende <a href="/arenden/{{ r.case_id }}">{{ r.case_id }}</a>{% endif %}</span>
     </header>
     {% if descriptions.get(r.operation) %}<p class="small muted">{{ descriptions[r.operation] }}</p>{% endif %}
     <dl class="kv">
@@ -65,7 +65,7 @@
     {% endif %}
   </article>
   {% else %}
-  <p class="empty">Inga ärenden i urvalet.</p>
+  <p class="empty">Inga förslag i urvalet.</p>
   {% endfor %}
 </section>
 {% endblock %}

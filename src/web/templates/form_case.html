@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf with context %}
+{% set fe = error.field_errors if error is defined and error else {} %}
+{% block title %}Nytt ärende{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <h1>Nytt ärende: inrapporterat löneunderlag</h1>
+  <p class="muted small">Registrera det som kommit in. Ärendet prövas sedan av dig eller av handläggaragenten –
+    registreringen skapar inget löneunderlag och ingen premie.</p>
+  {% include "partials/error_box.html" %}
+  <form method="post" action="/arenden" class="form">
+    {{ csrf() }}
+    <div class="row">
+      {% call field("personal_id_number", "Försäkrad (personnummer)", fe, "ÅÅÅÅMMDDNNNN") %}
+      <input id="f-personal_id_number" name="personal_id_number" value="{{ values.get('personal_id_number', '') }}" required>
+      {% endcall %}
+      {% call field("employer_org_number", "Arbetsgivare (org.nr)", fe, "Den som rapporterat lönen") %}
+      <input id="f-employer_org_number" name="employer_org_number" value="{{ values.get('employer_org_number', '') }}" required>
+      {% endcall %}
+      {% call field("policy_number", "Försäkring", fe, "Valfri – om ärendet gäller en viss") %}
+      <input id="f-policy_number" name="policy_number" value="{{ values.get('policy_number', '') }}">
+      {% endcall %}
+    </div>
+    <fieldset class="choice">
+      <legend>Typ av rapport</legend>
+      <label><input type="radio" name="kind" value="new" {% if values.get("kind", "new") == "new" %}checked{% endif %}> Ny rapport för månaden</label>
+      <label><input type="radio" name="kind" value="correction" {% if values.get("kind") == "correction" %}checked{% endif %}> Rättelse av gällande version</label>
+    </fieldset>
+    <div class="row">
+      {% call field("period_month", "Utbetalningsmånad", fe) %}
+      <input id="f-period_month" type="month" name="period_month" value="{{ values.get('period_month', '')[:7] }}" required>
+      {% endcall %}
+      {% call field("pensionable_salary_sek", "Rapporterad pensionsmedförande lön (kr)", fe) %}
+      <input id="f-pensionable_salary_sek" name="pensionable_salary_sek" inputmode="decimal" value="{{ values.get('pensionable_salary_sek', '') }}" required>
+      {% endcall %}
+      {% call field("corrects_version", "Version som rättas", fe, "Bara vid rättelse") %}
+      <input id="f-corrects_version" type="number" min="1" name="corrects_version" value="{{ values.get('corrects_version', '') }}">
+      {% endcall %}
+    </div>
+    <div class="row">
+      {% call field("source", "Ursprung", fe) %}
+      <select id="f-source" name="source">
+        <option value="employer" {% if values.get("source") == "employer" %}selected{% endif %}>Arbetsgivarens rapport</option>
+        <option value="manual" {% if values.get("source") == "manual" %}selected{% endif %}>Underlag som handläggaren registrerar</option>
+      </select>
+      {% endcall %}
+      {% call field("source_reference", "Avsändarens referens", fe, "T.ex. lönefil – samma referens registreras inte två gånger") %}
+      <input id="f-source_reference" name="source_reference" value="{{ values.get('source_reference', '') }}">
+      {% endcall %}
+      {% call field("received_date", "Mottaget", fe) %}
+      <input id="f-received_date" type="date" name="received_date" value="{{ values.get('received_date', '') }}" required>
+      {% endcall %}
+    </div>
+    <div class="row">
+      {% call field("assigned_to", "Handläggare", fe, "Valfri") %}
+      <input id="f-assigned_to" name="assigned_to" value="{{ values.get('assigned_to', '') }}">
+      {% endcall %}
+      {% call field("due_date", "Tidsfrist", fe, "Valfri") %}
+      <input id="f-due_date" type="date" name="due_date" value="{{ values.get('due_date', '') }}">
+      {% endcall %}
+    </div>
+    {% if fe.get("details") %}<p class="field__error">Inrapporterade uppgifter: {{ fe["details"] }}</p>{% endif %}
+    {{ reason(values, fe, "T.ex. lönefil mottagen från arbetsgivaren") }}
+    <div class="form__actions">
+      <button type="submit">Registrera ärendet</button>
+      <a href="/arenden">Avbryt</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

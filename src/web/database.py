@@ -6,8 +6,8 @@ anrop, händelselogg och godkännandekö i databasen).
 
 | Val        | Databas                                                     | Tabeller                              |
 |------------|-------------------------------------------------------------|---------------------------------------|
-| `demo`     | SQLite-fil (`data/handlaggare_demo.db`, gitignorerad)       | Skapas med demobeståndet om filen saknas |
-| `svc_test` | Schemat `handlaggare_ui` i `SERVICES_TEST_POSTGRES_URL`     | Skapas med demobeståndet om schemat är tomt |
+| `demo`     | SQLite-fil (`data/handlaggare_demo.db`, gitignorerad)       | Skapas med demobeståndet om filen saknas; nya tabeller läggs till |
+| `svc_test` | Schemat `handlaggare_ui` i `SERVICES_TEST_POSTGRES_URL`     | Skapas med demobeståndet om schemat är tomt; nya tabeller läggs till |
 | `lakebase` | Beståndet via `DATABASE_URL`                                | Skapas aldrig – schemat ändras bara med migrationsskript |
 """
 
@@ -21,13 +21,35 @@ from sqlalchemy.engine import Engine
 
 from services import ServiceLayer
 from services.db import session_factory_for
+from web.agent import CaseAgent
 from web.config import WebConfigError, WebSettings
 
 SVC_TEST_SCHEMA = "handlaggare_ui"
 
 
 def build_service(settings: WebSettings) -> ServiceLayer:
-    return ServiceLayer(session_factory=session_factory_for(build_engine(settings)))
+    return build_services(settings)[0]
+
+
+def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent]:
+    """Handläggarens tjänstelager och handläggaragenten (Fas 5 F5-4) mot samma databas."""
+    engine = build_engine(settings)
+    session_factory = session_factory_for(engine)
+    service = ServiceLayer(session_factory=session_factory)
+    if settings.database == "lakebase":
+        from services.db import agent_service_layer
+
+        agent = CaseAgent(agent_service_factory=agent_service_layer, simulated_role=False)
+    else:
+        # Demo- och testdatabasen: samma anslutning, rollen simuleras (B-033 val H)
+        agent = CaseAgent(
+            agent_service_factory=lambda: ServiceLayer(
+                session_factory=session_factory, validation_session_factory=session_factory,
+                agent_role="agent_forsakring",
+            ),
+            simulated_role=True,
+        )
+    return service, agent
 
 
 def build_engine(settings: WebSettings) -> Engine:
@@ -56,7 +78,17 @@ def demo_engine(path: Path) -> Engine:
 
     if created:
         create_demo_database(engine)
+    else:
+        add_missing_tables(engine)
     return engine
+
+
+def add_missing_tables(engine: Engine) -> None:
+    """Nya tabeller (t.ex. `cases`, Fas 5) i en befintlig demo- eller testdatabas. Används aldrig
+    mot Lakebase – där gäller migrationsskripten."""
+    from utils.demo_data import add_missing_demo_tables
+
+    add_missing_demo_tables(engine)
 
 
 def svc_test_engine() -> Engine:
@@ -78,6 +110,8 @@ def svc_test_engine() -> Engine:
     )
     if not inspect(engine).get_table_names():
         create_demo_database(engine)
+    else:
+        add_missing_tables(engine)
     return engine
 
 

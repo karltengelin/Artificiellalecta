@@ -36,7 +36,8 @@ def _iso(value: datetime | None) -> str | None:
 
 class ApprovalQuery(BaseModel):
     status: ApprovalStatus | None = Field(default="pending", description="Urval på status; None = alla")
-    approval_id: str | None = Field(default=None, max_length=32, description="Ett enskilt ärende")
+    approval_id: str | None = Field(default=None, max_length=32, description="Ett enskilt förslag")
+    case_id: str | None = Field(default=None, max_length=100, description="Bara förslag i ett ärende (CASE-NNNNNN)")
     limit: int = Field(default=100, ge=1, le=500)
 
 
@@ -65,7 +66,7 @@ class ApprovalList(BaseModel):
     name="list_approval_requests",
     description=(
         "Visar godkännandekön: agentförslag med operation, indata, motivering och förslagsställare, "
-        "och avgjorda ärenden med beslut. Urval på status eller ett enskilt ärende."
+        "och avgjorda förslag med beslut. Urval på status, ärende eller ett enskilt förslag."
     ),
     kind=OperationKind.READ,
     pii=True,
@@ -75,6 +76,8 @@ def list_approval_requests(ctx: OperationContext, data: ApprovalQuery) -> Approv
     query = select(ApprovalRequestRecord)
     if data.approval_id is not None:
         query = query.where(ApprovalRequestRecord.id == data.approval_id)
+    if data.case_id is not None:
+        query = query.where(ApprovalRequestRecord.case_id == data.case_id)
     if data.status is not None:
         query = query.where(ApprovalRequestRecord.status == data.status)
     if data.status == "pending":
@@ -134,6 +137,7 @@ class EventQuery(BaseModel):
     )
     operation: str | None = Field(default=None, max_length=64, description="Bara en operation")
     outcome: Outcome | None = Field(default=None, description="Bara ett utfall")
+    case_id: str | None = Field(default=None, max_length=100, description="Bara händelser i ett ärende (CASE-NNNNNN)")
     include_reads: bool = Field(default=False, description="Ta med läsningar av personuppgifter")
     limit: int = Field(default=200, ge=1, le=1000)
 
@@ -168,7 +172,7 @@ class EventList(BaseModel):
     name="get_operation_events",
     description=(
         "Visar tjänstelagrets händelselogg – vem som gjorde vad, när, varför och enligt vilka regler – "
-        "senaste först. Urval på försäkrad, operation och utfall; läsningar tas med på begäran."
+        "senaste först. Urval på försäkrad, ärende, operation och utfall; läsningar tas med på begäran."
     ),
     kind=OperationKind.READ,
     pii=True,
@@ -183,6 +187,8 @@ def get_operation_events(ctx: OperationContext, data: EventQuery) -> EventList:
         query = query.where(E.operation == data.operation)
     if data.outcome is not None:
         query = query.where(E.outcome == data.outcome)
+    if data.case_id is not None:
+        query = query.where(E.case_id == data.case_id)
     if data.personal_id_number is not None:
         query = query.where(_concerns_person(session, data.personal_id_number))
     rows = session.scalars(query.order_by(E.occurred_at.desc()).limit(data.limit + 1)).all()
