@@ -236,6 +236,41 @@ Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen
 
 `bestand` är nyckeln till flaggskeppets "business insight": den ger aggregerade svar utan att någon agent behöver personuppgifter, och är samma förmåga som BI-delprojektet (2) behöver.
 
+### 5.5 Planerad gemensam rapport- och presentationsförmåga
+
+**Planeringskrav från operatören 2026-10-24; ej implementerat eller aktiverat.**
+Alla team och agenter ska kunna ge rapporter, dokumentation och presentationer med
+samma grafiska identitet och gemensam struktur. Två centralt underhållna skills planeras:
+`skapa-dokumentation` (`create_documentation`, inklusive rapporter) och
+`skapa-presentation` (`create_presentation`). De hör till den gemensamma podden
+`dokument`, som monteras på respektive team och agent enligt körpolicyn.
+De kopieras inte till varje podd eller team: varje skill har en implementation och
+återanvänder gemensamma, versionsstyrda mallar och designvärden (B-007/B-008/B-026).
+
+Domänagenten ansvarar för innehåll, beräkningar och källor. Kommunikation äger de
+gemensamma mallarna; utveckling äger den tekniska genereringen. Vid en sakfråga från
+operatören används rapport-/dokumentationsskillen som standard, med längd anpassad
+till frågan; en kort rapport kan visas direkt i chatten. Presentation används när
+operatören eller uppdraget anger det. Gemensam grundstruktur är svar/slutsats,
+underlag och källor, antaganden/osäkerhet samt eventuella nästa steg.
+Instruktioner och uppdragsstyrning i harness ska få agenterna att använda förmågan;
+att bara montera podden räcker inte. Användning och mallversion ska verifieras över
+flera team när förmågan byggs.
+
+Dokumentgatewayens gränser kvarstår (`harness.md` §5.2): endast avgränsade utkast,
+ingen ändring av gällande dokument eller aktiva instruktioner. Den allmänna
+dokumentpodden är utan PII. Känsliga kundunderlag kräver separat skyddad väg med
+eget mandat; samma mallar kan återanvändas där utan att dataåtkomst utökas.
+Resursgränser för binära exporter behöver specificeras före implementation.
+Generering ger ingen rätt att skicka eller publicera; externa leveranser går genom
+befintliga godkännanden och gateways.
+
+En ny agent behövs inte enbart för formatering. Den planerade rapporteringsagenten
+behåller sitt särskilda mandat för rapportering och sammanställning över flera
+områden, och använder samma gemensamma skills. Genomförandet ligger i
+`ATT_GORA.md` under **Grafisk identitet och designsystem** och de två skillsen
+listas som planerade i `03_skills/skillkatalog.md`.
+
 ---
 
 ## 6. Samverkan

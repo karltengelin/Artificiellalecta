@@ -48,9 +48,36 @@ Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsov
 - [x] **2026-10-11** **Bygga ut produktnära `04_regulatoriskt/`** – källregister, tolkningar och underlag per regelverk för ITP, LTF, FFFS, FAL, skatt, GDPR, DORA, distribution, SFDR, AI och AML (delprojekt 4). Bolagets fullständiga policies och rapportering hör till egna verksamhetsprojekt
 - [x] **2026-10-11** **Delprojekt 4: sammanhängande produktpaket** – PR-ITP1 v1.0 (34 regler), villkor v2.0, tio tolkningar och leveranskontroll; infört genom B-031, gäller från 2026-11-01. Regelkod, migrationer och automatiserade regeltester görs i senare sessioner
 - [ ] **Fullständig styrdokumentsstruktur** i `05_styrdokument/` – minimal grund för kapitalförvaltningen finns sedan 2026-10-24 (Fas 2a), med struktur, ägarskap, revisionscykel och standardmetadata. Antagande, fullständigt styrdokumentsregister, övriga policies och bolagets samlade kontrollsystem återstår
+- [ ] **Gemensamt designspråk för bolaget** – grafisk identitet och återanvändbara komponenter och mallar för hemsidor, kundportal, handläggargränssnitt, rapporter och presentationer. Se arbetsgång och leveranser under **Grafisk identitet och designsystem** nedan
 - [x] **2026-05-16** Definiera databasschema – `02_system/databasschema.md` + SQLAlchemy-modeller för `employers` och `insured_persons`. Övriga tabeller (policies, premium_transactions, portfolio_holdings, cases) skjuts upp till de behövs.
 - [x] **2026-05-16** Sätta upp Google-konto för det fiktiva bolaget – Artificiellalecta@gmail.com
 - [x] **2026-05-16** Skapa Supabase-konto och projekt – Artificiellalecta-projektet, region Europe *(databasval ersatt av B-018, se Arkiv)*
+
+---
+
+## 🎨 Grafisk identitet och designsystem – hög prioritet
+
+Tillagt **2026-10-24** på operatörens begäran. Tvärgående arbete för hela bolaget.
+Handläggar-UI:t (`src/web/static/app.css`) och företagsöversikten
+(`projekt/08_företagsöversikt/foretagsoversikt.html`) har egna stildefinitioner,
+men någon gemensam grafisk specifikation och uppsättning mallar finns ännu inte.
+Målet är ett modernt, stilrent och sammanhållet uttryck som känns igen i alla kanaler.
+
+**Arbetsordning:** Ta fram en liten gemensam designgrund tidigt, före nästa större
+gränssnitt eller dokumentmall. Fortsätt bygga funktion stegvis med den grunden.
+Befintliga ytor anpassas successivt när de vidareutvecklas. Backend-, regel- och
+agentarbete kan fortsätta enligt fasplanen; ingen total ombyggnad av fungerande system
+behövs för att införa formspråket. Den visuella riktningen väljs med operatören när
+konkreta exempel finns att granska.
+
+- [ ] **Visuell riktning och designgrund v1** – ta fram ett fåtal alternativa uttryck och visa varje riktning på en webbsida, en rapportsida och en presentationsbild. Precisera vad modern, stilren och snygg betyder för bolaget. Samla vald riktning i Markdown under `06_design/`: logotyp/ordmärke, färger, typografi, luft, layout, ikon-/bildstil och diagramstil. Ta med läsbarhet, kontrast, tangentbordsfokus och status som förklaras med text/form utöver färg. Ingen ny grafisk profil är vald genom denna backlogpost
+- [ ] **Gemensamma designvärden och återanvändning** – versionshantera färger, textstilar, avstånd och övriga grundvärden (design tokens) på ett gemensamt ställe under `src/`, med koppling till designspecifikationen. Använd dem i webbens CSS och dokument-/presentationsmallar så att kanalerna inte får separata, manuellt underhållna paletter. Bygg vidare på FastAPI/Jinja2/HTMX för handläggar-UI:t; välj inga nya frontendramverk enbart för formspråkets skull
+- [ ] **Pilot och stegvis införande i gränssnitten** – tillämpa grunden på en representativ handläggarvy med tabell, formulär, status, fel och godkännande. Utvärdera tillsammans med rapport- och slideexemplen innan grunden breddas. Återanvänd layout och komponenter i fortsatt UI-arbete; planera anpassning av företagsöversikten, kommande hemsidor och kundportalen. Dashboarden följer grunden inom Databricks möjligheter enligt B-029; eventuella begränsningar dokumenteras
+- [ ] **Rapport- och presentationsmallar** – gemensamma mallar för rapport/kundbrev samt presentation med titelbild, innehåll, nyckeltal, tabell och diagram. Dokumentmallarna kopplas till md→PDF-pipelinen nedan; Markdown förblir arbetsformat enligt B-012. En rapport, presentation och webbyta ska kännas som samma bolag även när informationsmängd och layout skiljer sig
+- [ ] **Gemensamma skills: skapa rapport/dokumentation och skapa presentation** *(tillagt 2026-10-24 på operatörens begäran)* – planera `skapa-dokumentation` (`create_documentation`, även rapporter) och `skapa-presentation` (`create_presentation`) som två centralt underhållna skills i den gemensamma podden `dokument`, tillgängliga för samtliga team och agenter genom granskad montering. Varje skill tillhör en podd; samma implementation, mallar och designversion återanvänds av alla. Ingen kopia per team/podd och ingen ny agent krävs enbart för formatering (B-007/B-008/B-026). Domänagenten ansvarar för fakta och analys; kommunikation äger de gemensamma mallarna och utveckling den tekniska genereringen. Se `02_system/agentekosystem.md` §5.5 och planerade skills i `03_skills/skillkatalog.md`
+- [ ] **Enhetligt svar från valfri agent/team** – när operatören ställer en sakfråga ska agenten använda den gemensamma rapport-/dokumentationsförmågan; presentation används när operatören begär det eller uppdraget anger det formatet. En kort rapport kan visas direkt i chatten; längd och detaljnivå anpassas till frågan. Gemensam grundstruktur: slutsats/svar först, underlag och källor, antaganden/osäkerhet samt eventuella nästa steg. Fullständiga dokument och slides använder de gemensamma mallarna och designvärdena. Koppla användningsregeln till agenternas instruktioner och uppdrag i harness; verifiera med representativa uppdrag till flera team att rätt skill, mallversion och struktur används. Enbart tillgång till skillen garanterar inte användning
+- [ ] **Kontrollerad dokumentgenerering** – bygg på dokumentgatewayen och avgränsade utkast enligt `02_system/harness.md` §5.2. Samma mallar får användas i en separat skyddad väg för behöriga PII-underlag; den allmänna dokumentpodden får inte lagra personuppgifter. Innehåll, källor, period och mallversion följer med leveransen. Bestäm resursgränser för binära exporter separat från Markdown-gränserna. Skapande av utkast ger inte rätt att ändra gällande dokument, skicka eller publicera. Externa leveranser följer befintliga godkännanden och gateways. Rapporteringsagenten används för sitt rapporteringsmandat och samordning, och kan återanvända samma två skills
+- [ ] **Instruktioner och visuell leveranskontroll** – dokumentera hur människor och agenter hittar rätt version av specifikationen, komponenterna och mallarna. Nya leveranser ska återanvända dessa. Kontrollera representativa webb-, rapport- och presentationsresultat visuellt samt att statusfärger, enheter, perioder och diagram betyder samma sak mellan kanalerna
 
 ---
 
@@ -169,8 +196,8 @@ Fas 3b är klar (3b-1–3b-8). Nästa steg är ärendet som agentens arbetsenhet
 
 ## 🟢 Lägre prioritet – när grunden står
 
-- [ ] **Sätta upp md→PDF-pipeline** – välja verktyg (Pandoc eller WeasyPrint), definiera mallar för formella dokument (rapporter, kundbrev, styrelseprotokoll)
-- [ ] **Standardmall för officiella dokument** – logga, sidhuvud/sidfot, signaturplats, sidnumrering, dokument-ID, versionsinfo. Tas i samband med PDF-pipelinen
+- [ ] **Sätta upp md→PDF-pipeline** – välja verktyg (Pandoc eller WeasyPrint), koppla mallar för formella dokument (rapporter, kundbrev, styrelseprotokoll) till den gemensamma designgrunden under **Grafisk identitet och designsystem** ovan
+- [ ] **Standardmall för officiella dokument** – logga, sidhuvud/sidfot, signaturplats, sidnumrering, dokument-ID, versionsinfo. Tas i samband med PDF-pipelinen och återanvänder bolagets gemensamma designgrund ovan
 - [ ] **Bygga första agent: Handläggaragent** (ärendehantering)
 - [ ] **Bygga kommunikationsagent** – äger bred utgående kommunikation (kundutskick, mailbesvarande, standardiserade meddelanden). Separerad från handläggaragenten för att skilja ärendelogik från kommunikationsarbete. Mandat motiveras i BESLUTSLOGG när agenten byggs (avsteg från B-008).
 - [ ] **Bygga första skills:** `hämta-kunddata`, `skriv-kundmail`, `tolka-itp1-fråga`

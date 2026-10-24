@@ -41,6 +41,8 @@ Operationer utan poddmappning – stängda för alla agenter: `count_approval_re
 | tolka-itp1-fråga | regelverk | Bygger på `01_domän/ITP1_regelverk.md`; planerad podd `regelverk` (dokumentgateway, `harness.md` §5.2) |
 | complianceöversyn | regelverk | Compliance-agenten; gap-analys regelverk ↔ styrdokument |
 | marknadsdata | data | Fas 2d (B-019): kurser via gratis-API |
+| skapa-dokumentation (`create_documentation`) | kommunikation | Planerad, ej implementerad. Gemensam rapport-/dokumentationsskill i podden `dokument` för alla team/agenter genom granskad montering. En implementation och versionsstyrda mallar; domänagenten ansvarar för sakunderlaget. Allmän väg utan PII; känsliga underlag kräver separat skyddad väg. Se `../02_system/agentekosystem.md` §5.5 och ATT_GORA:s designarbete |
+| skapa-presentation (`create_presentation`) | kommunikation | Planerad, ej implementerad. Samma gemensamma dokumentpodd, designgrund och behörighetsgränser som ovan; återanvänder underlag och mallar för enhetliga presentationer oavsett team. Ingen utskicks-/publiceringsbehörighet |
 
 ## Hänvisningar
 
