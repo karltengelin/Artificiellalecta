@@ -22,7 +22,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from agents.errors import ScopeError
+from agents.errors import HarnessError, ScopeError
 from services import Actor, OperationContext, ServiceLayer
 
 MAX_SCOPE_MONTHS = 24
@@ -32,6 +32,7 @@ MAX_SCOPE_PERSONS = 1
 _PERSON_FIELDS = {"personal_id_number"}
 _POLICY_FIELDS = {"policy_number"}
 _EMPLOYER_FIELDS = {"employer_org_number", "org_number"}
+_CASE_FIELDS = {"case_number", "case_id"}  # måste vara körningens ärende (B-033)
 _PERIOD_BOUNDS = ("from_month", "to_month")  # öppen period (None) nekas
 _UNVERIFIABLE_ID = re.compile(r"(^|_)(id|uuid)$")
 
@@ -81,6 +82,10 @@ class ExecutionScope(BaseModel):
             elif name in _EMPLOYER_FIELDS:
                 if value not in self.employers:
                     reasons.append(f"{name}: arbetsgivaren ingår inte i uppdraget")
+            elif name in _CASE_FIELDS:
+                subject = True
+                if self.case_id is None or value != self.case_id:
+                    reasons.append(f"{name}: ärendet är inte körningens ärende")
             elif isinstance(value, uuid.UUID) or _UNVERIFIABLE_ID.search(name):
                 reasons.append(f"{name}: id:t kan inte prövas mot scopet")
             elif name.endswith("_month") and isinstance(value, date) and not self._in_period(value):
@@ -90,7 +95,7 @@ class ExecutionScope(BaseModel):
                     f"{self.from_month.isoformat()}–{self.to_month.isoformat()}"
                 )
         if not subject:
-            reasons.append("anropet anger ingen försäkrad eller försäkring ur uppdraget")
+            reasons.append("anropet anger ingen försäkrad, försäkring eller ärende ur uppdraget")
         if reasons:
             raise ScopeError(f"'{skill}' utanför uppdragets scope: {'; '.join(reasons)}")
 
@@ -141,12 +146,56 @@ def scope_for_person(
     )
 
 
+def scope_for_case(service: ServiceLayer, case_number: str, *, assigned_by: str) -> ExecutionScope:
+    """Betrodd kod: bygger mandatet ur ärendet (B-033, Fas 5 F5-3). Se `case_and_scope`."""
+    return case_and_scope(service, case_number, assigned_by=assigned_by)[1]
+
+
+def case_and_scope(service: ServiceLayer, case_number: str, *, assigned_by: str) -> tuple[Any, ExecutionScope]:
+    """Ärendet (CaseView) och mandatet ur det.
+
+    Ärendets försäkrade med alla sina försäkringar, ärendets arbetsgivare och personens
+    nuvarande, och perioden från ärendets månad 23 månader bakåt (24 totalt). Ett stängt
+    ärende eller ett ärende utan försäkrad ger inget mandat. Läsningarna görs som
+    systemaktör i ärendet och loggas.
+    """
+    ctx = OperationContext(
+        actor=Actor.system("harness_scope"),
+        reason=f"Resursmandat för agentuppdrag i ärendet {case_number}, tilldelat av {assigned_by}",
+        case_id=case_number,
+    )
+    case = service.execute("get_case", ctx, {"case_number": case_number}).output
+    if case.status == "closed":
+        raise HarnessError(f"Ärendet {case_number} är stängt – ingen agentkörning")
+    if case.personal_id_number is None:
+        raise HarnessError(f"Ärendet {case_number} gäller ingen försäkrad – inget mandat för personuppgifter")
+    overview = service.execute(
+        "get_insured_overview", ctx, {"personal_id_number": case.personal_id_number}
+    ).output
+    to_month = case.period_month or case.received_date.replace(day=1)
+    return case, ExecutionScope(
+        ref=f"scope-{case_number}",
+        persons=frozenset({overview.personal_id_number}),
+        policies=frozenset(p.policy_number for p in overview.policies),
+        employers=frozenset(o for o in (case.employer_org_number, overview.employer.org_number) if o),
+        from_month=_months_before(to_month, MAX_SCOPE_MONTHS - 1),
+        to_month=to_month,
+        case_id=case_number,
+    )
+
+
+def _months_before(month: date, months: int) -> date:
+    index = month.year * 12 + month.month - 1 - months
+    return date(index // 12, index % 12 + 1, 1)
+
+
 def _walk_identifiers(node: Any, scope: ExecutionScope, found: list[str]) -> None:
     if isinstance(node, dict):
         allowed = (
             (_PERSON_FIELDS, scope.persons),
             (_POLICY_FIELDS, scope.policies),
             (_EMPLOYER_FIELDS, scope.employers),
+            (_CASE_FIELDS, {scope.case_id} if scope.case_id else set()),
         )
         for key, value in node.items():
             if isinstance(value, str):

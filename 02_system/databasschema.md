@@ -538,7 +538,7 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 
 - **Tabellen `insured_persons` är PII-bärande** (B-006). Skills som läser/skriver mot den ska deklareras med behörighetslista.
 - **Maskning vid analys:** Data scientist-agenten arbetar mot anonymiserade vyer eller aggregat, inte rå PII.
-- **Databasroller och radnivåsäkerhet:** `app_backend` (Lakebase, B-018) äger tabellerna och används av handläggar-UI:t, skripten och provkörningen av agentförslag. Försäkringsagenten ansluter med den begränsade rollen `agent_forsakring` (2026-10-24, `harness.md` §5.1): SELECT på försäkringstabellerna, INSERT på `approval_requests` och `operation_events` (plus SELECT på deras `created_at`/`updated_at` för INSERT … RETURNING), ingen UPDATE/DELETE och inga kapitaltabeller. Rättigheterna står i `src/utils/agent_roles.py`. Kundscope verkställs i harness (`src/agents/scope.py`); radnivåsäkerhet används inte ännu.
+- **Databasroller och radnivåsäkerhet:** `app_backend` (Lakebase, B-018) äger tabellerna och används av handläggar-UI:t, skripten och provkörningen av agentförslag. Försäkringsagenten ansluter med den begränsade rollen `agent_forsakring` (2026-10-24, `harness.md` §5.1): SELECT på försäkringstabellerna och `cases` (Fas 5, ännu inte verkställt i Lakebase), INSERT på `approval_requests` och `operation_events` (plus SELECT på deras `created_at`/`updated_at` för INSERT … RETURNING), ingen UPDATE/DELETE och inga kapitaltabeller. Rättigheterna står i `src/utils/agent_roles.py`. Kundscope verkställs i harness (`src/agents/scope.py`); radnivåsäkerhet används inte ännu.
 
 ---
 

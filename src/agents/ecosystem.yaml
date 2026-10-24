@@ -45,6 +45,7 @@ pods:
       get_insured_overview: {service_operation: get_insured_overview}
       get_premium_history: {service_operation: get_premium_history}
       get_salary_reports: {service_operation: get_salary_reports}
+      get_case: {service_operation: get_case}             # bara körningens ärende (B-033)
       register_salary_report: {service_operation: register_salary_report}
       set_policy_paid_up: {service_operation: set_policy_paid_up}
       correct_premium_transaction: {service_operation: correct_premium_transaction}

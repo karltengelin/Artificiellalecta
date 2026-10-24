@@ -23,13 +23,14 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 |---|---|---|---|---|---|---|
 | `calculate_premium_preview` | `berakning` | `calculate_premium_preview` | compute | Nej | AGENT | case_handler (Handläggaragent) |
 | `correct_premium_transaction` | `kunddata` | `correct_premium_transaction` | write | Ja | HUMAN_ONLY | – |
+| `get_case` | `kunddata` | `get_case` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_insured_overview` | `kunddata` | `get_insured_overview` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_premium_history` | `kunddata` | `get_premium_history` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_salary_reports` | `kunddata` | `get_salary_reports` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `register_salary_report` | `kunddata` | `register_salary_report` | write | Ja | APPROVAL | case_handler (Handläggaragent) |
 | `set_policy_paid_up` | `kunddata` | `set_policy_paid_up` | write | Ja | APPROVAL | – |
 
-Operationer utan poddmappning – stängda för alla agenter: `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_case`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `register_employer`, `update_case_status`, `update_contact_details`, `update_current_salary`.
+Operationer utan poddmappning – stängda för alla agenter: `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `register_employer`, `update_case_status`, `update_contact_details`, `update_current_salary`.
 <!-- list_skills.py: slut -->
 
 ## Planerade skills (ur ATT_GORA)

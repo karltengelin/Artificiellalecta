@@ -8,6 +8,7 @@ Byggt hittills:
   - dispatcher som prövar varje anrop, och resursmandat för personuppgifter (3b-3)
   - agentloopen med kontextbygge, tak och stopp (3b-4)
   - länkad fortsättning efter godkännande (3b-5) och körjournal i JSONL (3b-6)
+  - körning i ett ärende: mandat ur ärendet, uppdragsmall och status efteråt (Fas 5 F5-3)
 
     from agents import Dispatcher, Ecosystem, SkillRegistry, compile_profile
     from services import ServiceLayer, default_registry
@@ -17,6 +18,7 @@ Byggt hittills:
     print(profile.explain())
 """
 
+from agents.case_runs import CaseRun, record_run_status, request_for_case, run_case
 from agents.continuation import Continuation, ContinuationNotReady, prepare_continuation
 from agents.dispatcher import CallOutcome, CallStatus, Dispatcher, DispatchOutcome
 from agents.ecosystem import Ecosystem, Limits
@@ -38,12 +40,18 @@ from agents.profile import (
     compile_profile,
 )
 from agents.run import RunRequest, RunResult, RunStatus
-from agents.scope import ExecutionScope, scope_for_person
+from agents.scope import (
+    ExecutionScope,
+    case_and_scope,
+    scope_for_case,
+    scope_for_person,
+)
 from agents.skills import ServiceSkill, SkillRegistry
 
 __all__ = [
     "CallOutcome",
     "CallStatus",
+    "CaseRun",
     "Continuation",
     "ContinuationNotReady",
     "DispatchOutcome",
@@ -71,9 +79,14 @@ __all__ = [
     "SkillRegistry",
     "VersionSnapshot",
     "build_context",
+    "case_and_scope",
     "compile_profile",
     "prepare_continuation",
     "read_journal",
+    "record_run_status",
+    "request_for_case",
     "run_agent",
+    "run_case",
+    "scope_for_case",
     "scope_for_person",
 ]

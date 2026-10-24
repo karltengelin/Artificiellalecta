@@ -23,6 +23,7 @@ from agents import (
     Dispatcher,
     Ecosystem,
     RunRequest,
+    RunStatus,
     SkillRegistry,
     compile_profile,
     scope_for_person,
@@ -159,6 +160,8 @@ def test_agentrollen_kan_inte_avgora_forslag(db):
         "UPDATE approval_requests SET status = 'approved'",
         "DELETE FROM approval_requests",
         "UPDATE insured_persons SET monthly_salary_sek = 1",
+        "UPDATE cases SET status = 'closed'",
+        "DELETE FROM cases",
         "DELETE FROM premium_transactions",
         "INSERT INTO base_amounts (year, income_base_amount_sek) VALUES (2099, 1)",
         "SELECT * FROM insured_persons FOR UPDATE",
@@ -186,7 +189,7 @@ def test_dispatchern_hela_vagen_med_agentrollen(db):
                          execution_scope_ref="scope-pg")
     profile = compile_profile(eco, SkillRegistry.build(eco, default_registry), service, request=request)
     assert {d.skill for d in profile.visible()} == {
-        "get_insured_overview", "get_premium_history", "get_salary_reports",
+        "get_case", "get_insured_overview", "get_premium_history", "get_salary_reports",
         "register_salary_report", "calculate_premium_preview",
     }
     outcome = Dispatcher(profile, service, run_id="run-pg", scope=scope).dispatch([
@@ -197,3 +200,28 @@ def test_dispatchern_hela_vagen_med_agentrollen(db):
                             "reason": "Arbetsgivarens lönefil"}),
     ])
     assert [c.status for c in outcome.calls] == [CallStatus.DONE, CallStatus.PENDING_APPROVAL]
+
+
+def test_arendekorning_med_agentrollen(db, tmp_path):
+    """Hela Fas 5-kedjan med den begränsade rollen: ärende → mandat → läsning → förslag → status."""
+    from agents import run_case
+    from ai.providers.fake import FakeProvider, tool_call_result
+    from tests.test_agents_loop import ai_client
+
+    trusted = ServiceLayer(session_factory=db.session_factory, rules=ProductRuleCatalog(today=AFTER_RULES))
+    number = trusted.execute("create_case", HUMAN, {
+        "case_type": "salary_report", "personal_id_number": PERSON, "employer_org_number": "5560000001",
+        "period_month": "2025-06-01", "received_date": "2025-07-05", "source_reference": "lönefil 2025-06",
+        "details": {"pensionable_salary_sek": "81000", "kind": "new", "corrects_version": None, "source": "employer"},
+    }).output.case_number
+    salary = {**SALARY, "period_month": "2025-06-01", "source_reference": "lönefil 2025-06",
+              "received_date": "2025-07-05", "corrects_version": None}
+    fake = FakeProvider([
+        tool_call_result("get_case", {"data": {"case_number": number}, "reason": None}),
+        tool_call_result("register_salary_report", {"data": salary, "reason": "Enligt ärendet"}, call_id="c2"),
+    ])
+    eco = Ecosystem.load()
+    run = run_case(ai_client(fake), eco, SkillRegistry.build(eco, default_registry), agent_service(db), trusted,
+                   number, assigned_by="karl", run_id="run-case-pg", journal_dir=tmp_path)
+    assert run.outcome.result.status == RunStatus.WAITING_APPROVAL
+    assert trusted.execute("get_case", HUMAN, {"case_number": number}).output.status == "waiting_approval"

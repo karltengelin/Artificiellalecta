@@ -54,6 +54,7 @@ FORSAKRING = RoleGrants(
     role="agent_forsakring",
     select=(
         "base_amounts",
+        "cases",  # ärenden (B-033); kundscope verkställs i harness, inte i databasen
         "employers",
         "insured_persons",
         "policies",
