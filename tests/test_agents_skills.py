@@ -181,14 +181,20 @@ class TestUtfall:
         assert any("PR-T-UTKAST" in r for r in profile.decision("draft_rule_write").reasons)
         assert profile.decision("lookup").reasons == (
             "personuppgifter kräver execution_scope i uppdraget",
-            "personuppgifter: resurskontrollen för tilldelat ärende är inte byggd (3b-3)",
+            "personuppgifter: egen databasroll och Postgres-prov för PII-podden saknas (harness.md §5.1)",
         )
 
-    def test_pii_forblir_dold_aven_med_scope_tills_resurskontrollen_finns(self, setup):
+    def test_pii_forblir_dold_aven_med_scope_tills_databasrollen_finns(self, setup):
         profile = profile_for(setup, request=request(execution_scope_ref="scope-1"))
         assert profile.decision("lookup").reasons == (
-            "personuppgifter: resurskontrollen för tilldelat ärende är inte byggd (3b-3)",
+            "personuppgifter: egen databasroll och Postgres-prov för PII-podden saknas (harness.md §5.1)",
         )
+
+    def test_pii_oppnas_med_scope_nar_databasrollen_finns(self, setup, monkeypatch):
+        monkeypatch.setattr("agents.profile.PII_DATABASE_ROLE_READY", True)
+        assert profile_for(setup).decision("lookup").outcome == Outcome.HIDDEN  # utan scope
+        profile = profile_for(setup, request=request(execution_scope_ref="scope-1"))
+        assert profile.decision("lookup").outcome == Outcome.EXECUTE
 
     def test_omappad_operation_blir_inget_verktyg(self, setup):
         profile = profile_for(setup)

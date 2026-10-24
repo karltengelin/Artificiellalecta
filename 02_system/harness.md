@@ -1,7 +1,7 @@
 # Harness – utredning och designförslag
 
 > **Status:** Designinriktningen godkänd i chatten 2026-10-12: egen tunn motor och samlad konfiguration. Operatören preciserade att tjänstelagret endast hör till försäkringssystemet och överlät val av startgränser. Dokumentet beskriver den fortsatta designen; ingen harness eller produktionskod byggs genom det.
-> **Implementation:** 3b-1 och 3b-2 byggda 2026-10-24 i `src/agents/` (körpolicy, `RunRequest`/`RunResult`, skill-register, effektiv profil). Avvikelser från exemplet i §3.4: handläggarens gränser står på teamet och ärvs av agenten; poddarna `regelverk` och `dokument` är inte med förrän deras gateways finns; PII-verktyg döljs tills resurskontrollen (3b-3) är byggd. Effektiv profil: `python scripts/documentation/show_agent_profile.py`.
+> **Implementation:** 3b-1–3b-3 byggda 2026-10-24 i `src/agents/` (körpolicy, `RunRequest`/`RunResult`, skill-register, effektiv profil, dispatcher och resursmandat `ExecutionScope`). Avvikelser från exemplet i §3.4: handläggarens gränser står på teamet och ärvs av agenten; poddarna `regelverk` och `dokument` är inte med förrän deras gateways finns; `execution_scope` byggs av betrodd kod i stället för att peka på ett ärende (`cases` saknas). PII-verktyg döljs tills operatören satt upp databasrollen enligt §5.1 (`PII_DATABASE_ROLE_READY`). Effektiv profil: `python scripts/documentation/show_agent_profile.py`.
 > **Datum:** 2026-10-12. Kod och lokalt underlag granskat på `main` **0a8227c**, hämtad från origin samma dag.
 > **Omfattning:** Fas 3b samt de kontrakt Fas 3c behöver från början. Byggordningen **1 → 1f → 4 → 3b → 5 → 3c** enligt B-028 består.
 > **Grund:** B-024/B-026 (vision och team), B-025 (AI-lagret), B-028/B-030/B-031 (tjänstelager och produktregler).

@@ -29,3 +29,7 @@ class SkillDeniedError(HarnessError):
 
 class SkillInputError(HarnessError):
     """Modellens anrop validerar inte mot skillens schema – inklusive okända fält."""
+
+
+class ScopeError(HarnessError):
+    """Anropet eller resultatet rör personer, försäkringar eller perioder utanför uppdragets scope."""
