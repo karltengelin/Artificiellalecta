@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="499.27559055118115" height="227" preserveAspectRatio="xMinYMin meet" viewBox="0 0 499 227" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="499.27559055118115" height="227"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-227)" style="clip-path: url(#clip)">
+		<g transform="">
+			<path d="M 35,42 L 499.275591,42 Z" style="stroke: rgb(87%,86%,92%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="20.844" y="39.0" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,78) scale(1,-1)">0</text>
+			<path d="M 35,88.461538 L 499.275591,88.461538 Z" style="stroke: rgb(87%,86%,92%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="9.503999999999998" y="85.46153846153847" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,170) scale(1,-1)">200</text>
+			<path d="M 35,134.923077 L 499.275591,134.923077 Z" style="stroke: rgb(87%,86%,92%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="9.224999999999998" y="131.92307692307693" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,263) scale(1,-1)">400</text>
+			<path d="M 35,181.384615 L 499.275591,181.384615 Z" style="stroke: rgb(87%,86%,92%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="9.035999999999998" y="178.3846153846154" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,356) scale(1,-1)">600</text>
+			<rect x="60.0" y="42" width="48.0" height="33.4523076923077" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="60.0" y="75.4523076923077" width="48.0" height="40.886153846153846" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="60.0" y="116.33846153846154" width="48.0" height="18.58461538461539" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="73.71" y="140.92307692307693" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,281) scale(1,-1)">400</text>
+			<text x="68.5065" y="25" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,50) scale(1,-1)">1-6 sep</text>
+			<rect x="150.85511811023622" y="42" width="48.0" height="39.027692307692305" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="150.85511811023622" y="81.0276923076923" width="48.0" height="58.54153846153845" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="150.85511811023622" y="139.56923076923076" width="48.0" height="32.52307692307693" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="165.0551181102362" y="178.09230769230768" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,356) scale(1,-1)">560</text>
+			<text x="157.12511811023623" y="25" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,50) scale(1,-1)">7-13 sep</text>
+			<rect x="241.71023622047247" y="42" width="47.99999999999997" height="33.4523076923077" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="241.71023622047247" y="75.4523076923077" width="47.99999999999997" height="61.329230769230776" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="241.71023622047247" y="136.78153846153847" width="47.99999999999997" height="44.60307692307694" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="255.50023622047243" y="187.38461538461542" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,374) scale(1,-1)">600</text>
+			<text x="244.64123622047242" y="25" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,50) scale(1,-1)">14-20 sep</text>
+			<rect x="332.5653543307087" y="42" width="48.0" height="26.018461538461537" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="332.5653543307087" y="68.01846153846154" width="48.0" height="58.541538461538465" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="332.5653543307087" y="126.56" width="48.0" height="45.53230769230768" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="346.7653543307087" y="178.09230769230768" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,356) scale(1,-1)">560</text>
+			<text x="336.3108543307087" y="25" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,50) scale(1,-1)">21-27 sep</text>
+			<rect x="423.42047244094493" y="42" width="48.0" height="13.009230769230768" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<rect x="423.42047244094493" y="55.00923076923077" width="48.0" height="26.018461538461537" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="423.42047244094493" y="81.0276923076923" width="48.0" height="26.018461538461537" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="437.85047244094494" y="113.04615384615384" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,226) scale(1,-1)">280</text>
+			<text x="425.0914724409449" y="25" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,50) scale(1,-1)">28-30 sep</text>
+			<text x="0" y="211" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,422) scale(1,-1)">Antal stängda ärenden</text>
+			<rect x="0" y="2" width="8" height="8" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(72%,70%,80%); fill-rule: evenodd;"/>
+			<text x="13" y="3" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,6) scale(1,-1)">Manuellt</text>
+			<rect x="64.44200000000001" y="2" width="8.0" height="8" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="77.44200000000001" y="3" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,6) scale(1,-1)">Agentstöd</text>
+			<rect x="137.27200000000002" y="2" width="8.0" height="8" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="150.27200000000002" y="3" style="font-family: DMSans; font-size: 9px;fill: rgb(39%,38%,49%); stroke:none;" transform="translate(0,6) scale(1,-1)">Agentutfört internt</text>
+		</g>
+	</g>
+</svg>

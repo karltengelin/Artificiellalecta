@@ -1,0 +1,64 @@
+{
+  "synthetic": true,
+  "scenario": "Illustrativ mogen drift - inte uppmätt verksamhet eller aktuell implementationsstatus",
+  "period": "2026-09",
+  "generated_on": "2026-10-24",
+  "agents": [
+    {"id":"handlaggning","name":"Handläggaragent","short":"Handläggning","abbr":"HAND","team":"Försäkring","runs":3600,"calls":12000,"root_runs":1500,"role_tokens_m":{"fast":36,"standard":12,"deep":0}},
+    {"id":"kommunikation","name":"Kommunikationsagent","short":"Kommunikation","abbr":"KOM","team":"Kommunikation","runs":1800,"calls":6000,"root_runs":0,"role_tokens_m":{"fast":16,"standard":2,"deep":0}},
+    {"id":"kapital","name":"Portföljförvaltningsagent","short":"Portfölj","abbr":"KAP","team":"Kapital","runs":600,"calls":1600,"root_runs":100,"role_tokens_m":{"fast":6,"standard":5,"deep":1}},
+    {"id":"aktuarie","name":"Aktuarieagent","short":"Aktuarie","abbr":"AKT","team":"Aktuarie & analys","runs":800,"calls":2600,"root_runs":50,"role_tokens_m":{"fast":4,"standard":13,"deep":5}},
+    {"id":"data","name":"Data scientist-agent","short":"Data scientist","abbr":"DATA","team":"Aktuarie & analys","runs":900,"calls":3200,"root_runs":0,"role_tokens_m":{"fast":8,"standard":13,"deep":3}},
+    {"id":"compliance","name":"Compliance-agent","short":"Compliance","abbr":"COMP","team":"Compliance","runs":700,"calls":2000,"root_runs":100,"role_tokens_m":{"fast":3,"standard":6,"deep":7}},
+    {"id":"rapportering","name":"Rapporteringsagent","short":"Rapportering","abbr":"RAPP","team":"Compliance","runs":650,"calls":1800,"root_runs":0,"role_tokens_m":{"fast":6,"standard":3,"deep":1}},
+    {"id":"ekonomi","name":"Ekonomiagent","short":"Ekonomi","abbr":"EKO","team":"Ekonomi","runs":900,"calls":2000,"root_runs":100,"role_tokens_m":{"fast":6,"standard":1,"deep":0}},
+    {"id":"inkop","name":"Inköpsagent","short":"Inköp","abbr":"INK","team":"Ekonomi","runs":240,"calls":700,"root_runs":0,"role_tokens_m":{"fast":2,"standard":1,"deep":0}},
+    {"id":"utveckling","name":"Utvecklaragent","short":"Utveckling","abbr":"UTV","team":"Utveckling","runs":810,"calls":1800,"root_runs":150,"role_tokens_m":{"fast":3,"standard":4,"deep":1}}
+  ],
+  "roles": {
+    "fast":{"input_share":0.8333333333333334,"cached_input_share":0.6,"sek_per_m_uncached_input":40,"sek_per_m_cached_input":8,"sek_per_m_output":160},
+    "standard":{"input_share":0.8333333333333334,"cached_input_share":0.4,"sek_per_m_uncached_input":140,"sek_per_m_cached_input":28,"sek_per_m_output":560},
+    "deep":{"input_share":0.8333333333333334,"cached_input_share":0.3333333333333333,"sek_per_m_uncached_input":500,"sek_per_m_cached_input":100,"sek_per_m_output":2000}
+  },
+  "case_types": [
+    {"name":"Löner & premier","manual":144,"supported":432,"internal":384,"manual_minutes":28,"supported_minutes":11,"internal_minutes":3},
+    {"name":"Stamdata & anslutning","manual":120,"supported":264,"internal":96,"manual_minutes":35,"supported_minutes":14,"internal_minutes":4},
+    {"name":"Utbetalningsfrågor","manual":108,"supported":180,"internal":72,"manual_minutes":40,"supported_minutes":18,"internal_minutes":5},
+    {"name":"Avstämning & ekonomi","manual":48,"supported":120,"internal":72,"manual_minutes":45,"supported_minutes":20,"internal_minutes":6},
+    {"name":"Regelverk & rapportering","manual":96,"supported":48,"internal":48,"manual_minutes":120,"supported_minutes":54,"internal_minutes":12},
+    {"name":"Övriga kundärenden","manual":108,"supported":12,"internal":48,"manual_minutes":32,"supported_minutes":16,"internal_minutes":4}
+  ],
+  "weeks": [
+    {"label":"1-6 sep","manual":144,"supported":176,"internal":80,"tokens_m":22},
+    {"label":"7-13 sep","manual":168,"supported":252,"internal":140,"tokens_m":32},
+    {"label":"14-20 sep","manual":144,"supported":264,"internal":192,"tokens_m":40},
+    {"label":"21-27 sep","manual":112,"supported":252,"internal":196,"tokens_m":49},
+    {"label":"28-30 sep","manual":56,"supported":112,"internal":112,"tokens_m":25}
+  ],
+  "previous_period":{"total_cases":2200,"manual":770,"supported":990,"internal":440,"tokens_m":145},
+  "delegations": [
+    ["kommunikation","handlaggning",1200],["ekonomi","handlaggning",600],["utveckling","handlaggning",300],
+    ["handlaggning","kommunikation",1400],["compliance","kommunikation",250],["ekonomi","kommunikation",150],
+    ["aktuarie","kapital",250],["ekonomi","kapital",250],
+    ["handlaggning","aktuarie",300],["kapital","aktuarie",250],["utveckling","aktuarie",100],["compliance","aktuarie",100],
+    ["aktuarie","data",900],
+    ["handlaggning","compliance",350],["kapital","compliance",75],["ekonomi","compliance",50],["kommunikation","compliance",50],["utveckling","compliance",25],["rapportering","compliance",50],
+    ["compliance","rapportering",650],
+    ["handlaggning","ekonomi",450],["kapital","ekonomi",150],["aktuarie","ekonomi",100],["inkop","ekonomi",100],
+    ["ekonomi","inkop",240],
+    ["compliance","utveckling",360],["handlaggning","utveckling",300]
+  ],
+  "run_outcomes":{"completed":10120,"waiting_approval":550,"needs_human":220,"blocked":88,"failed":22},
+  "approvals":{"approved":686,"rejected":62,"withdrawn":32,"pending":40,"median_minutes":42,"p95_minutes":210},
+  "retry_causes":{"Schema eller format":728,"Verktygsfel eller timeout":566,"Otillräckligt underlag":425,"Kontext eller budget":303},
+  "retry_token_and_cost_share":0.08,
+  "case_attributed_share":0.85,
+  "quality":[
+    {"mode":"manual","sample":90,"errors":9,"median_hours":14.2,"p95_hours":54,"sla_breaches":75},
+    {"mode":"supported","sample":120,"errors":6,"median_hours":5.8,"p95_hours":24,"sla_breaches":63},
+    {"mode":"internal","sample":90,"errors":3,"median_hours":0.6,"p95_hours":4.2,"sla_breaches":14}
+  ],
+  "quality_severity":{"critical":0,"major":4,"minor":14},
+  "assumptions":{"governance_hours":96,"platform_hours":40,"capacity_hours":800,"one_operator_hours":160,"hourly_value_sek":600,"platform_cost_sek":6000,"sla_hours":16},
+  "automation_scenario":{"Löner & premier":240,"Stamdata & anslutning":72,"Avstämning & ekonomi":48}
+}

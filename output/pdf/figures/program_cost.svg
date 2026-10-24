@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="499.27559055118115" height="127" preserveAspectRatio="xMinYMin meet" viewBox="0 0 499 127" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="499.27559055118115" height="127"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-127)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="71" width="113.65981086255948" height="26" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<rect x="113.65981086255948" y="71" width="26.412039704700106" height="26" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<rect x="140.0718505672596" y="71" width="359.20373998392154" height="26" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(14%,14%,25%); fill-rule: evenodd;"/>
+			<rect x="0" y="47" width="8" height="8" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(41%,31%,81%); fill-rule: evenodd;"/>
+			<text x="14" y="47" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,94) scale(1,-1)">Modellanrop</text>
+			<text x="459.13559055118117" y="47" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,94) scale(1,-1)">25 820 kr</text>
+			<rect x="0" y="28" width="8" height="8" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,64%,92%); fill-rule: evenodd;"/>
+			<text x="14" y="28" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,56) scale(1,-1)">Plattform</text>
+			<text x="462.50159055118115" y="28" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,56) scale(1,-1)">6 000 kr</text>
+			<rect x="0" y="9" width="8" height="8" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(14%,14%,25%); fill-rule: evenodd;"/>
+			<text x="14" y="9" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,18) scale(1,-1)">Mänskligt tilläggsarbete</text>
+			<text x="460.37759055118113" y="9" style="font-family: DMSans; font-size: 9px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,18) scale(1,-1)">81 600 kr</text>
+			<text x="0" y="112" style="font-family: DMSans-Bold; font-size: 10px;fill: rgb(14%,14%,25%); stroke:none;" transform="translate(0,224) scale(1,-1)">Tillkommande resurskostnad i kalkylen: 113 420 kr</text>
+		</g>
+	</g>
+</svg>
