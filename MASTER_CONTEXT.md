@@ -272,7 +272,7 @@ Artificiellalecta/
     ├── diagnostics/                ← Databas- och AI-kontroller
     ├── analysis/                   ← Manuella analyskörningar
     ├── documentation/              ← Genererade förteckningar
-    └── web/                        ← Start av handläggar-UI:t
+    └── web/                        ← Start av handläggar-UI:t, skrivbordsgenväg och designvärden för webben
 ```
 
 **Mappnamnskonvention:**
