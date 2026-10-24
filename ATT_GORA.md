@@ -151,6 +151,12 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 Fas 3b är klar (3b-1–3b-8). Nästa steg är ärendet som agentens arbetsenhet och mandat.
 
 - [x] **2026-10-24** **F5-0: Designstopp** – beslutsförslag `projekt/01_ärendehantering/ARENDEN_BESLUTSFORSLAG.md` (2026-10-24): tabellen `cases`, ärendeoperationer, resursmandat ur ärendet (`scope_for_case`) och första flödet *nytt löneunderlag* med UI-sidorna `/arenden`. Godkänt 2026-10-24 med valen A–H enligt rekommendationerna och loggat som **B-033**; byggstegen F5-1–F5-6 står i förslagets §7
+- [x] **2026-10-24** **F5-1: Tabellen `cases`** – `databasschema.md` §9g, modellen `src/models/case.py` och migrationen `scripts/migrations/migrate_cases.py` (bara `cases`, torrkörning som standard). Databasens villkor provade i SQLite (`tests/test_models_cases.py`), migrationen mot isolerad Postgres (`tests/test_migration_cases.py`). Torrkörning mot Lakebase visar rätt SQL; **tabellen är inte skapad där** – det sker i F5-5
+- [ ] **F5-2: Ärendeoperationer** – `create_case`, `list_cases`, `update_case_status`, `close_case` (`HUMAN_ONLY`) och `get_case` (`AGENT`) med åtkomstrader och tester; operationsförteckningen genereras om
+- [ ] **F5-3: Harness** – `scope_for_case`, `case_number` i resurskontrollen, uppdragsmall per ärendetyp, `get_case` i podden `kunddata`, status efter körning
+- [ ] **F5-4: UI** – `/arenden`, registrering, detalj med *Starta agent*, resultat, kostnad och journal
+- [ ] **F5-5: Lakebase** – migration och rättigheter för `agent_forsakring` på `cases` efter backup och operatörens OK (AGENTS.md §4.5); skarp verifiering
+- [ ] **F5-6: Röktest av hela flödet** – ärende → agent → förslag → godkännande → stängt, efter 2026-11-01
 
 ## 🟡 Medium prioritet – domänkartläggning
 

@@ -7,6 +7,7 @@ ser samtliga tabeller. Lägg in nya modeller här när de skapas.
 from .approval_request import ApprovalRequestRecord
 from .base import Base
 from .base_amount import BaseAmount
+from .case import Case
 from .employer import Employer
 from .insured_person import InsuredPerson
 from .operation_event import OperationEventRecord
@@ -23,6 +24,7 @@ __all__ = [
     "ApprovalRequestRecord",
     "Base",
     "BaseAmount",
+    "Case",
     "Employer",
     "InsuredPerson",
     "OperationEventRecord",

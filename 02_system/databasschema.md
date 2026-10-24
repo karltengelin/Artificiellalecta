@@ -19,11 +19,12 @@
 | `salary_reports` | Löneunderlag – pensionsmedförande lön per person, arbetsgivare och månad, versionerat | 🟢 Skapad i Lakebase 2026-10-11 (Fas 1f T3, §8b) – tom tills underlag registreras |
 | `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟢 I drift (seedad 2023–2026) |
 | `operation_events` / `approval_requests` | Tjänstelagrets händelselogg och godkännandekö (§9b–9c) | 🟡 Fas 1f T3a |
+| `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟡 Fas 5 F5-1: modell och lokala tester; ej skapad i Lakebase |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
 
 **Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för försäkringens läge. Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
-**Planerade tabeller (ej i denna omgång):** `cases` (ärenden, Fas 5). Kapitalets kassaflödesjournal och premiekoppling byggs senare; se §9d.
+**Planerade tabeller (ej i denna omgång):** Kapitalets kassaflödesjournal och premiekoppling byggs senare; se §9d.
 
 ---
 
@@ -467,6 +468,51 @@ för befintligt `scripts/setup/create_tables.py`; skriptet har inte körts.
 
 ---
 
+## 9g. Tabell: `cases` – Ärenden
+
+> **Status:** Beslutad av operatören 2026-10-24 (Fas 5, **B-033**, `projekt/01_ärendehantering/ARENDEN_BESLUTSFORSLAG.md`). Modell och lokala tester i F5-1; skapas i Lakebase med `scripts/migrations/migrate_cases.py` (§12) först efter backup och operatörens OK enligt AGENTS.md §4.5.
+
+**Domän:** Ett ärende är något som kommit in och ska handläggas – i v1 ett inrapporterat löneunderlag. Ärendet är handläggaragentens arbetsenhet och mandat: resursmandatet för en agentkörning byggs ur ärendets person, försäkringar, arbetsgivare och period (`harness.md` §5.1), och en körning gäller ett ärende. Ärendenumret är det som står i `case_id` i `operation_events` och `approval_requests` (§9b–9c).
+
+Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapade, bytte status och stängde, när och varför – står i `operation_events` via `case_id`, eftersom varje ändring går genom en tjänsteoperation (B-033 val A). Ingen separat händelsetabell.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
+| `case_number` | `VARCHAR(20)` | NOT NULL, UNIQUE, CHECK form `CASE-NNNNNN` | Ärendenumret; står i `case_id` i kö och logg |
+| `case_type` | `VARCHAR(40)` | NOT NULL, CHECK in (`'salary_report'`) | Ärendetyp. Fler typer läggs till med ny CHECK (B-033 val C) |
+| `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`open`, `in_progress`, `waiting_approval`, `waiting_info`, `closed`), default `open` | Aktuell status |
+| `outcome` | `VARCHAR(20)` | NULL, CHECK in (`approved`, `rejected`, `supplement_requested`, `manual_review`, `no_action`) | Utfall; satt exakt när ärendet är stängt |
+| `insured_person_id` | `UUID` | NULL, FK → `insured_persons(id)` ON DELETE RESTRICT | Den försäkrade ärendet gäller |
+| `policy_id` | `UUID` | NULL, FK → `policies(id)` ON DELETE RESTRICT | Försäkringen, om ärendet gäller en viss |
+| `employer_id` | `UUID` | NULL, FK → `employers(id)` ON DELETE RESTRICT | Arbetsgivaren, t.ex. avsändare av löneunderlaget |
+| `period_month` | `DATE` | NULL, CHECK (dag = 1) | Månaden ärendet gäller |
+| `channel` | `VARCHAR(20)` | NOT NULL, CHECK in (`manual`, `employer_file`, `customer_portal`, `chatbot`) | Inkommande kanal; `manual` i v1, övriga reserverade (delprojekt 3 och 7) |
+| `received_date` | `DATE` | NOT NULL | Mottagningsdag (PR-ITP1-031) |
+| `source_reference` | `VARCHAR(100)` | NULL | Avsändarens referens, t.ex. lönefilens id |
+| `due_date` | `DATE` | NULL | Tidsfrist, t.ex. för klagomål (PR-ITP1-030); ingen för löneunderlag i v1 |
+| `details` | `JSONB` | NOT NULL | Typens uppgifter, validerade mot en Pydantic-modell per typ i tjänstelagret (B-033 val F). För `salary_report`: rapporterad lön, källa, `kind` och ev. `corrects_version` |
+| `assigned_to` | `VARCHAR(100)` | NULL | Handläggaren som äger ärendet |
+| `last_run_id` | `VARCHAR(100)` | NULL | Senaste agentkörningen; journal i `logs/agent_runs/<run_id>.jsonl` |
+| `created_by` | `VARCHAR(100)` | NOT NULL | Den som registrerade ärendet |
+| `closed_by` / `closed_at` | `VARCHAR(100)` / `TIMESTAMPTZ` | NULL | Satta exakt när ärendet är stängt |
+| `closing_note` | `TEXT` | NULL | Anteckning vid stängning; krävs vid `rejected` och `manual_review` |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
+
+**Integritet:**
+- Unikt `case_number`
+- CHECK: minst en av `insured_person_id` och `employer_id` – ett ärende gäller någon
+- CHECK: stängt ärende har `outcome`, `closed_by` och `closed_at`; öppet ärende har inga av dem
+- CHECK: `rejected` och `manual_review` har `closing_note` – avslag och manuell prövning motiveras (PR-ITP1-031)
+- CHECK: `period_month` är första dagen i månaden (Postgres- och SQLite-variant, §12)
+- Index på `status`, `case_type` och `insured_person_id`
+
+**Skrivs av** tjänstelagrets ärendeoperationer (F5-2): `create_case`, `update_case_status` och `close_case` (`HUMAN_ONLY`; harness skriver status efter en körning som systemaktör). **Läses av** `list_cases` (`HUMAN_ONLY`) och `get_case` (`AGENT`, bara körningens ärende). Agenten kan inte skapa, ändra eller stänga ärenden.
+
+**Personuppgifter:** `details` kan innehålla lön och fri text (B-006). Gallring följer PR-ITP1-031 och beslutas i tjänstelagerprojektets lagringspolicy.
+
+---
+
 ## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**
@@ -503,6 +549,7 @@ för befintligt `scripts/setup/create_tables.py`; skriptet har inte körts.
 - **Ändringar i schemat** dokumenteras alltid här först – sedan genereras Alembic-migration.
 - **Fas 1f T3 (2026-10-11) – första ändringen av en befintlig tabell:** gjord med ett kontrollerat migrationsskript, `scripts/migrations/migrate_t3_schema.py`, i stället för Alembic (som skulle kräva ett nytt beroende – föreslaget som eget steg). Skriptet skapar `salary_reports` och lägger till `premium_transactions.corrects_transaction_id` med sin CHECK och sitt index i **en** transaktion (Postgres-DDL är transaktionell), kontrollerar förutsättningarna först, visar SQL med `--dry-run`, ändrar inga befintliga rader och verifierar radantalen efteråt. Verifierat 2026-10-11 mot en isolerad Postgres 17 (`svc_test`): migrationen från det gamla schemat med data ger samma kolumner, constraints och index som `create_all`, är idempotent och lämnar radantalen oförändrade (`tests/test_services_postgres.py`). Körs mot Lakebase först efter backup (`scripts/maintenance/backup_database.py`) och avstämning enligt AGENTS.md §4.5. `create_all` används inte för den befintliga tabellen. **Ordning:** migrationen är bakåtkompatibel (äldre kod påverkas inte), men koden från Fas 1f T3 läser `corrects_transaction_id` – migrationen ska därför vara körd innan den koden används mot Lakebase. Migrerat i Lakebase 2026-10-11 efter backup `backups/20261011T151353Z` och dry-run; radantalen oförändrade (15 097 premietransaktioner), en andra körning gjorde ingenting
 - **Portabla modeller för tester (2026-10-11):** modellerna kan även skapas i en SQLite-databas i minnet, så att tjänstelagret (B-028) testas utan att röra Lakebase. JSON-kolumner är `JSON` med `JSONB`-variant för Postgres, de partiella unika indexen har även `sqlite_where`, och kontrollen att `period_month` är den första i månaden finns i en Postgres- och en SQLite-variant (`ddl_if`). Postgres-DDL:en är verifierat identisk före och efter ändringen – Lakebase påverkas inte och ingen migration behövs. Testdatabasen byggs i `tests/conftest.py` (`insurance_db`).
+- **Fas 5 F5-1 (2026-10-24) – tabellen `cases` (§9g, B-033):** skapas med `scripts/migrations/migrate_cases.py` (`utils/migration_cases.py`), inte `create_all` – den skulle även skapa kapitalförvaltningens tabeller, som inte finns i Lakebase. Skriptet skapar bara `cases` och dess index i en transaktion, kontrollerar att de refererade tabellerna finns, torrkör som standard och kräver `--apply` och `--backup` för en skarp körning, ändrar inga befintliga rader och verifierar radantalen. Verifierat mot isolerad Postgres (`svc_test`, `tests/test_migration_cases.py`): resultatet är identiskt med `create_all`, idempotent och lämnar övriga tabeller orörda. Villkoret för ärendenumret använder `SUBSTR` i stället för `LIKE 'CASE-%'`, eftersom procenttecknet dubbleras när DDL:en kompileras för psycopg2. `details` sparar Pythons `None` som SQL `NULL` (`none_as_null`), så att `NOT NULL` gäller. **Inte körd mot Lakebase** – görs i F5-5 efter backup och operatörens OK
 
 ---
 
