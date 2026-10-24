@@ -146,6 +146,12 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 
 ---
 
+## 🔴 Fas 5 – Handläggaragent och ärenden (B-026, B-028)
+
+Fas 3b är klar (3b-1–3b-8). Nästa steg är ärendet som agentens arbetsenhet och mandat.
+
+- [ ] **F5-0: Designstopp** – beslutsförslag `projekt/01_ärendehantering/ARENDEN_BESLUTSFORSLAG.md` (2026-10-24): tabellen `cases`, ärendeoperationer, resursmandat ur ärendet (`scope_for_case`) och första flödet *nytt löneunderlag* med UI-sidorna `/arenden`. **Väntar på operatörens val A–H**; byggstegen F5-1–F5-6 står i förslagets §7
+
 ## 🟡 Medium prioritet – domänkartläggning
 
 - [x] **2026-10-11** Specificera AI-abstraktionslagret i `02_system/ai_abstraktion.md` – LiteLLM, OpenRouter och egen wrapper utvärderade; egen tunn wrapper beslutad (B-025) och byggd i `src/ai/` (Anthropic Messages API + OpenAI Responses API, roller `fast`/`standard`/`deep` med reserv hos andra leverantören, team-nycklar, anropslogg, 81 tester). Agentekosystemet designat i `02_system/agentekosystem.md` (B-026)

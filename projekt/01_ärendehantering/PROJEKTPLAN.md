@@ -35,10 +35,10 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 
 - **Tjänstelagret (Fas 1f, B-028).** UI:t anropar bara dess operationer. Se `02_system/tjänstelager.md`.
 - **Fas 3 (AI-abstraktionslagret, B-009)** ✅ byggdes 2026-10-11 i `src/ai/`.
-  - Den inbyggda Claude-chatten och handläggaragenten kräver dessutom harness (Fas 3b). Harness byggs
-    efter UI:t (B-028), se `02_system/agentekosystem.md` §12 och `ATT_GORA.md`.
-- **`cases`-tabellen** finns inte än. Att definiera den ingår i det här projektets scope (jfr `databasschema.md`).
-  `OperationContext.case_id` finns redan i tjänstelagret.
+  - Den inbyggda Claude-chatten och handläggaragenten kräver dessutom harness (Fas 3b), ✅ byggd 2026-10-24
+    i `src/agents/` (3b-1–3b-8, röktestet gick igenom hos båda leverantörerna), se `02_system/harness.md`.
+- **`cases`-tabellen** finns inte än. Att definiera den ingår i det här projektets scope: designstopp i
+  [ARENDEN_BESLUTSFORSLAG.md](ARENDEN_BESLUTSFORSLAG.md). `OperationContext.case_id` finns redan i tjänstelagret.
 
 ## Befintlig grund i repot
 
@@ -59,7 +59,7 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
   - arbetsgivarens uppgifter och avslut
   - försäkringsbesked
   - interna id:n i adresserna
-- `cases`-tabell och ärendeflöde, tillsammans med handläggaragenten (Fas 5).
+- `cases`-tabell och ärendeflöde, tillsammans med handläggaragenten (Fas 5): designstopp i [ARENDEN_BESLUTSFORSLAG.md](ARENDEN_BESLUTSFORSLAG.md), väntar på operatörens val A–H.
 - Inbyggd Claude efter harness (Fas 3b).
 
 ## Öppna designfrågor
