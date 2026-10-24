@@ -82,6 +82,17 @@ Systemet ska alltid kunna styras manuellt av en människa, på samma nivå som e
 ### 3.8 Ett tjänstelager för människor och agenter
 Alla operationer mot försäkringssystemet går via ett gemensamt tjänstelager (`src/services/`) som handläggar-UI, agenter och skript använder. Ett centralt register bestämmer vad agenter får göra med varje operation: utföra direkt, föreslå för godkännande, eller ingenting alls (*endast handläggare*). Skrivande operationer vars produktregel inte är godkänd är alltid endast handläggare. Varje ändring loggas med vem som gjorde den och varför. Se `02_system/tjänstelager.md` och B-028.
 
+### 3.9 Gemensamt grafiskt designspråk – Digital klarhet
+
+Bolagets grafiska riktning är **Digital klarhet** (B-034): indigo, ljusa ytor,
+DM Sans och mjukare former. Webb, handläggargränssnitt, rapporter, dokumentation
+och presentationer ska använda samma grund, även när de skapas av olika agenter.
+Specifikation och visuell referens finns i [`06_design/`](06_design/README.md);
+gemensamma designvärden i `src/design/digital_clarity.tokens.json`.
+Designgrunden är dokumenterad; mallar, genereringsskills och införande i befintliga
+ytor byggs stegvis enligt ATT_GORA. Designspråket ändrar inte tjänstelagrets
+behörigheter eller den beslutade webbarkitekturen.
+
 ---
 
 ## 4. Bolagets funktionsområden
@@ -218,6 +229,11 @@ Artificiellalecta/
 │   │   └── placeringsriktlinje.md ← Beslutsutkast för paper trading (Fas 2b)
 │   └── 04_processer/
 │
+├── 06_design/                       ← Digital klarhet: designspråk och visuell referens (B-034)
+│   ├── README.md
+│   ├── designsprak.md
+│   └── digital_klarhet.html         ← Bevarad referens med exempeldata
+│
 ├── projekt/                         ← Delprojektens PROJEKTPLAN.md (B-024, se §4b)
 │   ├── 01_ärendehantering/
 │   ├── 02_bi_insikter/
@@ -242,6 +258,7 @@ Artificiellalecta/
 │   ├── services/                   ← Tjänstelagret (B-028): kontrakt, access_register.yaml, godkännande, händelselogg
 │   ├── web/                        ← Handläggar-UI:t (Fas 4): sidor, templates/, static/ – anropar bara tjänstelagret
 │   ├── analytics/                  ← Analyser och scenarier (delprojekt 2)
+│   ├── design/                     ← Gemensamma designvärden (digital_clarity.tokens.json)
 │   └── utils/                      ← Gemensam kod
 │
 ├── tests/                          ← Tester

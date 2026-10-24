@@ -21,12 +21,21 @@ Se MASTER_CONTEXT §7 för fullständig översikt.
 - `03_skills/` – Skill-instruktioner (markdown)
 - `04_regulatoriskt/` – Regelverkskällor (lager 1)
 - `05_styrdokument/` – Interna styrdokument (lager 3)
+- [`06_design/`](06_design/README.md) – Digital klarhet: bolagets gemensamma designspråk och visuella referens (B-034)
 - `projekt/` – Delprojektens projektplaner (B-024)
 - `src/` – Python-kod
 - `tests/`, `data/`, `scripts/` – Tester, mockdata och kategoriserade körverktyg
 
 Se [kodbas och skriptkatalog](02_system/skriptkatalog.md) för verktyg, beroenden,
 körordning och vilka kommandon som läser eller ändrar data.
+
+## Grafisk design
+
+**Digital klarhet** är bolagets valda grafiska riktning (B-034): indigo, ljusa
+ytor, DM Sans och mjukare former. Se [designspecifikationen](06_design/designsprak.md)
+och [den visuella referensen](06_design/digital_klarhet.html) för rapport, slide
+och handläggarvy. Designgrunden är dokumenterad; mallar och införande i befintliga
+gränssnitt sker stegvis enligt ATT_GORA.
 
 ## Teknisk stack
 
