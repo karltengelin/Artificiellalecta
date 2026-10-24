@@ -1,0 +1,99 @@
+# Agentekosystemets körpolicy (Fas 3b-1). Design: 02_system/harness.md §3, agentekosystem.md §3–5.
+#
+# En samlad fil för team, agenter, skill-poddar och gränser – den enda källan för vad en
+# agent får se och anropa. Agentens Markdown-instruktion ger inga befogenheter.
+#
+# Effektiva verktyg för en agent = snittet av allt nedan, och ett nej vinner alltid:
+#   - skillen hör till exakt en podd, och podden är monterad på teamet och agenten
+#   - skillen är inte nekad globalt, för teamet, agenten eller uppdraget
+#   - skillens sidoeffekt finns i alla tillåtna mängder (defaults, podd, team, agent, uppdrag)
+#   - tjänstelagrets effektiva nivå (access_register.yaml + golven) är inte HUMAN_ONLY
+# Agentnivån (AGENT/APPROVAL/HUMAN_ONLY) står bara i tjänstelagrets åtkomstregister – aldrig här.
+#
+# Ändras genom granskad merge. Ingen agent skriver den här filen.
+# Visa effektiv profil: python scripts/documentation/show_agent_profile.py case_handler
+
+schema_version: 1
+policy_id: harness-v1
+
+# B-026:s sju team. Namn som får användas som ägare, montering och delegeringsmål,
+# även innan teamet har en aktiv profil under `teams`.
+team_ids: [forsakring, kommunikation, kapital, aktuarie, compliance, ekonomi, utveckling]
+
+defaults:
+  deny_skills: []
+  allowed_effects: [read, compute, write]   # external öppnas aldrig här (§3.5, B-026)
+  require_execution_scope_for_pii: true
+  # Globala tak för en enskild agent (harness.md §6.3). Team, agent och uppdrag får bara sänka.
+  limits:
+    max_steps: 20
+    max_tool_calls: 30
+    max_cost_usd: 2.00
+    max_output_tokens: 4000
+    max_context_bytes: 120000
+    max_wall_seconds: 600
+
+pods:
+  # Kunddata via tjänstelagret. PII: verktygen visas först när resurskontrollen för
+  # tilldelat ärende är byggd (3b-3) – till dess döljer harness dem med skäl.
+  kunddata:
+    owner_team: forsakring
+    mountable_by: [forsakring]
+    pii: true
+    allowed_effects: [read, write]
+    skills:
+      get_insured_overview: {service_operation: get_insured_overview}
+      get_premium_history: {service_operation: get_premium_history}
+      get_salary_reports: {service_operation: get_salary_reports}
+      register_salary_report: {service_operation: register_salary_report}
+      set_policy_paid_up: {service_operation: set_policy_paid_up}
+      correct_premium_transaction: {service_operation: correct_premium_transaction}
+
+  berakning:
+    owner_team: aktuarie
+    mountable_by: [forsakring, aktuarie]
+    pii: false
+    allowed_effects: [compute]
+    skills:
+      calculate_premium_preview: {service_operation: calculate_premium_preview}
+
+  # Planerade poddar enligt harness.md §3.4 läggs till när deras gateways finns:
+  #   regelverk (read_rule_document, dokumentgateway) och dokument (write_markdown_draft).
+
+teams:
+  forsakring:
+    lead: case_handler
+    mandate: Utred tilldelade ITP1-ärenden och förbered administrativa åtgärder.
+    pods: [kunddata, berakning]
+    allowed_effects: [read, compute, write]
+    deny_skills: [correct_premium_transaction]
+    delegates_to: [kommunikation]
+    limits:
+      max_steps: 12
+      max_tool_calls: 18
+      max_cost_usd: 0.50
+      max_output_tokens: 1500
+      max_context_bytes: 40000
+      max_wall_seconds: 180
+
+agents:
+  case_handler:
+    name: Handläggaragent
+    team: forsakring
+    instruction: 02_system/agenter/handlaggaragent.md
+    model_role: standard
+    pods: [kunddata, berakning]
+    allowed_effects: [read, compute, write]
+    deny_skills: [set_policy_paid_up]   # fribrevsförslag öppnas som eget användningsfall (§9.1)
+    delegates_to: [kommunikation]
+
+# Delegering mellan team byggs i Fas 3c. Gränserna gäller en hel rotkörning (harness.md §6.3, §10.2).
+delegation:
+  enabled: false
+  max_depth: 2
+  max_children: 3
+  root_limits:
+    max_steps: 60
+    max_tool_calls: 90
+    max_cost_usd: 5.00
+    max_wall_seconds: 900

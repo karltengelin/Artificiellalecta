@@ -1,7 +1,7 @@
 # Agentekosystem
 
 > **Typ:** Tvärgående arkitekturramverk (MASTER_CONTEXT §4b, B-024) – inte ett delprojekt utan det sätt alla delprojekt bygger agenter på
-> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Harness, skill-poddar och flödesmotor är ännu inte byggda – se byggordningen i §12.
+> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Harness byggs i Fas 3b: körpolicyn `src/agents/ecosystem.yaml` och skill-registret finns sedan 2026-10-24 (3b-1, 3b-2); agentloop, dispatcher med resurskontroll, körjournal och flödesmotor återstår – se byggordningen i §12 och `harness.md`.
 > **Vidareutvecklar:** B-006, B-007, B-008, B-009, B-011, B-016, B-017
 
 ---
@@ -130,7 +130,7 @@ De tio befintliga agenterna (`agentkarta.md`) fördelas på sju team:
 En agent består, i linje med B-015, av:
 
 - **Mandat och instruktion** i `02_system/agenter/<agent>.md` (finns som skelett för alla tio).
-- **En körprofil** som harness läser. Förslaget är en samlad fil `src/agents/ecosystem.yaml` med team, agenter och poddmontering – en enda källa för behörigheter som går att granska i en diff:
+- **En körprofil** som harness läser: den samlade filen `src/agents/ecosystem.yaml` med team, agenter och poddmontering – en enda källa för behörigheter som går att granska i en diff (byggd i Fas 3b-1, fullständigt format och validering i `harness.md` §3). Den första skissen:
 
 ```yaml
 teams:
@@ -148,7 +148,7 @@ agents:
     limits: {max_steps: 20, max_cost_usd: 0.50}
 ```
 
-Agent-id är engelska `snake_case` (kod, B-015); visningsnamnet är svenskt. Det exakta formatet bestäms när harness byggs (Fas 3b).
+Agent-id är engelska `snake_case` (kod, B-015); visningsnamnet är svenskt.
 
 ### 4.2 Agentloopen (harness)
 
@@ -362,7 +362,7 @@ Byggs efter harness (§12).
 
 - **Internrevision:** eget oberoende team – när, och med vilka poddar (läsåtkomst till journaler och anropsloggar)?
 - **Lagring av körjournalen** i Lakebase – tabellschema i `databasschema.md` när Fas 3c påbörjas. (Godkännandekön och händelseloggen får tabeller redan i Fas 1f, se `tjänstelager.md` §9.)
-- **Formatet för agentdefinitioner** – samlad `ecosystem.yaml` (förslag) eller körprofil i respektive agents MD-fil?
+- **Formatet för agentdefinitioner:** ✅ avgjort 2026-10-12 – samlad `src/agents/ecosystem.yaml` (`harness.md` §3.3), byggd i Fas 3b-1 2026-10-24. MD-filerna är instruktioner och ger inga befogenheter.
 - **Utvärderingsuppsättningar** per agent/skill för att kunna byta modell med belägg.
 - **Ledningsfunktion:** behövs en agent för tvärgående prioritering (VD-roll) – eller förblir operatören och flödesmotorn den rollen?
 - **Godkännandegränssnitt:** ✅ löst 2026-10-12 – kön avgörs i handläggar-UI:t (`/godkannanden`, Fas 4, `handläggar-ui.md`) via `ServiceLayer.approve/reject`; det planerade CLI:t byggdes inte (`tjänstelager.md` §6).
