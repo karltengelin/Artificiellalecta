@@ -21,5 +21,7 @@ källan till de maskinläsbara grundvärdena. Den visuella referensen är en bev
 ögonblicksbild av det valda förslaget, med exempeldata och skisser av komponenter.
 Den är inte en kopia av dagens handläggar-UI eller en färdig rapport-/PPTX-mall.
 
-Designgrunden är dokumenterad. Införande i befintliga ytor, färdiga dokument- och
+Designgrunden är dokumenterad och tillämpad i handläggar-UI:t, som är pilotytan
+(2026-10-24). Webbens CSS-variabler genereras där ur tokenfilen, se
+`02_system/handläggar-ui.md` §2. Införande i övriga ytor, färdiga dokument- och
 presentationsmallar samt de gemensamma genereringsskillsen återstår enligt backloggen.

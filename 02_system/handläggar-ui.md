@@ -18,6 +18,13 @@ Lakebase-tabellerna och i händelseloggen. UI:t är tjänstelagrets första klie
 - **FastAPI + Jinja2 + HTMX.** Sidorna renderas på servern. HTMX laddas från unpkg med fast version och
   SRI-hash. Det finns inget Node och inget byggsteg. Sidorna fungerar också utan JavaScript, och då ger
   HTMX bara mjukare navigering.
+- **Digital klarhet (B-034).** UI:t är designspråkets pilotyta (`06_design/designsprak.md`). Färger,
+  typsnitt, avstånd och hörnradier finns bara i tokenfilen `src/design/digital_clarity.tokens.json`.
+  `src/web/static/tokens.css` genereras ur den med `python scripts/web/build_design_tokens.py`, och
+  `app.css` använder enbart dessa variabler. Härledda nyanser blandas med `color-mix()`.
+  `tests/test_design_web_css.py` fallerar om `tokens.css` inte är aktuell eller om `app.css` får egna
+  färgvärden. DM Sans laddas från Google Fonts utan referer, eftersom adresserna innehåller
+  personnummer. Saknas nätet används reserven `system-ui`.
 - **Bara tjänstelagret.** Webbkoden anropar `ServiceLayer.execute/approve/reject` och läsoperationerna,
   och rör aldrig modeller eller sessioner. Det gäller även läsningar, eftersom läsningar av
   personuppgifter loggas. Testet `test_webbkoden_ror_varken_modeller_eller_sessioner` vaktar gränsen.
