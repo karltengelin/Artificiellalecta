@@ -21,9 +21,13 @@ class EnvironmentUnavailable(Exception):
 
 def _probe(database: str) -> bool:
     """Bara connection refused betyder ledig port; andra svar måste kunna verifieras."""
-    connection = HTTPConnection("127.0.0.1", DEFAULT_PORTS[database], timeout=1)
+    # Windows kan behöva cirka två sekunder för att rapportera en ledig port
+    # som connection refused. En sekund förväxlar det med en server som hängt.
+    connection = HTTPConnection("127.0.0.1", DEFAULT_PORTS[database], timeout=3)
     try:
         connection.request("GET", "/_instance", headers={"Accept": "application/json"})
+        if connection.sock is not None:
+            connection.sock.settimeout(1)
         response = connection.getresponse()
         body = response.read(4097)
         if response.status != 200 or len(body) > 4096:
