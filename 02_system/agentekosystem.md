@@ -234,6 +234,8 @@ Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen
 | `dokument` | Läsa/skriva Markdown i bolagsmappen, avgränsat per team | Nej | `write` | utveckling | Alla (med mappavgränsning) |
 | `delegering` | `delegate_to_team` (§6.1) | Nej | `read` | utveckling | Ledande agenter |
 
+**Byggt i Fas 3c 3c-T (B-035):** `regelverk`, `dokument` och `bestand` finns i `src/agents/ecosystem.yaml`, monterade på teamen `compliance` och `aktuarie` (`bestand` bara på `aktuarie`). Avvikelser från tabellen: `bestand` har sidoeffekten `read`, eftersom `estimate_parameter_change_impact` är en läsoperation. `dokument` skriver bara utkast i körningens egen arbetsyta. `regelverk` har även `get_product_parameters`.
+
 `bestand` är nyckeln till flaggskeppets "business insight": den ger aggregerade svar utan att någon agent behöver personuppgifter, och är samma förmåga som BI-delprojektet (2) behöver.
 
 ### 5.5 Planerad gemensam rapport- och presentationsförmåga

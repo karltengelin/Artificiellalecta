@@ -16,6 +16,11 @@ operationens egen Pydantic-modell skulle ignorera dem.
 Anropet går alltid via `ServiceLayer.execute` – aldrig direkt till `op.func` –
 så att åtkomstregistret, regelgolven, godkännandekön och händelseloggen gäller
 exakt som för handläggar-UI:t.
+
+En skill kan också vara ett omslag runt ett gatewayverktyg (`GatewaySkill`, 3c-T):
+läsning av regeldokument och utkast i körningens arbetsyta (harness.md §5.2). Samma
+omslag och samma strikta prövning av argumenten; gatewayen nekar själv otillåten
+användning, och team och run-id kommer från betrodd kontext.
 """
 
 from __future__ import annotations
@@ -28,6 +33,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
 
 from agents.ecosystem import Ecosystem
 from agents.errors import HarnessError, SkillDeniedError, SkillInputError
+from agents.gateways.tools import GATEWAY_TOOLS, GatewayContext, GatewayTool
 from ai import ToolSpec
 from ai.schema import strict_json_schema
 from services import (
@@ -55,9 +61,16 @@ class ServiceSkill:
     operation: Operation
     action_model: type[BaseModel]
 
+    source = "service"
+
     @classmethod
     def wrap(cls, name: str, pod: str, op: Operation) -> ServiceSkill:
-        return cls(name=name, pod=pod, operation=op, action_model=_action_model(name, op))
+        return cls(name=name, pod=pod, operation=op, action_model=_action_model(name, op.input_model, op.kind))
+
+    @property
+    def target(self) -> str:
+        """Operationen i tjänstelagret som skillen anropar."""
+        return self.operation.name
 
     @property
     def kind(self) -> OperationKind:
@@ -74,16 +87,7 @@ class ServiceSkill:
 
     def parse(self, arguments: dict[str, Any]) -> BaseModel:
         """Validerar modellens argument mot omslaget. Okända fält på alla nivåer nekas."""
-        if not isinstance(arguments, dict):
-            raise SkillInputError(f"'{self.name}': argumenten ska vara ett objekt")
-        schema = strict_json_schema(self.action_model)
-        unknown = _unknown_fields(arguments, schema, schema.get("$defs", {}), "")
-        if unknown:
-            raise SkillInputError(f"'{self.name}': okända fält {', '.join(unknown)}", security=True)
-        try:
-            return self.action_model.model_validate(arguments)
-        except ValidationError as exc:
-            raise SkillInputError(f"'{self.name}': ogiltiga argument: {exc}") from exc
+        return _parse(self.name, self.action_model, arguments)
 
     def invoke(
         self, service: ServiceLayer, ctx: OperationContext, arguments: dict[str, Any]
@@ -112,6 +116,49 @@ class ServiceSkill:
         return {"status": "done", "output": output}
 
 
+@dataclass(frozen=True)
+class GatewaySkill:
+    """En skill som anropar ett gatewayverktyg (regelverk, dokument) – utanför tjänstelagret."""
+
+    name: str
+    pod: str
+    tool: GatewayTool
+    action_model: type[BaseModel]
+
+    source = "gateway"
+    pii = False  # gatewayerna i 3c-G är utan personuppgifter; ecosystem.yaml prövar mot verktyget
+
+    @classmethod
+    def wrap(cls, name: str, pod: str, tool: GatewayTool) -> GatewaySkill:
+        kind = OperationKind(tool.side_effect)
+        return cls(name=name, pod=pod, tool=tool, action_model=_action_model(name, tool.input_model, kind))
+
+    @property
+    def target(self) -> str:
+        return self.tool.name
+
+    @property
+    def kind(self) -> OperationKind:
+        return OperationKind(self.tool.side_effect)
+
+    def tool_spec(self, *, proposes: bool = False) -> ToolSpec:
+        return ToolSpec.from_model(self.name, self.tool.description, self.action_model)
+
+    def parse(self, arguments: dict[str, Any]) -> BaseModel:
+        return _parse(self.name, self.action_model, arguments)
+
+    def execute(self, ctx: GatewayContext, action: BaseModel) -> BaseModel:
+        """Kör ett validerat anrop. GatewayError går vidare till dispatchern."""
+        return self.tool.call(ctx, action.data)
+
+    @staticmethod
+    def result_payload(output: BaseModel) -> dict[str, Any]:
+        return {"status": "done", "output": output.model_dump(mode="json")}
+
+
+Skill = ServiceSkill | GatewaySkill
+
+
 class SkillRegistry:
     """Alla skills som körpolicyn mappar, byggda mot tjänstelagrets operationsregister.
 
@@ -119,7 +166,7 @@ class SkillRegistry:
     rad i en podd i ecosystem.yaml (och en rad i åtkomstregistret för att bli öppen).
     """
 
-    def __init__(self, skills: dict[str, ServiceSkill]) -> None:
+    def __init__(self, skills: dict[str, Skill]) -> None:
         self._skills = dict(skills)
 
     @classmethod
@@ -128,10 +175,13 @@ class SkillRegistry:
         skills = {}
         for pod_name, pod in ecosystem.pods.items():
             for skill, entry in pod.skills.items():
-                skills[skill] = ServiceSkill.wrap(skill, pod_name, registry.get(entry.service_operation))
+                if entry.gateway_tool is not None:
+                    skills[skill] = GatewaySkill.wrap(skill, pod_name, GATEWAY_TOOLS[entry.gateway_tool])
+                else:
+                    skills[skill] = ServiceSkill.wrap(skill, pod_name, registry.get(entry.service_operation))
         return cls(skills)
 
-    def get(self, name: str) -> ServiceSkill:
+    def get(self, name: str) -> Skill:
         try:
             return self._skills[name]
         except KeyError:
@@ -143,16 +193,29 @@ class SkillRegistry:
     def __contains__(self, name: str) -> bool:
         return name in self._skills
 
-    def __iter__(self) -> Iterator[ServiceSkill]:
+    def __iter__(self) -> Iterator[Skill]:
         return iter(self._skills[name] for name in self.names())
 
     def __len__(self) -> int:
         return len(self._skills)
 
 
-def _action_model(name: str, op: Operation) -> type[BaseModel]:
+def _parse(name: str, action_model: type[BaseModel], arguments: dict[str, Any]) -> BaseModel:
+    if not isinstance(arguments, dict):
+        raise SkillInputError(f"'{name}': argumenten ska vara ett objekt")
+    schema = strict_json_schema(action_model)
+    unknown = _unknown_fields(arguments, schema, schema.get("$defs", {}), "")
+    if unknown:
+        raise SkillInputError(f"'{name}': okända fält {', '.join(unknown)}", security=True)
+    try:
+        return action_model.model_validate(arguments)
+    except ValidationError as exc:
+        raise SkillInputError(f"'{name}': ogiltiga argument: {exc}") from exc
+
+
+def _action_model(name: str, input_model: type[BaseModel], kind: OperationKind) -> type[BaseModel]:
     """Omslaget {data, reason}. Motivering krävs när operationen ändrar data."""
-    if op.kind.changes_state:
+    if kind.changes_state:
         reason: Any = (str, Field(min_length=1, description="Kort motivering till ändringen"))
     else:
         reason = (str | None, Field(default=None, description="Valfri kort motivering"))
@@ -161,7 +224,7 @@ def _action_model(name: str, op: Operation) -> type[BaseModel]:
         title,
         __config__=ConfigDict(extra="forbid"),
         # Ingen description bredvid $ref – OpenAI:s strikta läge godtar inga syskonnyckelord
-        data=(op.input_model, ...),
+        data=(input_model, ...),
         reason=reason,
     )
 

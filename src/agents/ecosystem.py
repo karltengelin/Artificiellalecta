@@ -22,9 +22,10 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError, model_validator
 
 from agents.errors import EcosystemConfigError
+from agents.gateways.tools import GATEWAY_TOOLS
 from services.contract import OPERATION_NAME_PATTERN, OperationKind, OperationRegistry
 
 DEFAULT_ECOSYSTEM_PATH = Path(__file__).with_name("ecosystem.yaml")
@@ -33,6 +34,8 @@ INSTRUCTION_DIR = Path("02_system/agenter")
 
 #: Team-, podd- och agent-id: engelska snake_case (B-015), samma form som verktygsnamn.
 ID_PATTERN = OPERATION_NAME_PATTERN
+#: Indatafälten som ett parametermandat prövar (scope.ParameterChangeMandate)
+PARAMETER_FIELDS = frozenset({"key", "value", "valid_from"})
 
 # Raden "| **Team** | Försäkring & kund (`forsakring`) – …" i agentens instruktion.
 _TEAM_ROW = re.compile(r"^\|\s*\*\*Team\*\*\s*\|[^|\n]*\(`([a-z0-9_]+)`\)", re.MULTILINE)
@@ -81,9 +84,27 @@ class Defaults(_Strict):
 
 
 class SkillEntry(_Strict):
-    """En skill i en podd. I Fas 3b finns bara omslag runt tjänstelagrets operationer."""
+    """En skill i en podd: ett omslag runt en tjänsteoperation eller ett gatewayverktyg (3c-T).
 
-    service_operation: str
+    `parameter_mandate` kräver att uppdraget har ett godkänt parameterförslag
+    (`ParameterChangeMandate`) och att anropets parameter, värde och giltighet är just det.
+    """
+
+    service_operation: str | None = None
+    gateway_tool: str | None = None
+    parameter_mandate: bool = False
+
+    @model_validator(mode="after")
+    def _one_target(self) -> SkillEntry:
+        if (self.service_operation is None) == (self.gateway_tool is None):
+            raise ValueError("ange exakt en av service_operation och gateway_tool")
+        if self.parameter_mandate and self.gateway_tool is not None:
+            raise ValueError("parameter_mandate gäller bara tjänsteoperationer")
+        return self
+
+    @property
+    def target(self) -> str:
+        return self.service_operation or self.gateway_tool
 
 
 class Pod(_Strict):
@@ -270,12 +291,26 @@ class Ecosystem(_Strict):
         operations: dict[str, str] = {}
         for pod_name, pod in self.pods.items():
             for skill, entry in pod.skills.items():
-                if entry.service_operation in operations:
+                if entry.target in operations:
+                    what = "Operationen '{}' är mappad" if entry.service_operation else "Gatewayverktyget '{}' är mappat"
                     errors.append(
-                        f"Operationen '{entry.service_operation}' är mappad två gånger "
-                        f"('{operations[entry.service_operation]}' och '{skill}')"
+                        f"{what.format(entry.target)} två gånger ('{operations[entry.target]}' och '{skill}')"
                     )
-                operations[entry.service_operation] = skill
+                operations[entry.target] = skill
+                if entry.gateway_tool is not None:
+                    tool = GATEWAY_TOOLS.get(entry.gateway_tool)
+                    if tool is None:
+                        errors.append(f"'{pod_name}.{skill}': gatewayverktyget '{entry.gateway_tool}' finns inte")
+                        continue
+                    if tool.pod != pod_name:
+                        errors.append(f"'{pod_name}.{skill}': verktyget hör till podden '{tool.pod}'")
+                    if OperationKind(tool.side_effect) not in pod.allowed_effects:
+                        errors.append(
+                            f"'{pod_name}.{skill}': verktyget är {tool.side_effect}, podden tillåter "
+                            f"{', '.join(sorted(e.value for e in pod.allowed_effects))}"
+                        )
+                    if tool.pii and not pod.pii:
+                        errors.append(f"'{pod_name}.{skill}': verktyget har personuppgifter, podden är utan PII")
 
         def check_denied(where: str, names: Iterable[str]) -> None:
             for name in names:
@@ -345,6 +380,8 @@ class Ecosystem(_Strict):
         errors: list[str] = []
         for pod_name, pod in self.pods.items():
             for skill, entry in pod.skills.items():
+                if entry.service_operation is None:
+                    continue  # gatewayverktyg prövas i _validate_structure
                 if entry.service_operation not in registry:
                     errors.append(
                         f"'{pod_name}.{skill}': operationen '{entry.service_operation}' finns inte"
@@ -358,8 +395,19 @@ class Ecosystem(_Strict):
                     )
                 if op.pii and not pod.pii:
                     errors.append(f"'{pod_name}.{skill}': operationen har personuppgifter, podden är utan PII")
+                if entry.parameter_mandate and not PARAMETER_FIELDS <= set(op.input_model.model_fields):
+                    errors.append(
+                        f"'{pod_name}.{skill}': parameter_mandate kräver fälten {', '.join(sorted(PARAMETER_FIELDS))} "
+                        "i operationens indata"
+                    )
         if errors:
             raise EcosystemConfigError("Körpolicyn stämmer inte med tjänstelagret:\n  - " + "\n  - ".join(errors))
+
+    def entry(self, skill: str) -> SkillEntry:
+        pod = self.pod_of(skill)
+        if pod is None:
+            raise EcosystemConfigError(f"Okänd skill: '{skill}'")
+        return self.pods[pod].skills[skill]
 
     def unmapped_operations(self, registry: OperationRegistry) -> list[str]:
         """Operationer som ingen podd mappar – de är stängda för alla agenter."""

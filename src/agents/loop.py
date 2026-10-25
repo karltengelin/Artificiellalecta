@@ -18,6 +18,9 @@ En körning:
      `needs_human`; vanliga fel får modellen rätta högst två gånger per felklass (§6.4).
   6. Ett slutsvar utan verktyg avslutar som `completed`. `refusal` ger `needs_human`,
      avklippt eller okänt slut ger `failed` – aldrig ett "färdigt" resultat.
+  7. Med ett resultatschema i uppdraget (3c-T) tvingar AI-lagret slutsvaret till schemat,
+     och harness prövar det mot körningen (agents.results): lästa källor, skrivna utkast och
+     beräkningen. Håller det inte blir körningen `needs_human` med skälen.
 
 Varje steg journalförs (agents.journal, 3b-6) – utan råa personuppgifter. Går journalen
 inte att skriva görs inget modellanrop eller verktygsanrop efter det.
@@ -37,10 +40,12 @@ from agents.continuation import Continuation
 from agents.dispatcher import CallStatus, Dispatcher, DispatchOutcome
 from agents.ecosystem import REPO_ROOT, Limits
 from agents.errors import HarnessError
+from agents.gateways import Gateways
 from agents.journal import FileJournal, Journal, JournalError, digest, mask, text_ref
 from agents.profile import EffectiveProfile
+from agents.results import ResultError, schema_for, summary_of, verify
 from agents.run import RunRequest, RunResult, RunStatus
-from agents.scope import ExecutionScope
+from agents.scope import ExecutionScope, ParameterChangeMandate
 from ai import AIClient, AIError, Message, ModelResponse, ToolSpec
 from services import ServiceLayer
 
@@ -124,6 +129,11 @@ def build_context(
         parts.append("Referenser: " + ", ".join(request.references))
     if request.expected_output:
         parts.append(f"Förväntat resultat: {request.expected_output}")
+    if request.result_schema:
+        parts.append(
+            f"Slutsvaret lämnas strukturerat enligt {request.result_schema}. Ange bara källor du har läst och "
+            "utkast du har skrivit i den här körningen; beräknade tal läggs till av systemet ur verktygens svar."
+        )
     if continuation is not None:
         parts.append(continuation.note())
     return system, Message.user("\n\n".join(parts))
@@ -136,6 +146,8 @@ def run_agent(
     request: RunRequest,
     *,
     scope: ExecutionScope | None = None,
+    parameter_change: ParameterChangeMandate | None = None,
+    gateways: Gateways | None = None,
     run_id: str | None = None,
     journal: Journal | None = None,
     journal_dir: Path | None = None,
@@ -146,11 +158,18 @@ def run_agent(
 
     Körjournalen skrivs till `journal_dir` (standard logs/agent_runs/) om ingen
     `journal` anges. En fortsättning (3b-5) tar sitt uppdrag från `continuation`.
+    `gateways` är regel- och utkastgatewayerna (standard: repot och logs/agent_artifacts/).
     """
     if profile.team != request.target_team:
         raise HarnessError(f"Profilen gäller teamet '{profile.team}', uppdraget '{request.target_team}'")
     if profile.execution_scope_ref != request.execution_scope_ref:
         raise HarnessError("Profilen är inte byggd för det här uppdraget (execution_scope_ref)")
+    if profile.parameter_change_ref != request.parameter_change_ref:
+        raise HarnessError("Profilen är inte byggd för det här uppdraget (parameter_change_ref)")
+    try:
+        schema = schema_for(request.result_schema)
+    except ValueError as exc:
+        raise HarnessError(str(exc)) from None
     if continuation is not None and request != continuation.request:
         raise HarnessError("En fortsättning körs med fortsättningens uppdrag (Continuation.request)")
     if ai.log_content and any(d.visible and d.pii for d in profile.decisions):
@@ -170,7 +189,10 @@ def run_agent(
     def observe(type: str, **fields: Any) -> None:
         journal.append(type, step=budget.steps, **fields)
 
-    dispatcher = Dispatcher(profile, service, run_id=run_id, case_id=request.case_id, scope=scope, observer=observe)
+    dispatcher = Dispatcher(
+        profile, service, run_id=run_id, case_id=request.case_id, scope=scope,
+        parameter_change=parameter_change, gateways=gateways, observer=observe,
+    )
     bound = ai.bind(team=profile.team, agent=profile.agent_id, run_id=run_id)
     tools = profile.tool_specs()
     system, first = build_context(profile, request, continuation)
@@ -195,7 +217,9 @@ def run_agent(
         observe("approval_observed", approval_id=o.approval_id, operation=o.operation, decision=o.status,
                 decided_by=o.decided_by, decided_at=o.decided_at, note=text_ref(o.note))
 
-    def finish(status: RunStatus, summary: str, *, uncertainties: tuple[str, ...] = ()) -> RunOutcome:
+    def finish(
+        status: RunStatus, summary: str, *, uncertainties: tuple[str, ...] = (), output: dict | None = None
+    ) -> RunOutcome:
         pending = tuple(a for d in dispatches for a in d.pending_approvals)
         evidence = tuple(
             f"{c.call_id}:{c.skill}" for d in dispatches for c in d.calls if c.status == CallStatus.DONE
@@ -212,7 +236,7 @@ def run_agent(
         result = RunResult(
             task_id=request.task_id, run_id=run_id, status=status, summary=summary,
             evidence_refs=evidence, uncertainties=uncertainties, pending_approvals=pending,
-            cost_usd=round(budget.cost_usd, 6),
+            cost_usd=round(budget.cost_usd, 6), output=output,
         )
         return RunOutcome(
             result=result, system=system, history=tuple(history), dispatches=tuple(dispatches),
@@ -232,7 +256,7 @@ def run_agent(
         try:
             response = bound.complete(
                 history, system=system, model=profile.model_role, tools=tools or None,
-                max_output_tokens=profile.limits.max_output_tokens, step=step,
+                output_schema=schema, max_output_tokens=profile.limits.max_output_tokens, step=step,
             )
         except AIError as exc:
             return finish(RunStatus.FAILED, f"Modellanropet misslyckades: {type(exc).__name__}.",
@@ -276,6 +300,13 @@ def run_agent(
                                   uncertainties=_messages(outcome))
             continue
 
+        if schema is not None and response.stop_reason == "end_turn" and response.parsed is not None:
+            try:
+                output = verify(response.parsed, profile, dispatches)
+            except ResultError as exc:
+                return finish(RunStatus.NEEDS_HUMAN, "Resultatet stämmer inte med körningen – handläggaren tar över.",
+                              uncertainties=exc.problems)
+            return finish(RunStatus.COMPLETED, summary_of(response.parsed), output=output)
         return _final(response, finish)
 
 

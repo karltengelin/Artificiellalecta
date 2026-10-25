@@ -1,7 +1,7 @@
 """Körpolicyns skills i skillkatalogen (Fas 3b-7, agentekosystem.md §5.1).
 
 Varje skill i `src/agents/ecosystem.yaml` hör till exakt en podd. Tabellen visar podd,
-operation, typ, PII, nivån i tjänstelagrets åtkomstregister och vilka agenter som har
+operation eller gatewayverktyg (3c-T), typ, PII, nivån i tjänstelagrets åtkomstregister och vilka agenter som har
 podden monterad utan att skillen är nekad – så att behörigheten går att granska i
 katalogen, inte bara i YAML-filen.
 
@@ -20,6 +20,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from agents.ecosystem import Ecosystem
+from agents.gateways.tools import GATEWAY_TOOLS
 from services import AccessRegister, OperationRegistry
 
 DEFAULT_PATH = Path(__file__).resolve().parents[2] / "03_skills" / "skillkatalog.md"
@@ -41,19 +42,27 @@ def authorized_agents(ecosystem: Ecosystem, skill: str) -> list[str]:
 
 def render_skill_table(ecosystem: Ecosystem, registry: OperationRegistry, register: AccessRegister) -> str:
     lines = [
-        "| Skill | Podd | Operation i tjänstelagret | Typ | PII | Åtkomstregistret | Behöriga agenter |",
+        "| Skill | Podd | Operation eller gatewayverktyg | Typ | PII | Åtkomstregistret | Behöriga agenter |",
         "|---|---|---|---|---|---|---|",
     ]
     for skill in ecosystem.skill_names():
         pod = ecosystem.pod_of(skill)
-        op = registry.get(ecosystem.pods[pod].skills[skill].service_operation)
-        level = register.levels.get(op.name)
+        entry = ecosystem.pods[pod].skills[skill]
+        if entry.gateway_tool is not None:
+            tool = GATEWAY_TOOLS[entry.gateway_tool]
+            target, kind, pii, level = f"gateway `{tool.name}`", tool.side_effect, tool.pii, "– (gatewayens policy)"
+        else:
+            op = registry.get(entry.service_operation)
+            registered = register.levels.get(op.name)
+            target, kind, pii = f"`{op.name}`", op.kind.value, op.pii
+            level = registered.value if registered else "saknas (HUMAN_ONLY)"
+        if entry.parameter_mandate:
+            level += ", kräver godkänt parameterförslag"
         agents = ", ".join(
             f"{a} ({ecosystem.agents[a].name})" for a in authorized_agents(ecosystem, skill)
         ) or "–"
         lines.append(
-            f"| `{skill}` | `{pod}` | `{op.name}` | {op.kind.value} | {'Ja' if op.pii else 'Nej'} | "
-            f"{level.value if level else 'saknas (HUMAN_ONLY)'} | {agents} |"
+            f"| `{skill}` | `{pod}` | {target} | {kind} | {'Ja' if pii else 'Nej'} | {level} | {agents} |"
         )
     unmapped = ecosystem.unmapped_operations(registry)
     lines += [

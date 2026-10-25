@@ -16,21 +16,26 @@
 
 ## Skills i körpolicyn (harness)
 
-Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varje skill är ett tunt omslag runt en operation i tjänstelagret och hör till exakt en podd. **Åtkomstregistret** visar registrets nivå; effektiv nivå per dag står i `02_system/tjänstelager_operationer.md`. Verktyg med personuppgifter visas först med resursmandat och teamets databasroll (`02_system/harness.md` §5.1). Effektiv profil för en agent: `python scripts/documentation/show_agent_profile.py`.
+Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varje skill är ett tunt omslag runt en operation i tjänstelagret eller, sedan 3c-T, ett gatewayverktyg (`regelverk`, `dokument`, `harness.md` §5.2), och hör till exakt en podd. Gatewayverktyg har ingen nivå i åtkomstregistret; gatewayen verkställer sin egen policy. **Åtkomstregistret** visar registrets nivå; effektiv nivå per dag står i `02_system/tjänstelager_operationer.md`. Verktyg med personuppgifter visas först med resursmandat och teamets databasroll (`02_system/harness.md` §5.1). Effektiv profil för en agent: `python scripts/documentation/show_agent_profile.py`.
 
 <!-- list_skills.py: start – genererad, ändra inte för hand -->
-| Skill | Podd | Operation i tjänstelagret | Typ | PII | Åtkomstregistret | Behöriga agenter |
+| Skill | Podd | Operation eller gatewayverktyg | Typ | PII | Åtkomstregistret | Behöriga agenter |
 |---|---|---|---|---|---|---|
-| `calculate_premium_preview` | `berakning` | `calculate_premium_preview` | compute | Nej | AGENT | case_handler (Handläggaragent) |
+| `calculate_premium_preview` | `berakning` | `calculate_premium_preview` | compute | Nej | AGENT | actuary_agent (Aktuarieagent), case_handler (Handläggaragent), compliance_agent (Compliance-agent) |
 | `correct_premium_transaction` | `kunddata` | `correct_premium_transaction` | write | Ja | HUMAN_ONLY | – |
+| `estimate_parameter_change_impact` | `bestand` | `estimate_parameter_change_impact` | read | Nej | AGENT, kräver godkänt parameterförslag | actuary_agent (Aktuarieagent) |
 | `get_case` | `kunddata` | `get_case` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_insured_overview` | `kunddata` | `get_insured_overview` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_premium_history` | `kunddata` | `get_premium_history` | read | Ja | AGENT | case_handler (Handläggaragent) |
+| `get_product_parameters` | `regelverk` | `get_product_parameters` | read | Nej | AGENT | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 | `get_salary_reports` | `kunddata` | `get_salary_reports` | read | Ja | AGENT | case_handler (Handläggaragent) |
+| `list_regulatory_documents` | `regelverk` | gateway `list_regulatory_documents` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
+| `read_regulatory_document` | `regelverk` | gateway `read_regulatory_document` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 | `register_salary_report` | `kunddata` | `register_salary_report` | write | Ja | APPROVAL | case_handler (Handläggaragent) |
 | `set_policy_paid_up` | `kunddata` | `set_policy_paid_up` | write | Ja | APPROVAL | – |
+| `write_draft` | `dokument` | gateway `write_draft` | write | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 
-Operationer utan poddmappning – stängda för alla agenter: `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `estimate_parameter_change_impact`, `get_operation_events`, `get_product_parameters`, `list_approval_requests`, `list_cases`, `list_employers`, `register_employer`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
+Operationer utan poddmappning – stängda för alla agenter: `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `register_employer`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
 <!-- list_skills.py: slut -->
 
 ## Planerade skills (ur ATT_GORA)
@@ -39,7 +44,7 @@ Operationer utan poddmappning – stängda för alla agenter: `close_case`, `cou
 |---|---|---|
 | hämta-kunddata | data | PII – kräver behörighetslista (B-006). *Delvis täckt av läsoperationerna i podden `kunddata` ovan* |
 | skriv-kundmail | kommunikation | Utskick kräver manuellt godkännande (§3.5) |
-| tolka-itp1-fråga | regelverk | Bygger på `01_domän/ITP1_regelverk.md`; podden `regelverk` har en läsgateway sedan 3c-G (`list_regulatory_documents`, `read_regulatory_document`, `harness.md` §5.2) och monteras i 3c-T |
+| tolka-itp1-fråga | regelverk | Bygger på `01_domän/ITP1_regelverk.md`; podden `regelverk` har en läsgateway sedan 3c-G (`list_regulatory_documents`, `read_regulatory_document`, `harness.md` §5.2), monterad på compliance och aktuarie sedan 3c-T |
 | complianceöversyn | regelverk | Compliance-agenten; gap-analys regelverk ↔ styrdokument |
 | marknadsdata | data | Fas 2d (B-019): kurser via gratis-API |
 | skapa-dokumentation (`create_documentation`) | kommunikation | Planerad, ej implementerad. Gemensam rapport-/dokumentationsskill i podden `dokument` för alla team/agenter genom granskad montering. En implementation och versionsstyrda mallar; domänagenten ansvarar för sakunderlaget. Allmän väg utan PII; känsliga underlag kräver separat skyddad väg. Se `../02_system/agentekosystem.md` §5.5 och ATT_GORA:s designarbete |

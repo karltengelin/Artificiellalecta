@@ -6,7 +6,7 @@
 En gateway har ett eget litet kontrakt: indata- och utdatamodeller, sidoeffekt, dataklass och
 tillåtna resurser (`GATEWAY_TOOLS`). Den ger aldrig modellen en sökväg, ett filhandtag eller
 ett generellt filverktyg, och den nekar själv otillåten användning – även när den anropas
-direkt utan harness. Monteringen som verktyg för teamen sker i körpolicyn (3c-T).
+direkt utan harness. Verktygen monteras på teamen compliance och aktuarie i körpolicyn (3c-T).
 """
 
 from agents.gateways.common import GatewayError
@@ -23,7 +23,7 @@ from agents.gateways.regulatory import (
     ReadRegulatoryDocumentInput,
     RegulatoryGateway,
 )
-from agents.gateways.tools import GATEWAY_TOOLS, GatewayTool
+from agents.gateways.tools import GATEWAY_TOOLS, GatewayContext, Gateways, GatewayTool
 
 __all__ = [
     "GATEWAY_TOOLS",
@@ -32,8 +32,10 @@ __all__ = [
     "DraftGateway",
     "DraftList",
     "DraftReceipt",
+    "GatewayContext",
     "GatewayError",
     "GatewayTool",
+    "Gateways",
     "ListRegulatoryDocumentsInput",
     "ReadRegulatoryDocumentInput",
     "RegulatoryGateway",

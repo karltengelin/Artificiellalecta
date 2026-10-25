@@ -129,7 +129,7 @@ def prepare_continuation(
     limits = Limits(**remaining).narrowed(request.limits)
 
     decided_ops = {o.operation for o in observations}
-    denied = {s.name for s in skills if s.operation.name in decided_ops}
+    denied = {s.name for s in skills if s.target in decided_ops}
     cont_request = request.model_copy(update={
         "limits": limits,
         "deny_skills": tuple(sorted(set(request.deny_skills) | denied)),

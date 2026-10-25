@@ -394,7 +394,7 @@ En person är berörd ett år om premien skiljer sig någon månad det året. Ex
 - *Konflikt:* en senare schemalagd version av samma parameter finns efter giltighetsdagen. Då blir scenariot tvetydigt.
 - *Ogiltig indata:* giltighetsdag som inte är en månadsförsta, okänd parameter, horisont utanför 1–45 år.
 
-**Gränser kvar till senare steg.** Operationen skyddar varje enskilt svar, men inte mot differenser mellan upprepade anrop med olika horisont, giltighetsdag eller värde. Därför binder resurskontrollen i 3c-T aktuarieagentens anrop till den parameterändring som grind 1 godkänt (`key`, `value`, `valid_from`) och bör binda även `horizon_years`. Operationen monteras i podden `bestand` först i 3c-T och är omappad till dess. Före skarp demo i Lakebase behövs databasrollen `agent_aktuarie` med `SELECT` på `insured_persons`, `policies`, `policy_states`, `base_amounts` och `product_parameters`, och rätt att skriva loggrader (val I, 3c-V).
+**Skydd mellan anrop (3c-T).** Operationen skyddar varje enskilt svar, men inte mot differenser mellan upprepade anrop med olika horisont, giltighetsdag eller värde. Därför är den monterad i podden `bestand` med parametermandat: dispatchern binder aktuarieagentens anrop till den parameterändring som grind 1 godkänt (`key`, `value`, `valid_from` och `horizon_years`, `ParameterChangeMandate`). Utan godkänt förslag i uppdraget är verktyget dolt. Före skarp demo i Lakebase behövs databasrollen `agent_aktuarie` med `SELECT` på `insured_persons`, `policies`, `policy_states`, `base_amounts` och `product_parameters`, och rätt att skriva loggrader (val I, 3c-V).
 
 ## 10. Öppna frågor
 

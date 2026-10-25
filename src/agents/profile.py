@@ -14,9 +14,13 @@ En skill är öppen bara om varje villkor håller – ett nej vinner alltid:
   3. sidoeffekten finns i snittet av defaults, podd, team, agent och uppdrag
   4. personuppgifter: uppdraget har execution_scope och tjänstelagret ansluter med teamets
      begränsade databasroll
-  5. tjänstelagrets effektiva nivå (register + golv) är inte HUMAN_ONLY
-Nivån AGENT ger "utföra", APPROVAL ger "föreslå". Profilen listar samtliga skäl
-när en skill är dold, inte bara det första.
+  5. parametermandat: en skill med `parameter_mandate` kräver ett godkänt parameterförslag
+     i uppdraget (`parameter_change_ref`, 3c-T)
+  6. tjänstelagrets effektiva nivå (register + golv) är inte HUMAN_ONLY
+Nivån AGENT ger "utföra", APPROVAL ger "föreslå". Ett gatewayverktyg (regelverk, dokument)
+har ingen nivå i tjänstelagret; gatewayen verkställer sin egen policy och skillen blir
+"utföra" när villkor 1–3 håller. Profilen listar samtliga skäl när en skill är dold,
+inte bara det första.
 """
 
 from __future__ import annotations
@@ -30,7 +34,7 @@ from pathlib import Path
 from agents.ecosystem import REPO_ROOT, Ecosystem, Limits
 from agents.errors import RunRequestError, SkillDeniedError
 from agents.run import RunRequest
-from agents.skills import ServiceSkill, SkillRegistry
+from agents.skills import Skill, SkillRegistry
 from ai import ToolSpec
 from services import AgentAccess, OperationKind, ServiceLayer
 from services.db import AGENT_ROLES
@@ -56,6 +60,8 @@ class SkillDecision:
     service_level: AgentAccess  # tjänstelagrets effektiva nivå vid kompileringen
     outcome: Outcome
     reasons: tuple[str, ...]  # varför dold (tomt när öppen)
+    source: str = "service"  # service = tjänstelagret, gateway = gatewayverktyg (3c-T)
+    parameter_mandate: bool = False  # anropet prövas mot uppdragets godkända parameterförslag
 
     @property
     def visible(self) -> bool:
@@ -86,6 +92,7 @@ class EffectiveProfile:
     unmapped_operations: tuple[str, ...]  # operationer som ingen podd mappar – stängda
     execution_scope_ref: str | None  # uppdragets resursmandat – dispatchern kräver samma scope
     snapshot: VersionSnapshot
+    parameter_change_ref: str | None  # uppdragets godkända parameterförslag – dispatchern kräver samma
     _skills: SkillRegistry
 
     def visible(self) -> list[SkillDecision]:
@@ -103,7 +110,7 @@ class EffectiveProfile:
             for d in self.visible()
         ]
 
-    def require(self, skill: str) -> ServiceSkill:
+    def require(self, skill: str) -> Skill:
         """Skillen om den är öppen i profilen – annars SkillDeniedError med alla skäl.
 
         Prövas vid varje anrop, även för ett namn modellen har hittat på eller ett
@@ -144,7 +151,8 @@ class EffectiveProfile:
         if not hidden:
             lines.append("  (inga)")
         for d in hidden:
-            lines.append(f"  {d.skill:<30} {d.pod:<10} {d.kind.value:<8} tjänstelagret: {d.service_level.value}")
+            level = "gateway" if d.source == "gateway" else f"tjänstelagret: {d.service_level.value}"
+            lines.append(f"  {d.skill:<30} {d.pod:<10} {d.kind.value:<8} {level}")
             lines += [f"      - {reason}" for reason in d.reasons]
         lines += ["", "Operationer utan poddmappning (stängda för alla agenter):"]
         lines.append("  " + (", ".join(self.unmapped_operations) or "(inga)"))
@@ -185,9 +193,11 @@ def compile_profile(
         run_effects = request.allowed_effects
 
     has_scope = request is not None and request.execution_scope_ref is not None
+    has_parameter_change = request is not None and request.parameter_change_ref is not None
     decisions = []
     for skill in skills:
         pod = ecosystem.pods[skill.pod]
+        entry = pod.skills[skill.name]
         reasons: list[str] = []
 
         if skill.pod not in team.pods:
@@ -224,14 +234,21 @@ def compile_profile(
                     "(harness.md §5.1)"
                 )
 
-        decision = service.decision(skill.operation.name)
-        if decision.effective == AgentAccess.HUMAN_ONLY:
-            detail = "; ".join(decision.reasons) or "HUMAN_ONLY i åtkomstregistret"
-            reasons.append(f"endast handläggare i tjänstelagret ({detail})")
+        if entry.parameter_mandate and not has_parameter_change:
+            reasons.append("kräver ett godkänt parameterförslag i uppdraget (parameter_change_ref)")
+
+        if skill.source == "gateway":
+            level = AgentAccess.AGENT  # gatewayens egen policy gäller; ingen nivå i tjänstelagret
+        else:
+            decision = service.decision(skill.target)
+            level = decision.effective
+            if level == AgentAccess.HUMAN_ONLY:
+                detail = "; ".join(decision.reasons) or "HUMAN_ONLY i åtkomstregistret"
+                reasons.append(f"endast handläggare i tjänstelagret ({detail})")
 
         if reasons:
             outcome = Outcome.HIDDEN
-        elif decision.effective == AgentAccess.APPROVAL:
+        elif level == AgentAccess.APPROVAL:
             outcome = Outcome.PROPOSE
         else:
             outcome = Outcome.EXECUTE
@@ -239,12 +256,14 @@ def compile_profile(
             SkillDecision(
                 skill=skill.name,
                 pod=skill.pod,
-                operation=skill.operation.name,
+                operation=skill.target,
                 kind=skill.kind,
                 pii=skill.pii or pod.pii,
-                service_level=decision.effective,
+                service_level=level,
                 outcome=outcome,
                 reasons=tuple(reasons),
+                source=skill.source,
+                parameter_mandate=entry.parameter_mandate,
             )
         )
 
@@ -259,6 +278,7 @@ def compile_profile(
         unmapped_operations=tuple(ecosystem.unmapped_operations(service.registry)),
         snapshot=_snapshot(ecosystem, agent.instruction, service),
         execution_scope_ref=request.execution_scope_ref if request is not None else None,
+        parameter_change_ref=request.parameter_change_ref if request is not None else None,
         _skills=skills,
     )
 

@@ -18,6 +18,7 @@ from __future__ import annotations
 import re
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -112,6 +113,39 @@ class ExecutionScope(BaseModel):
     def _in_period(self, value: date) -> bool:
         month = value.replace(day=1)
         return self.from_month <= month <= self.to_month
+
+
+class ParameterChangeMandate(BaseModel):
+    """Godkänt parameterförslag för en körning (3c-T, flaggskeppsflöde.md §5 *Resurskontroll*).
+
+    Byggs av betrodd kod – i flödet ur grind 1:s godkända tolkning – och hör till uppdragets
+    `parameter_change_ref`. En skill med `parameter_mandate` får bara anropas med exakt den
+    här parametern, det här värdet och den här giltighetsdagen, och med den här horisonten
+    när operationen har en. Samma anrop ger då samma svar: upprepade anrop med andra värden
+    eller horisonter kan inte ringa in en dold cell genom differenser (tjänstelager.md §9.5).
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    ref: str = Field(min_length=1)
+    key: str = Field(min_length=1)
+    value: Decimal
+    valid_from: date
+    horizon_years: int = Field(default=10, gt=0)
+
+    def check_input(self, skill: str, data: BaseModel) -> None:
+        values = data.model_dump()
+        expected = {"key": self.key, "value": self.value, "valid_from": self.valid_from}
+        if "horizon_years" in values:
+            expected["horizon_years"] = self.horizon_years
+        reasons = []
+        for name, want in expected.items():
+            got = values.get(name)
+            same = Decimal(got) == want if name == "value" and got is not None else got == want
+            if not same:
+                reasons.append(f"{name} {got} – det godkända förslaget har {want}")
+        if reasons:
+            raise ScopeError(f"'{skill}' utanför det godkända parameterförslaget {self.ref}: {'; '.join(reasons)}")
 
 
 def scope_for_person(

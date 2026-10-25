@@ -52,15 +52,43 @@ pods:
 
   berakning:
     owner_team: aktuarie
-    mountable_by: [forsakring, aktuarie]
+    mountable_by: [forsakring, aktuarie, compliance]
     pii: false
     allowed_effects: [compute]
     skills:
       calculate_premium_preview: {service_operation: calculate_premium_preview}
 
-  # Poddarna regelverk (list_regulatory_documents, read_regulatory_document) och dokument
-  # (write_draft) har gateways sedan 3c-G (src/agents/gateways/, B-035). De monteras här
-  # tillsammans med teamen compliance och aktuarie i 3c-T.
+  # Läsning av godkända regel- och källdokument via handtag (gatewayen regelverk, 3c-G) och
+  # produktparametrarna med versioner. Innehållet är underlag, aldrig instruktion (harness.md §5.2).
+  regelverk:
+    owner_team: compliance
+    mountable_by: [compliance, aktuarie]
+    pii: false
+    allowed_effects: [read]
+    skills:
+      list_regulatory_documents: {gateway_tool: list_regulatory_documents}
+      read_regulatory_document: {gateway_tool: read_regulatory_document}
+      get_product_parameters: {service_operation: get_product_parameters}
+
+  # Markdown-utkast i körningens egen arbetsyta (gatewayen dokument, 3c-G). Ändrar aldrig
+  # gällande dokument; operatören för in en regeländring själv (flaggskeppsflöde.md val H).
+  dokument:
+    owner_team: utveckling
+    mountable_by: [compliance, aktuarie]
+    pii: false
+    allowed_effects: [write]
+    skills:
+      write_draft: {gateway_tool: write_draft}
+
+  # Aggregat om beståndet i betrodd kod – ingen individdata (tjänstelager.md §9.5). Bara den
+  # parameterändring som uppdragets godkända förslag anger (flaggskeppsflöde.md §5).
+  bestand:
+    owner_team: aktuarie
+    mountable_by: [aktuarie]
+    pii: false
+    allowed_effects: [read]
+    skills:
+      estimate_parameter_change_impact: {service_operation: estimate_parameter_change_impact, parameter_mandate: true}
 
 teams:
   forsakring:
@@ -78,6 +106,34 @@ teams:
       max_context_bytes: 40000
       max_wall_seconds: 180
 
+  # Flaggskeppsdemon (B-035, flaggskeppsflöde.md §5). Inga kundpersonuppgifter, inga skrivningar
+  # i försäkringssystemet – write gäller bara utkast i körningens arbetsyta.
+  compliance:
+    lead: compliance_agent
+    mandate: Tolka regelverksändringar till produktregler och parametrar med källor, konsekvenser och osäkerheter.
+    pods: [regelverk, dokument, berakning]
+    allowed_effects: [read, compute, write]
+    limits:
+      max_steps: 16
+      max_tool_calls: 24
+      max_cost_usd: 1.50
+      max_output_tokens: 4000
+      max_context_bytes: 120000
+      max_wall_seconds: 600
+
+  aktuarie:
+    lead: actuary_agent
+    mandate: Ta fram beståndsinsikter i betrodd kod för godkända parameterändringar, med antaganden och begränsningar.
+    pods: [bestand, berakning, regelverk, dokument]
+    allowed_effects: [read, compute, write]
+    limits:
+      max_steps: 12
+      max_tool_calls: 16
+      max_cost_usd: 1.00
+      max_output_tokens: 4000
+      max_context_bytes: 100000
+      max_wall_seconds: 480
+
 agents:
   case_handler:
     name: Handläggaragent
@@ -88,6 +144,22 @@ agents:
     allowed_effects: [read, compute, write]
     deny_skills: [set_policy_paid_up]   # fribrevsförslag öppnas som eget användningsfall (§9.1)
     delegates_to: [kommunikation]
+
+  compliance_agent:
+    name: Compliance-agent
+    team: compliance
+    instruction: 02_system/agenter/compliance-agent.md
+    model_role: deep
+    pods: [regelverk, dokument, berakning]
+    allowed_effects: [read, compute, write]
+
+  actuary_agent:
+    name: Aktuarieagent
+    team: aktuarie
+    instruction: 02_system/agenter/aktuarieagent.md
+    model_role: deep
+    pods: [bestand, berakning, regelverk, dokument]
+    allowed_effects: [read, compute, write]
 
 # Delegering mellan team byggs i Fas 3c. Gränserna gäller en hel rotkörning (harness.md §6.3, §10.2).
 delegation:
