@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -54,6 +55,14 @@ def create_app(
     app.include_router(journal.router)
     app.include_router(cases.router)
     app.include_router(parameters.router)
+
+    @app.get("/_instance")
+    def instance(request: Request):
+        """Startskriptets miljökontroll; inga databasfrågor eller anslutningsuppgifter."""
+        return JSONResponse(
+            {"application": "artificiellalecta-handlaggare", "database": request.app.state.settings.database},
+            headers={"Cache-Control": "no-store"},
+        )
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):

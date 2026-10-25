@@ -91,11 +91,13 @@ def render(
     *, push_url: str | None = None,
 ):
     """push_url: adressen HTMX lägger i historiken – en sida som går att ladda om, inte formulärets POST-adress."""
+    pending = pending_approvals(request)
     base = {
         "settings": settings(request),
         "csrf_token": request.app.state.csrf_token,
         "rules": service(request).rules,
-        "pending_approvals": pending_approvals(request),
+        "pending_approvals": pending,
+        "database_available": pending is not None,
     }
     response = templates.TemplateResponse(request, template, {**base, **(context or {})}, status_code=status_code)
     if push_url:
