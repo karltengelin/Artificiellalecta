@@ -83,6 +83,10 @@ sidhuvudet en röd varning. Första skarpa skrivningen föregås av backup och o
 | 19900101-7897 | fribrev |
 | 19590420-2461 | pension pågår |
 
+Därtill en äldre kohort för flaggskeppsdemon (B-035 val K): 31 aktiva, premiebetalande försäkrade födda
+1959–1962 (AL-000005–AL-000035) hos de två demoarbetsgivarna. En demofil som skapades före 3c-B saknar kohorten;
+ta bort `data/handlaggare_demo.db` så skapas den på nytt med kohorten.
+
 Agentförslagen prövas mot regelpaketet som om det redan gällde, men bara i demodatabasen. Före
 2026-11-01 kan en agent annars inte föreslå skrivningar, eftersom regelgolvet ger `HUMAN_ONLY`.
 

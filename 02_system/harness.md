@@ -358,6 +358,8 @@ Tjänstelagret behöver skriva godkännande- och händelserader även vid vissa 
 
 `bestand` får inte implementeras som ”hämta alla individer och be modellen summera”. Aggregatet beräknas i betrodd kod. Startskyddet är att dölja celler med färre än **10** individer, grova segment och förbud mot upprepade överlappande urval som kan avslöja en person genom differenser. Talet 10 är en vald försiktig startgräns, ingen garanti för anonymitet. Tills en kontrollerad aggregattjänst finns saknar dessa team beståndsverktyg.
 
+**Första aggregattjänsten byggd i 3c-B (2026-10-25, B-035):** `estimate_parameter_change_impact` (`tjänstelager.md` §9.5) döljer celler med 1–9 individer, döljer vid behov fler så att en dold cell inte kan räknas fram ur totalen, och avrundar belopp till hela tusental kronor. Den skyddar varje enskilt svar; skyddet mot differenser mellan upprepade anrop ligger i resurskontrollen när den monteras i `bestand` (3c-T).
+
 Persondata kan komma även i uppdrag, filer och delegerade svar. Kontexten bär därför en dataklass som kan **skärpas men inte sänkas** utan en granskad transformation. Personanknutna födelsedatum, kund-id och löneuppgifter förblir skyddade även om `Operation.pii` är falsk. I första försäkringsprofilen behöver modellen ibland ett fiktivt personnummer, eftersom dagens operationsschema kräver det. Föreslaget senare kontrakt med ogenomskinliga kundreferenser minskar exponeringen; det är inte befintligt stöd.
 
 ### 5.2 Filåtkomst: regelverk och dokument

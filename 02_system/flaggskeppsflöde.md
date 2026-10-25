@@ -133,9 +133,15 @@ räknar i betrodd kod med premiemotorn: berörda aktiva försäkrade, extra prem
 anges i dagens lönenivå utan lönetillväxt och utan avkastning, och det står i svaret. Ej beräknat visas som ej
 beräknat. Bygger på mönstret i `src/analytics/premium_impact.py`.
 
+*Byggd i 3c-B (2026-10-25):* operationen i `src/services/operations/portfolio_impact.py` och den rena
+beräkningen i `src/analytics/parameter_impact.py`, med stöd och spärrar i `tjänstelager.md` §9.5. Baslinjen följer
+`product_parameters` månad för månad. Utöver undertryckningen döljs vid behov fler år, så att en dold cell inte
+kan räknas fram ur totalen, och belopp avrundas till hela tusental kronor. Ännu inte monterad i `bestand` (3c-T).
+
 **Resurskontroll för flödet.** Aktuarieagenten får bara räkna på den parameterändring som grind 1 godkänt.
 Dispatchern jämför verktygets `key`, `value` och `valid_from` med flödets godkända förslag, på samma sätt som
-`case_number` prövas mot ärendet i Fas 5.
+`case_number` prövas mot ärendet i Fas 5. *Förslag från 3c-B:* bind även `horizon_years`, eftersom två svar med
+olika horisont annars ger ett döljt års volym som differens.
 
 **Databasroll.** Aggregattjänsten läser individrader internt. Den behöver en egen roll, `agent_aktuarie`, med
 `SELECT` på de tabeller beräkningen kräver och rätt att skriva loggrader, men ingen rätt till affärs-DML. Modellen
@@ -196,6 +202,11 @@ bara kopierar källan.
 Den äldsta aktiva försäkrade i demobeståndet är född **1979**. En premieålder på 67 berör alltså ingen förrän
 2045. Insikten blir då *"ingen berörs på tjugo år; på lång sikt får alla 471 aktiva tolv extra premiemånader"*.
 Det är korrekt men tunt som demo. Tre sätt att hantera det står i val A och K.
+
+*Hanterat i 3c-B (val K):* demobeståndet (`src/utils/demo_data.py`) har en äldre kohort med 31 aktiva födda
+1959–1962, och då berör 66 → 67 försäkrade redan 2027–2029. Generatorn för det delade beståndet tar fram samma
+kohort som CSV (`scripts/demo/generate_mock_data.py --older-cohort-only`). I Lakebase läggs den in först efter
+backup och operatörens OK (AGENTS.md §4.5); fram till dess gäller beskrivningen ovan där.
 
 ## 9. Val att stämma av
 
