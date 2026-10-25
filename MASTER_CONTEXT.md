@@ -248,7 +248,7 @@ Artificiellalecta/
 │   └── 09_processkartor/
 │
 ├── src/                            ← All Python-kod
-│   ├── agents/                     ← Agent­implementationer
+│   ├── agents/                     ← Harness, körpolicy och gateways (regelverk, dokument)
 │   ├── skills/                     ← Skill-implementationer
 │   │   ├── data/                   ← (= 03_skills/data/)
 │   │   ├── calculation/            ← (= 03_skills/beräkning/)

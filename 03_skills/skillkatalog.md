@@ -39,7 +39,7 @@ Operationer utan poddmappning – stängda för alla agenter: `close_case`, `cou
 |---|---|---|
 | hämta-kunddata | data | PII – kräver behörighetslista (B-006). *Delvis täckt av läsoperationerna i podden `kunddata` ovan* |
 | skriv-kundmail | kommunikation | Utskick kräver manuellt godkännande (§3.5) |
-| tolka-itp1-fråga | regelverk | Bygger på `01_domän/ITP1_regelverk.md`; planerad podd `regelverk` (dokumentgateway, `harness.md` §5.2) |
+| tolka-itp1-fråga | regelverk | Bygger på `01_domän/ITP1_regelverk.md`; podden `regelverk` har en läsgateway sedan 3c-G (`list_regulatory_documents`, `read_regulatory_document`, `harness.md` §5.2) och monteras i 3c-T |
 | complianceöversyn | regelverk | Compliance-agenten; gap-analys regelverk ↔ styrdokument |
 | marknadsdata | data | Fas 2d (B-019): kurser via gratis-API |
 | skapa-dokumentation (`create_documentation`) | kommunikation | Planerad, ej implementerad. Gemensam rapport-/dokumentationsskill i podden `dokument` för alla team/agenter genom granskad montering. En implementation och versionsstyrda mallar; domänagenten ansvarar för sakunderlaget. Allmän väg utan PII; känsliga underlag kräver separat skyddad väg. Se `../02_system/agentekosystem.md` §5.5 och ATT_GORA:s designarbete |
