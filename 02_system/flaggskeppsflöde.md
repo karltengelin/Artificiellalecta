@@ -1,6 +1,6 @@
-# Beslutsförslag: flödesmotorn (Fas 3c) och en minimal flaggskeppsdemo
+# Regeländringsflöde – tekniskt nuläge och framtida visningsscenario
 
-> **Status:** Godkänt av operatören i chatten 2026-10-25, med valen A–L enligt rekommendationerna i §9, och loggat som **B-035**. Byggs i stegen i §11, med början i 3c-P1.
+> **Historiskt beslut:** Underlaget godkändes av operatören 2026-10-25 med valen A–L i §9 och loggades som **B-035**. Den ursprungliga byggplanen finns i §11. Fortsatt arbete följer **B-037**; aktuellt tekniskt nuläge anges nedan.
 > **Datum:** 2026-10-25, på `main` `fe4be6a` (Fas 5 F5-1–F5-4 klar, F5-5 halvklar, Digital klarhet i handläggar-UI:t).
 > **Underlag:** MASTER_CONTEXT §1 (flaggskeppsscenariot); `02_system/agentekosystem.md` §5.4, §6.2 och §12; `02_system/harness.md` §4.2–4.3, §5.1–5.2, §9.2–9.3 och §10; `02_system/Agentsystem/regelförändringsflöde.md`; `04_regulatoriskt/03_bevakning/kallandringar.md`; PR-ITP1-001, -013, -016 och -032; `01_domän/parametrar/PARAMETERREGISTER.md`; `src/skills/calculation/calculate_itp1_premium.py`; `src/analytics/premium_impact.py`.
 > **Bygger på:** B-016, B-017, B-024, B-026, B-028, B-031, B-033.
@@ -18,6 +18,23 @@
 > [Godkänt beslutsunderlag för B-037](bolagsvision_beslutsforslag.md).
 
 ---
+
+## Tekniskt nuläge efter B-037
+
+Det körbara, skriptade scenariot har tagits bort på operatörens uppdrag. Beskrivningen
+av ett framtida visningsfall nedan finns kvar som exempel. Verksamhetskoden väljer
+varken en viss källa, en testmodell eller ett framtida regelgodkännande automatiskt.
+Flödesmotorn, uppdragsmallarna, gateways, parameteroperationer och UI-adaptern finns
+kvar för återanvändning. `FlowConsole.build` kräver en uttrycklig AI-klient; koppling
+till ordinarie webbstart med verifierade modeller, roller och tabeller återstår.
+
+Definition `rule_change_parameter` v2 stöder en godkänd parameterändring åt gången
+utifrån vald källa och agentens tolkning. Verifieringen jämför beslutet med lagrade
+parameterversioner. Den skapar inga påhittade kundprofiler eller exempelbelopp.
+Modellanrop ersätts av uttryckliga testdubblar enbart i regressionstesterna. Äldre
+flödesversioner bevaras för avstämning men körs inte vidare med en ny definition.
+Ändringar som kräver ny logik, villkor, processer eller kommunikation behöver fortsatt
+verksamhetsutveckling; ett parameterflöde är inte fullständig regeländringshantering.
 
 ## 1. Varför
 
@@ -211,12 +228,12 @@ adaptern `src/agents/flows/console.py` (`FlowConsole`) och rör varken modeller,
 Formulären bär flödets version och, för grindar, hashen av underlaget som visades. *Kör nästa steg* körs synkront
 och en åt gången i processen (val F). När UI:t startar markeras steg som stod som pågående som
 `reconciliation_required` (`mark_interrupted`), och sidan har avstämning och avbrott. Utkasten och körjournalen
-visas på egna sidor, bara för stegets egna referenser. Flödena finns i demo och `svc_test`. I Lakebase visas
-varför de saknas, eftersom `migrate_flows.py` inte är körd där. Agentstegen körs med en **skriptad demomodell**
-(`src/agents/flows/demo_model.py`, FakeProvider) för den fiktiva källan, genom samma harness som en riktig
-modell. Riktiga modellanrop hör till 3c-V. Två ändringar i motorn: en grind kan bära uppgifter
-(`decision_model`) och pröva godkännandet mot tidigare resultat (`check`). Kön läses också innan flödets
-transaktion öppnas, eftersom läsningen annars väntade på flödets eget skrivlås i demodatabasens SQLite-fil.
+visas på egna sidor, bara för stegets egna referenser. Efter B-037 ansluts flödena inte
+vid ordinarie webbstart. `FlowConsole` kräver uttrycklig AI-klient; den tidigare
+`demo_model.py` är borttagen. Regelgiltighet och tjänstelager väljs inte om av adaptern.
+Grindar kan bära uppgifter (`decision_model`) och pröva godkännandet mot tidigare
+resultat (`check`). Kön läses innan flödets transaktion öppnas för att undvika att
+läsningen väntar på flödets eget skrivlås i SQLite.
 
 ## 7. Flödet steg för steg
 
@@ -228,7 +245,7 @@ transaktion öppnas, eftersom läsningen annars väntade på flödets eget skriv
 | G2 | grind | operatören | Beslut bundet till steg 1 och 2: version, giltighet, valfritt B-nummer | Antar regeländringen |
 | 3 Regeltext | manuell | operatören | Commit-referens | För in PR-013 v1.1 och parameterregistret, utifrån utkasten |
 | 4 Aktivering | system → kö | motorn lägger förslaget | `approval_id` | Godkänner i `/godkannanden` |
-| 5 Verifiering | system | motorn | `ReleaseEvidence`: parametrarnas versioner, förhandsberäkning före och efter giltighetsdagen för en syntetisk profil | – |
+| 5 Verifiering | system | motorn | `ReleaseEvidence`: lagrade parameterversioner före och efter giltighetsdagen, avstämda mot beslutet | – |
 
 Compliance-agenten bör även se konsekvensen för **PR-ITP1-016**, eftersom den frivilliga 66–67-grenen blir
 överflödig eller måste ändras om den ordinarie premien går till 67. Det är ett bra prov på att tolkningen inte
@@ -242,14 +259,12 @@ bara kopierar källan.
   måste vara tolkningens, eftersom insikten är räknad för den dagen. En annan giltighet kräver ett nytt flöde.
 - **Aktiveringen** lägger `schedule_product_parameter_change` i kön under `compliance_agent`, med tolkningens
   `run_id` och commit-referensen i motiveringen (val C). Beslutsreferensen är `FLOW-NNNNNN G2`, med B-numret
-  efter när det finns. Före 2026-11-01 stoppar regelgolvet förslaget, och steget kräver då avstämning. I demo och
-  `svc_test` prövas regelpaketet som om det gällde, som för demoförslagen.
-- **Verifieringen** (`ReleaseEvidence`) läser parameterns gällande version dagen före och på giltighetsdagen. Den
-  förhandsberäknar också en syntetisk profil månaden före och giltighetsmånaden. Profilen fyller den lägre åldern
-  ett halvår före giltighetsdagen; för 66 → 67 ger det 0 kr före och premie efter. Bevisen binder versionen i
-  beräkningens underlag, och avvikelser listas som problem. Saknas IBB för giltighetsåret räknar
-  förhandsberäkningen med det senast fastställda och säger det (`latest_base_amount`). Demobeståndet har inte
-  IBB 2027.
+  efter när det finns. Före 2026-11-01 stoppar regelgolvet förslaget, och steget kräver då
+  avstämning. Testerna styr sina datum uttryckligen; verksamhetsadaptern gör det aldrig.
+- **Verifieringen** (`ReleaseEvidence`, definition v2) läser parameterns gällande version
+  dagen före och på giltighetsdagen. Värde, giltighet, regelversion, källa och beslut
+  jämförs med det antagna underlaget. Avvikelser redovisas. Inga syntetiska profiler,
+  exempelbelopp eller antagna basbelopp används som bevis för ett lyckat införande.
 
 ## 8. Ett problem i beståndet
 

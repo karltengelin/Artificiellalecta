@@ -209,12 +209,13 @@ regeländringshantering. Fortsatt bygge utgår från verksamhetsfallen och deras
   - **Definitionen** (`src/agents/flows/definitions/`): tolkning (compliance), G1, insikt (aktuarie, mandat ur den godkända tolkningen), G2, regeltext (commit-referens), aktivering och verifiering.
   - **Grindarna:** G1 kräver exakt en parameterändring. G2 bär regelns version, giltighet och valfritt B-nummer, och giltigheten måste vara tolkningens. Motorn har fått `decision_model` och `check` för grindar.
   - **Aktiveringen** lägger `schedule_product_parameter_change` i kön under `compliance_agent`, länkad till tolkningens körning (val C).
-  - **Verifieringen** ger `ReleaseEvidence`: versionerna före och efter, och förhandsberäkningen för en syntetisk profil, i demon 0 kr → 2 025 kr. Förhandsberäkningen kan räkna med senast fastställda IBB och säger det (`latest_base_amount`), eftersom demobeståndet saknar IBB 2027.
-  - **UI:t** når motorn genom adaptern `src/agents/flows/console.py`. Formulären bär version och `seen_hash`. *Kör nästa steg* körs synkront. Sidorna har avstämning, avbrott, utkast och körjournal, och `mark_interrupted` körs vid start.
-  - **Miljöer:** bara demo och `svc_test`, med en skriptad demomodell (FakeProvider) för K-SIM-ITP-2027. I Lakebase förklarar sidan varför flödena saknas.
-  - **Tillfälligt hem:** handläggar-UI:t. Flöden och parametrar flyttar till operatörscentralen i OC-7.
+  - **Ändrat enligt B-037 på operatörens uppdrag:** skriptad demomodell borttagen från verksamhetskoden och ingen automatisk webbkoppling i någon datakälla. `FlowConsole.build` kräver en uttrycklig AI-klient; den väljer ingen källa eller framtida regelstatus. FakeProvider injiceras enbart av testerna. Återanvändbar motor, parameterfunktioner och UI-kod finns kvar
+  - **Verifieringen** ger `ReleaseEvidence` i definition v2: parameterversionerna före och efter giltighetsdagen, avstämda mot det godkända beslutet. Den tidigare syntetiska profilen och demonstrationsbeloppet är borttagna. Äldre flödesversioner stoppas från fortsatt körning med v2
+  - **UI:t** når motorn genom adaptern `src/agents/flows/console.py`. Formulären bär version och `seen_hash`. *Kör nästa steg* körs synkront. Sidorna har avstämning, avbrott, utkast och körjournal. Menyn visas bara med ansluten konsol; utan den förklarar direktåtkomst att förmågan inte är tillgänglig
+  - **Kvar:** verifierad anslutning med riktiga modeller, teamroller och flödestabeller. Inga Lakebase-ändringar eller riktiga modellanrop ingick i borttagningen. Scenarioförklaringen i `flaggskeppsflöde.md` finns kvar som möjligt senare visningsfall
+  - **Framtida hem:** operatörscentralen i OC-7, med återanvändbara verksamhetsfunktioner enligt B-037
   - **Rättat i motorn (3c-2):** kön lästes inom flödets transaktion och väntade då på flödets eget skrivlås i demodatabasens SQLite-fil.
-  - **Verifierat** i webbläsaren mot demodatabasen, från källa till verifierad parameter, även på smal skärm.
+  - **Tidigare verifiering före B-037:** i webbläsaren mot demodatabasen, från källa till verifierad parameter, även på smal skärm. Det körbara visningsscenariot är nu borttaget; aktuella regressionstester injicerar testunderlag uttryckligen
   - **Tester:** 39 nya: 23 i `tests/test_agents_flow_rule_change.py` och 16 i `tests/test_web_flows.py`.
 
 **Senare:** MCP-exponering av poddar (§9), anropsloggen i databasen, kostnadsindikatorer per team. *(Lakebase-rollen för PII-poddar är flyttad till före aktivering av `kunddata`, se operatörspunkten under 3b-3.)*

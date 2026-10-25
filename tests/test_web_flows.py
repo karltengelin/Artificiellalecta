@@ -1,6 +1,6 @@
 """Handläggar-UI:t, Fas 3c 3c-3: sidorna `/floden` för flödet `rule_change_parameter`.
 
-Mot demobeståndet i minnet med den skriptade demomodellen – inga modellanrop. Flödets
+Mot demobeståndet i minnet med en uttryckligen injicerad FakeProvider för tester – inga modellanrop. Flödets
 tjänstelager prövar regelpaketet som om det gällde (2026-11-01), så att compliance-agenten
 får föreslå aktiveringen; handläggarens UI har dagens regelstatus. Formulären bär flödets
 version och hashen av underlaget som visades, och gamla värden ger en konflikt.
@@ -18,6 +18,7 @@ from sqlalchemy import update
 from agents.flows.console import FlowConsole
 from models import FlowStep
 from services import Actor, ProductRuleCatalog, ServiceLayer
+from tests.flow_helpers import flow_client
 from web import create_app
 from web.config import WebSettings
 
@@ -28,7 +29,7 @@ SOURCE = "K-SIM-ITP-2027"
 
 def build_console(web, tmp_path) -> FlowConsole:
     service = ServiceLayer(session_factory=web.session_factory, rules=ProductRuleCatalog(today=date(2026, 11, 1)))
-    return FlowConsole.build(web.session_factory, trusted=service, agent_service=service,
+    return FlowConsole.build(web.session_factory, trusted=service, agent_service=service, ai=flow_client(),
                              journal_dir=tmp_path / "runs", drafts_dir=tmp_path / "utkast")
 
 
@@ -80,11 +81,12 @@ class TestListaOchStart:
         page = flow_web.client.get("/floden")
         assert page.status_code == 200
         assert 'href="/floden"' in page.text and "Inga flöden ännu" in page.text
-        assert f'<option value="{SOURCE}">' in page.text and "skriptad demomodell" in page.text
+        assert f'<option value="{SOURCE}">' in page.text and "konfigurerad AI-klient" in page.text
 
     def test_utan_flodesmotor_visas_varfor(self, web):
+        assert 'href="/floden"' not in web.client.get("/").text
         page = web.client.get("/floden")
-        assert page.status_code == 409 and "migrate_flows.py är inte körd" in page.text
+        assert page.status_code == 409 and "ännu inte anslutna" in page.text
         assert post(web, "/floden", {"source_handle": SOURCE}).status_code == 409
 
     def test_starta_och_lista(self, flow_web):
@@ -94,9 +96,9 @@ class TestListaOchStart:
         listing = flow_web.client.get("/floden")
         assert 'href="/floden/FLOW-000001"' in listing.text and "Tolkning och konsekvens" in listing.text
 
-    def test_annan_kalla_stoppas(self, flow_web):
+    def test_annan_kalla_kan_startas(self, flow_web):
         page = post(flow_web, "/floden", {"source_handle": "kallandringar"})
-        assert page.status_code == 422 and "bara köra den fiktiva källan" in page.text
+        assert page.status_code == 200 and "kallandringar" in page.text
 
     def test_formularet_kraver_token(self, flow_web):
         assert post(flow_web, "/floden", {"source_handle": SOURCE}, csrf=False).status_code == 403
@@ -105,7 +107,7 @@ class TestListaOchStart:
 class TestHelaFlodet:
     def test_fran_kalla_till_verifierad_parameter(self, flow_web):
         page = act(flow_web, start(flow_web), "kor")
-        assert "Premieåldern i ITP1 höjs från 66 till 67 år" in page.text
+        assert "Teständring: premium_age_end från 66 till 67" in page.text
         assert "Godkänn tolkningen" in page.text and "/steg/tolkning/utkast/konsekvensanalys.md" in page.text
         assert "0.0000 USD" in page.text and "körjournal" in page.text
 
@@ -131,8 +133,8 @@ class TestHelaFlodet:
         assert "Verifiera i systemet" in page.text
         page = act(flow_web, page, "kor")
         assert "Klart" in page.text and "Verifierat" in page.text
-        assert "inom åldersfönstret" in page.text and "utanför åldersfönstret" in page.text
-        assert "IBB 2026 antaget" in page.text and "Kör nästa steg" not in page.text
+        assert "Parameterversion" in page.text and "premium_age_end" in page.text
+        assert "Syntetisk profil" not in page.text and "Kör nästa steg" not in page.text
 
     def test_grind_2_med_annan_giltighet_stoppas(self, flow_web):
         page = act(flow_web, start(flow_web), "kor")

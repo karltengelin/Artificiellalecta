@@ -35,8 +35,8 @@ def build_service(settings: WebSettings) -> ServiceLayer:
 def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent, FlowConsole | None]:
     """Handläggarens tjänstelager, handläggaragenten (Fas 5 F5-4) och flödena (Fas 3c 3c-3) mot samma databas.
 
-    Flödena finns bara i demo och `svc_test`: i Lakebase är `migrate_flows.py` inte körd, och
-    riktiga modellanrop hör till 3c-V.
+    Flöden ansluts inte automatiskt. En verksamhetskoppling kräver uttrycklig AI-klient,
+    verifierade teamroller och flödestabeller; databasvalet väljer aldrig en testmodell (B-037).
     """
     engine = build_engine(settings)
     session_factory = session_factory_for(engine)
@@ -45,7 +45,6 @@ def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent, Flow
         from services.db import agent_service_layer
 
         agent = CaseAgent(agent_service_factory=agent_service_layer, simulated_role=False)
-        flows = None
     else:
         # Demo- och testdatabasen: samma anslutning, rollen simuleras (B-033 val H)
         agent = CaseAgent(
@@ -55,8 +54,7 @@ def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent, Flow
             ),
             simulated_role=True,
         )
-        flows = FlowConsole.for_demo_database(session_factory)
-    return service, agent, flows
+    return service, agent, None
 
 
 def build_engine(settings: WebSettings) -> Engine:

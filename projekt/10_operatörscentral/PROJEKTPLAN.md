@@ -91,9 +91,11 @@ lokal server, formulärskydd och godkännandekön. En regeländring är ett besl
 bolagsnivå och inte handläggning av enskilda försäkrade, och flödet kör compliance
 och aktuarie, inte handläggaragenten. Därför flyttar flödena hit i OC-7, och
 produktparametrarna (`/parametrar`) med dem. Flytten är billig:
-motor, definitioner och demomodell ligger i `src/agents/flows/`, och webben når
+motor och verksamhetsdefinition ligger i `src/agents/flows/`, och webben når
 dem bara genom adaptern `FlowConsole`. Den kan användas av vilket gränssnitt som
-helst, även ett kommandoradsverktyg eller Cowork (B-017).
+helst, även ett kommandoradsverktyg eller Cowork (B-017). Den tidigare demomodellen
+är borttagen enligt B-037; inför integration krävs en verifierad, uttrycklig modell-
+och datakoppling. Att flytta UI-koden aktiverar inte den kopplingen.
 
 ## Ansvar och samordning
 
