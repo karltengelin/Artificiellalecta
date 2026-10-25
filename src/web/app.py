@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from agents.flows.console import FlowConsole
 from services import ServiceLayer
 from web.agent import CaseAgent
 from web.config import WebSettings
@@ -29,6 +30,7 @@ from web.routes import (
     changes,
     enrollment,
     environments,
+    flows,
     insured,
     journal,
     parameters,
@@ -39,19 +41,33 @@ log = logging.getLogger("web")
 
 def create_app(
     service: ServiceLayer | None = None, settings: WebSettings | None = None, case_agent: CaseAgent | None = None,
+    flow_console: FlowConsole | None = None,
 ) -> FastAPI:
     """case_agent: handläggaragenten för ärenden. Byggs med tjänstelagret om inget anges;
-    med ett givet tjänstelager utan agent visas ärendena utan knappen *Starta agent*."""
+    med ett givet tjänstelager utan agent visas ärendena utan knappen *Starta agent*.
+
+    flow_console: flödena (`/floden`, Fas 3c 3c-3) på samma sätt. Steg som stod som pågående
+    när UI:t senast stoppades blir `reconciliation_required` här och avgörs av handläggaren."""
     settings = settings or WebSettings.from_env()
     if service is None:
         from web.database import build_services
 
-        service, built_agent = build_services(settings)
+        service, built_agent, built_flows = build_services(settings)
         case_agent = case_agent or built_agent
+        flow_console = flow_console or built_flows
+    if flow_console is not None:
+        try:
+            interrupted = flow_console.mark_interrupted()
+        except Exception:  # UI:t startar även om databasen inte svarar; sidan visar felet
+            log.exception("Avbrutna flödessteg kunde inte markeras")
+        else:
+            if interrupted:
+                log.warning("Flödessteg som pågick vid omstart kräver avstämning: %s", ", ".join(interrupted))
 
     app = FastAPI(title="Artificiellalecta – handläggare", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
     app.state.case_agent = case_agent
+    app.state.flow_console = flow_console
     app.state.settings = settings
     app.state.csrf_token = new_csrf_token()
 
@@ -63,6 +79,7 @@ def create_app(
     app.include_router(journal.router)
     app.include_router(cases.router)
     app.include_router(parameters.router)
+    app.include_router(flows.router)
     app.include_router(environments.router)
 
     @app.get("/_instance")

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Körjournal · {{ flow_id }}{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>Körjournal <span class="muted">· {{ flow_id }} steg {{ step_key }}</span></h1>
+    <a href="/floden/{{ flow_id }}#steg-{{ step_key }}">← {{ flow_id }}</a>
+  </div>
+  <p class="muted small">En händelse per rad ur <code>logs/agent_runs/</code> (val J). Indata, resultat och fri text står som hash och längd – inga råa personuppgifter.</p>
+  <div class="table-wrap">
+  <table class="table table--compact">
+    <thead><tr><th>Tid</th><th>Steg</th><th>Händelse</th><th>Uppgifter</th></tr></thead>
+    <tbody>
+      {% for e in events %}
+      <tr>
+        <td class="small">{{ e.get("timestamp", "") | iso_date }}</td>
+        <td>{{ e.get("step") if e.get("step") is not none else "" }}</td>
+        <td><code>{{ e.get("type") }}</code></td>
+        <td><details><summary class="small">Visa</summary><pre class="json">{{ e | pretty_json }}</pre></details></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

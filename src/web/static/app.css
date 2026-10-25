@@ -197,6 +197,25 @@ ul.plain { margin: 0; padding-left: 1.1rem; }
 .table details summary { white-space: nowrap; }
 .table details .decide__form { margin-top: var(--space-2); min-width: 260px; text-align: left; }
 
+/* flöden (Fas 3c 3c-3) */
+.pill--flow-running, .pill--step-running { background: var(--color-accent-soft); border-color: var(--brand-line); color: var(--color-link); }
+.pill--flow-waiting_gate, .pill--flow-waiting_manual, .pill--flow-waiting_approval, .pill--step-waiting { background: var(--status-warning-bg); border-color: var(--status-warning-line); color: var(--status-warning-text); }
+.pill--flow-completed, .pill--step-completed { background: var(--status-success-bg); border-color: var(--status-success-line); color: var(--status-success-text); }
+.pill--flow-rejected, .pill--flow-failed, .pill--flow-reconciliation_required, .pill--step-rejected, .pill--step-failed, .pill--step-reconciliation_required { background: var(--status-error-bg); border-color: var(--status-error-line); color: var(--status-error-text); }
+.flowstart { max-width: 720px; margin: var(--space-3) 0; }
+.flowcancel { max-width: 560px; }
+.flownext { border: 1px solid var(--status-warning-line); border-radius: var(--radius-card); padding: var(--space-4); margin-top: var(--space-4); background: var(--color-surface); }
+.flownext h2 { margin-top: 0; }
+.flowsteps { list-style: none; margin: 0; padding: 0; }
+.flowstep { border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: var(--space-3) var(--space-4); margin: var(--space-3) 0; background: var(--color-surface); }
+.flowstep.is-current { border-color: var(--brand-line); background: color-mix(in srgb, var(--color-accent-soft) 35%, var(--color-surface)); }
+.flowstep__head { display: flex; gap: var(--space-3); align-items: baseline; flex-wrap: wrap; }
+.flowstep__head .pill { margin-left: auto; }
+.flowstep .kv { margin-bottom: var(--space-2); }
+.flowstep .table--compact { max-width: none; }
+pre.draft { white-space: pre-wrap; background: var(--color-background); border-radius: var(--radius-control); padding: var(--space-4); font-size: .88rem; overflow-x: auto; }
+@media (max-width: 640px) { .flowstep .kv { grid-template-columns: 1fr; } .flowstep__head .pill { margin-left: 0; } }
+
 /* mellanbred skärm: databas och handläggare på egen rad, menyn får hela bredden */
 @media (max-width: 1100px) {
   .who { order: 3; width: 100%; justify-content: flex-end; }

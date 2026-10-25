@@ -16,8 +16,8 @@ Det finns ingen separat kodbas per delprojekt eller avdelning (B-015/B-024).
 | design | Digital klarhets tokenfil (B-034), webbens CSS-variabler som härleds ur den (`web_css.py`) och märket som ikon (`icon.py`) |
 | reporting | [Återanvändbar rapportmall i Digital klarhet](../06_design/rapportmall.md) och exempelrapport om agentnyttjande: fiktiv data, PDF/Markdown och diagram. Ingen aktiverad skill |
 | utils | Databasanslutning, backup/återställning, återanvändbar migrationskod och demobeståndet för handläggar-UI:t, med den äldre kohorten födda 1959–1962 (B-035 val K) |
-| web | Handläggar-UI:t (Fas 4): FastAPI-sidor som bara anropar tjänstelagret, se [handläggar-ui.md](handläggar-ui.md) |
-| agents | Harness: körpolicy, skill-register, dispatcher, agentloop, körjournal, ärendekörningar, gatewayerna `regelverk` och `dokument` (`agents/gateways/`, 3c-G), teamen compliance och aktuarie med parametermandat, resultatscheman (`results.py`) och uppdragsmallar (`assignments.py`, 3c-T), och flödesmotorn (`agents/flows/`, 3c-2) |
+| web | Handläggar-UI:t (Fas 4): FastAPI-sidor som bara anropar tjänstelagret, och flödena `/floden` genom flödesadaptern, se [handläggar-ui.md](handläggar-ui.md) |
+| agents | Harness: körpolicy, skill-register, dispatcher, agentloop, körjournal, ärendekörningar, gatewayerna `regelverk` och `dokument` (`agents/gateways/`, 3c-G), teamen compliance och aktuarie med parametermandat, resultatscheman (`results.py`) och uppdragsmallar (`assignments.py`, 3c-T), flödesmotorn (`agents/flows/`, 3c-2), och flödet `rule_change_parameter` med adaptern för UI:t och den skriptade demomodellen (`agents/flows/definitions/`, `console.py`, `demo_model.py`, 3c-3) |
 | testing | Testkatalog, ändringsstyrt urval och pytest-markörer; se [teststrategin](teststrategi.md) |
 | övriga skill-mappar | Förberedd struktur; ytterligare förmågor byggs enligt fasplanen |
 

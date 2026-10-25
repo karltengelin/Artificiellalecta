@@ -2,7 +2,8 @@
 
 Design: 02_system/flaggskeppsflöde.md §6 och harness.md §10.3–10.4. Tabellerna `flows`,
 `flow_steps` och `flow_gate_decisions` (databasschema.md §9i) hör till harness. Första
-flödesdefinitionen, `rule_change_parameter`, och UI:t `/floden` byggs i 3c-3.
+flödesdefinitionen, `rule_change_parameter`, ligger i `agents.flows.definitions` och UI:t `/floden`
+når motorn genom `agents.flows.console` (3c-3).
 """
 
 from agents.flows.definition import (

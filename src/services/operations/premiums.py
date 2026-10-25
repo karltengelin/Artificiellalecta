@@ -103,6 +103,11 @@ class PremiumPreviewInput(BaseModel):
     birth_date: date | None = Field(
         default=None, description="Födelsedatum – om angivet kontrolleras åldersfönstret enligt produktparametrarna (25–66 i PR-ITP1 v1.0)"
     )
+    latest_base_amount: bool = Field(
+        default=False,
+        description="Om inkomstbasbeloppet för året inte är fastställt: räkna med det senast fastställda "
+        "(ett antagande som står i svaret). Annars stoppas beräkningen",
+    )
 
     @field_validator("period_month")
     @classmethod
@@ -118,6 +123,9 @@ class PremiumPreview(BaseModel):
     amount_high_sek: Decimal = Field(description="30 %-delen mellan 7,5 och 30 IBB/12")
     in_age_window: bool | None = Field(description="None om åldersfönstret inte kontrollerades")
     calculation_basis: dict[str, Any]
+    base_amount_assumed_from: int | None = Field(
+        default=None, description="Året vars inkomstbasbelopp användes när årets inte är fastställt (antagande)"
+    )
 
 
 @operation(
@@ -132,6 +140,12 @@ class PremiumPreview(BaseModel):
 def calculate_premium_preview(ctx: OperationContext, data: PremiumPreviewInput) -> PremiumPreview:
     session = ctx.require_session()
     base_amount = session.get(BaseAmount, data.period_month.year)
+    assumed_from = None
+    if base_amount is None and data.latest_base_amount:
+        base_amount = session.scalar(
+            select(BaseAmount).where(BaseAmount.year < data.period_month.year).order_by(BaseAmount.year.desc()).limit(1)
+        )
+        assumed_from = base_amount.year if base_amount is not None else None
     if base_amount is None:
         raise NotFoundError(f"Inkomstbasbelopp saknas för {data.period_month.year} (tabellen base_amounts)")
 
@@ -150,4 +164,5 @@ def calculate_premium_preview(ctx: OperationContext, data: PremiumPreviewInput) 
         amount_high_sek=result.amount_high_sek,
         in_age_window=result.in_age_window,
         calculation_basis=result.calculation_basis,
+        base_amount_assumed_from=assumed_from,
     )

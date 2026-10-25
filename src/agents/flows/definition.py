@@ -6,7 +6,9 @@ Modellen bestämmer aldrig nästa steg. Fyra slags steg:
 - `AgentStep`: ett team kör ett uppdrag genom harness. Uppdraget byggs av betrodd kod ur
   flödets indata och tidigare resultat; ett parametermandat kan byggas på samma sätt.
 - `GateStep`: operatören godkänner eller avslår. Beslutet binder hashen av de angivna
-  stegens resultat; ändras ett av dem blir grinden inaktuell.
+  stegens resultat; ändras ett av dem blir grinden inaktuell. Ett godkännande kan bära
+  uppgifter enligt grindens `decision_model` (t.ex. regelns version och giltighet), och
+  `check` prövar godkännandet mot tidigare resultat innan beslutet sparas (3c-3).
 - `ManualStep`: operatören gör något utanför systemet (t.ex. för in regeltext) och
   markerar det klart med uppgifter enligt stegets modell, t.ex. en commit-referens.
 - `SystemStep`: betrodd kod, t.ex. att lägga ett förslag i tjänstelagrets godkännandekö
@@ -59,6 +61,9 @@ class GateStep:
     key: str
     title: str
     binds: tuple[str, ...]
+    decision_model: type[BaseModel] | None = None  # uppgifter ett godkännande bär
+    # prövar ett godkännande mot tidigare resultat (uppgifterna, eller None utan modell); FlowError stoppar
+    check: Callable[[FlowContext, BaseModel | None], None] | None = None
     kind = "gate"
 
 

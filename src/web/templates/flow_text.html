@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · {{ flow_id }}{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>Utkast <code>{{ title }}</code></h1>
+    <a href="/floden/{{ flow_id }}#steg-{{ step_key }}">← {{ flow_id }}</a>
+  </div>
+  <p class="muted small">Skrivet av agenten i steget <code>{{ step_key }}</code> genom dokumentgatewayen. Ett utkast är underlag för ditt beslut –
+    det ändrar inga gällande dokument. Texten visas som den skrevs (Markdown).</p>
+  <pre class="draft">{{ text }}</pre>
+</section>
+{% endblock %}

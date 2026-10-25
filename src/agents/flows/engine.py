@@ -202,11 +202,12 @@ class FlowEngine:
     def run_next(self, flow_id: str, *, expected_version: int, actor: Actor) -> FlowView:
         """Kör flödets nästa agent- eller systemsteg, eller prövar ett väntande förslag i kön."""
         self._require_operator(actor)
+        approval = self._awaited_approval(flow_id)
         with self._session_factory() as s:
             flow, steps, decisions = load(s, flow_id)
             self._check_version(flow, expected_version)
             if flow.status == "waiting_approval":
-                return self._observe_approval(s, flow, steps, expected_version)
+                return self._observe_approval(s, flow, steps, expected_version, approval)
             if flow.status != "running":
                 raise FlowError(f"Flödet {flow_id} är {flow.status} – inget steg att köra")
             definition = self._definition(flow.flow_type)
@@ -291,10 +292,22 @@ class FlowEngine:
         self._complete(row, outcome.result, completed_by=actor.id)
         self._advance(s, flow, row.step_key, version)
 
-    def _observe_approval(self, s, flow: Flow, steps: list[FlowStep], version: int) -> FlowView:
+    def _awaited_approval(self, flow_id: str):
+        """Förslaget ett väntande flöde väntar på, läst innan flödets transaktion öppnas.
+
+        Kön läses med tjänstelagrets egen anslutning. Inom flödets transaktion skulle den
+        vänta på flödets eget skrivlås i en SQLite-fil (demodatabasen, BEGIN IMMEDIATE).
+        """
+        with self._session_factory() as s:
+            flow, steps, _ = load(s, flow_id)
+            if flow.status != "waiting_approval":
+                return None
+            approval_id = self._row(steps, flow.current_step).approval_id
+        return self._trusted().approvals.get(approval_id)
+
+    def _observe_approval(self, s, flow: Flow, steps: list[FlowStep], version: int, approval) -> FlowView:
         row = self._row(steps, flow.current_step)
-        approval = self._trusted().approvals.get(row.approval_id)
-        if approval is None:
+        if approval is None or approval.id != row.approval_id:
             raise FlowError(f"Förslaget {row.approval_id} finns inte i godkännandekön")
         if approval.status == "pending":
             raise FlowError(f"Förslaget {row.approval_id} väntar på godkännande i /godkannanden")
@@ -324,8 +337,13 @@ class FlowEngine:
         decision: Literal["approved", "rejected"],
         seen_hash: str,
         note: str | None = None,
+        details: dict[str, Any] | None = None,
     ) -> FlowView:
-        """Operatörens grindbeslut, bundet till hashen av underlaget hen såg."""
+        """Operatörens grindbeslut, bundet till hashen av underlaget hen såg.
+
+        `details`: uppgifterna ett godkännande bär enligt grindens `decision_model`. De sparas
+        i grindens resultat; ett avslag bär inga uppgifter.
+        """
         self._require_human(actor, "Grindbeslut")
         if decision not in ("approved", "rejected"):
             raise FlowError("Beslutet är approved eller rejected")
@@ -346,6 +364,9 @@ class FlowEngine:
                 raise FlowConflictError(
                     f"Underlaget för grinden '{gate.key}' har ändrats sedan det visades – granska det igen"
                 )
+            decided = None
+            if decision == "approved":
+                decided = self._gate_details(gate, self._context(flow, steps), details)
             s.add(FlowGateDecision(
                 flow_id=flow_id, step_key=gate.key, decision=decision, decided_by=actor.id,
                 note=(note or "").strip() or None, bound_steps=list(gate.binds), bound_hash=current,
@@ -359,9 +380,28 @@ class FlowEngine:
                 bump(s, flow, expected_version, status="rejected", finished_at=self._now(),
                      note=f"Grinden '{gate.key}' avslogs av {actor.id}")
             else:
-                self._complete(row, {"decision": decision, "bound_hash": current, "note": note}, completed_by=actor.id)
+                result = {"decision": decision, "bound_hash": current, "note": note}
+                if decided is not None:
+                    result["details"] = decided
+                self._complete(row, result, completed_by=actor.id)
                 self._advance(s, flow, gate.key, expected_version)
         return self.get(flow_id)
+
+    @staticmethod
+    def _gate_details(gate: GateStep, ctx: FlowContext, details: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Godkännandets uppgifter, validerade mot grindens modell och prövade mot tidigare resultat."""
+        validated = None
+        if gate.decision_model is None:
+            if details:
+                raise FlowError(f"Grinden '{gate.key}' tar inga uppgifter med beslutet")
+        else:
+            try:
+                validated = gate.decision_model.model_validate(details or {})
+            except ValidationError as exc:
+                raise FlowError(f"Ogiltiga uppgifter i beslutet för grinden '{gate.key}': {exc}") from exc
+        if gate.check is not None:
+            gate.check(ctx, validated)
+        return validated.model_dump(mode="json") if validated is not None else None
 
     def complete_manual(self, flow_id: str, *, expected_version: int, actor: Actor, data: dict[str, Any]) -> FlowView:
         """Operatören markerar ett manuellt steg klart med stegets uppgifter (t.ex. commit-referens)."""

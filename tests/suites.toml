@@ -77,7 +77,7 @@ dependents = []
 [suites.orchestration]
 description = "Flödesmotor och samverkan mellan team; delegering återstår"
 status = "partial"
-tests = ["tests/test_agents_flows.py"]
+tests = ["tests/test_agents_flows.py", "tests/test_agents_flow_rule_change.py"]
 dependents = ["agents", "web", "tooling"]
 
 [suites.services]
@@ -101,7 +101,7 @@ dependents = ["agents", "services", "web", "tooling"]
 [suites.web]
 description = "HTTP, formulär och handläggarflöden"
 status = "active"
-tests = ["tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_design_web_css.py"]
+tests = ["tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_flows.py", "tests/test_design_web_css.py"]
 dependents = ["tooling"]
 
 [suites.data]
@@ -131,7 +131,7 @@ postgres = [
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
   "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
 ]
-integration = ["tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py"]
+integration = ["tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py", "tests/test_agents_flow_rule_change.py", "tests/test_web_flows.py"]
 security = ["tests/test_services_access.py", "tests/test_services_transactions.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_skills.py", "tests/test_agents_postgres_role.py", "tests/test_ai_boundaries.py", "tests/test_portfolio_impact.py::TestIngaIndividuppgifter", "tests/test_portfolio_impact.py::TestAtkomst", "tests/test_agents_teams.py::TestGatewayverktyg", "tests/test_agents_teams.py::TestParametermandatet"]
 
 # Alla matchande regler förenas. dependents utvidgar sedan kodändringens urval transitivt.
