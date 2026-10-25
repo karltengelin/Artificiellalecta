@@ -22,6 +22,10 @@ En grupp är ingen affärstransaktion: ett tidigare utfört anrop står kvar om 
 senare fallerar. Identiteten (Actor.agent med team) kommer från profilen, aldrig
 från modellen.
 
+Gatewayverktyg (regelverk, dokument, 3c-T) körs med team och run-id från betrodd kod.
+Gatewayens säkerhetsnej blir DENIED, övriga nej ERROR. En skill med parametermandat
+prövas mot uppdragets godkända parameterförslag före anropet; utan mandat nekas den.
+
 `observer` (körjournalen, 3b-6) får `tool_denied`, `tool_intent` *före* anropet till
 tjänstelagret och `tool_completed`/`approval_wait` efteråt. Fallerar den före anropet
 körs ingenting; fallerar den efter är utfallet okänt för journalen och loopen kräver
@@ -39,10 +43,11 @@ from typing import Any
 from pydantic import BaseModel
 
 from agents.errors import HarnessError, ScopeError, SkillDeniedError, SkillInputError
+from agents.gateways import GatewayError, Gateways
 from agents.journal import digest, mask, text_ref
 from agents.profile import EffectiveProfile, SkillDecision
-from agents.scope import ExecutionScope
-from agents.skills import ServiceSkill
+from agents.scope import ExecutionScope, ParameterChangeMandate
+from agents.skills import GatewaySkill, ServiceSkill, Skill
 from ai import ToolCall, ToolResult
 from services import Actor, OperationContext, ServiceError, ServiceLayer
 
@@ -105,7 +110,7 @@ class DispatchOutcome:
 @dataclass(frozen=True)
 class _Checked:
     call: ToolCall
-    skill: ServiceSkill
+    skill: Skill
     action: BaseModel
 
 
@@ -118,19 +123,29 @@ class Dispatcher:
         run_id: str,
         case_id: str | None = None,
         scope: ExecutionScope | None = None,
+        parameter_change: ParameterChangeMandate | None = None,
+        gateways: Gateways | None = None,
         observer: Callable[..., Any] | None = None,
     ) -> None:
-        """`scope` byggs av betrodd kod och måste vara det uppdraget pekar ut."""
+        """`scope` och `parameter_change` byggs av betrodd kod och måste vara det uppdraget pekar ut."""
         if (scope.ref if scope else None) != profile.execution_scope_ref:
             raise HarnessError(
                 "Resursmandatet stämmer inte med uppdraget "
                 f"(uppdraget: {profile.execution_scope_ref!r}, scope: {scope.ref if scope else None!r})"
+            )
+        if (parameter_change.ref if parameter_change else None) != profile.parameter_change_ref:
+            raise HarnessError(
+                "Parameterförslaget stämmer inte med uppdraget "
+                f"(uppdraget: {profile.parameter_change_ref!r}, "
+                f"mandat: {parameter_change.ref if parameter_change else None!r})"
             )
         if scope is not None and scope.case_id is not None and case_id is not None and scope.case_id != case_id:
             raise HarnessError("Resursmandatet gäller ett annat ärende än körningen")
         self.profile = profile
         self.service = service
         self.scope = scope
+        self.parameter_change = parameter_change
+        self._gateways = gateways
         self.actor = Actor.agent(profile.agent_id, team=profile.team)
         self.run_id = run_id
         self.case_id = case_id
@@ -178,15 +193,25 @@ class Dispatcher:
     def _check(self, call: ToolCall) -> _Checked:
         skill = self.profile.require(call.name)
         action = skill.parse(call.arguments)
-        self._check_policy(self.profile.decision(call.name))
-        if self.profile.decision(call.name).pii:
+        decision = self.profile.decision(call.name)
+        self._check_policy(decision)
+        if decision.pii:
             if self.scope is None:
                 raise ScopeError(f"'{call.name}' har personuppgifter men körningen saknar resursmandat")
             self.scope.check_input(call.name, action.data)
+        if decision.parameter_mandate:
+            if self.parameter_change is None:
+                raise ScopeError(f"'{call.name}' kräver ett godkänt parameterförslag men körningen saknar det")
+            self.parameter_change.check_input(call.name, action.data)
         return _Checked(call=call, skill=skill, action=action)
 
     def _check_policy(self, decision: SkillDecision) -> None:
-        """Ingen ny förmåga mitt i en körning, och en indragning gäller direkt (harness.md §3.5)."""
+        """Ingen ny förmåga mitt i en körning, och en indragning gäller direkt (harness.md §3.5).
+
+        Gatewayverktyg har ingen nivå i tjänstelagret – deras policy står i körpolicyn och gatewayen.
+        """
+        if decision.source == "gateway":
+            return
         now = self.service.decision(decision.operation)
         if now.effective != decision.service_level:
             raise SkillDeniedError(
@@ -204,12 +229,14 @@ class Dispatcher:
             self._check_policy(decision)
         except SkillDeniedError as exc:
             return _denied(c.call, exc)
-        ctx = OperationContext(actor=self.actor, run_id=self.run_id, case_id=self.case_id)
         self._observe(
-            "tool_intent", tool_call_id=c.call.id, skill=c.skill.name, operation=c.skill.operation.name,
-            kind=c.skill.kind.value, effective=decision.service_level.value,
+            "tool_intent", tool_call_id=c.call.id, skill=c.skill.name, operation=c.skill.target,
+            kind=c.skill.kind.value, effective=decision.service_level.value, source=decision.source,
             input_hash=digest(c.action.data.model_dump(mode="json")), reason=text_ref(c.action.reason),
         )
+        if isinstance(c.skill, GatewaySkill):
+            return self._execute_gateway(c)
+        ctx = OperationContext(actor=self.actor, run_id=self.run_id, case_id=self.case_id)
         try:
             result = c.skill.execute(self.service, ctx, c.action)
         except ServiceError as exc:
@@ -231,6 +258,20 @@ class Dispatcher:
                 )
         return _outcome(c.call, CallStatus.DONE, payload)
 
+    def _execute_gateway(self, c: _Checked) -> CallOutcome:
+        if self._gateways is None:
+            self._gateways = Gateways()
+        ctx = self._gateways.context(self.profile.team, self.run_id)
+        try:
+            output = c.skill.execute(ctx, c.action)
+        except GatewayError as exc:
+            if exc.security:
+                return _denied(c.call, exc)
+            return _outcome(
+                c.call, CallStatus.ERROR, {"status": "error", "message": exc.message},
+                error=True, error_type=f"GatewayError:{exc.code}",
+            )
+        return _outcome(c.call, CallStatus.DONE, GatewaySkill.result_payload(output))
 
     def _observe_result(self, outcome: CallOutcome) -> None:
         if outcome.status == CallStatus.PENDING_APPROVAL:

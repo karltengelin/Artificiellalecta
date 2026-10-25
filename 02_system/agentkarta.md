@@ -14,9 +14,9 @@ Varje agent tillhör ett team (B-026). Teamets ledande agent är dess orkestrera
 | Försäkring & kund (`forsakring`) | [Handläggaragent](agenter/handlaggaragent.md) | Ledande (orkestrerare) | Kundadministration & ärendehantering | 🔲 Ej påbörjad |
 | Kommunikation (`kommunikation`) | [Kommunikationsagent](agenter/kommunikationsagent.md) | Ledande (orkestrerare) | Kund- & intressentkommunikation | 🔲 Ej påbörjad |
 | Kapitalförvaltning (`kapital`) | [Portföljförvaltningsagent](agenter/portfoljforvaltningsagent.md) | Ledande (orkestrerare) | Kapitalförvaltning | 🔲 Ej påbörjad |
-| Aktuarie & analys (`aktuarie`) | [Aktuarieagent](agenter/aktuarieagent.md) | Ledande (orkestrerare) | Aktuariell verksamhet | 🔲 Ej påbörjad |
+| Aktuarie & analys (`aktuarie`) | [Aktuarieagent](agenter/aktuarieagent.md) | Ledande (orkestrerare) | Aktuariell verksamhet | 🟡 Profil i harness (3c-T): beståndsinsikt i flaggskeppsdemon |
 | Aktuarie & analys (`aktuarie`) | [Data scientist-agent](agenter/data-scientist-agent.md) | Specialist | Datahantering & analys | 🔲 Ej påbörjad |
-| Regelefterlevnad & rapportering (`compliance`) | [Compliance-agent](agenter/compliance-agent.md) | Ledande (orkestrerare) | Regelefterlevnad | 🔲 Ej påbörjad |
+| Regelefterlevnad & rapportering (`compliance`) | [Compliance-agent](agenter/compliance-agent.md) | Ledande (orkestrerare) | Regelefterlevnad | 🟡 Profil i harness (3c-T): tolkning i flaggskeppsdemon |
 | Regelefterlevnad & rapportering (`compliance`) | [Rapporteringsagent](agenter/rapporteringsagent.md) | Specialist | Regulatorisk rapportering | 🔲 Ej påbörjad |
 | Ekonomi & inköp (`ekonomi`) | [Ekonomiagent](agenter/ekonomiagent.md) | Ledande (orkestrerare) | Ekonomi & redovisning | 🔲 Ej påbörjad |
 | Ekonomi & inköp (`ekonomi`) | [Inköpsagent](agenter/inkopsagent.md) | Specialist | Inköp & avtalsgranskning | 🔲 Ej påbörjad |

@@ -136,12 +136,18 @@ beräknat. Bygger på mönstret i `src/analytics/premium_impact.py`.
 *Byggd i 3c-B (2026-10-25):* operationen i `src/services/operations/portfolio_impact.py` och den rena
 beräkningen i `src/analytics/parameter_impact.py`, med stöd och spärrar i `tjänstelager.md` §9.5. Baslinjen följer
 `product_parameters` månad för månad. Utöver undertryckningen döljs vid behov fler år, så att en dold cell inte
-kan räknas fram ur totalen, och belopp avrundas till hela tusental kronor. Ännu inte monterad i `bestand` (3c-T).
+kan räknas fram ur totalen, och belopp avrundas till hela tusental kronor. Monterad i `bestand` sedan 3c-T.
 
 **Resurskontroll för flödet.** Aktuarieagenten får bara räkna på den parameterändring som grind 1 godkänt.
 Dispatchern jämför verktygets `key`, `value` och `valid_from` med flödets godkända förslag, på samma sätt som
-`case_number` prövas mot ärendet i Fas 5. *Förslag från 3c-B:* bind även `horizon_years`, eftersom två svar med
-olika horisont annars ger ett döljt års volym som differens.
+`case_number` prövas mot ärendet i Fas 5. Även `horizon_years` binds, eftersom två svar med olika horisont
+annars ger ett dolt års volym som differens.
+
+*Byggt i 3c-T (2026-10-25):* teamen och agenterna i `src/agents/ecosystem.yaml`, instruktionerna i
+`02_system/agenter/`, parametermandatet `ParameterChangeMandate` (dispatchern prövar varje anrop; utan mandat är
+verktyget dolt), resultatschemana `InterpretationProposal` och `PortfolioImpactResult` i `src/agents/results.py`
+(lästa källor, skrivna utkast och beräkningen prövas mot körningen) och uppdragsmallarna i
+`src/agents/assignments.py`. Mandatet byggs ur den godkända tolkningen med `mandate_from_interpretation`.
 
 **Databasroll.** Aggregattjänsten läser individrader internt. Den behöver en egen roll, `agent_aktuarie`, med
 `SELECT` på de tabeller beräkningen kräver och rätt att skriva loggrader, men ingen rätt till affärs-DML. Modellen

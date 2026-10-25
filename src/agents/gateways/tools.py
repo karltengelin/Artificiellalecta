@@ -8,7 +8,7 @@ modellens schema; harness skickar dem som betrodd kontext.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic import BaseModel
@@ -30,6 +30,17 @@ class GatewayContext:
     run_id: str
     regulatory: RegulatoryGateway
     drafts: DraftGateway
+
+
+@dataclass(frozen=True)
+class Gateways:
+    """Gatewayerna som en körning använder. Standard: repots rot och `logs/agent_artifacts/`."""
+
+    regulatory: RegulatoryGateway = field(default_factory=RegulatoryGateway)
+    drafts: DraftGateway = field(default_factory=DraftGateway)
+
+    def context(self, team: str, run_id: str) -> GatewayContext:
+        return GatewayContext(team=team, run_id=run_id, regulatory=self.regulatory, drafts=self.drafts)
 
 
 @dataclass(frozen=True)

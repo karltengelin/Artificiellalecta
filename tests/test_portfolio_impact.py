@@ -285,8 +285,11 @@ class TestAtkomst:
         result = service.execute(OPERATION, ACTUARY, AGE_67)
         assert result.output.first_affected_year == 2027
 
-    def test_omappad_tills_teamen_byggs_3c_t(self):
-        assert OPERATION in Ecosystem.load().unmapped_operations(default_registry)
+    def test_monterad_i_bestand_med_parametermandat(self):
+        eco = Ecosystem.load()
+        assert OPERATION not in eco.unmapped_operations(default_registry)
+        assert eco.pod_of(OPERATION) == "bestand" and eco.entry(OPERATION).parameter_mandate
+        assert eco.pods["bestand"].mountable_by == ("aktuarie",)
 
     def test_handlaggaren_far_samma_svar(self, demo):
         service, _ = demo

@@ -33,11 +33,17 @@ class RunRequest(_Strict):
     background: str = ""
     constraints: tuple[str, ...] = ()
     expected_output: str | None = None
+    # Resultatschema för slutsvaret (agents.results, 3c-T), t.ex. InterpretationProposal.
+    # AI-lagret tvingar svaret till schemat och harness prövar det mot körningen.
+    result_schema: str | None = None
     references: tuple[str, ...] = ()
     case_id: str | None = None
     # Resursmandat för personuppgifter: vilka personer/försäkringar körningen får röra.
     # Referensen löses av betrodd kod (3b-3); utan den visas inga PII-verktyg.
     execution_scope_ref: str | None = None
+    # Godkänt parameterförslag (3c-T): beståndsinsikten får bara räkna på just den ändringen.
+    # Referensen löses av betrodd kod till ett ParameterChangeMandate; utan den är verktyget dolt.
+    parameter_change_ref: str | None = None
     root_run_id: str | None = None
     parent_run_id: str | None = None
     continuation_of: str | None = None  # körningen detta segment fortsätter (3b-5)
@@ -74,3 +80,6 @@ class RunResult(_Strict):
     proposals: tuple[str, ...] = ()
     pending_approvals: tuple[str, ...] = ()  # approval-id i tjänstelagrets kö
     cost_usd: float = Field(default=0.0, ge=0)
+    # Strukturerat stegresultat när uppdraget begär ett schema (agents.results, 3c-T):
+    # modellens del validerad mot schemat och harness bevis (lästa källor, utkast, beräkning)
+    output: dict | None = None

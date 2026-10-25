@@ -7,8 +7,8 @@ parametrar med det nya värdet från giltighetsdagen. Beräkningen i analytics/p
 
 Operationen läser individrader internt men lämnar bara aggregat: inga personnummer,
 namn, födelsedatum eller löner. Celler med färre än 10 individer döljs (harness.md §5.1),
-och antagandena står i svaret. Monteras i podden `bestand` i 3c-T; skillkatalogen visar
-den som omappad till dess.
+och antagandena står i svaret. Monterad i podden `bestand` sedan 3c-T; skillkatalogen visar
+den med parametermandat (3c-T).
 """
 
 from __future__ import annotations

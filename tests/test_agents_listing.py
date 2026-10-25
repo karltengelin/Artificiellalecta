@@ -24,7 +24,7 @@ def test_katalogen_i_repot_ar_aktuell():
 
 def test_nekade_skills_har_inga_behoriga_agenter():
     eco = Ecosystem.load()
-    assert authorized_agents(eco, "calculate_premium_preview") == ["case_handler"]
+    assert authorized_agents(eco, "calculate_premium_preview") == ["actuary_agent", "case_handler", "compliance_agent"]
     assert authorized_agents(eco, "correct_premium_transaction") == []  # nekad för teamet
     assert authorized_agents(eco, "set_policy_paid_up") == []  # nekad för agenten
 
