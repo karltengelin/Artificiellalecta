@@ -8,6 +8,32 @@
 
 ## Beslut
 
+### B-036 | 2026-10-25 | En plattform med teamområden och operatörscentralen som nav
+
+**Beslut:** Operatören godkände inriktningen i chatten 2026-10-25 och bad om att beslutet loggas.
+
+1. **En plattform.** Bolagets gränssnitt är en gemensam webbplattform med operatörscentralen som startsida och ett område per team, inte en app per team.
+2. **Bara teamets egen agent.** I ett teamområde nås bara teamets egen agent. Handläggar-UI:t är försäkringsteamets område, med handläggaragenten.
+3. **Flöden från centralen.** Flöden över flera team, först regeländringsflödet, och produktparametrarna startas och drivs från operatörscentralen. `/floden` och `/parametrar` i handläggar-UI:t är tillfälliga. Flödena når motorn genom adaptern `FlowConsole` och behöver inte styrvägens autentisering.
+4. **Självständiga agenter.** Agenter får ta uppdrag självständigt, till exempel handläggaragenten när ett ärende registreras. Mandat och budget är desamma som när en människa startar dem, och skrivningar godkänns i kön.
+
+**Motivering:**
+- Ett gränssnitt per verksamhetsområde ger tydliga behörighetsgränser.
+- En regeländring är ett bolagsbeslut på ledningsnivå och kör compliance och aktuarie, inte handläggaragenten.
+- En plattform undviker dubblerad inloggning, design och drift.
+
+**Övervägda alternativ:** *Separata appar per team* – hårdare gränser, men dubblerad inloggning, design och drift. Avvisat. *Flöden kvar i handläggar-UI:t* – fungerar tekniskt, men blandar handläggning av enskilda försäkrade med bolagsbeslut och andra teams agenter. Avvisat.
+
+**Konsekvenser:**
+- OC-7 (flöden och produktparametrar) och OC-8 (plattform och teamområden) i projekt 10.
+- F5-7 (självständiga ärendekörningar) och en bakgrundsarbetare för agentkörningar i harness.
+- `/floden` och `/parametrar` flyttar från handläggar-UI:t till centralen.
+- Uppdaterat: `projekt/10_operatörscentral/PROJEKTPLAN.md`, `operatörscentral.md`, `handläggar-ui.md`, `agentekosystem.md`, `flaggskeppsflöde.md` och ATT_GORA.
+
+**Preciserar:** B-017 (människa som fullständig operatör), B-026 (agentekosystemet), B-033 (val D, synkrona körningar, kompletteras med självständiga) och B-035 (UI-sidorna `/floden` och `/parametrar`).
+
+---
+
 ### B-035 | 2026-10-25 | Fas 3c: flödesmotor, parametrar som data och en minimal flaggskeppsdemo
 
 **Beslut:** Operatören godkände beslutsförslaget `02_system/flaggskeppsflöde.md` i chatten 2026-10-25, med valen A–L enligt rekommendationerna, och bad om att beslutet loggas. Fas 3c byggs med en minimal flaggskeppsdemo som första mål:

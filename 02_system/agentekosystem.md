@@ -101,6 +101,8 @@ Varje team har en egen orkestrerare – men det är **teamets ledande agent**, i
 
 **Teamets ytterdörr:** andra team, flöden och operatören når ett team via dess ledande agent – aldrig direkt till en specialist. Det ger en ansvarig per team och en tydlig behörighetsgräns. Undantag: eskalering till compliance-agenten är alltid tillåten (B-011).
 
+**Gränssnitten följer teamen (B-036).** Bolagets webbplattform har ett område per team, med operatörscentralen som startsida. I ett teamområde når operatören bara teamets egen agent, till exempel handläggaragenten i handläggningen. Arbete över flera team startas som flöden från centralen eller sker genom delegering (§6.1–6.2, `operatörscentral.md`).
+
 **Ingen VD-agent i v1.** Operatören är högsta orkestrerare. Kända tvärgående processer körs av flödesmotorn (§6.2); ad hoc-samarbete sker via delegering mellan ledande agenter (§6.1).
 
 **Planerad VD-arbetsyta (2026-10-25):** [operatörscentralen](operatörscentral.md)

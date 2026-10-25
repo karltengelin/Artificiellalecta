@@ -13,6 +13,13 @@ ledningsfråga, exempelvis ett återkommande kvalitetsproblem eller en budgetavv
 Väsentlighet, tidsfönster och ansvarig måste preciseras; inga automatiska
 eskaleringströsklar införs genom planen.
 
+**Plattform med teamområden.** Centralen är startsidan i en gemensam
+webbplattform, där varje team har ett eget område. Försäkringsteamets område är
+dagens handläggar-UI. Compliance, aktuarie och senare team får egna områden.
+Ett område exponerar bara teamets egen agent, och centralen länkar till alla
+områden och visar deras läge. Arbete över flera team startas härifrån som flöden
+(B-036; OC-7, OC-8 i [projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md)).
+
 En ledningsfråga ska innehålla frågeställning, period, ansvarigt team,
 underlagsreferenser, alternativ, konsekvenser, osäkerhet och föreslagen
 uppföljning. Att Karl väljer en inriktning verkställer inte automatiskt en
@@ -37,6 +44,8 @@ flowchart TD
 Pilarna beskriver målbilden. Frågeingång, sammanställningar och styrväg är ännu
 inte implementerade. Flödesmotorn 3c-2 finns på main `66d1add`; 3c-1-delegering,
 VD-routning, 3b-9-inställningsvy och BI-dashboardens drift återstår vid planstart.
+Det första flödet, `rule_change_parameter`, och dess UI `/floden` kom i 3c-3.
+UI:t ligger tillfälligt i handläggar-UI:t, och flyttar hit i OC-7 (se nedan).
 
 - Återanvänd FastAPI/Jinja2/HTMX och Digital klarhet. Ingen ny frontendplattform
   krävs. Ett separat navigationsområde för ledning är ett designförslag;
@@ -48,6 +57,18 @@ VD-routning, 3b-9-inställningsvy och BI-dashboardens drift återstår vid plans
   De får en egen betrodd operatörsväg till rätt konfiguration/gateway.
 - Ingen generell SQL-, fil-, shell- eller nätverksåtkomst introduceras för
   chattens modeller. Befintliga scopes, PII-gränser och godkännanden gäller.
+- **Flöden och produktparametrar hör hemma här (OC-7).** En regeländring är ett
+  beslut på bolagsnivå och inte handläggning av enskilda försäkrade.
+  - Centralen når flödena genom adaptern `agents.flows.console.FlowConsole`,
+    precis som handläggar-UI:t gör i dag. Motorn och definitionerna i
+    `src/agents/flows/` ändras inte vid en flytt.
+  - Flöden startas och drivs härifrån med samma operatörsidentitet och
+    formulärskydd som handläggar-UI:t (B-017). Kravet på autentisering i §7
+    gäller styrvägen för modellpolicy och budget, inte flödenas steg.
+    Flödenas egna skydd består: version, bunden hash och godkännandekön.
+  - Grindarna ersätter inte godkännandekön (`harness.md` §4.2). Förslag som gäller
+    bolagsbeslut, till exempel en ny parameterversion, visas här, men kön ägs
+    fortfarande av tjänstelagret och förslagen avgörs genom `ServiceLayer.approve/reject`.
 
 ## 3. Data för bolagsläge och team
 

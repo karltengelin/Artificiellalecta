@@ -1,7 +1,7 @@
 # Handläggar-UI:t
 
 > **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5). **Verifierat skarpt i Lakebase 2026-10-12** (S6, se ATT_GORA): verifieringsposten AL-000499.
-> **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret), B-032 (anslutning, stamdata och arbetsgivare)
+> **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret), B-032 (anslutning, stamdata och arbetsgivare), B-036 (försäkringsteamets område på plattformen)
 > **Kod:** `src/web/` · **Start:** `python scripts/web/start_ui.py` · **Tester:** `tests/test_web_*.py`
 > **Relaterat:** [tjänstelager.md](tjänstelager.md), [tjänstelager_operationer.md](tjänstelager_operationer.md), `projekt/01_ärendehantering/PROJEKTPLAN.md`
 
@@ -12,6 +12,11 @@
 Ett lokalt webbgränssnitt där handläggaren söker fram en försäkrad och gör ändringar som syns i
 Lakebase-tabellerna och i händelseloggen. UI:t är tjänstelagrets första klient. Agenterna
 (Fas 3b/5) använder senare samma operationer, med samma spår i loggen (B-017).
+
+**Försäkringsteamets område (B-036).** På bolagets gemensamma plattform är handläggar-UI:t försäkringsteamets
+område, och operatörscentralen är startsidan ([projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md),
+OC-8). Här nås bara försäkringsteamets agent, handläggaragenten. Flöden över flera team och andra teams
+agenter hör hemma i centralen respektive i teamens egna områden.
 
 ## 2. Teknik och gränser
 
@@ -202,6 +207,13 @@ Handläggaren utför ändringarna direkt. En agent kan bara föreslå en ny vers
 **Flöden (Fas 3c, 3c-3, B-035).** Flödet `rule_change_parameter` från regeländring till verifierad
 produktparameter ([flaggskeppsflöde.md](flaggskeppsflöde.md) §6–7).
 
+> **Tillfälligt hem.** Flöden och produktparametrar är beslut på bolagsnivå, inte handläggning av enskilda
+> försäkrade, och flödet kör compliance och aktuarie, som inte hör till det här området. De ligger här för att
+> handläggar-UI:t var det enda gränssnittet när 3c-3 byggdes. De flyttar till operatörscentralen i OC-7
+> ([projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md),
+> [operatörscentral.md](operatörscentral.md) §2). Bygg därför inte ut `/floden` och `/parametrar` här, utöver
+> rättningar. Det som ska kunna återanvändas läggs i `src/agents/flows/` och i adaptern `FlowConsole`.
+
 | Adress | Innehåll | Motorn |
 |---|---|---|
 | `/floden` | Flödena med status och aktuellt steg, och *Starta flöde* med en källa ur regelverksgatewayen | `list`, `start` |
@@ -263,6 +275,7 @@ som väntande och kan avslås. Tider visas i datorns lokala tid, medan tjänstel
 | `/arenden/{nummer}/stang` (POST) | Stäng med utfall och motivering | `close_case` |
 
 - **Agenten körs synkront**, en körning åt gången i processen (B-033 val D). Knappen frågar först, eftersom körningen gör modellanrop som kostar. Modellklienten skapas vid första körningen – UI:t startar utan API-nycklar.
+- **Planerat: självständiga körningar (F5-7).** Handläggaragenten ska kunna ta ärenden själv, till exempel när ett ärende om löneunderlag registreras, och arbeta utan att handläggaren klickar. Det kräver en utlösare, en bakgrundsarbetare och regler för vilka ärendetyper som går automatiskt, med budget och möjlighet att stänga av. Mandat, budget och godkännande i kön gäller som vid *Starta agent*. Agenten föreslår, handläggaren beslutar. Knappen finns kvar för att starta agenten i ett enskilt ärende.
 - **Databasrollen per läge** (B-033 val H): i `demo` och `svc_test` simuleras agentens roll och sidan visar *simulerad*; mot `lakebase` används den riktiga rollen `agent_forsakring`, vars läsrätt på `cases` verkställdes i Lakebase 2026-10-24 (F5-5).
 - **Efter körningen** skriver harness ärendets status: *Väntar på godkännande* om ett förslag lagts, annars *Pågår*. Förslaget avgörs i `/godkannanden`, där det länkar till ärendet.
 - **Egen registrering i ärendet.** *Registrera löneunderlaget själv* öppnar löneunderlagsformuläret med ärendets uppgifter och ärendenumret medskickat (`?arende=`). Registreringen hamnar då i ärendets historik, och ärendet kan stängas som *Godkänt*.

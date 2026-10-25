@@ -20,6 +20,25 @@ Karl är högsta beslutsfattare. Den gemensamma frågeingången samordnar uppdra
 via teamens ledande agenter och sammanställer underlag; den får inget eget
 VD-mandat och inga utökade data- eller skrivrättigheter.
 
+**En plattform med teamområden (B-036).** Bolaget får
+en gemensam webbplattform, inte en app per team. Samma server, Digital klarhet,
+formulärskydd och, när den finns, inloggning.
+
+- **Operatörscentralen är startsida och nav.** Härifrån startar och följer Karl
+  bolagsflöden, till exempel regeländringar. Härifrån når han också varje teams område.
+- **Varje team har ett eget område:** försäkring (handläggning, dagens
+  handläggar-UI), compliance, aktuarie och senare utveckling, kommunikation och
+  kapitalförvaltning. Området visar teamets uppdrag, körningar, utkast, resultat
+  och de förslag i godkännandekön som rör teamets domän.
+- **I ett teamområde nås bara teamets egen agent.** I handläggningen är det
+  handläggaragenten, inte compliance eller aktuarie. Arbete över flera team går
+  genom flöden från centralen eller genom delegering (3c-1), aldrig genom att ett
+  teamområde startar ett annat teams agent.
+- **Agenter kan arbeta självständigt.** En agent kan ta uppdrag automatiskt,
+  till exempel när ett ärende registreras. Gränserna är desamma som när en människa
+  startar den: mandat, budget och godkännande av skrivningar i kön. Självständig
+  betyder att agenten börjar arbeta själv, inte att den beslutar själv.
+
 ## Produktens sex delar
 
 | Del | Fråga som ska besvaras | Första avgränsning |
@@ -53,6 +72,8 @@ ekonomiska motorer finns; saknade mått visas som **ej beräknat**.
 | OC-4: Ledningsunderlag | Prioriterade, sammanfattade frågor med alternativ, konsekvenser, ägare och beslutsspår. Rutinärenden stannar i specialistvyer. Eskaleringsvillkor granskas före aktivering | OC-1/2; definierade domängränser och rapportkontrakt |
 | OC-5: Modellpolicy och budget | Autentiserad Karl kan förhandsgranska och aktivera versionssatt policy för nya körningar: globalt val, rollmappning, teamundantag, reservpolicy och körbudget. Granskning visar berörda team och faktisk effekt | OC-0, AI-lagret och 3b-9; inga styrskrivningar före autentisering och ändringslogg |
 | OC-6: Ekonomisk fördjupning och acceptans | Konsolidering, FTA, kapital och likviditet ansluts när respektive modell är verifierad; period- och grundversioner går att följa. Sammanhängande VD-scenario godkänt | Projekt 2, 5 och 6; definierad konsoliderings-/fördelningsmodell |
+| OC-7: Flöden och produktparametrar | Bolagsflöden startas och följs här, först regeländringsflödet `rule_change_parameter` (B-035): starta, kör nästa steg, grindbeslut, manuella steg, avstämning, utkast och körjournal. Produktparametrarnas versioner visas här. Förslag i godkännandekön som gäller bolagsbeslut visas också här; kön ägs fortfarande av tjänstelagret. Åtgärderna använder samma operatörsidentitet och formulärskydd som handläggar-UI:t (B-017) och behöver inte vänta på styrvägens autentisering i OC-5. `/floden` och `/parametrar` i handläggar-UI:t tas bort eller blir länkar när de fungerar här | Flödesadaptern `agents.flows.console.FlowConsole` (3c-3); plattformen i OC-8 |
+| OC-8: Plattform och teamområden | En gemensam webbplattform med operatörscentralen som startsida och ett område per team. Handläggar-UI:t blir försäkringsteamets område; om dagens adresser behålls eller samlas under ett prefix avgörs här. Compliance och aktuarie får egna områden med teamets uppdrag, körningar, utkast och resultat. Ett område exponerar bara teamets egen agent, och ett test vaktar gränsen. Centralen länkar till varje område och visar dess läge | Befintlig FastAPI/Jinja2/HTMX-grund; teamprofilerna i `ecosystem.yaml`; OC-1 för navet |
 
 **Rekommenderad första byggleverans:** OC-0 följt av OC-1 och en smal OC-2:
 bolagsöversikt med ärligt markerade dataluckor, teamstatus samt agentkostnader ur
@@ -60,13 +81,23 @@ befintliga loggar. Därefter frågor till ett team åt gången. Automatisk
 samordning över flera team och skrivande styrning öppnas först med sina beroenden.
 Inga kalendertider eller generell omprioritering av pågående arbete är beslutade.
 
+**Flöden har tillfälligt hem i handläggar-UI:t.** Regeländringsflödet byggdes i
+3c-3 som `/floden` i handläggar-UI:t, eftersom det var det enda gränssnittet med
+lokal server, formulärskydd och godkännandekön. En regeländring är ett beslut på
+bolagsnivå och inte handläggning av enskilda försäkrade, och flödet kör compliance
+och aktuarie, inte handläggaragenten. Därför flyttar flödena hit i OC-7, och
+produktparametrarna (`/parametrar`) med dem. Flytten är billig:
+motor, definitioner och demomodell ligger i `src/agents/flows/`, och webben når
+dem bara genom adaptern `FlowConsole`. Den kan användas av vilket gränssnitt som
+helst, även ett kommandoradsverktyg eller Cowork (B-017).
+
 ## Ansvar och samordning
 
 | Område | Äger |
 |---|---|
 | Projekt 10 | VD-upplevelse, navigation, ledningsunderlag och samlad operatörscentral |
 | Projekt 2: BI & insikter | Gemensamma mått, historik, analys-/Genie-underlag och Databricks-dashboard enligt B-029 |
-| Harness och AI-lagret | Teamrouting, körpolicy, budgetverkställighet, körspår, modellroller och leverantörsval |
+| Harness och AI-lagret | Teamrouting, körpolicy, budgetverkställighet, körspår, modellroller och leverantörsval, flödesmotorn och flödesdefinitionerna |
 | Projekt 1 och övriga specialistytor | Enskilda ärenden, domänhandlingar och deras godkännanden |
 | Projekt 5 och 6 | Kapitalvärdering, ekonomi, aktuariella motorer och underlag för konsolidering/risk |
 | Projekt 8 och 9 | Projektkarta respektive processkartor som förklarar hur bolaget hänger ihop |

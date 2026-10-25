@@ -192,7 +192,9 @@ motorn med operatören som aktör.
 agentsteg, *Godkänn* och *Avslå* med anteckning för grindar, *Markera klart* med commit-referens för det
 manuella steget, och länkar till utkast, körjournal och förslaget i `/godkannanden`.
 
-*Byggt i 3c-3 (2026-10-25):* sidorna i `src/web/routes/flows.py` (`handläggar-ui.md` §4). Webben går genom
+*Byggt i 3c-3 (2026-10-25):* sidorna i `src/web/routes/flows.py` (`handläggar-ui.md` §4). Handläggar-UI:t är
+ett tillfälligt hem. Flöden är bolagsbeslut och flyttar till operatörscentralen i OC-7
+(`operatörscentral.md` §2). Webben går genom
 adaptern `src/agents/flows/console.py` (`FlowConsole`) och rör varken modeller, sessioner eller operationsmoduler.
 Formulären bär flödets version och, för grindar, hashen av underlaget som visades. *Kör nästa steg* körs synkront
 och en åt gången i processen (val F). När UI:t startar markeras steg som stod som pågående som
