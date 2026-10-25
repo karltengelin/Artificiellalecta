@@ -58,8 +58,9 @@ pods:
     skills:
       calculate_premium_preview: {service_operation: calculate_premium_preview}
 
-  # Planerade poddar enligt harness.md §3.4 läggs till när deras gateways finns:
-  #   regelverk (read_rule_document, dokumentgateway) och dokument (write_markdown_draft).
+  # Poddarna regelverk (list_regulatory_documents, read_regulatory_document) och dokument
+  # (write_draft) har gateways sedan 3c-G (src/agents/gateways/, B-035). De monteras här
+  # tillsammans med teamen compliance och aktuarie i 3c-T.
 
 teams:
   forsakring:

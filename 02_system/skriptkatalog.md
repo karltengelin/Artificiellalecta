@@ -17,7 +17,8 @@ Det finns ingen separat kodbas per delprojekt eller avdelning (B-015/B-024).
 | reporting | [Återanvändbar rapportmall i Digital klarhet](../06_design/rapportmall.md) och exempelrapport om agentnyttjande: fiktiv data, PDF/Markdown och diagram. Ingen aktiverad skill |
 | utils | Databasanslutning, backup/återställning, återanvändbar migrationskod och demobeståndet för handläggar-UI:t |
 | web | Handläggar-UI:t (Fas 4): FastAPI-sidor som bara anropar tjänstelagret, se [handläggar-ui.md](handläggar-ui.md) |
-| agents och övriga skill-mappar | Förberedd struktur; agent-runtime och ytterligare förmågor byggs enligt fasplanen |
+| agents | Harness: körpolicy, skill-register, dispatcher, agentloop, körjournal, ärendekörningar och gatewayerna `regelverk` och `dokument` (`agents/gateways/`, 3c-G) |
+| övriga skill-mappar | Förberedd struktur; ytterligare förmågor byggs enligt fasplanen |
 
 ## Var finns körverktygen?
 

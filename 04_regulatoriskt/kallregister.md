@@ -69,6 +69,15 @@ K-AMF-UTTAG: [AMF:s tidsutbud](https://www.amf.se/ta-ut-din-pension/sa-tar-du-ut
 K-ITP-SPARFORM: [Avtalats ITP1-information](https://www.avtalat.se/tjansteman/tjanstepensionen-itp/tjanstepensionen-itp-1/).
 Dessa är produktinformation, inte universella ITP-satser/ansökningsfrister.
 
+## Simulerade källor (fiktiva)
+
+Konstruerade källor för att prova bolagets regelförändringsflöde i sandlådan (B-003). De är inte
+verkliga, ingår inte i produktpaketet PR-ITP1 v1.0 och får inte citeras som verkliga källor.
+
+| ID | Simulerad källa/version | Avsnitt och användning |
+|---|---|---|
+| K-SIM-ITP-2027 | [Fiktiv avtalsändring: höjd premieålder](03_bevakning/K-SIM-ITP-2027-premiealder.md), version 1.0, 2026-10-25 | Punkt 1–3: premie t.o.m. månaden före 67 år för lönemånader från januari 2027, med övergång. Flaggskeppsdemon (B-035). Tillagd 2026-10-25 utan att paketet ändras |
+
 ## Aktualitet och reproducerbarhet
 
 Lokalt sparad statistik är versionslåst. Övriga källor är identifierade

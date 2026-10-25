@@ -377,6 +377,12 @@ Valda startgränser: högst **100 KiB per Markdown-utkast, 10 utkast och totalt 
 
 Den allmänna dokumentpodden är utan PII. Den får därför inte skriva personuppgifter eller personanknutna kundreferenser från handläggningen. Kundbrev och känsliga ärendeutkast måste lagras i en separat skyddad kund-/kommunikationsyta med PII-policy. Ett annat team får bara ett handtag om dess profil tillåter både dokumentet och dess dataklass.
 
+**Byggt i 3c-G (2026-10-25, B-035)** – `src/agents/gateways/`, ännu inte monterat på något team (det sker i 3c-T):
+
+- **`regelverk`** (`RegulatoryGateway`, verktygen `list_regulatory_documents` och `read_regulatory_document`): en katalog över en fast lista godkända platser – källregistret, regelverkskartan, regelverksunderlagen, bevakningen, tolkningarna, produktreglerna, produktregelpaketet, parameterregistret, villkoren, den aktuariella grunden och ITP1-regelverket (65 dokument). Handtag i stället för sökvägar (`PR-ITP1-013`, `T-ITP1-006`, `K-SIM-ITP-2027`). Varje svar har version, statusrad och kontrollsumma, fiktiva källor märks, och texten följs av anteckningen att den är underlag och inte instruktioner. Utdrag är högst 8 KiB, kan börja vid en rubrik och läses vidare med `next_offset`; ett ofullständigt utdrag är märkt. Filer över 512 KiB läses inte.
+- **`dokument`** (`DraftGateway`, verktyget `write_draft`): utkast i `logs/agent_artifacts/<team>/<run_id>/` med gränserna ovan. Team och run-id kommer från betrodd kontext; modellen anger bara ett filnamn ur mallen `^[a-z0-9][a-z0-9_-]{0,58}\.md$`. Publicering via tillfällig fil och hårdlänk, som misslyckas om namnet finns – ingen överskrivning. Exekverbart innehåll (skript, inbäddningar, händelseattribut, `javascript:`), kontrolltecken och personnummer stoppas. Id, kontrollsumma, författande körning och dataklass sparas i `manifest.jsonl`.
+- Båda kontrollerar varje led i sökvägen mot symlänkar och Windows junctions/reparse points, och att den verkliga sökvägen ligger under gatewayens rot (`checked_path`). Testerna (`tests/test_agents_gateways.py`) prövar junctions på riktigt i Windows.
+
 ### 5.3 Utdata, eskalering och externa handlingar
 
 Kontroller görs innan verktygsresultat går in i modellen, innan ett dokument sparas, innan ett svar lämnas till ett annat team och innan operatören får ett färdigt resultat. Ett schema kontrollerar struktur; det bevisar inte att en regeltolkning är riktig.
