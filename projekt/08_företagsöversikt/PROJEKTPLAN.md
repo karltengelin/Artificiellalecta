@@ -17,25 +17,27 @@ Den befintliga statiska HTML-översikten görs inte om till ett driftsgränssnit
 
 ## Status
 
-🟡 Första version 2026-10-12; uppdaterad 2026-10-24:
-[foretagsoversikt.html](foretagsoversikt.html), läget på main @ a2cfc60.
+🟡 Första version 2026-10-12; senast uppdaterad 2026-10-25:
+[foretagsoversikt.html](foretagsoversikt.html), läget på main @ 5fd10ab.
 Öppnas direkt i webbläsaren. Den innehåller en klickbar bolagskarta, delprojektens status,
 byggordning, tjänstelagrets flöde, regelkedjan, datamodellen, agentekosystemet, kod, skript
 och luckor. Sidan är statisk och uppdateras manuellt; siffror och status gäller per datumet i
 sidhuvudet. Naturligt att uppdatera i takt med att övriga delprojekt tar form – annars blir
 översikten inaktuell.
 
-**Avgränsning efter nulägesgenomgången 2026-10-25:** HTML-filerna bevaras som den
-daterade ögonblicksbilden ovan. Uppgifter om 15 operationer, kommande `cases`
-och återstående harness-röktest beskriver läget på bascommitten, inte dagens
-byggstatus. Använd `MASTER_CONTEXT.md`, `ATT_GORA.md` och respektive projektplan
-för aktuellt nuläge. En framtida uppdatering behöver ny datering och källinventering.
+**Uppdatering 25 oktober:** båda HTML-filerna visar nu 25 tjänsteoperationer,
+tre agentprofiler, fem poddar och 13 mappade verktyg, ärendestödet, versionerade
+produktparametrar och den lokala flödesmotorn. De tio delprojekten omfattar även
+operatörscentralen och teamområdena. Diagram, detaljrutor, test- och kodinventering
+skiljer byggt stöd från kvarstående verifiering och verksamhetsbygge.
 
-Uppdateringen 24 oktober omfattar handläggar-UI v1, samtliga 15 tjänsteoperationer,
-harness 3b-1–6 och den införda databasrollen, kapitalets beslutsutkast och lokala
-modeller samt kod- och testinventeringen. Byggt lokalt, infört i Lakebase och
-återstående arbete anges separat. Källor och avgränsningar finns i
-[uppdateringsunderlaget](UPPDATERING_2026-10-24.md).
+B-037:s verksamhetsdrivna målbild styr beskrivningen. Ett visningsscenario är
+inget eget byggmål; det avgränsade parameterflödet beskrivs med sina begränsningar.
+HTML är fortsatt en daterad statisk ögonblicksbild, utan liveanslutning till
+Lakebase. Grunddokumenten och projektplanerna är underlaget för senare ändringar.
+Källor, verifiering och avgränsningar finns i
+[uppdateringsunderlaget för 25 oktober](UPPDATERING_2026-10-25.md).
+[Underlaget för 24 oktober](UPPDATERING_2026-10-24.md) bevaras som historik.
 
 En fristående leveranskopia finns även i projektroten:
 [foretagsoversikt.html](../../foretagsoversikt.html), på operatörens begäran.
