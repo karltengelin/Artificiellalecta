@@ -21,6 +21,7 @@
 | `operation_events` / `approval_requests` | Tjänstelagrets händelselogg och godkännandekö (§9b–9c) | 🟡 Fas 1f T3a |
 | `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad i Lakebase 2026-10-24 (Fas 5, F5-5) – tom tills ärenden registreras |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
+| `flows` / `flow_steps` / `flow_gate_decisions` | Flödesmotorn i harness: flöden, steg och grindbeslut (§9i) | 🟡 Fas 3c 3c-2: modeller, motor och tester; migrationen verifierad mot isolerad Postgres, ej körd mot Lakebase |
 
 **Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för försäkringens läge. Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
@@ -540,6 +541,70 @@ Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma 
 
 ---
 
+## 9i. Tabeller: `flows`, `flow_steps` och `flow_gate_decisions` – Flödesmotorn
+
+> **Status:** Beslutade i **B-035** (`flaggskeppsflöde.md` §6, val E och J). Modeller, motor och lokala tester i Fas 3c 3c-2 (2026-10-25). Migrationen `scripts/migrations/migrate_flows.py` är verifierad mot isolerad Postgres men **inte körd mot Lakebase** – det kräver backup och operatörens OK (AGENTS.md §4.5).
+
+**Domän:** Ett flöde är en körning av en flödesdefinition i harness, t.ex. flaggskeppets regeländring: agentsteg, grindar där operatören beslutar, manuella steg och systemsteg. Tabellerna hör till harness (`src/agents/flows/`), inte till försäkringstjänstelagret (`harness.md` §4.3). De skrivs bara av flödesmotorn via den betrodda anslutningen, med operatören som aktör för grindbeslut och manuella steg. Agenternas körjournal ligger kvar som JSONL i `logs/agent_runs/` och länkas med `flow_steps.run_id` (val J). Ett förslag i tjänstelagrets godkännandekö länkas med `flow_steps.approval_id`; grinden ersätter aldrig det godkännandet.
+
+### `flows`
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `flow_id` | `VARCHAR(20)` | PK, CHECK form `FLOW-NNNNNN` | Flödesnumret |
+| `flow_type` | `VARCHAR(60)` | NOT NULL | Flödesdefinitionen, t.ex. `rule_change_parameter` (3c-3) |
+| `definition_version` | `VARCHAR(20)` | NOT NULL | Definitionens version när flödet startades |
+| `status` | `VARCHAR(30)` | NOT NULL, CHECK in (`running`, `waiting_gate`, `waiting_manual`, `waiting_approval`, `completed`, `rejected`, `cancelled`, `failed`, `reconciliation_required`) | Flödets läge |
+| `input` | `JSONB` | NOT NULL | Indata, validerade mot definitionens modell |
+| `current_step` | `VARCHAR(60)` | NULL | Stegnyckeln som står på tur; NULL när flödet är klart |
+| `version` | `INTEGER` | NOT NULL, CHECK ≥ 1 | Version för optimistisk låsning: varje ändring är en villkorlig UPDATE på den lästa versionen |
+| `created_by` | `VARCHAR(100)` | NOT NULL | Operatören som startade flödet |
+| `finished_at` | `TIMESTAMPTZ` | NULL | Satt exakt när flödet är avslutat (`completed`, `rejected`, `cancelled`, `failed`) |
+| `note` | `TEXT` | NULL | Skälet vid avslag, avbrott eller fel |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
+
+### `flow_steps`
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Stegets id; står i `RunRequest.flow_step_id` och körjournalen |
+| `flow_id` | `VARCHAR(20)` | NOT NULL, FK → `flows(flow_id)` ON DELETE RESTRICT | Flödet |
+| `step_key` / `position` | `VARCHAR(60)` / `INTEGER` | NOT NULL, unika per flöde, position ≥ 1 | Stegnyckeln och ordningen enligt definitionen |
+| `kind` | `VARCHAR(20)` | NOT NULL, CHECK in (`agent`, `gate`, `manual`, `system`) | Stegets slag |
+| `title` | `VARCHAR(200)` | NOT NULL | Stegets rubrik |
+| `team` / `agent` | `VARCHAR` | NULL | Team och agent för agentsteg |
+| `status` | `VARCHAR(30)` | NOT NULL, CHECK in (`pending`, `running`, `completed`, `waiting`, `rejected`, `failed`, `skipped`, `reconciliation_required`) | Stegets läge |
+| `run_id` | `VARCHAR(100)` | NULL | Agentkörningen; journal i `logs/agent_runs/<run_id>.jsonl`. Sätts innan körningen startar |
+| `result` | `JSONB` | NULL | Stegets resultat: för agentsteg körningens status och det prövade resultatschemat (`agents.results`), för grindar beslutet, för manuella steg operatörens uppgifter |
+| `result_hash` | `VARCHAR(64)` | CHECK satt när steget är `completed` | sha256 av resultatet i kanonisk JSON – det grindarna binder |
+| `approval_id` | `VARCHAR(64)` | NULL | Förslaget i `approval_requests` som systemsteget väntar på |
+| `artifact_refs` | `JSONB` | NULL | Utkastreferenser (`utkast:<team>/<run_id>/<namn>`) |
+| `started_at` / `finished_at` | `TIMESTAMPTZ` | NULL | Tider |
+| `completed_by` | `VARCHAR(100)` | NULL | Operatören vid grindar och manuella steg, godkännaren vid ett förslag i kön |
+| `error` | `TEXT` | NULL | Fel eller avstämningsanteckning |
+
+### `flow_gate_decisions`
+
+Append-only: ett beslut är en ny rad, ingen rad ändras.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | |
+| `flow_id` | `VARCHAR(20)` | NOT NULL, FK → `flows(flow_id)` | Flödet |
+| `step_key` | `VARCHAR(60)` | NOT NULL | Grinden |
+| `decision` | `VARCHAR(20)` | NOT NULL, CHECK in (`approved`, `rejected`) | Beslutet |
+| `decided_by` | `VARCHAR(100)` | NOT NULL | Operatören |
+| `note` | `TEXT` | CHECK krävs vid `rejected` | Anteckning |
+| `bound_steps` | `JSONB` | NOT NULL | Stegen vars resultat beslutet gäller |
+| `bound_hash` | `VARCHAR(64)` | NOT NULL | Hashen av stegens resultathashar vid beslutet |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | Beslutstiden |
+
+**Regler i motorn:** ett steg tas med en villkorlig UPDATE på `flows.version`, så att två klick inte kör samma steg två gånger. Grindbeslutet kräver att operatörens hash är densamma som underlagets just då. Innan ett senare steg tas räknas varje godkänd grind om, och ändrat underlag stoppar flödet. Ett steg som var `running` när motorn startade om blir `reconciliation_required` och avgörs av operatören.
+
+**Personuppgifter:** inga. Stegens resultat är strukturerat underlag och aggregat (`agents.results`); uppdragstexterna innehåller inga personuppgifter.
+
+---
+
 ## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**
@@ -578,6 +643,7 @@ Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma 
 - **Portabla modeller för tester (2026-10-11):** modellerna kan även skapas i en SQLite-databas i minnet, så att tjänstelagret (B-028) testas utan att röra Lakebase. JSON-kolumner är `JSON` med `JSONB`-variant för Postgres, de partiella unika indexen har även `sqlite_where`, och kontrollen att `period_month` är den första i månaden finns i en Postgres- och en SQLite-variant (`ddl_if`). Postgres-DDL:en är verifierat identisk före och efter ändringen – Lakebase påverkas inte och ingen migration behövs. Testdatabasen byggs i `tests/conftest.py` (`insurance_db`).
 - **Fas 5 F5-1 (2026-10-24) – tabellen `cases` (§9g, B-033):** skapas med `scripts/migrations/migrate_cases.py` (`utils/migration_cases.py`), inte `create_all` – den skulle även skapa kapitalförvaltningens tabeller, som inte finns i Lakebase. Skriptet skapar bara `cases` och dess index i en transaktion, kontrollerar att de refererade tabellerna finns, torrkör som standard och kräver `--apply` och `--backup` för en skarp körning, ändrar inga befintliga rader och verifierar radantalen. Verifierat mot isolerad Postgres (`svc_test`, `tests/test_migration_cases.py`): resultatet är identiskt med `create_all`, idempotent och lämnar övriga tabeller orörda. Villkoret för ärendenumret använder `SUBSTR` i stället för `LIKE 'CASE-%'`, eftersom procenttecknet dubbleras när DDL:en kompileras för psycopg2. `details` sparar Pythons `None` som SQL `NULL` (`none_as_null`), så att `NOT NULL` gäller. **Skapad i Lakebase 2026-10-24 efter backup `backups/20261024T191154Z` och torrkörning, med operatörens OK (AGENTS.md §4.5); radantalen i övriga tabeller oförändrade**. Agentrollens läsrätt på `cases` sattes därefter med `grant_agent_role.py --apply`
 - **Fas 3c 3c-P1 (2026-10-25) – tabellen `product_parameters` (§9h, B-035):** skapas med `scripts/migrations/migrate_product_parameters.py` (`utils/migration_product_parameters.py`) enligt samma mönster som `cases`: bara den nya tabellen och dess index, en transaktion, torrkörning som standard, `--apply` kräver `--backup`, radantalen kontrolleras. Migrationen lägger dessutom in startvärdena och **räknar om varje ordinarie premierad** med de lästa parametrarna – minsta avvikelse rullar tillbaka allt. Även torrkörningen gör kontrollen, i en transaktion som rullas tillbaka. Verifierat mot isolerad Postgres (`tests/test_product_parameters.py`): demobeståndet räknas om identiskt, idempotent, och en ändrad premie stoppar migrationen. Tills tabellen finns används paketets värden i koden, märkt i `calculation_basis`. **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --apply` (agentrollen får `SELECT` på tabellen). **Skapad i Lakebase 2026-10-25 efter backup `backups/20261025T090949Z` och torrkörning, med operatörens OK (AGENTS.md §4.5): alla 15 097 premier räknades om identiskt, radantalen i övriga tabeller oförändrade, en andra körning gjorde ingenting; agentrollens läsrätt sattes därefter med `grant_agent_role.py --apply`**
+- **Fas 3c 3c-2 (2026-10-25) – flödesmotorns tabeller (§9i, B-035):** skapas med `scripts/migrations/migrate_flows.py` (`utils/migration_flows.py`) enligt samma mönster: bara `flows`, `flow_steps` och `flow_gate_decisions` med index, i en transaktion, torrkörning som standard, `--apply` kräver `--backup`, radantalen kontrolleras. Finns bara en del av tabellerna stoppar migrationen. Verifierat mot isolerad Postgres (`tests/test_migration_flows.py`): identiskt med `create_all`, idempotent, övriga tabeller orörda. Agentrollerna får ingen rätt till tabellerna – flödesmotorn skriver med den betrodda anslutningen. **Ej körd mot Lakebase**
 
 ---
 

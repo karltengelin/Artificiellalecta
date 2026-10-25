@@ -68,10 +68,13 @@ documentation = true
 
 def test_repo_katalogen_klassificerar_alla_testfiler_och_markerar_malbilden():
     catalog = load_catalog()
-    for name in ("pensions", "payments", "economy", "risk", "simulation", "orchestration", "compliance", "communication"):
+    for name in ("pensions", "payments", "economy", "risk", "simulation", "compliance", "communication"):
         assert catalog.suites[name].status == "planned"
         assert not catalog.suites[name].tests
     assert catalog.suites["reporting"].status == "partial"
+    # Flödesmotorn finns sedan 3c-2; delegering mellan team återstår
+    assert catalog.suites["orchestration"].status == "partial"
+    assert "tests/test_agents_flows.py" in catalog.suites["orchestration"].tests
     assert set(full_plan(catalog).tests) == set(catalog.tests)
 
 

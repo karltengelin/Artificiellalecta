@@ -179,6 +179,11 @@ ser bara aggregat. Operatören skapar rollen i Databricks (val I).
 - **Grinden ersätter aldrig godkännandet av en `APPROVAL`-operation** (`harness.md` §4.2). Flödet visar båda,
   men kön ägs fortfarande av tjänstelagret.
 
+*Byggt i 3c-2 (2026-10-25):* `src/agents/flows/` (`definition.py`, `store.py`, `engine.py`) och `src/models/flow.py`,
+tabellerna i `databasschema.md` §9i, migrationen `scripts/migrations/migrate_flows.py` (inte körd mot Lakebase).
+Agentsteg körs med `run_assignment` (3c-T); ett systemsteg som lägger ett förslag i kön väntar på det
+(`waiting_approval`). Flödesdefinitionen `rule_change_parameter` och UI:t kommer i 3c-3.
+
 **Var koden ligger.** `src/agents/flows/` med motor, lagring och definitioner. Flödestabellerna hör till harness,
 inte till försäkringstjänstelagret (`harness.md` §4.3). Operatörens grindbeslut och manuella steg skrivs av
 motorn med operatören som aktör.
