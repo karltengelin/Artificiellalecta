@@ -32,6 +32,12 @@ Modellerna registreras automatiskt för befintligt `create_tables.py`, som inte 
   styrdokument, godkänd instrumentlista, dokumenterat scenario och fungerande kontroller
 - Beståndskoppling kräver dessutom avstämd finansiering och ALM-underlag enligt riktlinjens §§2/7
 - Premieinflödet (Fas 1) kopplas som insättningar till portföljen
+- För månadssimuleringen samordnas V-07 och paketen A/B i
+  [processöversikten](../../01_domän/processer_översikt.md): avstämda faktiska kassaflöden
+  från premier och till pensionsbetalningar, kurs-/värderingsversioner, likviditet och
+  avkastningsunderlag till kapitaljournalen. Stäm även av ingående portfölj/kassa mot
+  startbeståndets finansiering (S-04). Kundkapital eller garantier får inte kopieras som
+  en extra insättning i portföljen
 
 ## Befintlig grund i repot
 

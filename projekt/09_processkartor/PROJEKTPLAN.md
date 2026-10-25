@@ -34,6 +34,18 @@ Föreslagen arbetsordning:
 
 ## Hur kartorna hålls trovärdiga
 
+### Underlag från verksamhetskartläggningen 2026-10-25
+
+[Processöversikten](../../01_domän/processer_översikt.md) finns nu som gemensam ingång:
+dagligt arbete, verksamhetsgap V-01–12, simuleringsbehov S-01–06 och föreslagna paket A–C.
+Detaljerade kartor och verifierade nulägesflöden återstår. Använd gap-ID:n för att visa
+beroenden och byggstatus i de fem kartorna ovan, särskilt premie → kapital → pension och
+aktuariellt/ekonomiskt underlag → rapport. Visa även gränssnitt mot simulerade motparter,
+månadsordning och godkännandestopp. Projekt 9 dokumenterar dessa behov; en simulator-runtime
+eller nya agentmandat ingår inte genom denna dokumentationsuppdatering.
+
+### Granskningsregler
+
 - Märk varje karta som nuläge eller målflöde; märk enskilda steg som byggda, planerade eller öppna.
 - Länka till källdokument och exakta operationer där de finns. Föreslagna verktygsnamn får
   inte presenteras som implementerade. Ange granskningsdatum och kodversion för nulägeskartor.

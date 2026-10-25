@@ -65,6 +65,17 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 
 ## Öppna designfrågor
 
+### Underlag för löpande verksamhet och månadssimulering
+
+[Processöversikten](../../01_domän/processer_översikt.md) fångar V-01–03 och V-08–09:
+anställningshistorik, lön → faktura → mottagen premie, bredare ärendeintag och besked.
+Paket A föreslås samordna dessa led; paket B behöver försäkringsoperationer för pension,
+kapital och betalning innan de kan exponeras i UI eller kundportal. Fler agentprofiler
+ersätter inte dessa motorer. Bryt ned beroendena vid nästa designstart, inklusive
+arbetsgivarfil, systemskapade avvikelser och tidsfristuppföljning efter `salary_report`.
+
+### Befintliga gränssnittsfrågor
+
 Se `ATT_GORA.md` 🔵:
 - **Sessionshistorik** för chatten.
 - **Filrättigheter.**
