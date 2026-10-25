@@ -8,6 +8,43 @@
 
 ## Beslut
 
+### B-035 | 2026-10-25 | Fas 3c: flödesmotor, parametrar som data och en minimal flaggskeppsdemo
+
+**Beslut:** Operatören godkände beslutsförslaget `02_system/flaggskeppsflöde.md` i chatten 2026-10-25, med valen A–L enligt rekommendationerna, och bad om att beslutet loggas. Fas 3c byggs med en minimal flaggskeppsdemo som första mål:
+
+1. **Scenario:** en fiktiv ändring där ordinarie ITP1-premie betalas till och med månaden före 67 år i stället för 66, för premiemånader från 2027-01-01 (val A). Källan är en märkt simuleringskälla, `K-SIM-ITP-2027`, i källregistret och `04_regulatoriskt/03_bevakning/` (val L).
+2. **Parametrar som versionerad data:** värden som styr premieberäkningen (premieålder, premiesatser, brytpunkter) lagras i tabellen `product_parameters` med giltighetsintervall, produktregel, källa och beslut. Premiemotorn tar parametrarna som indata och tjänstelagret slår upp dem per premiemånad. Ändringar görs med `schedule_product_parameter_change` (`APPROVAL`) och dras tillbaka med `withdraw_product_parameter_change` (`HUMAN_ONLY`); läsning med `get_product_parameters` (`AGENT`) (val B).
+3. **Aktiveringen** läggs av flödesmotorn som förslag under compliance-agentens identitet, länkat till tolkningskörningen, och godkänns i `/godkannanden` (val C).
+4. **Ordning:** tolkning → grind → beståndsinsikt → grind (regelbeslut) → operatören för in regeltexten → aktivering → verifiering i systemet (val D). Compliance skriver bara utkast; operatören för in regeltexten (val H).
+5. **Flödesmotorn** får egna tabeller i harness – `flows`, `flow_steps` och `flow_gate_decisions` – utanför försäkringstjänstelagret. Grindar binder hashen av det underlag som godkänts (val E). Agentsteg körs synkront när operatören klickar (val F). Körjournalen förblir JSONL och länkas via `run_id` (val J).
+6. **Team och poddar:** `compliance` och `aktuarie` med gatewayerna `regelverk` (läsning), `dokument` (utkast) och `bestand` (aggregat i betrodd kod med undertryckning av celler under 10).
+7. **Data:** aggregattjänsten provas först i demo och `svc_test` med simulerad roll; operatören skapar `agent_aktuarie` före skarp demo i Lakebase (val I). Demobeståndet utökas med en fiktiv äldre kohort födda 1959–1962, först i demo och `svc_test`, i Lakebase efter backup och OK (val K).
+8. **Delegering mellan team (3c-1)** byggs efter demon (val G). Utvecklings- och kommunikationsteamen ingår inte i demon.
+
+**Motivering:**
+- Den kortaste vägen till ett visbart flöde från regelverksändring till produktion med människa i loopen.
+- Premieåldern och satserna är i dag konstanter i koden, så en antagen regeländring kan bara nå produktion genom en kodändring. Parametrar som data stänger den luckan utan att agenter får ändra kod eller gällande dokument.
+- Grindar som binder underlaget gör varje mänskligt beslut spårbart till exakt det som granskades.
+
+**Övervägda alternativ:**
+
+*IBB 2027 som demo* (förslaget i `kallandringar.md`) – minst bygge, men ingen produktregel ändras. *Höjd premiesats under brytpunkten* – berör alla aktiva direkt men är ett avtalsval snarare än nationellt regelverk. Båda kan köras i samma flöde senare.
+
+*Behåll konstanterna och låt utvecklingsteamet ändra koden* – det fullständiga flaggskeppet, men kräver isolerad patch- och releasemiljö. Senare.
+
+*Flödesoperationer i tjänstelagret* – en logg, men blandar verksamhetsområden (`harness.md` §4.3). Avvisat.
+
+*Bygga delegering före demon* – byggordningen i `agentekosystem.md` §12, men demon behöver bara team i följd. Senare.
+
+**Konsekvenser:**
+- Byggsteg 3c-P1, 3c-P2, 3c-G, 3c-B, 3c-T, 3c-2, 3c-3 och 3c-V enligt förslagets §11, därefter 3c-1.
+- Nya tabeller med migrationer mot Lakebase först efter backup och operatörens OK (AGENTS.md §4.5).
+- `databasschema.md`, `tjänstelager.md`, `harness.md`, `agentekosystem.md`, `handläggar-ui.md`, skillkatalogen och operationsförteckningen uppdateras när respektive steg byggs.
+
+**Preciserar:** B-016 (flöden), B-026 (agentekosystemet) och B-028 (tjänstelagret).
+
+---
+
 ### B-034 | 2026-10-24 | Digital klarhet som bolagets gemensamma grafiska design
 
 **Beslut:** Operatören valde i chatten 2026-10-24 förslaget **Digital klarhet**

@@ -167,6 +167,13 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 - [ ] **3b-9: Admin-sida – Agentteam → Körgränser** *(tillagd 2026-10-12 på operatörens begäran)* – operatören kan se effektiva gränser och ändra kostnadsbudget, modellsteg, verktygsanrop, aktiv tidsgräns och delegeringsgränser per team/agent. Validera värden och arv mellan globala, team-, agent- och rotgränser. Spara varaktigt med konfigurationsversion och ändringslogg (tid, aktör, tidigare och nytt värde); bestäm relationen till `ecosystem.yaml` så att samma inställning inte får två sanningskällor. Nya körningar använder den nya versionen; pågående körningar behåller sin version. Endast autentiserad operatör får ändra; befogenheter och godkännandekrav hanteras separat. **Beroenden:** handläggar-UI:t (Fas 4), 3b-1 och 3b-4; delegeringskontroller aktiveras med 3c-1. Inställningarna hör till harness, utanför försäkringstjänstelagret. Startgränser: `02_system/harness.md` §6.3.
 
 **Fas 3c – Samverkan (inför flaggskeppsscenariot)**
+- [x] **2026-10-25** **3c-0: Designstopp** – beslutsförslag [`02_system/flaggskeppsflöde.md`](02_system/flaggskeppsflöde.md): flödesmotorn, parametrar som versionerad data (`product_parameters`), teamen compliance och aktuarie, gateways för `regelverk`, `dokument` och `bestand`, och en minimal flaggskeppsdemo (fiktiv premieålder 66 → 67). Godkänt med valen A–L och loggat som **B-035**
+- [ ] **3c-P1: Produktparametrar som data** – `product_parameters` med migration och seed, `PremiumParameters` i premiemotorn, uppslag i tjänstelagret, `get_product_parameters`; test att alla premier räknas identiskt
+- [ ] **3c-P2: Ändra parametrar** – `schedule_product_parameter_change` (`APPROVAL`), `withdraw_product_parameter_change` (`HUMAN_ONLY`), parameterversioner i `calculation_basis`, UI-sidan `/parametrar`
+- [ ] **3c-G: Gateways** `regelverk` (läsning) och `dokument` (utkast), fiktiv källa `K-SIM-ITP-2027`
+- [ ] **3c-B: Beståndsinsikt** – `estimate_parameter_change_impact` med undertryckning; demobeståndet utökas med en äldre kohort
+- [ ] **3c-T: Teamen** `compliance` och `aktuarie` – profiler, instruktioner, uppdragsmallar, resultatscheman
+- [ ] **3c-V: Röktest och demomanus** – demo och `svc_test`, sedan Lakebase efter backup, roll `agent_aktuarie` och OK
 - [ ] **3c-1: Delegering mellan team** – `delegate_to_team` med strukturerat uppdrag, `parent_run_id`, djup- och kostnadstak (§6.1)
 - [ ] **3c-2: Flödesmotor** – persisterat tillstånd och godkännandesteg; tabeller för flöden, godkännanden och körjournal i `databasschema.md` (körning mot Lakebase enligt AGENTS.md §4.5)
 - [ ] **3c-3: Första flödet** – regelförändrings-/flaggskeppsflödet (§6.2)

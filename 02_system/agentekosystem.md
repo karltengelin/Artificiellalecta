@@ -394,7 +394,7 @@ Byggs efter harness (§12).
 | **3** ✅ | AI-lagret (`src/ai/`) med roller, team-nycklar, verktygsgränssnitt, anropslogg, fejkleverantör | Allt nedan |
 | **1f** | Tjänstelagret (`tjänstelager.md`): operationskontrakt, agentåtkomst inkl. *endast handläggare*, godkännandekö, händelselogg, första läs- och skrivoperationerna | Fas 4 och alla agentverktyg |
 | **3b** | Harness v1 (efter Fas 4): `ecosystem.yaml`, skill-register ovanpå tjänstelagret, behörighetsfilter, agentloop, körjournal (JSONL), första poddarna | Fas 5 – handläggaragenten |
-| **3c** | Delegering mellan team, flödesmotor med persisterat tillstånd (Lakebase-tabeller), regelförändringsflödet | Flaggskeppsscenariot |
+| **3c** | Delegering mellan team, flödesmotor med persisterat tillstånd (Lakebase-tabeller), regelförändringsflödet. Designstopp med en minimal flaggskeppsdemo som första mål: `flaggskeppsflöde.md` (B-035) | Flaggskeppsscenariot |
 | Senare | MCP-exponering av poddar, databas-sink för anropsloggen, kostnadsindikatorer | B-017/B-024 fullt ut, BI |
 
 Egen Lakebase-roll för PII-poddar är flyttad från *Senare* till före aktiveringen av första PII-podden (`harness.md` §5.1, `ATT_GORA.md` under 3b-3).
