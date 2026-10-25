@@ -198,7 +198,7 @@ Artificiellalecta/
 │   ├── databasschema.md            ← Tabellstruktur och SQLAlchemy-modeller (B-018, B-022)
 │   ├── ai_abstraktion.md           ← AI-lagret: utvärdering, gränssnitt, roller, nycklar (B-009/B-025)
 │   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
-│   ├── flaggskeppsflöde.md          ← Beslutsförslag Fas 3c: flödesmotor och minimal flaggskeppsdemo
+│   ├── flaggskeppsflöde.md          ← Fas 3c: flödesmotor och minimal flaggskeppsdemo (B-035)
 │   ├── tjänstelager.md             ← Operationer för handläggare, agenter och skript (B-028)
 │   ├── tjänstelager_operationer.md ← Genererad förteckning: operationer, agentnivå och skäl (T4)
 │   ├── handläggar-ui.md            ← Handläggar-UI:t: start, databasval, sidor och gränser (Fas 4)

@@ -1,6 +1,6 @@
 # Beslutsförslag: flödesmotorn (Fas 3c) och en minimal flaggskeppsdemo
 
-> **Status:** Förslag, väntar på operatörens beslut om valen A–L i §9. Inget är byggt. Ingen post i beslutsloggen förrän operatören godkänt (förslag till text i §12).
+> **Status:** Godkänt av operatören i chatten 2026-10-25, med valen A–L enligt rekommendationerna i §9, och loggat som **B-035**. Byggs i stegen i §11, med början i 3c-P1.
 > **Datum:** 2026-10-25, på `main` `fe4be6a` (Fas 5 F5-1–F5-4 klar, F5-5 halvklar, Digital klarhet i handläggar-UI:t).
 > **Underlag:** MASTER_CONTEXT §1 (flaggskeppsscenariot); `02_system/agentekosystem.md` §5.4, §6.2 och §12; `02_system/harness.md` §4.2–4.3, §5.1–5.2, §9.2–9.3 och §10; `02_system/Agentsystem/regelförändringsflöde.md`; `04_regulatoriskt/03_bevakning/kallandringar.md`; PR-ITP1-001, -013, -016 och -032; `01_domän/parametrar/PARAMETERREGISTER.md`; `src/skills/calculation/calculate_itp1_premium.py`; `src/analytics/premium_impact.py`.
 > **Bygger på:** B-016, B-017, B-024, B-026, B-028, B-031, B-033.
@@ -240,7 +240,7 @@ Skrivningarna i 3c-P2 kan provas av agenter först från 2026-11-01. Byggstegen 
 oberoende nog att delas mellan Claude Code och Codex enligt AGENTS.md §4.2, så länge datamodellen i 3c-P1 läggs
 först.
 
-## 12. Beslutsförslag (förslag till B-035)
+## 12. Beslutsförslag (loggat som B-035)
 
 > **Beslut:** Fas 3c byggs med en minimal flaggskeppsdemo som första mål. Parametrar som styr
 > premieberäkningen blir versionerad data med giltighetsintervall (`product_parameters`) och ändras genom
