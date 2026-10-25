@@ -76,6 +76,7 @@ en uttrycklig grupp eller en bas före integrationsändringen för den kontroll 
 |---|---|
 | Rapportmall | Rapportgruppen |
 | Premiemotor/produktparametrar | Premier och kända beroenden, bland annat tjänster, agenter, webb och insikter |
+| Beståndsanalys | Insikter och tjänstelagrets operation som använder beräkningen, vidare till dess användare |
 | Tjänstelager/åtkomst | Brett urval av tjänster och deras användare |
 | Gemensamma modeller, conftest, testkatalog, testverktyg eller projektberoenden | Hela befintliga sviten |
 | Ändrad testfil | Den filen direkt; delade testhjälpare ger hela sviten och kodändringar i samma diff kan utvidga urvalet |

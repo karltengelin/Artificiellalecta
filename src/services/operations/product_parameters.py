@@ -136,7 +136,7 @@ class ParameterChange(BaseModel):
     previous_valid_to: date | None = Field(description="Den föregående versionens slutdag efter ändringen (None = tills vidare)")
 
 
-def _first_of_next_month(d: date) -> date:
+def first_of_next_month(d: date) -> date:
     return date(d.year + (d.month == 12), d.month % 12 + 1, 1)
 
 
@@ -148,9 +148,12 @@ def _locked_versions(session, key: str) -> list[ProductParameter]:
     ).all())
 
 
-def _check_value(session, data: ParameterChangeInput) -> None:
-    unit = PARAMETER_UNITS[data.key]
-    value = data.value
+def check_parameter_value(session, key: str, value: Decimal, valid_from: date) -> None:
+    """Värdet i parameterns enhet och samstämmigheten med övriga parametrar dagen ändringen börjar gälla.
+
+    Används av schemaläggningen och av konsekvensberäkningen (portfolio_impact) – samma gränser.
+    """
+    unit = PARAMETER_UNITS[key]
     if unit == "years":
         if value != value.to_integral_value() or not AGE_RANGE[0] <= value <= AGE_RANGE[1]:
             raise BlockedError(f"En premieålder anges i hela år mellan {AGE_RANGE[0]} och {AGE_RANGE[1]}, inte {value}")
@@ -161,8 +164,8 @@ def _check_value(session, data: ParameterChangeInput) -> None:
         raise BlockedError(f"En brytpunkt anges som ett positivt antal IBB, inte {value}")
 
     # Parametrarna ska hänga ihop den dag ändringen börjar gälla
-    current = {k: parameters.plain(r.value) for k, r in parameters.versions_on(session, data.valid_from).items()}
-    current[data.key] = value
+    current = {k: parameters.plain(r.value) for k, r in parameters.versions_on(session, valid_from).items()}
+    current[key] = value
     pairs = (("premium_age_start", "premium_age_end", "premieåldern"),
              ("premium_breakpoint_low_ibb", "premium_breakpoint_high_ibb", "brytpunkterna"))
     for low, high, what in pairs:
@@ -184,7 +187,7 @@ def _check_value(session, data: ParameterChangeInput) -> None:
 )
 def schedule_product_parameter_change(ctx: OperationContext, data: ParameterChangeInput) -> ParameterChange:
     session = ctx.require_session()
-    earliest = _first_of_next_month(common.today())
+    earliest = first_of_next_month(common.today())
     if data.valid_from < earliest:
         raise BlockedError(
             f"Giltighetsdagen {data.valid_from} är passerad eller i innevarande månad – tidigast {earliest}. "
@@ -212,7 +215,7 @@ def schedule_product_parameter_change(ctx: OperationContext, data: ParameterChan
         )
     if parameters.plain(previous.value) == parameters.plain(data.value):
         raise ConflictError(f"{data.key} är redan {parameters.plain(data.value)} – ingen ändring")
-    _check_value(session, data)
+    check_parameter_value(session, data.key, data.value, data.valid_from)
 
     previous.valid_to = data.valid_from - timedelta(days=1)
     row = ProductParameter(

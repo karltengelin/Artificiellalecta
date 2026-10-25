@@ -23,6 +23,7 @@ operations:
   get_product_parameters: AGENT        # produktparametrarna med versioner (B-035), inga personuppgifter
   schedule_product_parameter_change: APPROVAL    # ny parameterversion från en framtida månad (B-035); agenten föreslår
   withdraw_product_parameter_change: HUMAN_ONLY  # dra tillbaka en kommande version (B-035)
+  estimate_parameter_change_impact: AGENT  # beståndsinsikt i betrodd kod (B-035, 3c-B): bara aggregat, celler < 10 döljs
 
   # Godkännandekön och händelseloggen (Fas 4, handläggar-UI:t). Handläggarens kontrollyta:
   # agenter ser inte kön eller loggen (dataminimering, B-006) – kan öppnas genom en ändring här.

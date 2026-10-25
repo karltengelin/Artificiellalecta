@@ -8,11 +8,19 @@ Skripten `scripts/demo/seed_mock_data.py` läser därifrån och laddar in i data
     men slumpgenererade. Eventuella krockar med riktiga är en slumpartad
     sammanträffning, inte avsikt.
 
-Default-omfattning: 20 arbetsgivare och ~500 anställda totalt.
+Default-omfattning: 20 arbetsgivare och ~500 anställda totalt (födda 1979–2000),
+plus den äldre kohorten för flaggskeppsdemon (B-035 val K): 31 aktiva födda
+1959–1962, samma personer som i demobeståndet (`utils.demo_data.OLDER_COHORT`).
+
+`--older-cohort-only` skriver bara kohorten till `insured_persons_older_cohort.csv`,
+kopplad till arbetsgivarna i en befintlig `employers.csv` – för ett bestånd som redan
+finns i databasen. Kohortens id är stabila (uuid5 av personnumret), så en ny körning ger
+samma rader. Inläsning i Lakebase kräver backup och operatörens OK (AGENTS.md §4.5).
 
 Användning:
     python scripts/demo/generate_mock_data.py
     python scripts/demo/generate_mock_data.py --employers 5 --employees 50
+    python scripts/demo/generate_mock_data.py --older-cohort-only     # läser data/employers.csv
 """
 
 from __future__ import annotations
@@ -20,9 +28,18 @@ from __future__ import annotations
 import argparse
 import csv
 import random
+import sys
 import uuid
 from datetime import date, timedelta
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "src"))
+
+from utils.demo_data import OLDER_COHORT, OLDER_COHORT_SEED  # noqa: E402
+
+#: Namnrymd för kohortens stabila id
+COHORT_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "https://artificiellalecta.example/demo/older-cohort")
 
 # --- Konstanter och namnlistor ---
 
@@ -201,6 +218,42 @@ def generate_insured_person(
     }
 
 
+def generate_older_cohort(employers: list[dict]) -> list[dict]:
+    """Den äldre kohorten som rader i insured_persons.csv, fördelad på arbetsgivarna.
+
+    ITP1 från anställningen, dock tidigast arbetsgivarens anslutning. Egen slumpgenerator,
+    så att resten av mockdatan blir densamma som förut för samma frö.
+    """
+    rng = random.Random(OLDER_COHORT_SEED)
+    rows = []
+    for person in OLDER_COHORT:
+        employer = rng.choice(employers)
+        itp1_start = max(person.employment_start_date, date.fromisoformat(employer["affiliation_date"]))
+        rows.append({
+            "id": str(uuid.uuid5(COHORT_NAMESPACE, person.personal_id_number)),
+            "personal_id_number": person.personal_id_number,
+            "first_name": person.first_name,
+            "last_name": person.last_name,
+            "email": f"{person.first_name.lower()}.{person.last_name.lower()}.{person.personal_id_number[-4:]}@example.se",
+            "phone": "",
+            "employer_id": employer["id"],
+            "employment_start_date": person.employment_start_date.isoformat(),
+            "employment_end_date": "",
+            "monthly_salary_sek": f"{person.monthly_salary_sek:.2f}",
+            "employment_rate": "100.00",
+            "itp1_start_date": itp1_start.isoformat(),
+            "status": "active",
+        })
+    return rows
+
+
+def write_csv(path: Path, fields: list[str], rows: list[dict]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 # --- Main ---
 
 EMPLOYER_FIELDS = [
@@ -227,11 +280,28 @@ def main() -> None:
                         help="Slumpfrö för reproducerbarhet")
     parser.add_argument("--out-dir", default="data",
                         help="Utskriftsmapp (default data/)")
+    parser.add_argument("--no-older-cohort", action="store_true",
+                        help="Utan den äldre kohorten (födda 1959–1962)")
+    parser.add_argument("--older-cohort-only", action="store_true",
+                        help="Skriv bara kohorten, kopplad till arbetsgivarna i --employers-csv")
+    parser.add_argument("--employers-csv", type=Path,
+                        help="Befintliga arbetsgivare för --older-cohort-only (default <out-dir>/employers.csv)")
     args = parser.parse_args()
 
     rng = random.Random(args.seed)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.older_cohort_only:
+        employers_csv = args.employers_csv or out_dir / "employers.csv"
+        if not employers_csv.exists():
+            raise SystemExit(f"{employers_csv} saknas – kohorten kopplas till befintliga arbetsgivare")
+        with employers_csv.open(encoding="utf-8") as fh:
+            existing = sorted(csv.DictReader(fh), key=lambda row: row["org_number"])
+        cohort_path = out_dir / "insured_persons_older_cohort.csv"
+        write_csv(cohort_path, INSURED_FIELDS, generate_older_cohort(existing))
+        print(f"Skrev {len(OLDER_COHORT)} försäkrade i den äldre kohorten → {cohort_path}")
+        return
 
     # Generera arbetsgivare
     employers = [generate_employer(rng, i) for i in range(args.employers)]
@@ -246,23 +316,16 @@ def main() -> None:
                                        per_employer_avg * 1.4)))
         for _ in range(count):
             insured.append(generate_insured_person(rng, emp, affiliation))
+    cohort = [] if args.no_older_cohort else generate_older_cohort(employers)
 
     # Skriv ut
     employers_path = out_dir / "employers.csv"
     insured_path = out_dir / "insured_persons.csv"
-
-    with employers_path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=EMPLOYER_FIELDS)
-        writer.writeheader()
-        writer.writerows(employers)
-
-    with insured_path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=INSURED_FIELDS)
-        writer.writeheader()
-        writer.writerows(insured)
+    write_csv(employers_path, EMPLOYER_FIELDS, employers)
+    write_csv(insured_path, INSURED_FIELDS, insured + cohort)
 
     print(f"Skrev {len(employers)} arbetsgivare → {employers_path}")
-    print(f"Skrev {len(insured)} försäkrade → {insured_path}")
+    print(f"Skrev {len(insured) + len(cohort)} försäkrade, varav {len(cohort)} i den äldre kohorten → {insured_path}")
 
 
 if __name__ == "__main__":

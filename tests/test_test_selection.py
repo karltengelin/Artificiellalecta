@@ -90,6 +90,13 @@ def test_premiemotorn_tar_med_indirekta_anvandare():
     assert "tests/test_ai_openai_provider.py" not in plan.tests
 
 
+def test_bestandsberakning_tar_med_operationen_och_dess_anvandare():
+    plan = changed_plan(load_catalog(), ["src/analytics/parameter_impact.py"])
+    assert {"insights", "services", "agents", "web", "tooling"} <= set(plan.suites)
+    assert "tests/test_portfolio_impact.py" in plan.tests
+    assert "tests/test_reporting_template.py" not in plan.tests
+
+
 def test_andringsurvalet_utvidgas_transitivt_och_dedupliceras(small):
     _, catalog = small
     plan = changed_plan(catalog, ["src/a/core.py", "src/a/core.py", "tests/test_b.py"])

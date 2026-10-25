@@ -53,8 +53,8 @@ dependents = []
 [suites.insights]
 description = "Beståndsanalys och scenario"
 status = "partial"
-tests = ["tests/test_analytics_premium_impact.py"]
-dependents = ["tooling"]
+tests = ["tests/test_analytics_premium_impact.py", "tests/test_portfolio_impact.py"]
+dependents = ["services", "tooling"]
 
 [suites.simulation]
 description = "Sammanhängande månadssimulering och ekonomiskt facit"
@@ -83,7 +83,7 @@ dependents = ["agents", "web", "tooling"]
 [suites.services]
 description = "Gemensamma tjänstekontrakt, åtkomst och transaktioner"
 status = "active"
-tests = ["tests/test_services_access.py", "tests/test_services_contract.py", "tests/test_services_service.py", "tests/test_services_transactions.py", "tests/test_services_persistence.py", "tests/test_services_postgres.py", "tests/test_services_listing.py", "tests/test_services_operations.py", "tests/test_services_write_ops.py", "tests/test_services_cases.py", "tests/test_services_enrollment.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py"]
+tests = ["tests/test_services_access.py", "tests/test_services_contract.py", "tests/test_services_service.py", "tests/test_services_transactions.py", "tests/test_services_persistence.py", "tests/test_services_postgres.py", "tests/test_services_listing.py", "tests/test_services_operations.py", "tests/test_services_write_ops.py", "tests/test_services_cases.py", "tests/test_services_enrollment.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_portfolio_impact.py"]
 dependents = ["agents", "web", "tooling"]
 
 [suites.agents]
@@ -130,8 +130,8 @@ postgres = [
   "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
 ]
-integration = ["tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_product_parameters.py"]
-security = ["tests/test_services_access.py", "tests/test_services_transactions.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_skills.py", "tests/test_agents_postgres_role.py", "tests/test_ai_boundaries.py"]
+integration = ["tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py"]
+security = ["tests/test_services_access.py", "tests/test_services_transactions.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_skills.py", "tests/test_agents_postgres_role.py", "tests/test_ai_boundaries.py", "tests/test_portfolio_impact.py::TestIngaIndividuppgifter", "tests/test_portfolio_impact.py::TestAtkomst"]
 
 # Alla matchande regler förenas. dependents utvidgar sedan kodändringens urval transitivt.
 [[rules]]

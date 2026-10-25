@@ -14,12 +14,15 @@ import pytest
 from sqlalchemy import func, select
 
 from models import Employer, InsuredPerson, OperationEventRecord, Policy, PolicyState, SalaryReport
+from utils.demo_data import OLDER_COHORT, PERSONS
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
 
 ANNA = "198505151236"
 CECILIA = "199001017897"
 NORA = "199204171236"
+#: Nästa försäkringsnummer: demobeståndet har AL-000001–000004 och den äldre kohorten därefter
+NORA_POLICY = f"AL-{len(PERSONS) + len(OLDER_COHORT) + 1:06d}"
 
 
 def post(web, url: str, data: dict, *, csrf: bool = True, **kwargs):
@@ -62,7 +65,7 @@ def test_ny_forsakrad_ansluts_och_visas(web):
     response = post(web, "/forsakrade/ny", enroll_form())
     assert response.status_code == 200, response.text
     assert "Ansluten: Nora Nyström" in response.text
-    assert "AL-000005" in response.text  # demobeståndet har AL-000001–000004
+    assert NORA_POLICY in response.text
     assert "Inte skickat" in response.text  # försäkringsbeskedet
     assert response.headers["HX-Push-Url"] == f"/forsakrade/{NORA}"
     nora = get_person(web, NORA)
@@ -99,7 +102,8 @@ def test_arbetsgivarlistan_visar_aktiva_forsakrade(web):
     text = web.client.get("/arbetsgivare").text
     rows = text.split("<tbody>")[1]
     assert "Demobolaget AB" in rows and "Exempelverken AB" in rows
-    assert '<td class="num">2</td>' in rows and '<td class="num">0</td>' in rows
+    # Demobolaget: Anna, Bertil och 15 i den äldre kohorten; Exempelverken: 16 i kohorten
+    assert '<td class="num">17</td>' in rows and '<td class="num">16</td>' in rows
     assert "Kontaktpersoner visas inte" in text
 
 
@@ -179,14 +183,14 @@ def test_handlaggarflodet_anslut_lon_loneunderlag_fribrev(web):
         "employer_org_number": "5560000001", "source": "employer", "received_date": "2026-10-12",
         "reason": "Lönefil oktober",
     }).status_code == 200
-    response = post(web, "/forsakringar/AL-000005/fribrev",
+    response = post(web, f"/forsakringar/{NORA_POLICY}/fribrev",
                     {"employment_end_date": "2026-10-11", "reason": "Avanmälan: provanställningen avbröts"})
     assert response.status_code == 200, response.text
 
     with web.session_factory() as s:
         nora = s.scalars(select(InsuredPerson).where(InsuredPerson.personal_id_number == NORA)).one()
         states = sorted((st.state, st.valid_from, st.valid_to)
-                        for st in s.scalars(select(PolicyState).join(Policy).where(Policy.policy_number == "AL-000005")))
+                        for st in s.scalars(select(PolicyState).join(Policy).where(Policy.policy_number == NORA_POLICY)))
         report = s.scalars(select(SalaryReport).where(SalaryReport.insured_person_id == nora.id)).one()
         writes = [e.operation for e in s.scalars(
             select(OperationEventRecord)

@@ -361,6 +361,41 @@ Skrivoperationerna bär produktreglerna PR-ITP1-001, -013 och -032 (respektive -
 
 En återkallad version ligger kvar som historik. Samma giltighetsdag kan inte återanvändas för parametern (unik nyckel och dag); välj en annan månad.
 
+### 9.5 Beståndsinsikt för en parameterändring (Fas 3c, 3c-B) – vad som stöds och vad som spärras
+
+Beslutat i **B-035** (`02_system/flaggskeppsflöde.md` §5 *bestand*, val I och K). Kod: `src/services/operations/portfolio_impact.py` (operationen) och `src/analytics/parameter_impact.py` (den rena beräkningen och undertryckningen). Ingen schemaändring.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `estimate_parameter_change_impact` | `read` | Nej | `AGENT` | Baslinje mot scenario för de aktiva försäkrade år för år: berörda, extra premiemånader och extra premievolym, första berörda år, antaganden och dolda celler. Ändrar ingenting |
+
+**Indata:** parameter (`key`, samma sex som i §9.4), nytt värde, giltighetsdag (månadsförsta) och `horizon_years` (1–45 år, standard 10).
+
+**Beräkningen sker i betrodd kod.** Operationen läser de aktiva försäkrade (status `active` med en öppen försäkring i läget `premium_paying`) internt: födelsedatum ur personnumret, aktuell månadslön och ett känt slutdatum för anställningen. Identiteten lämnar aldrig operationen. För varje person och månad räknar premiemotorn premien två gånger:
+
+- *Baslinjen* är de parametrar som gäller månaden enligt `product_parameters`, med samma uppslag som premieberäkningen (`services/parameters.py`, en fråga för hela perioden). Schemalagda versioner ingår.
+- *Scenariot* är samma parametrar med det nya värdet från giltighetsdagen.
+
+En person är berörd ett år om premien skiljer sig någon månad det året. Extra premiemånader är månaderna i premieåldern i scenariot minus i baslinjen, och kan bli negativa (lägre premieålder). Extra premievolym är scenario minus baslinje.
+
+**Antagandena står i svaret:** dagens aktiva, inga nyanställda, inga avgångar och ingen dödlighet; dagens lön utan lönetillväxt; inkomstbasbeloppet för året och för år utan fastställt belopp det senast fastställda, utan uppräkning; ingen avkastning, ränta eller avgift. Volymen är summan av premier, inte kapital eller pension.
+
+**Skydd mot röjande (`harness.md` §5.1):**
+
+- *Inga individuppgifter i utdata:* inga personnummer, namn, födelsedatum, löner eller försäkringsnummer. Utdatamodellen har bara aggregat.
+- *Små celler döljs:* ett år med 1–9 berörda visas som `dold`, och berörda, extra premiemånader, extra volym och scenariovolym blir `None`. Baslinjens volym döljs om 1–9 betalar premie det året. Samma gäller totalen, antalet aktiva och antalet som inte gick att beräkna. Noll visas som noll.
+- *Kompletterande döljning:* de dolda åren ska tillsammans omfatta minst 10 berörda. Annars döljs också det minsta synliga året med berörda, så att en dold cell inte kan räknas fram som totalen minus de synliga.
+- *Avrundning:* belopp i hela tusental kronor, grövre än en enskild månadspremie.
+- *Ej beräknat är aldrig noll:* en månad utan parametrar (saknad version, två giltiga versioner eller parametrar som inte hänger ihop med det nya värdet) gör året `ej beräknad` med skälet. Totalen blir då också ej beräknad.
+
+**Spärras:**
+
+- *Blockeras:* giltighetsdag i innevarande eller passerad månad (tidigast nästa månad, som för schemaläggningen); värde utanför parameterns gränser eller som inte hänger ihop med övriga parametrar (samma kontroll som `schedule_product_parameter_change`, §9.4); tabellen `product_parameters` saknas.
+- *Konflikt:* en senare schemalagd version av samma parameter finns efter giltighetsdagen. Då blir scenariot tvetydigt.
+- *Ogiltig indata:* giltighetsdag som inte är en månadsförsta, okänd parameter, horisont utanför 1–45 år.
+
+**Gränser kvar till senare steg.** Operationen skyddar varje enskilt svar, men inte mot differenser mellan upprepade anrop med olika horisont, giltighetsdag eller värde. Därför binder resurskontrollen i 3c-T aktuarieagentens anrop till den parameterändring som grind 1 godkänt (`key`, `value`, `valid_from`) och bör binda även `horizon_years`. Operationen monteras i podden `bestand` först i 3c-T och är omappad till dess. Före skarp demo i Lakebase behövs databasrollen `agent_aktuarie` med `SELECT` på `insured_persons`, `policies`, `policy_states`, `base_amounts` och `product_parameters`, och rätt att skriva loggrader (val I, 3c-V).
+
 ## 10. Öppna frågor
 
 - **Fyraögonprincip** (två olika människor) är inte möjlig med en operatör – framtida option per operation.
