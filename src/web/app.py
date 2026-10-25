@@ -23,7 +23,7 @@ from web.agent import CaseAgent
 from web.config import WebSettings
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.presenters import ErrorView
-from web.routes import cases, changes, enrollment, insured, journal
+from web.routes import cases, changes, enrollment, insured, journal, parameters
 
 log = logging.getLogger("web")
 
@@ -53,6 +53,7 @@ def create_app(
     app.include_router(changes.router)
     app.include_router(journal.router)
     app.include_router(cases.router)
+    app.include_router(parameters.router)
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):

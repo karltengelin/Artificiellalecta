@@ -171,6 +171,21 @@ details summary { cursor: pointer; color: var(--color-link); }
 .agent-summary { white-space: pre-wrap; background: var(--color-accent-soft); border-radius: var(--radius-card); padding: var(--space-4); margin: var(--space-2) 0 var(--space-4); }
 ul.plain { margin: 0; padding-left: 1.1rem; }
 
+/* nyckeltal och produktparametrar (Fas 3c) – ljus indigo enligt designspecifikationen */
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--space-3); margin: var(--space-3) 0 0; }
+.table-wrap { overflow-x: auto; }
+.metric { background: var(--color-accent-soft); border-radius: var(--radius-card); padding: var(--space-3) var(--space-4); }
+.metric dt { font-size: .8rem; font-weight: var(--font-weight-label); color: var(--color-text-muted); }
+.metric dd { margin: var(--space-1) 0 0; font-size: 1.4rem; font-weight: var(--font-weight-emphasis); font-variant-numeric: tabular-nums; }
+.table details summary { white-space: nowrap; }
+.table details .decide__form { margin-top: var(--space-2); min-width: 260px; text-align: left; }
+
+/* mellanbred skärm: databas och handläggare på egen rad, menyn får hela bredden */
+@media (max-width: 1100px) {
+  .who { order: 3; width: 100%; justify-content: flex-end; }
+  .mainnav a { padding: var(--space-1) var(--space-2); }
+}
+
 /* smala skärmar */
 @media (max-width: 640px) {
   .topbar { gap: var(--space-2); padding: var(--space-3) var(--space-4); }

@@ -532,11 +532,11 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 | `created_by` | `VARCHAR(100)` | NOT NULL | Aktören som lade versionen |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL | Standardtidsstämplar |
 
-Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma nyckel samma dag stoppar beräkningen (`BlockedError`) i stället för att en väljs tyst; en saknad parameter för månaden stoppar beräkningen (`NotFoundError`). Överlappskontroll vid nya versioner görs av skrivoperationerna i 3c-P2.
+Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma nyckel samma dag stoppar beräkningen (`BlockedError`) i stället för att en väljs tyst; en saknad parameter för månaden stoppar beräkningen (`NotFoundError`). Överlappskontrollen görs av skrivoperationerna: en ny version avslutar den föregående dagen före, och bara en kommande version per parameter är tillåten. En återkallad version ligger kvar, så samma giltighetsdag kan inte återanvändas.
 
 **Startvärden från 2023-01-01** – samma som premiehistoriken 2023–2026 räknats med: premieålder 25–66 (PR-ITP1-013), satserna 4,5 och 30 % och brytpunkterna 7,5 och 30 IBB (PR-ITP1-001), `decision_ref` `B-035 startvärden`.
 
-**Läses av** `get_product_parameters` (`AGENT`, inga personuppgifter), förhandsberäkningen och premierättelsen. **Skrivs av** migrationen (startvärden) och – från 3c-P2 – `schedule_product_parameter_change` (`APPROVAL`) och `withdraw_product_parameter_change` (`HUMAN_ONLY`). Inga personuppgifter.
+**Läses av** `get_product_parameters` (`AGENT`, inga personuppgifter), förhandsberäkningen och premierättelsen. **Skrivs av** migrationen (startvärden), `schedule_product_parameter_change` (`APPROVAL`) och `withdraw_product_parameter_change` (`HUMAN_ONLY`), med radlås på parameterns versioner (`tjänstelager.md` §9.4). Inga personuppgifter.
 
 ---
 
