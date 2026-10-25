@@ -182,7 +182,7 @@ ser bara aggregat. Operatören skapar rollen i Databricks (val I).
 *Byggt i 3c-2 (2026-10-25):* `src/agents/flows/` (`definition.py`, `store.py`, `engine.py`) och `src/models/flow.py`,
 tabellerna i `databasschema.md` §9i, migrationen `scripts/migrations/migrate_flows.py` (inte körd mot Lakebase).
 Agentsteg körs med `run_assignment` (3c-T); ett systemsteg som lägger ett förslag i kön väntar på det
-(`waiting_approval`). Flödesdefinitionen `rule_change_parameter` och UI:t kommer i 3c-3.
+(`waiting_approval`). Flödesdefinitionen `rule_change_parameter` och UI:t byggdes i 3c-3 (se nedan och §7).
 
 **Var koden ligger.** `src/agents/flows/` med motor, lagring och definitioner. Flödestabellerna hör till harness,
 inte till försäkringstjänstelagret (`harness.md` §4.3). Operatörens grindbeslut och manuella steg skrivs av
@@ -191,6 +191,18 @@ motorn med operatören som aktör.
 **UI:t `/floden`.** Lista och detalj: stegen med status, resultat och kostnad, knappen *Kör nästa steg* för
 agentsteg, *Godkänn* och *Avslå* med anteckning för grindar, *Markera klart* med commit-referens för det
 manuella steget, och länkar till utkast, körjournal och förslaget i `/godkannanden`.
+
+*Byggt i 3c-3 (2026-10-25):* sidorna i `src/web/routes/flows.py` (`handläggar-ui.md` §4). Webben går genom
+adaptern `src/agents/flows/console.py` (`FlowConsole`) och rör varken modeller, sessioner eller operationsmoduler.
+Formulären bär flödets version och, för grindar, hashen av underlaget som visades. *Kör nästa steg* körs synkront
+och en åt gången i processen (val F). När UI:t startar markeras steg som stod som pågående som
+`reconciliation_required` (`mark_interrupted`), och sidan har avstämning och avbrott. Utkasten och körjournalen
+visas på egna sidor, bara för stegets egna referenser. Flödena finns i demo och `svc_test`. I Lakebase visas
+varför de saknas, eftersom `migrate_flows.py` inte är körd där. Agentstegen körs med en **skriptad demomodell**
+(`src/agents/flows/demo_model.py`, FakeProvider) för den fiktiva källan, genom samma harness som en riktig
+modell. Riktiga modellanrop hör till 3c-V. Två ändringar i motorn: en grind kan bära uppgifter
+(`decision_model`) och pröva godkännandet mot tidigare resultat (`check`). Kön läses också innan flödets
+transaktion öppnas, eftersom läsningen annars väntade på flödets eget skrivlås i demodatabasens SQLite-fil.
 
 ## 7. Flödet steg för steg
 
@@ -207,6 +219,23 @@ manuella steget, och länkar till utkast, körjournal och förslaget i `/godkann
 Compliance-agenten bör även se konsekvensen för **PR-ITP1-016**, eftersom den frivilliga 66–67-grenen blir
 överflödig eller måste ändras om den ordinarie premien går till 67. Det är ett bra prov på att tolkningen inte
 bara kopierar källan.
+
+*Byggt i 3c-3 (2026-10-25):* definitionen `rule_change_parameter` i `src/agents/flows/definitions/` med stegen
+`tolkning`, `g1`, `insikt`, `g2`, `regeltext`, `aktivering` och `verifiering`. Preciseringar vid bygget:
+
+- **G1** godkänns bara om tolkningen föreslår exakt en parameterändring. Fler ändringar körs som fler flöden.
+- **G2** bär regelns nya version, giltighetsdagen och ett valfritt B-nummer (`RuleAdoption`). Giltighetsdagen
+  måste vara tolkningens, eftersom insikten är räknad för den dagen. En annan giltighet kräver ett nytt flöde.
+- **Aktiveringen** lägger `schedule_product_parameter_change` i kön under `compliance_agent`, med tolkningens
+  `run_id` och commit-referensen i motiveringen (val C). Beslutsreferensen är `FLOW-NNNNNN G2`, med B-numret
+  efter när det finns. Före 2026-11-01 stoppar regelgolvet förslaget, och steget kräver då avstämning. I demo och
+  `svc_test` prövas regelpaketet som om det gällde, som för demoförslagen.
+- **Verifieringen** (`ReleaseEvidence`) läser parameterns gällande version dagen före och på giltighetsdagen. Den
+  förhandsberäknar också en syntetisk profil månaden före och giltighetsmånaden. Profilen fyller den lägre åldern
+  ett halvår före giltighetsdagen; för 66 → 67 ger det 0 kr före och premie efter. Bevisen binder versionen i
+  beräkningens underlag, och avvikelser listas som problem. Saknas IBB för giltighetsåret räknar
+  förhandsberäkningen med det senast fastställda och säger det (`latest_base_amount`). Demobeståndet har inte
+  IBB 2027.
 
 ## 8. Ett problem i beståndet
 

@@ -19,6 +19,7 @@ from pathlib import Path
 from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.engine import Engine
 
+from agents.flows.console import FlowConsole
 from services import ServiceLayer
 from services.db import session_factory_for
 from web.agent import CaseAgent
@@ -31,8 +32,12 @@ def build_service(settings: WebSettings) -> ServiceLayer:
     return build_services(settings)[0]
 
 
-def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent]:
-    """Handläggarens tjänstelager och handläggaragenten (Fas 5 F5-4) mot samma databas."""
+def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent, FlowConsole | None]:
+    """Handläggarens tjänstelager, handläggaragenten (Fas 5 F5-4) och flödena (Fas 3c 3c-3) mot samma databas.
+
+    Flödena finns bara i demo och `svc_test`: i Lakebase är `migrate_flows.py` inte körd, och
+    riktiga modellanrop hör till 3c-V.
+    """
     engine = build_engine(settings)
     session_factory = session_factory_for(engine)
     service = ServiceLayer(session_factory=session_factory)
@@ -40,6 +45,7 @@ def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent]:
         from services.db import agent_service_layer
 
         agent = CaseAgent(agent_service_factory=agent_service_layer, simulated_role=False)
+        flows = None
     else:
         # Demo- och testdatabasen: samma anslutning, rollen simuleras (B-033 val H)
         agent = CaseAgent(
@@ -49,7 +55,8 @@ def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent]:
             ),
             simulated_role=True,
         )
-    return service, agent
+        flows = FlowConsole.for_demo_database(session_factory)
+    return service, agent, flows
 
 
 def build_engine(settings: WebSettings) -> Engine:

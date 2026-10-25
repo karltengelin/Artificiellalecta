@@ -191,7 +191,16 @@ budgetmodell byggs i gränssnittet. Se [VD-planen](projekt/10_operatörscentral/
   - **Spårbarhet:** agentsteg körs med `run_assignment` och får `flow_id` och `flow_step_id` i uppdraget och körjournalen. Körjournalen ligger kvar i `logs/agent_runs/` (val J).
   - **Migrationen** `migrate_flows.py` är verifierad mot isolerad Postgres men **inte körd mot Lakebase**.
   - **Tester:** 27 nya: 24 med ett testflöde i flaggskeppets form mot FakeProvider (`tests/test_agents_flows.py`, testgruppen `orchestration`) och 3 för migrationen (`tests/test_migration_flows.py`).
-- [ ] **3c-3: Första flödet** – regelförändrings-/flaggskeppsflödet (§6.2)
+- [x] **2026-10-25** **3c-3: Första flödet** – flödet `rule_change_parameter` och UI:t `/floden` (`flaggskeppsflöde.md` §6–7, `handläggar-ui.md` §4).
+  - **Definitionen** (`src/agents/flows/definitions/`): tolkning (compliance), G1, insikt (aktuarie, mandat ur den godkända tolkningen), G2, regeltext (commit-referens), aktivering och verifiering.
+  - **Grindarna:** G1 kräver exakt en parameterändring. G2 bär regelns version, giltighet och valfritt B-nummer, och giltigheten måste vara tolkningens. Motorn har fått `decision_model` och `check` för grindar.
+  - **Aktiveringen** lägger `schedule_product_parameter_change` i kön under `compliance_agent`, länkad till tolkningens körning (val C).
+  - **Verifieringen** ger `ReleaseEvidence`: versionerna före och efter, och förhandsberäkningen för en syntetisk profil, i demon 0 kr → 2 025 kr. Förhandsberäkningen kan räkna med senast fastställda IBB och säger det (`latest_base_amount`), eftersom demobeståndet saknar IBB 2027.
+  - **UI:t** når motorn genom adaptern `src/agents/flows/console.py`. Formulären bär version och `seen_hash`. *Kör nästa steg* körs synkront. Sidorna har avstämning, avbrott, utkast och körjournal, och `mark_interrupted` körs vid start.
+  - **Miljöer:** bara demo och `svc_test`, med en skriptad demomodell (FakeProvider) för K-SIM-ITP-2027. I Lakebase förklarar sidan varför flödena saknas.
+  - **Rättat i motorn (3c-2):** kön lästes inom flödets transaktion och väntade då på flödets eget skrivlås i demodatabasens SQLite-fil.
+  - **Verifierat** i webbläsaren mot demodatabasen, från källa till verifierad parameter, även på smal skärm.
+  - **Tester:** 39 nya: 23 i `tests/test_agents_flow_rule_change.py` och 16 i `tests/test_web_flows.py`.
 
 **Senare:** MCP-exponering av poddar (§9), anropsloggen i databasen, kostnadsindikatorer per team. *(Lakebase-rollen för PII-poddar är flyttad till före aktivering av `kunddata`, se operatörspunkten under 3b-3.)*
 

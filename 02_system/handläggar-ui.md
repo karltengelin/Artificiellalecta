@@ -30,6 +30,8 @@ Lakebase-tabellerna och i händelseloggen. UI:t är tjänstelagrets första klie
   och rör aldrig modeller eller sessioner. Det gäller även läsningar, eftersom läsningar av
   personuppgifter loggas. Testet `test_webbkoden_ror_varken_modeller_eller_sessioner` vaktar gränsen.
   Behövs en lista eller en sökning byggs den som läsoperation med en rad i `access_register.yaml`.
+  Flödena (`/floden`) hör till harness och inte till tjänstelagret. De nås genom adaptern
+  `agents.flows.console.FlowConsole`, som följer samma gräns.
 - **Bara lokalt, ingen inloggning (v1).**
   - Servern binds till `127.0.0.1`, och Host-huvudet måste vara `127.0.0.1` eller `localhost`
     (skydd mot DNS-rebinding).
@@ -196,6 +198,36 @@ Rättas lönen för en månad som har premie, länkar resultatsidan direkt till 
 
 Handläggaren utför ändringarna direkt. En agent kan bara föreslå en ny version, och förslaget avgörs i
 `/godkannanden`. Procentsatser skrivs som andel (0,045 = 4,5 %) och visas i procent.
+
+**Flöden (Fas 3c, 3c-3, B-035).** Flödet `rule_change_parameter` från regeländring till verifierad
+produktparameter ([flaggskeppsflöde.md](flaggskeppsflöde.md) §6–7).
+
+| Adress | Innehåll | Motorn |
+|---|---|---|
+| `/floden` | Flödena med status och aktuellt steg, och *Starta flöde* med en källa ur regelverksgatewayen | `list`, `start` |
+| `/floden/{id}` | Stegen med status, resultat, kostnad, körning och tider, grindbesluten med bunden hash, och åtgärden flödet väntar på | `get` |
+| `/floden/{id}/kor` (POST) | *Kör nästa steg*: agent- eller systemsteget, synkront och ett åt gången (val F). När flödet väntar på kön prövas om förslaget är avgjort | `run_next` |
+| `/floden/{id}/grind` (POST) | *Godkänn* (anteckning valfri) eller *Avslå* (skäl krävs). Grind 2 bär regelns version, giltighet och valfritt B-nummer | `decide_gate` |
+| `/floden/{id}/klart` (POST) | *Markera klart* med commit-referensen för regeltexten | `complete_manual` |
+| `/floden/{id}/avstam` och `/avbryt` (POST) | Avstämning av ett avbrutet steg (kör om eller avsluta) och avbrott av flödet, med anteckning | `resolve_reconciliation`, `cancel` |
+| `/floden/{id}/steg/{steg}/utkast/{namn}` | Ett utkast som steget skrivit, som Markdown-text | – |
+| `/floden/{id}/steg/{steg}/journal` | Agentstegets körjournal ur `logs/agent_runs/` | – |
+
+- **Adapter i stället för modeller.** Webben anropar `agents.flows.console.FlowConsole`, som håller motorn,
+  definitionerna och agenternas körmiljö. Webbkoden importerar varken `models` eller `services.operations`.
+  Förslaget i kön läses med `list_approval_requests`.
+- **Låsning.** Varje formulär bär flödets version, och grindformulären bär också hashen av underlaget som visades
+  (`seen_hash`). Har flödet eller underlaget ändrats sedan sidan visades blir det en konflikt (409), och ingenting
+  ändras.
+- **Omstart.** När UI:t startar blir steg som stod som pågående `reconciliation_required` (`mark_interrupted`).
+  Handläggaren avgör dem på sidan efter att ha kontrollerat körjournalen och kön.
+- **Grinden ersätter inte kön.** Aktiveringen lägger ett förslag från `compliance_agent` i `/godkannanden`, och
+  flödet går vidare först när förslaget är avgjort där.
+- **Bara demo och `svc_test`.** I Lakebase visar sidan varför flödena saknas: `migrate_flows.py` är inte körd där.
+  Agentstegen körs med en **skriptad demomodell** (FakeProvider) som bara kan köra den fiktiva källan
+  K-SIM-ITP-2027: inga modellanrop och ingen kostnad. Verktygen, gatewayerna, mandatet och körjournalen körs
+  ändå på riktigt. Agentrollen simuleras, och regelpaketet prövas som om det gällde, som för demoförslagen.
+  Riktiga modellanrop hör till 3c-V.
 
 Antalet väntande förslag visas i menyn. Det hämtas med `count_approval_requests`, som inte läser
 personuppgifter och därför inte loggas. Ett godkännande som krockar med dagens läge, till exempel för

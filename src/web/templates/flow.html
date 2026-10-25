@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import csrf with context %}
+{% block title %}{{ flow.flow_id }}{% endblock %}
+
+{% macro version() %}<input type="hidden" name="version" value="{{ flow.version }}">{% endmacro %}
+
+{% macro cost(s) %}{% set run = (s.result or {}).get("run") %}{% if run %}{{ "%.4f" | format(run.cost_usd or 0) }} USD{% else %}–{% endif %}{% endmacro %}
+
+{% macro sources_and_drafts(s, output) %}
+  {% set ev = output.evidence %}
+  {% if ev.sources %}<dt>Lästa källor</dt><dd><ul class="plain">{% for d in ev.sources %}<li><code>{{ d.handle }}</code> {{ d.title }}{% if d.version %} v{{ d.version }}{% endif %} <span class="muted small">sha {{ d.sha256 }}</span>{% if d.fictional %} <span class="pill pill--pending">fiktiv</span>{% endif %}</li>{% endfor %}</ul></dd>{% endif %}
+  {% if ev.drafts %}<dt>Utkast</dt><dd><ul class="plain">{% for d in ev.drafts %}<li><a href="/floden/{{ flow.flow_id }}/steg/{{ s.key }}/utkast/{{ d.name }}">{{ d.title }}</a> <code class="small">{{ d.reference }}</code></li>{% endfor %}</ul></dd>{% endif %}
+{% endmacro %}
+
+{% macro step_result(s) %}
+{% set r = s.result or {} %}
+{% if s.kind == "agent" and r.get("output") %}
+  {% set out = r.output %}{% set res = out.result %}
+  <dl class="kv">
+  {% if out.schema == "InterpretationProposal" %}
+    <dt>Tolkning</dt><dd>{{ res.summary }}</dd>
+    <dt>Berörda regler</dt><dd>{% for rule in res.affected_rules %}<code>{{ rule }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+    <dt>Parameterändringar</dt><dd>
+      <table class="table table--compact">
+        <thead><tr><th>Parameter</th><th>Nu</th><th>Nytt</th><th>Från</th><th>Regel</th></tr></thead>
+        <tbody>{% for c in res.parameter_changes %}<tr><td><code>{{ c.key }}</code></td><td>{{ c.current_value }}</td><td><strong>{{ c.new_value }}</strong></td><td>{{ c.valid_from }}</td><td><code>{{ c.rule_id }}</code></td></tr>
+          <tr><td colspan="5" class="small muted">{{ c.rationale }}</td></tr>{% endfor %}</tbody>
+      </table></dd>
+    <dt>Kundpåverkan</dt><dd>{{ res.customer_impact }}</dd>
+    {% if res.uncertainties %}<dt>Osäkerheter</dt><dd><ul class="plain">{% for u in res.uncertainties %}<li>{{ u }}</li>{% endfor %}</ul></dd>{% endif %}
+  {% elif out.schema == "PortfolioImpactResult" %}
+    {% set est = out.evidence.estimate %}
+    <dt>Insikt</dt><dd>{{ res.insight }}</dd>
+    {% if res.key_findings %}<dt>Iakttagelser</dt><dd><ul class="plain">{% for k in res.key_findings %}<li>{{ k }}</li>{% endfor %}</ul></dd>{% endif %}
+    <dt>Beräkningen</dt><dd><code>{{ est.key }}</code> {{ est.current_value }} → <strong>{{ est.value }}</strong> från {{ est.valid_from }} ({{ est.period_from }}–{{ est.period_to }}).
+      Första berörda år: <strong>{{ est.first_affected_year or "ingen i perioden" }}</strong>.
+      Totalt: {% if est.totals_status == "beräknad" %}{{ est.affected_persons_total }} berörda, {{ est.extra_premium_months_total }} extra premiemånader, {{ est.extra_premium_volume_total_sek | sek(0) }}{% else %}{{ est.totals_status }}{% endif %}.</dd>
+    <dt>Per år</dt><dd>
+      <table class="table table--compact">
+        <thead><tr><th>År</th><th>Status</th><th class="num">Berörda</th><th class="num">Extra månader</th><th class="num">Extra premievolym</th></tr></thead>
+        <tbody>{% for y in est.years %}<tr><td>{{ y.year }}</td><td>{{ y.status }}</td><td class="num">{{ y.affected_persons if y.affected_persons is not none else "–" }}</td><td class="num">{{ y.extra_premium_months if y.extra_premium_months is not none else "–" }}</td><td class="num">{{ y.extra_premium_volume_sek | sek(0) }}</td></tr>{% endfor %}</tbody>
+      </table></dd>
+    <dt>Antaganden</dt><dd><ul class="plain">{% for a in est.assumptions %}<li>{{ a }}</li>{% endfor %}{% if est.hidden_cells %}<li>Dolda celler (färre än {{ est.min_cell_size }}): {{ est.hidden_cells | length }}</li>{% endif %}</ul></dd>
+    {% if res.uncertainties %}<dt>Osäkerheter</dt><dd><ul class="plain">{% for u in res.uncertainties %}<li>{{ u }}</li>{% endfor %}</ul></dd>{% endif %}
+  {% endif %}
+  {{ sources_and_drafts(s, out) }}
+  </dl>
+{% elif s.kind == "agent" and r.get("run") %}
+  <div class="agent-summary">{{ r.run.summary }}</div>
+{% elif s.kind == "gate" and r %}
+  <dl class="kv">
+    <dt>Beslut</dt><dd>{{ "Godkänt" if r.decision == "approved" else "Avslaget" }} av <code>{{ s.completed_by }}</code>{% if r.note %}: {{ r.note }}{% endif %}</dd>
+    {% if r.get("details") %}<dt>Antaget</dt><dd>Regelversion {{ r.details.rule_version }} från {{ r.details.valid_from }}{% if r.details.decision_number %} · beslut {{ r.details.decision_number }}{% endif %}</dd>{% endif %}
+    <dt>Bundet underlag</dt><dd><code class="small">{{ r.bound_hash[:16] }}…</code></dd>
+  </dl>
+{% elif s.kind == "manual" and r %}
+  <dl class="kv"><dt>Commit</dt><dd><code>{{ r.commit }}</code>{% if r.note %} · {{ r.note }}{% endif %}</dd></dl>
+{% elif s.key == "aktivering" and r %}
+  <dl class="kv">
+    <dt>Förslag</dt><dd><code>{{ r.operation }}</code> av <code>{{ r.proposed_by }}</code> i körningen <code>{{ r.run_id }}</code>
+      {% if s.approval_id %}· <a href="/godkannanden?status={{ 'vantar' if approval and approval.status == 'pending' else 'alla' }}#arende-{{ s.approval_id }}">förslaget i godkännandekön</a>{% endif %}</dd>
+    <dt>Ändringen</dt><dd><code>{{ r.input.key }}</code> = <strong>{{ r.input.value }}</strong> från {{ r.input.valid_from }}, regel v{{ r.input.rule_version }}, källa <code>{{ r.input.source_ref }}</code>, beslut <code>{{ r.input.decision_ref }}</code></dd>
+    {% if r.get("approval") %}<dt>Kön</dt><dd>{{ "Godkänt" if r.approval.status == "approved" else "Avslaget" }} av <code>{{ r.approval.decided_by }}</code>{% if r.approval.note %}: {{ r.approval.note }}{% endif %}</dd>
+    {% elif approval %}<dt>Kön</dt><dd><span class="pill pill--{{ approval.status }}">{{ approval.status | label('approval_status') }}</span></dd>{% endif %}
+  </dl>
+{% elif s.key == "verifiering" and r.get("evidence") %}
+  {% set e = r.evidence %}
+  <p><span class="pill pill--{{ 'approved' if e.verified else 'rejected' }}">{{ "Verifierat" if e.verified else "Avvikelse" }}</span></p>
+  {% if e.problems %}<ul class="plain">{% for p in e.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+  <table class="table table--compact">
+    <thead><tr><th></th><th>Version</th><th>Förhandsberäkning ({{ e.profile.description }})</th></tr></thead>
+    <tbody>
+      {% for label_text, v, p in [("Före", e.before, e.preview_before), ("Efter", e.after, e.preview_after)] %}
+      <tr><th>{{ label_text }}</th>
+        <td>{% if v %}<code>{{ e.key }}</code> = <strong>{{ v.value }}</strong> · {{ v.rule_id }} v{{ v.rule_version }} {{ v.valid_from }}–{{ v.valid_to or "" }} · <code class="small">{{ v.decision_ref }}</code>{% else %}–{% endif %}</td>
+        <td>{{ p.period_month[:7] }}: {{ p.total_premium_sek | sek }}, {{ "inom" if p.in_age_window else "utanför" }} åldersfönstret · <span class="small muted">{{ p.parameter_version }}{% if p.base_amount_assumed_from %} · IBB {{ p.base_amount_assumed_from }} antaget{% endif %}</span></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+{% if r %}<details class="small"><summary>Resultat som JSON</summary><pre class="json">{{ r | pretty_json }}</pre></details>{% endif %}
+{% endmacro %}
+
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>{{ flow.flow_id }} <span class="muted">· Regeländring till produktparameter</span></h1>
+    <span class="pill pill--flow-{{ flow.status }}">{{ flow_status.get(flow.status, flow.status) }}</span>
+  </div>
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+  {% if flow.stale_gates %}<div class="alert alert--error" role="alert"><p class="alert__message">Underlaget för {{ flow.stale_gates | join(", ") }} har ändrats efter beslutet. Flödet stannar – starta ett nytt flöde.</p></div>{% endif %}
+
+  <dl class="kv">
+    <dt>Källa</dt><dd><code>{{ flow.input.source_handle }}</code></dd>
+    <dt>Startat</dt><dd>{{ flow.created_at | iso_date }} av <code>{{ flow.created_by }}</code> · definition {{ flow.flow_type }} v{{ flow.definition_version }} · version {{ flow.version }}</dd>
+    {% if flow.finished_at %}<dt>Avslutat</dt><dd>{{ flow.finished_at | iso_date }}</dd>{% endif %}
+    {% if flow.note %}<dt>Anteckning</dt><dd>{{ flow.note }}</dd>{% endif %}
+    <dt>Modell</dt><dd>{{ console.model_label }}</dd>
+  </dl>
+
+  {% if current and not flow.finished %}
+  <div class="flownext" id="nasta">
+    <h2>Nästa: {{ current.title }}</h2>
+    {% if flow.status == "running" %}
+      <form method="post" action="/floden/{{ flow.flow_id }}/kor"{% if current.kind == "agent" %} hx-confirm="Kör {{ current.title | lower }} med {{ current.team }}-teamet nu? Körningen går synkront."{% endif %}>
+        {{ csrf() }}{{ version() }}
+        <p class="small">{% if current.kind == "agent" %}Agentsteget körs genom harness med teamet <code>{{ current.team }}</code>.{% elif current.key == "aktivering" %}Motorn lägger parameterändringen i godkännandekön under compliance-agentens identitet, länkad till tolkningens körning. Inget ändras förrän du godkänner förslaget.{% else %}Systemet verifierar parametrarnas versioner och förhandsberäknar en syntetisk profil före och efter giltighetsdagen.{% endif %}</p>
+        <button type="submit">Kör nästa steg</button>
+      </form>
+    {% elif flow.status == "waiting_gate" %}
+      {% set tolkning = flow.step("tolkning").result %}
+      <p class="small">Beslutet binder underlaget som visas här (steg {{ current.key }} binder
+        {% if current.key == "g1" %}tolkningen{% else %}tolkningen och insikten{% endif %}, hash <code>{{ (flow.gate_hashes[current.key] or "")[:16] }}…</code>).
+        Ändras underlaget efter beslutet stannar flödet.</p>
+      <div class="decide">
+        <form method="post" action="/floden/{{ flow.flow_id }}/grind" class="decide__form"
+              hx-confirm="Godkänna {{ current.title | lower }}?">
+          {{ csrf() }}{{ version() }}
+          <input type="hidden" name="seen_hash" value="{{ flow.gate_hashes[current.key] }}">
+          <input type="hidden" name="decision" value="approved">
+          {% if current.key == "g2" %}
+          {% set change = tolkning.output.result.parameter_changes[0] %}
+          <input type="hidden" name="has_details" value="1">
+          <label for="f-rule_version">Regelns nya version ({{ change.rule_id }})</label>
+          <input id="f-rule_version" name="rule_version" required pattern="\d+\.\d+" placeholder="1.1">
+          <label for="f-valid_from">Giltig från</label>
+          <input id="f-valid_from" name="valid_from" type="date" required value="{{ change.valid_from }}">
+          <label for="f-decision_number">B-nummer (valfritt)</label>
+          <input id="f-decision_number" name="decision_number" pattern="B-\d{3}" placeholder="B-036">
+          {% endif %}
+          <label for="f-gate-note">Anteckning (valfri)</label>
+          <input id="f-gate-note" name="note" placeholder="T.ex. tolkningen stämmer mot källan">
+          <button type="submit" class="ok">Godkänn</button>
+        </form>
+        <form method="post" action="/floden/{{ flow.flow_id }}/grind" class="decide__form">
+          {{ csrf() }}{{ version() }}
+          <input type="hidden" name="seen_hash" value="{{ flow.gate_hashes[current.key] }}">
+          <input type="hidden" name="decision" value="rejected">
+          <label for="f-gate-reject">Skäl för avslag</label>
+          <input id="f-gate-reject" name="note" required placeholder="Ett avslag stoppar flödet">
+          <button type="submit" class="danger">Avslå</button>
+        </form>
+      </div>
+    {% elif flow.status == "waiting_manual" %}
+      {% set drafts = flow.step("tolkning").result.output.evidence.drafts %}
+      <p class="small">För in regeltexten i <code>01_domän/produktregler/</code> och parameterregistret utifrån utkasten
+        {% for d in drafts %}<a href="/floden/{{ flow.flow_id }}/steg/tolkning/utkast/{{ d.name }}">{{ d.title }}</a>{% if not loop.last %}, {% endif %}{% endfor %},
+        committa och ange commit-referensen. Agenterna ändrar aldrig gällande dokument.</p>
+      <form method="post" action="/floden/{{ flow.flow_id }}/klart" class="decide__form">
+        {{ csrf() }}{{ version() }}
+        <label for="f-commit">Commit-referens</label>
+        <input id="f-commit" name="commit" required pattern="[0-9a-f]{7,40}" placeholder="t.ex. a1b2c3d">
+        <label for="f-manual-note">Anteckning (valfri)</label>
+        <input id="f-manual-note" name="note" placeholder="T.ex. PR-ITP1-013 v1.1 och parameterregistret">
+        <button type="submit" class="ok">Markera klart</button>
+      </form>
+    {% elif flow.status == "waiting_approval" %}
+      <p class="small">Förslaget väntar i <a href="/godkannanden?status=vantar#arende-{{ current.approval_id }}">godkännandekön</a>.
+        Grinden ersätter inte det godkännandet. När förslaget är avgjort tar <em>Kör nästa steg</em> flödet vidare.</p>
+      <form method="post" action="/floden/{{ flow.flow_id }}/kor">
+        {{ csrf() }}{{ version() }}
+        <button type="submit"{% if approval and approval.status == "pending" %} class="secondary"{% endif %}>Kör nästa steg</button>
+      </form>
+    {% elif flow.status == "reconciliation_required" %}
+      <p class="small">Steget avbröts och utfallet är okänt: <em>{{ current.error }}</em>. Kontrollera
+        {% if current.run_id %}<a href="/floden/{{ flow.flow_id }}/steg/{{ current.key }}/journal">körjournalen</a> och {% endif %}<a href="/godkannanden?status=alla">kön</a>, och avgör sedan.</p>
+      <form method="post" action="/floden/{{ flow.flow_id }}/avstam" class="decide__form">
+        {{ csrf() }}{{ version() }}
+        <label for="f-reconcile-note">Vad har du kontrollerat?</label>
+        <input id="f-reconcile-note" name="note" required placeholder="T.ex. journalen visar inga verktygsanrop">
+        <span>
+          <button type="submit" name="retry" value="1">Kör om steget</button>
+          <button type="submit" name="retry" value="0" class="danger">Avsluta som misslyckat</button>
+        </span>
+      </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Steg</h2>
+  <ol class="flowsteps">
+    {% for s in flow.steps %}
+    <li class="flowstep{% if s.key == flow.current_step %} is-current{% endif %}" id="steg-{{ s.key }}">
+      <div class="flowstep__head">
+        <strong>{{ s.position }}. {{ s.title }}</strong>
+        <span class="muted small">{{ step_kinds.get(s.kind, s.kind) }}{% if s.team %} · {{ s.team }}{% if s.agent %} (<code>{{ s.agent }}</code>){% endif %}{% endif %}</span>
+        <span class="pill pill--step-{{ s.status }}">{{ step_status.get(s.status, s.status) }}</span>
+      </div>
+      <p class="small muted">
+        {% if s.started_at %}Start {{ s.started_at | iso_date }}{% endif %}{% if s.finished_at %} · klart {{ s.finished_at | iso_date }}{% endif %}
+        {% if s.completed_by %} · av <code>{{ s.completed_by }}</code>{% endif %}
+        {% if s.kind == "agent" and s.result %} · kostnad {{ cost(s) }}{% endif %}
+        {% if s.run_id %} · körning <code>{{ s.run_id }}</code> · <a href="/floden/{{ flow.flow_id }}/steg/{{ s.key }}/journal">körjournal</a>{% endif %}
+      </p>
+      {% if s.error %}<p class="small field__error">{{ s.error }}</p>{% endif %}
+      {{ step_result(s) }}
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+
+{% if flow.decisions %}
+<section class="panel">
+  <h2>Grindbeslut</h2>
+  <table class="table table--compact">
+    <thead><tr><th>Grind</th><th>Beslut</th><th>Av</th><th>Binder</th><th>Hash</th><th>Tid</th></tr></thead>
+    <tbody>{% for d in flow.decisions %}<tr><td>{{ d.step_key }}</td><td>{{ "Godkänt" if d.decision == "approved" else "Avslaget" }}{% if d.note %}: {{ d.note }}{% endif %}</td><td><code>{{ d.decided_by }}</code></td><td>{{ d.bound_steps | join(", ") }}</td><td><code class="small">{{ d.bound_hash[:12] }}…</code></td><td>{{ d.decided_at | iso_date }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% endif %}
+
+{% if not flow.finished %}
+<section class="panel">
+  <h2>Avbryt flödet</h2>
+  <form method="post" action="/floden/{{ flow.flow_id }}/avbryt" class="decide__form flowcancel"
+        hx-confirm="Avbryta {{ flow.flow_id }}? Återstående steg hoppas över; ett nytt försök är ett nytt flöde.">
+    {{ csrf() }}{{ version() }}
+    <label for="f-cancel-note">Skäl</label>
+    <input id="f-cancel-note" name="note" required placeholder="T.ex. källan har dragits tillbaka">
+    <button type="submit" class="danger">Avbryt flödet</button>
+  </form>
+</section>
+{% endif %}
+<p><a href="/floden">← Alla flöden</a></p>
+{% endblock %}

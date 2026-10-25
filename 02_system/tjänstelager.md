@@ -353,6 +353,7 @@ Beslutat av operatören 2026-10-25 (**B-035**, underlag i `02_system/flaggskepps
 
 - *Stoppas:* en parameter saknas för månaden (`NotFoundError`), två giltiga versioner av samma parameter samma månad, eller en premieålder som inte är hela år (`BlockedError`). Ingen tyst reserv.
 - *Undantag:* finns tabellen inte (Lakebase före migrationen) används paketets värden PR-ITP1 v1.0 i koden, märkt i `calculation_basis`.
+- *Inkomstbasbelopp som inte är fastställt:* `calculate_premium_preview` stoppas om premiemånadens IBB saknas. Med `latest_base_amount` räknar den i stället med det senast fastställda och anger året i `base_amount_assumed_from`. Det är ett antagande, som i beståndsinsikten, och flödets verifiering använder det (3c-3).
 
 Skrivoperationerna bär produktreglerna PR-ITP1-001, -013 och -032 (respektive -032) och är därför `HUMAN_ONLY` för agenter till 2026-11-01. Därefter får en agent föreslå en ny version, men aldrig dra tillbaka en.
 
