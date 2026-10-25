@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
   <title>{% block title %}Handläggare{% endblock %} · Artificiellalecta</title>
   {# HTMX: felsvar (4xx/5xx) visas också; ingen sidhistorik i webbläsarens lagring (personuppgifter) #}
   <meta name="htmx-config" content='{"historyCacheSize": 0, "refreshOnHistoryMiss": true, "responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true}, {"code": "[45]..", "swap": true, "error": true}]}'>
@@ -12,6 +13,7 @@
   <link rel="stylesheet" href="/static/tokens.css?v={{ static_version }}">
   <link rel="stylesheet" href="/static/app.css?v={{ static_version }}">
   <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+  <script src="/static/environment.js?v={{ static_version }}" defer></script>
 </head>
 <body hx-boost="true">
   {% set path = request.url.path %}
@@ -30,6 +32,20 @@
       <span class="db db--{{ settings.database }}" title="Databas">{{ settings.database_label }}</span>
       <span class="user" title="Aktör i händelseloggen">Handläggare: <strong>{{ settings.handler_id }}</strong></span>
     </div>
+    <form class="environment-picker" data-environment-picker data-current-database="{{ settings.database }}"
+          method="post" action="/miljo" hx-boost="false">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="environment-database">Datakälla</label>
+      <select id="environment-database" name="database">
+        {% if settings.database == "svc_test" %}<option value="svc_test" selected disabled>{{ settings.database_label }}</option>{% endif %}
+        {% for database, label in environment_choices.items() %}
+        <option value="{{ database }}"{% if database == settings.database %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="secondary">Byt miljö</button>
+      <span data-environment-message role="status" aria-live="polite" hidden></span>
+      <noscript>JavaScript behövs för varning om osparade ändringar vid miljöbyte.</noscript>
+    </form>
   </header>
   {% if settings.is_production %}
   <div class="prodbanner" role="alert">Lakebase-beståndet: ändringar sparas på riktigt och loggas i händelseloggen.</div>
@@ -43,6 +59,14 @@
     {% endif %}
     {% block content %}{% endblock %}
   </main>
+  <dialog class="environment-confirm" data-environment-confirm aria-labelledby="environment-confirm-title">
+    <h2 id="environment-confirm-title">Osparade ändringar</h2>
+    <p>Du har osparade ändringar. Vill du lämna dem och öppna den andra miljöns startsida?</p>
+    <div class="environment-confirm__actions">
+      <button type="button" class="secondary" data-environment-decision="cancel" autofocus>Stanna kvar</button>
+      <button type="button" data-environment-decision="discard">Byt miljö och lämna ändringarna</button>
+    </div>
+  </dialog>
   <footer class="footer">
     Alla läsningar och ändringar går via tjänstelagret och loggas med handläggare och motivering (B-028).
   </footer>

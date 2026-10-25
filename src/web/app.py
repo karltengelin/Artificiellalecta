@@ -24,7 +24,15 @@ from web.agent import CaseAgent
 from web.config import WebSettings
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.presenters import ErrorView
-from web.routes import cases, changes, enrollment, insured, journal, parameters
+from web.routes import (
+    cases,
+    changes,
+    enrollment,
+    environments,
+    insured,
+    journal,
+    parameters,
+)
 
 log = logging.getLogger("web")
 
@@ -55,12 +63,14 @@ def create_app(
     app.include_router(journal.router)
     app.include_router(cases.router)
     app.include_router(parameters.router)
+    app.include_router(environments.router)
 
     @app.get("/_instance")
     def instance(request: Request):
         """Startskriptets miljökontroll; inga databasfrågor eller anslutningsuppgifter."""
         return JSONResponse(
-            {"application": "artificiellalecta-handlaggare", "database": request.app.state.settings.database},
+            {"application": "artificiellalecta-handlaggare", "database": request.app.state.settings.database,
+             "environment_switching": True},
             headers={"Cache-Control": "no-store"},
         )
 

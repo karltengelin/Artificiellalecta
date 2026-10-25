@@ -57,3 +57,7 @@ gränssnitt sker stegvis enligt ATT_GORA.
 - Handläggar-UI: FastAPI + Jinja2 + HTMX ovanpå tjänstelagret, bara lokalt. Vanlig skrivbordsgenväg använder Lakebase (8765); separat DEMO-genväg och `python scripts/web/start_ui.py` använder lokal övningsdata (8767). Installera genvägarna med `python scripts/web/install_desktop_shortcut.py`. Ingen synkning mellan miljöerna; se [handläggar-ui.md](02_system/handläggar-ui.md)
 - Markdown som primärt informationsformat
 - Git + GitHub för versionskontroll
+
+I handläggargränssnittets sidhuvud kan du välja **Datakälla** och växla mellan Lakebase
+(Postgres) och lokal demo (SQLite). Valet öppnar den andra miljöns startsida i samma flik;
+databaserna förblir separata. Se [miljövalet](02_system/handläggar-ui.md#byta-datakälla-i-gränssnittet).
