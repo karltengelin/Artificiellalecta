@@ -2,6 +2,7 @@
 
 import json
 import shutil
+import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -93,7 +94,8 @@ def test_malserverns_identitet_och_lage_kontrolleras(monkeypatch, identity, stat
             environments._probe("demo")
     else:
         assert environments._probe("demo")
-    factory.assert_called_once_with("127.0.0.1", 8767, timeout=1)
+    factory.assert_called_once_with("127.0.0.1", 8767, timeout=3)
+    connection.sock.settimeout.assert_called_once_with(1)
     connection.request.assert_called_once_with("GET", "/_instance", headers={"Accept": "application/json"})
     connection.close.assert_called_once()
 
@@ -106,6 +108,15 @@ def test_ledig_port_skils_fran_en_server_som_inte_svarar(monkeypatch):
     connection.request.side_effect = TimeoutError()
     with pytest.raises(EnvironmentUnavailable):
         environments._probe("demo")
+
+
+def test_ledig_loopbackport_upptacks_aven_med_windows_fordrojning(monkeypatch):
+    """Riktig lokal TCP: Windows rapporterar connection refused först efter cirka 2 s."""
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        unused_port = listener.getsockname()[1]
+    monkeypatch.setattr(environments, "DEFAULT_PORTS", {"demo": unused_port})
+    assert not environments._probe("demo")
 
 
 def test_befintlig_miljo_ateranvands_och_ny_startas_med_fast_databas(monkeypatch):
