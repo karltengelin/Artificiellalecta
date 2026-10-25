@@ -1,0 +1,238 @@
+# Verksamhetsområden följer målbilden; dependents och regler följer aktuell kod.
+# Alla testfiler ska tillhöra minst en grupp. Överlapp är avsiktligt.
+version = 1
+
+[suites.insurance]
+description = "Anställning, försäkring och ärenden"
+status = "partial"
+tests = ["tests/test_services_enrollment.py", "tests/test_services_cases.py", "tests/test_models_cases.py", "tests/test_services_operations.py"]
+dependents = ["agents", "web", "tooling"]
+
+[suites.premiums]
+description = "Löneunderlag, premie och produktparametrar; fakturakedjan återstår"
+status = "partial"
+tests = ["tests/test_calculate_itp1_premium.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_services_write_ops.py"]
+dependents = ["services", "agents", "web", "insights", "data", "tooling"]
+
+[suites.pensions]
+description = "Pensionsplaner, garanti och kapitalavräkning"
+status = "planned"
+tests = []
+dependents = ["payments", "economy", "reporting"]
+
+[suites.payments]
+description = "Bankflöden, pensionsskuld och betalningskvitton"
+status = "planned"
+tests = []
+dependents = ["economy", "reporting"]
+
+[suites.capital]
+description = "Portföljmodeller; handel och förvaltningsmotor återstår"
+status = "partial"
+tests = ["tests/test_portfolio_models.py"]
+dependents = []
+
+[suites.economy]
+description = "Bokföring, avstämning och månadsbokslut"
+status = "planned"
+tests = []
+dependents = ["reporting"]
+
+[suites.risk]
+description = "Reserv, FTA, ALM och finansieringskontroller"
+status = "planned"
+tests = []
+dependents = ["reporting"]
+
+[suites.reporting]
+description = "Rapportformat och exempel; formell verksamhetsrapportering återstår"
+status = "partial"
+tests = ["tests/test_reporting_template.py", "tests/test_reporting_agent_usage_example.py"]
+dependents = []
+
+[suites.insights]
+description = "Beståndsanalys och scenario"
+status = "partial"
+tests = ["tests/test_analytics_premium_impact.py"]
+dependents = ["tooling"]
+
+[suites.simulation]
+description = "Sammanhängande månadssimulering och ekonomiskt facit"
+status = "planned"
+tests = []
+dependents = []
+
+[suites.compliance]
+description = "Regeltolkning och verksamhetens regelefterlevnad; dokumentgateway testas tekniskt under agents"
+status = "planned"
+tests = []
+dependents = ["reporting"]
+
+[suites.communication]
+description = "Kundbesked, mottagare, godkända utskick och leveranskvitton"
+status = "planned"
+tests = []
+dependents = []
+
+[suites.orchestration]
+description = "Flödesmotor och samverkan mellan team"
+status = "planned"
+tests = []
+dependents = ["agents", "web", "tooling"]
+
+[suites.services]
+description = "Gemensamma tjänstekontrakt, åtkomst och transaktioner"
+status = "active"
+tests = ["tests/test_services_access.py", "tests/test_services_contract.py", "tests/test_services_service.py", "tests/test_services_transactions.py", "tests/test_services_persistence.py", "tests/test_services_postgres.py", "tests/test_services_listing.py", "tests/test_services_operations.py", "tests/test_services_write_ops.py", "tests/test_services_cases.py", "tests/test_services_enrollment.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py"]
+dependents = ["agents", "web", "tooling"]
+
+[suites.agents]
+description = "Harness, ärendekörningar, behörigheter och gateways"
+status = "active"
+tests = ["tests/test_agents_case_runs.py", "tests/test_agents_demo.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_listing.py", "tests/test_agents_loop.py", "tests/test_agents_postgres_role.py", "tests/test_agents_skills.py"]
+dependents = ["web", "tooling"]
+
+[suites.ai]
+description = "AI-abstraktion och leverantörsadaptrar med testdubblar"
+status = "active"
+tests = ["tests/test_ai_anthropic_provider.py", "tests/test_ai_boundaries.py", "tests/test_ai_client.py", "tests/test_ai_config.py", "tests/test_ai_openai_provider.py", "tests/test_ai_schema.py"]
+dependents = ["agents", "services", "web", "tooling"]
+
+[suites.web]
+description = "HTTP, formulär och handläggarflöden"
+status = "active"
+tests = ["tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_insured.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_design_web_css.py"]
+dependents = ["tooling"]
+
+[suites.data]
+description = "Datamodeller, backup och migrationer"
+status = "active"
+tests = ["tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
+dependents = []
+
+[suites.design]
+description = "Gemensamma designvärden, CSS och ikon"
+status = "active"
+tests = ["tests/test_design_icon.py", "tests/test_design_web_css.py"]
+dependents = ["web", "reporting", "tooling"]
+
+[suites.tooling]
+description = "Körverktyg, testkatalog och ändringsstyrt urval"
+status = "active"
+tests = ["tests/test_script_entrypoints.py", "tests/test_test_selection.py"]
+dependents = []
+
+# Filselektorer gäller alla testfall i filen; ::funktion gäller också parametriseringar.
+[markers]
+postgres = [
+  "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py",
+  "tests/test_migration_cases.py::test_migrationen_skapar_bara_cases_och_blir_identisk_med_create_all",
+  "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
+  "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
+]
+integration = ["tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_product_parameters.py"]
+security = ["tests/test_services_access.py", "tests/test_services_transactions.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_skills.py", "tests/test_agents_postgres_role.py", "tests/test_ai_boundaries.py"]
+
+# Alla matchande regler förenas. dependents utvidgar sedan kodändringens urval transitivt.
+[[rules]]
+paths = [
+  "tests/conftest.py", "tests/__init__.py", "tests/suites.toml",
+  "tests/test_agents_loop.py", "tests/test_services_postgres.py", "tests/test_services_transactions.py",
+  "tests/test_services_write_ops.py", "tests/test_services_enrollment.py", "tests/test_web_changes.py",
+  "pyproject.toml", "src/models/**", "src/testing/**", "scripts/testing/**", ".github/**",
+]
+full = true
+
+[[rules]]
+paths = ["src/skills/calculation/**", "src/services/parameters.py", "src/services/operations/premiums.py", "src/services/operations/salary.py", "src/services/operations/corrections.py", "src/services/operations/product_parameters.py"]
+suites = ["premiums"]
+
+[[rules]]
+paths = ["src/services/**"]
+suites = ["services", "insurance", "premiums", "insights", "data"]
+
+[[rules]]
+paths = ["src/ai/**"]
+suites = ["ai"]
+
+[[rules]]
+paths = ["src/agents/**", "02_system/agenter/**", "04_regulatoriskt/**"]
+suites = ["agents"]
+
+[[rules]]
+paths = ["src/web/**", "scripts/web/start_ui.py", "scripts/web/open_ui.ps1", "scripts/web/install_desktop_shortcut.py"]
+suites = ["web"]
+
+[[rules]]
+paths = ["src/analytics/**", "scripts/analysis/**"]
+suites = ["insights"]
+
+[[rules]]
+paths = ["src/reporting/**", "scripts/documentation/build_agent_usage_example.py", "06_design/exempel/**", "output/pdf/**"]
+suites = ["reporting"]
+
+[[rules]]
+paths = ["src/design/**", "scripts/web/build_design_tokens.py"]
+suites = ["design"]
+
+[[rules]]
+paths = ["src/utils/backup.py", "src/utils/migration*.py", "scripts/migrations/**", "scripts/maintenance/**"]
+suites = ["data", "tooling"]
+
+[[rules]]
+paths = ["src/utils/db.py", "src/utils/agent_roles.py", "src/utils/demo_data.py", "scripts/setup/**", "scripts/demo/**"]
+suites = ["services", "insurance", "premiums", "agents", "web", "data", "tooling"]
+
+[[rules]]
+paths = ["scripts/diagnostics/**", "scripts/smoke_test_ai.py"]
+suites = ["ai", "agents", "tooling"]
+
+[[rules]]
+paths = ["scripts/documentation/list_operations.py", "02_system/tjänstelager_operationer.md"]
+suites = ["services", "tooling"]
+
+[[rules]]
+paths = ["scripts/documentation/list_skills.py", "scripts/documentation/show_agent_profile.py", "03_skills/**"]
+suites = ["agents", "tooling"]
+
+[[rules]]
+paths = ["01_domän/**"]
+suites = ["premiums", "services", "agents", "web", "insights", "data", "tooling"]
+
+# Framtida kodområden: välj inte bort bristen på tester om kod börjar läggas här.
+[[rules]]
+paths = ["src/pensions/**"]
+suites = ["pensions"]
+
+[[rules]]
+paths = ["src/payments/**"]
+suites = ["payments"]
+
+[[rules]]
+paths = ["src/accounting/**"]
+suites = ["economy"]
+
+[[rules]]
+paths = ["src/risk/**"]
+suites = ["risk"]
+
+[[rules]]
+paths = ["src/simulation/**"]
+suites = ["simulation"]
+
+[[rules]]
+paths = ["src/compliance/**"]
+suites = ["compliance"]
+
+[[rules]]
+paths = ["src/communication/**"]
+suites = ["communication"]
+
+[[rules]]
+paths = ["src/agents/flows/**"]
+suites = ["orchestration"]
+
+# Produkt-/käll-/instruktionsfiler ovan behandlas som systemindata även om de är Markdown.
+[[rules]]
+paths = ["README.md", "AGENTS.md", "CLAUDE.md", "MASTER_CONTEXT.md", "BESLUTSLOGG.md", "ATT_GORA.md", "DEMO_ANTECKNINGAR.md", "projekt/**", "02_system/**", "05_styrdokument/**", "06_design/**"]
+documentation = true
