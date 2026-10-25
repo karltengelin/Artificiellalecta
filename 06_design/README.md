@@ -16,6 +16,7 @@ Det ska kännas modernt, professionellt och lugnt, med informationen i centrum.
 - [Införandeplan](../ATT_GORA.md) – se Grafisk identitet och designsystem.
 - [Utförlig exempelrapport om agentnyttjande](exempel/README.md) – PDF och Markdown med fiktiva analyser, diagram och tabeller i Digital klarhet.
 - [Återanvändbar rapportmall](rapportmall.md) – A4-komponenter för sidhuvud, rubriker, nyckeltal, tabeller och vektordiagram; används av exempelrapporten.
+- [Första skiss av operatörscentralen](../projekt/10_operatörscentral/SKISS.md) – planerad VD-arbetsyta med syntetiska exempel, inte en driftsatt vy.
 
 Designspecifikationen är den normativa beskrivningen. Tokenfilen är den gemensamma
 källan till de maskinläsbara grundvärdena. Den visuella referensen är en bevarad

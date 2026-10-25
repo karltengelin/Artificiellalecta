@@ -42,6 +42,12 @@ De här delarna ska avgränsas till bygguppdrag innan en full pensionsmånad kan
 
 Målbilden ovan innebär inga nya agentmandat, rapporteringskrav eller flytt av beslutat projektscope.
 
+**Leverans till VD-överblicken (2026-10-25):** projekt 6:s verifierade ekonomi-,
+värderings- och riskunderlag ska genom projekt 2:s gemensamma mått försörja
+[operatörscentralen](../10_operatörscentral/PROJEKTPLAN.md). Konsolidering kräver
+en definierad fördelnings-/återbäringsmodell och rätt värderingsunderlag. Projekt 10
+visar saknade mått som ej beräknade och bygger inga parallella domänmotorer.
+
 ### Organisation
 
 - Ett delprojekt per avdelning, eller en gemensam modul som växer per avdelning? (Karl nämner att
