@@ -5,6 +5,12 @@
 > Utgår från ett simulerat tjänstepensionsbolag med traditionell ITP1 ålderspension.
 > Kapital-, aktuariella och regulatoriska beräkningar är beroenden till andra delprojekt.
 
+> **Precisering 2026-10-25:** dashboardens ledningsmått ska försörja
+> [projekt 10:s operatörscentral på VD-nivå](../10_operatörscentral/PROJEKTPLAN.md).
+> Där visas teamens arbete, agentkostnader och väsentliga inriktningsfrågor.
+> Enskilda handläggarärenden och deras godkännanden hanteras i specialistvyer.
+> Måttens ägarskap och Databricks-inriktningen enligt B-029 består.
+
 ## Vad operatören ska kunna förstå
 
 Dashboarden ska besvara: hur stort är bolaget, kan vi bära våra pensionslöften, vad ändras
@@ -13,7 +19,7 @@ agentanalys och rapportering. En regeländring är ett användningsfall, inte he
 
 Föreslagna huvudkort: antal försäkrade, förvaltat kapital, betalda premier i perioden,
 utbetalda pensioner i perioden, FTA, kapitaltäckning, kollektiv konsolidering och avvikelser
-som väntar på operatören. Mått som saknar grund visas som "ej beräknat", aldrig som noll.
+som behöver ledningens uppmärksamhet. Mått som saknar grund visas som "ej beräknat", aldrig som noll.
 Datumvärden och periodflöden ska tydligt skiljas åt. Scenarioresultat visas separat från bas.
 
 ## Frågor och mått
@@ -28,7 +34,7 @@ Datumvärden och periodflöden ska tydligt skiljas åt. Scenarioresultat visas s
 | Kapitaltäckning/solvens | Vilket kapital får räknas och hur stor är marginalen till kraven? | Kapitalbas, riskkänsligt kapitalkrav, tillämpliga övriga kapitalkrav, tydligt namngivna kvoter och marginaler i kronor | Kräver regelregim, balansunderlag och riskberäkningar. Ingen generell Solvens II-kvot antas. |
 | Konsolidering/återbäring | Hur förhåller sig tillgångarna till fördelade värden och finns ofördelad buffert? | Kollektiv konsolideringsgrad, buffertbelopp, fördelade värden och eventuell återbäringsränta | Kräver beslutad fördelnings-/återbäringsmodell. Visas bara om modellen gör måttet tillämpligt. |
 | Likviditet och risk | Kan vi finansiera utbetalningar och vad händer vid stress? | Likvida medel mot kommande betalningar, koncentration, tillgångs-/skuldkänslighet och stresscenarier | Kräver kapital- och aktuariella underlag på samma datum. Prognos skiljs från utfall. |
-| Drift och agenter | Vad behöver Karl göra och fungerar bolaget? | Väntande godkännanden, gamla ärenden, fel, datakvalitetsavvikelser, agentkörningar och kostnad | Godkännande-/händelsegrund finns delvis; ärendeflöden och harness tillkommer enligt fasplanen. |
+| Drift och agenter | Vad kräver ledningens uppmärksamhet och hur fungerar teamen? | Sammanlagda väntetider/flaskhalsar, leveranser, fel, datakvalitetsavvikelser och agentkostnad per team/modell/uppdrag; inga individuella ärenden i VD-vyn | Körjournal/anropslogg och ärendegrund finns; granskad sammanställning och ledningseskaleringar planeras i projekt 10. |
 | Rapportering | Vad ska lämnas, när och är underlaget klart? | Rapportkalender, mottagare, period, kvalitet, granskning, godkännande och eventuell inlämningskvittens | Rapportkontrakt och mottagare måste fastställas; inga nya rapporteringskrav beslutas här. |
 
 ## Begrepp som måste hållas isär

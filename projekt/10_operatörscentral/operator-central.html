@@ -1,0 +1,247 @@
+<div id="operator-central-v01" lang="sv" aria-label="Skiss av Artificiellalectas operatörscentral">
+  <style>
+    #operator-central-v01 { color-scheme: light dark; --oc-brand:light-dark(#6951CF,#B9A5FF); --oc-ink:light-dark(#252440,#F4F2FF); --oc-muted:light-dark(#65627D,#C4BFD8); --oc-bg:light-dark(#EEEDF6,#191827); --oc-surface:light-dark(#FFFFFF,#252440); --oc-soft:light-dark(#EEEBFF,#35304E); --oc-border:light-dark(#DEDCED,#48425E); --oc-success:light-dark(#236342,#A3DBBC); --oc-warning:light-dark(#8A5A00,#F1CA7C); font:400 14px/1.5 'DM Sans',system-ui,'Segoe UI',sans-serif; color:var(--oc-ink); }
+    #operator-central-v01 * { box-sizing:border-box; }
+    #operator-central-v01 [hidden] { display:none !important; }
+    #operator-central-v01 button, #operator-central-v01 select, #operator-central-v01 textarea { font:inherit; color:inherit; }
+    #operator-central-v01 button { cursor:inherit; }
+    #operator-central-v01 button:focus-visible, #operator-central-v01 select:focus-visible, #operator-central-v01 textarea:focus-visible { outline:2px solid var(--oc-brand); outline-offset:3px; }
+    #operator-central-v01 h1,#operator-central-v01 h2,#operator-central-v01 h3,#operator-central-v01 p { margin:0; }
+    #operator-central-v01 h1 { font-size:28px; line-height:1.2; letter-spacing:-.8px; font-weight:700; }
+    #operator-central-v01 h2 { font-size:17px; font-weight:700; letter-spacing:-.2px; }
+    #operator-central-v01 h3 { font-size:14px; font-weight:600; }
+    #operator-central-v01 .oc-shell { display:grid; grid-template-columns:170px minmax(0,1fr); background:var(--oc-bg); border:1px solid var(--oc-border); border-radius:14px; overflow:hidden; }
+    #operator-central-v01 .oc-side { padding:26px 16px; background:var(--oc-surface); border-right:1px solid var(--oc-border); display:flex; flex-direction:column; gap:30px; }
+    #operator-central-v01 .oc-wordmark { font-weight:700; font-size:14px; letter-spacing:-.5px; overflow-wrap:anywhere; }
+    #operator-central-v01 .oc-mark { width:21px; height:21px; display:block; border-radius:6px; background:var(--oc-brand); margin-bottom:10px; }
+    #operator-central-v01 .oc-eyebrow { font-size:11px; text-transform:uppercase; letter-spacing:1.3px; color:var(--oc-muted); font-weight:600; }
+    #operator-central-v01 .oc-nav { display:flex; flex-direction:column; gap:6px; }
+    #operator-central-v01 .oc-nav button { border:0; border-radius:8px; background:transparent; text-align:left; padding:11px 10px; min-height:44px; color:var(--oc-muted); }
+    #operator-central-v01 .oc-nav button[aria-selected="true"] { background:var(--oc-soft); color:var(--oc-brand); font-weight:600; }
+    #operator-central-v01 .oc-sidefoot { margin-top:auto; padding-top:24px; border-top:1px solid var(--oc-border); font-size:12px; color:var(--oc-muted); }
+    #operator-central-v01 .oc-sidefoot strong { display:block; color:var(--oc-ink); margin-bottom:3px; }
+    #operator-central-v01 .oc-main { padding:28px; min-width:0; }
+    #operator-central-v01 .oc-top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin:0 84px 22px 0; }
+    #operator-central-v01 .oc-mode { color:var(--oc-warning); font-size:12px; }
+    #operator-central-v01 .oc-heading { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap; margin-bottom:24px; }
+    #operator-central-v01 .oc-sub { color:var(--oc-muted); margin-top:8px; }
+    #operator-central-v01 .oc-pill { display:inline-block; padding:4px 9px; background:var(--oc-soft); color:var(--oc-brand); border-radius:20px; font-size:12px; }
+    #operator-central-v01 .oc-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:26px; }
+    #operator-central-v01 .oc-stat { background:var(--oc-surface); padding:18px; border-radius:12px; min-width:0; }
+    #operator-central-v01 .oc-statlabel { color:var(--oc-muted); font-size:12px; }
+    #operator-central-v01 .oc-number { display:block; margin:9px 0 4px; font-size:26px; letter-spacing:-.8px; font-weight:700; font-variant-numeric:tabular-nums; }
+    #operator-central-v01 .oc-number.oc-missing { font-size:19px; letter-spacing:-.3px; }
+    #operator-central-v01 .oc-note { color:var(--oc-muted); font-size:12px; }
+    #operator-central-v01 .oc-two { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:18px; align-items:start; }
+    #operator-central-v01 .oc-panel { background:var(--oc-surface); border-radius:12px; padding:20px; min-width:0; }
+    #operator-central-v01 .oc-panelhead { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:17px; }
+    #operator-central-v01 .oc-decision { padding:16px 0; border-top:1px solid var(--oc-border); }
+    #operator-central-v01 .oc-decision p { color:var(--oc-muted); margin:6px 0 12px; font-size:13px; }
+    #operator-central-v01 .oc-action { padding:9px 13px; border:1px solid var(--oc-border); border-radius:8px; background:var(--oc-surface); font-weight:500; min-height:40px; }
+    #operator-central-v01 .oc-primary { background:var(--oc-brand); color:light-dark(#FFFFFF,#252440); border-color:var(--oc-brand); }
+    #operator-central-v01 .oc-textbtn { padding:0; border:0; background:transparent; color:var(--oc-brand); text-align:left; text-decoration:underline; text-underline-offset:3px; min-height:32px; }
+    #operator-central-v01 .oc-teamline { display:flex; justify-content:space-between; gap:12px; padding:12px 0; border-top:1px solid var(--oc-border); align-items:start; }
+    #operator-central-v01 .oc-teamline p { color:var(--oc-muted); font-size:12px; margin-top:4px; }
+    #operator-central-v01 .oc-status { color:var(--oc-success); font-size:12px; white-space:nowrap; }
+    #operator-central-v01 .oc-ask { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; padding:18px 20px; background:var(--oc-soft); border-radius:12px; margin-top:20px; }
+    #operator-central-v01 .oc-ask p { margin-top:4px; color:var(--oc-muted); font-size:13px; }
+    #operator-central-v01 .oc-section { margin-top:22px; }
+    #operator-central-v01 .oc-bars { display:flex; height:145px; align-items:stretch; gap:13px; margin-top:20px; }
+    #operator-central-v01 .oc-baritem { flex:1; display:flex; flex-direction:column; align-items:center; min-width:0; font-size:11px; color:var(--oc-muted); }
+    #operator-central-v01 .oc-barspace { flex:1; width:100%; display:flex; align-items:flex-end; }
+    #operator-central-v01 .oc-bar { width:100%; background:var(--oc-brand); border-radius:4px 4px 0 0; opacity:.72; }
+    #operator-central-v01 .oc-baritem:last-child .oc-bar { opacity:1; }
+    #operator-central-v01 .oc-baritem span { margin-top:5px; }
+    #operator-central-v01 .oc-costrow { display:grid; grid-template-columns:minmax(0,1fr) 90px; gap:12px; padding:14px 0; border-top:1px solid var(--oc-border); }
+    #operator-central-v01 .oc-costrow strong { text-align:right; font-variant-numeric:tabular-nums; }
+    #operator-central-v01 .oc-track { height:6px; background:var(--oc-bg); border-radius:4px; margin-top:9px; overflow:hidden; }
+    #operator-central-v01 .oc-track span { display:block; height:100%; background:var(--oc-brand); }
+    #operator-central-v01 .oc-input { display:block; width:100%; border:1px solid var(--oc-border); border-radius:8px; background:var(--oc-surface); padding:12px; resize:vertical; font-size:16px; }
+    #operator-central-v01 .oc-label { display:block; font-size:12px; font-weight:600; margin:15px 0 7px; }
+    #operator-central-v01 .oc-presets { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 18px; }
+    #operator-central-v01 .oc-result { background:var(--oc-soft); padding:18px; border-radius:10px; margin-top:18px; }
+    #operator-central-v01 .oc-result p + p { margin-top:10px; }
+    #operator-central-v01 .oc-policygrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    #operator-central-v01 .oc-formrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:17px 0; }
+    #operator-central-v01 .oc-footer { margin-top:22px; padding-top:14px; border-top:1px solid var(--oc-border); font-size:11px; color:var(--oc-muted); }
+    #operator-central-v01 .oc-detail { margin-top:14px; padding:14px 0 0; border-top:1px solid var(--oc-border); }
+    #operator-central-v01 .oc-detail p { margin-top:8px; }
+    @media(max-width:760px) { #operator-central-v01 .oc-shell { grid-template-columns:1fr; } #operator-central-v01 .oc-side { padding:18px; gap:16px; border-right:0; border-bottom:1px solid var(--oc-border); } #operator-central-v01 .oc-wordmark { display:flex; align-items:center; gap:10px; } #operator-central-v01 .oc-mark { margin:0; } #operator-central-v01 .oc-nav { flex-direction:row; flex-wrap:wrap; } #operator-central-v01 .oc-sidefoot { display:none; } #operator-central-v01 .oc-main { padding:22px; } }
+    @media(max-width:520px) { #operator-central-v01 .oc-main { padding:18px 14px; } #operator-central-v01 .oc-two, #operator-central-v01 .oc-policygrid { grid-template-columns:1fr; } #operator-central-v01 .oc-stats { grid-template-columns:1fr; gap:8px; } #operator-central-v01 .oc-stat { padding:15px; } #operator-central-v01 .oc-number { margin-top:4px; } #operator-central-v01 .oc-top { margin-right:0; } #operator-central-v01 h1 { font-size:25px; } #operator-central-v01 .oc-panel { padding:17px; } #operator-central-v01 .oc-nav button { flex:1 1 44%; padding:10px; } }
+    @media(pointer:coarse) { #operator-central-v01 button { min-height:44px; } }
+  </style>
+  <div class="oc-shell">
+    <aside class="oc-side" aria-label="Operatörscentralens navigation">
+      <div><div class="oc-wordmark"><span class="oc-mark" aria-hidden="true"></span>Artificiellalecta</div><p class="oc-note" style="margin-top:7px">Operatörscentral</p></div>
+      <nav class="oc-nav" role="tablist" aria-label="Ledningsvyer" aria-orientation="vertical">
+        <button type="button" role="tab" id="oc-tab-overview" aria-controls="oc-overview" aria-selected="true" data-view="overview">Överblick</button>
+        <button type="button" role="tab" id="oc-tab-teams" aria-controls="oc-teams" aria-selected="false" data-view="teams">Team &amp; kostnader</button>
+        <button type="button" role="tab" id="oc-tab-questions" aria-controls="oc-questions" aria-selected="false" data-view="questions">Fråga bolaget</button>
+        <button type="button" role="tab" id="oc-tab-policy" aria-controls="oc-policy" aria-selected="false" data-view="policy">Styrning</button>
+      </nav>
+      <div class="oc-sidefoot"><strong>Karl · VD</strong>Ledning och inriktning<br><br>Detaljarbete öppnas i respektive specialistvy.</div>
+    </aside>
+    <main class="oc-main">
+      <div class="oc-top"><span class="oc-eyebrow">Ledningsvy / första skiss</span><span class="oc-mode">Syntetiska exempel · inga livekopplingar</span></div>
+      <section id="oc-overview" role="tabpanel" aria-labelledby="oc-tab-overview">
+        <header class="oc-heading"><div><h1>Bolaget, samlat.</h1><p class="oc-sub">Läget, teamens arbete och dina nästa inriktningsbeslut.</p></div><span class="oc-pill">20–25 oktober · exempel</span></header>
+        <div class="oc-stats">
+          <div class="oc-stat"><span class="oc-statlabel">Kollektiv konsolidering</span><strong class="oc-number oc-missing">Ej beräknad</strong><span class="oc-note">Modell och värderingsunderlag saknas</span><br><button type="button" class="oc-textbtn" data-preset="consolidation">Vilket underlag behövs?</button></div>
+          <div class="oc-stat"><span class="oc-statlabel">Agentkostnad · exempelperiod</span><strong class="oc-number">128,40 <span style="font-size:14px;font-weight:400">USD</span></strong><span class="oc-note">64 % av exempelbudgeten 200 USD</span><div class="oc-track" role="img" aria-label="128,40 av 200 USD, syntetiskt exempel"><span style="width:64.2%"></span></div></div>
+          <div class="oc-stat"><span class="oc-statlabel">Team med körprofil</span><strong class="oc-number">3 <span style="font-size:14px;font-weight:400">av 7</span></strong><span class="oc-note">Försäkring, compliance och aktuarie<br>Konfiguration, inte en driftsignal</span></div>
+        </div>
+        <div class="oc-two">
+          <section class="oc-panel" aria-label="Exempel på ledningsunderlag"><div class="oc-panelhead"><h2>Att ta ställning till</h2><span class="oc-note">Exempelunderlag</span></div>
+            <div class="oc-decision"><span class="oc-eyebrow">Modellstrategi</span><h3>Pröva OpenAI som gemensamt förstaval</h3><p>Jämför kostnad och kvalitet för nästa uppsättning analysuppdrag. Granska teamundantag och reservpolicy.</p><button type="button" class="oc-action" data-go="policy">Granska modellpolicy</button></div>
+            <div class="oc-decision"><span class="oc-eyebrow">Prioritering</span><h3>Gör konsolideringen uppföljningsbar</h3><p>Samordna kapitalvärdering, fördelningsmodell och aktuariellt underlag innan ett nyckeltal tas i bruk.</p><button type="button" class="oc-textbtn" id="oc-detail-button" aria-expanded="false" aria-controls="oc-decision-detail">Visa beslutsunderlag</button><div class="oc-detail" id="oc-decision-detail" hidden><strong>Föreslagen inriktning</strong><p>Beställ ett gemensamt underlagsförslag från kapital, aktuarie och BI. VD väljer prioritet; respektive specialist äger modell och verifiering.</p><p class="oc-note">Planeringsexempel. Inget uppdrag har startats.</p></div></div>
+          </section>
+          <section class="oc-panel" aria-label="Exempel på teamleveranser"><div class="oc-panelhead"><h2>Från teamen</h2><button type="button" class="oc-textbtn" data-go="teams">Följ upp</button></div>
+            <div class="oc-teamline"><div><h3>Compliance</h3><p>Konsekvensanalys klar för granskning.</p></div><span class="oc-status">Utkast</span></div>
+            <div class="oc-teamline"><div><h3>Aktuarie &amp; analys</h3><p>Beståndsinsikt med redovisade antaganden.</p></div><span class="oc-status">Leverans</span></div>
+            <div class="oc-teamline"><div><h3>Försäkring &amp; kund</h3><p>Samlad uppföljning av löneunderlag.</p></div><span class="oc-status">Översikt</span></div>
+            <p class="oc-note" style="margin-top:15px">Illustrativa leveranser. Övriga fyra team saknar körprofil i planens nuläge.</p>
+          </section>
+        </div>
+        <div class="oc-ask"><div><h3>Vad vill du förstå bättre?</h3><p>Fråga om utvecklingen eller ge ett avgränsat analysuppdrag.</p></div><button type="button" class="oc-action oc-primary" data-go="questions">Fråga bolaget →</button></div>
+      </section>
+      <section id="oc-teams" role="tabpanel" aria-labelledby="oc-tab-teams" hidden>
+        <header class="oc-heading"><div><h1>Arbete och agentekonomi.</h1><p class="oc-sub">Följ vad teamen levererar och vad arbetet kostar.</p></div><span class="oc-pill">20–25 oktober · exempel</span></header>
+        <div class="oc-two">
+          <section class="oc-panel"><div class="oc-panelhead"><h2>Kostnad per team</h2><span class="oc-note">Uppskattat · USD</span></div>
+            <div class="oc-costrow"><div><h3>Compliance</h3><p class="oc-note">Regeltolkning och granskningsutkast</p><div class="oc-track"><span style="width:45.87%"></span></div></div><strong>58,90</strong></div>
+            <div class="oc-costrow"><div><h3>Aktuarie &amp; analys</h3><p class="oc-note">Beståndsinsikt och rapportunderlag</p><div class="oc-track"><span style="width:34.42%"></span></div></div><strong>44,20</strong></div>
+            <div class="oc-costrow"><div><h3>Försäkring &amp; kund</h3><p class="oc-note">Avgränsade handläggaruppdrag</p><div class="oc-track"><span style="width:19.70%"></span></div></div><strong>25,30</strong></div>
+            <div class="oc-costrow"><strong style="text-align:left">Summa exempel</strong><strong>128,40</strong></div>
+            <p class="oc-note">Syntetiska belopp. Faktisk vy ska redovisa okänd kostnad och loggtäckning, inte anta att saknade poster är noll.</p>
+          </section>
+          <section class="oc-panel"><div class="oc-panelhead"><h2>Utveckling i perioden</h2><span class="oc-note">USD per dag</span></div>
+            <div class="oc-bars" role="img" aria-label="Syntetisk daglig agentkostnad: 20 oktober 12,80 USD; 21 oktober 17,60; 22 oktober 19,90; 23 oktober 22,40; 24 oktober 25,10; 25 oktober 30,60. Summa 128,40 USD.">
+              <div class="oc-baritem"><div class="oc-barspace"><div class="oc-bar" style="height:42%"></div></div><span>20 okt</span><span>12,80</span></div>
+              <div class="oc-baritem"><div class="oc-barspace"><div class="oc-bar" style="height:58%"></div></div><span>21</span><span>17,60</span></div>
+              <div class="oc-baritem"><div class="oc-barspace"><div class="oc-bar" style="height:65%"></div></div><span>22</span><span>19,90</span></div>
+              <div class="oc-baritem"><div class="oc-barspace"><div class="oc-bar" style="height:73%"></div></div><span>23</span><span>22,40</span></div>
+              <div class="oc-baritem"><div class="oc-barspace"><div class="oc-bar" style="height:82%"></div></div><span>24</span><span>25,10</span></div>
+              <div class="oc-baritem"><div class="oc-barspace"><div class="oc-bar" style="height:100%"></div></div><span>25</span><span>30,60</span></div>
+            </div><p class="oc-note" style="margin-top:16px">Exempel på perioduppföljning, inte verklig förbrukning.</p><button type="button" class="oc-action" style="margin-top:18px" data-preset="cost">Undersök kostnadsökningen</button>
+          </section>
+        </div>
+        <section class="oc-panel oc-section"><h2>Planerade team</h2><p class="oc-sub">Kommunikation · Kapitalförvaltning · Ekonomi &amp; inköp · Utveckling &amp; plattform</p><p class="oc-note" style="margin-top:8px">Agentbeskrivningar finns. Körprofiler och domänförmågor återstår; inga kostnads- eller kvalitetsutfall antas här.</p></section>
+      </section>
+      <section id="oc-questions" role="tabpanel" aria-labelledby="oc-tab-questions" hidden>
+        <header class="oc-heading"><div><h1>Fråga bolaget.</h1><p class="oc-sub">En gemensam ingång till data och teamens kompetens.</p></div></header>
+        <section class="oc-panel"><form id="oc-question-form"><label class="oc-label" for="oc-question">Din ledningsfråga</label><textarea class="oc-input" id="oc-question" rows="3" required>Varför har agentkostnaden ökat, och vad bör vi följa upp?</textarea><div class="oc-presets"><button type="button" class="oc-action" data-preset="cost">Agentkostnader</button><button type="button" class="oc-action" data-preset="consolidation">Konsolidering</button></div><button class="oc-action oc-primary" type="submit">Visa exempel på routing och svar</button></form>
+          <div class="oc-result" id="oc-answer" aria-live="polite" hidden></div>
+        </section>
+        <p class="oc-note" style="margin-top:16px">Skissen visar en lokal svarsmall. Inget team körs, ingen datafråga skickas och inget modellanrop görs.</p>
+      </section>
+      <section id="oc-policy" role="tabpanel" aria-labelledby="oc-tab-policy" hidden>
+        <header class="oc-heading"><div><h1>Sätt riktningen.</h1><p class="oc-sub">Modellpolicy för nya körningar, med tydliga undantag.</p></div><span class="oc-pill" id="oc-policy-state">Exempelpolicy · blandad</span></header>
+        <section class="oc-panel"><h2>Gemensam modellpolicy</h2><div class="oc-policygrid"><div><label class="oc-label" for="oc-provider">Leverantörsinriktning</label><select class="oc-input" id="oc-provider"><option value="mixed">Blandad policy</option><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option></select></div><div><label class="oc-label" for="oc-fallback">Reservpolicy</label><select class="oc-input" id="oc-fallback"><option value="same">Endast vald leverantör</option><option value="cross">Tillåt reserv hos andra leverantören</option></select></div></div>
+          <div class="oc-formrow"><input type="checkbox" id="oc-exception"><label for="oc-exception">Behåll ett uttryckligt teamundantag för compliance</label></div>
+          <button type="button" class="oc-action oc-primary" id="oc-preview-policy">Förhandsgranska</button>
+          <div class="oc-result" id="oc-policy-preview" aria-live="polite" hidden><h3>Föreslagen effekt</h3><p id="oc-policy-description" style="margin-top:8px"></p><p class="oc-note" style="margin:10px 0">Nya rotkörningar använder den nya versionen. Pågående körningar och länkade fortsättningar behåller sin policy. Detta är en simulering.</p><button type="button" class="oc-action" id="oc-apply-policy">Prova valet i skissen</button></div>
+        </section>
+        <section class="oc-panel oc-section"><h2>Budget och prioritering</h2><p class="oc-sub">Kostnadsramar, teamundantag och uppföljning ska kunna granskas här.</p><p class="oc-note" style="margin-top:10px">Körgränser återanvänder harnessens planerade inställningsvy. Periodbudget och spärr mot nya uppdrag behöver egen verifierad budgethantering.</p></section>
+      </section>
+      <footer class="oc-footer">Digital klarhet · skiss v0.1 · 25 oktober 2026. Alla kostnader och leveranser är syntetiska. VD-överblick; detaljhandläggning sker i specialistgränssnitt.</footer>
+    </main>
+  </div>
+  <script>
+    (() => {
+      const root = document.getElementById('operator-central-v01');
+      const tabs = [...root.querySelectorAll('[data-view]')];
+      const viewIds = ['overview','teams','questions','policy'];
+      let currentView = 'overview';
+      let previewPolicy = null;
+      const byId = id => root.querySelector('#' + id);
+      function showView(name) {
+        if (!viewIds.includes(name)) return;
+        currentView = name;
+        tabs.forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.view === name)));
+        viewIds.forEach(view => { byId('oc-' + view).hidden = view !== name; });
+      }
+      function remember() {
+        if (window.openai && window.openai.setWidgetState) window.openai.setWidgetState({modelContent:{sketch:'operator-central-v01',view:currentView},privateContent:{provider:byId('oc-provider').value,fallback:byId('oc-fallback').value,exception:byId('oc-exception').checked}}).catch(() => {});
+      }
+      function restore(saved) {
+        if (!saved) return;
+        const model = saved.modelContent || {}, priv = saved.privateContent || {};
+        const settingsChanged = (['mixed','openai','anthropic'].includes(priv.provider) && byId('oc-provider').value !== priv.provider)
+          || (['same','cross'].includes(priv.fallback) && byId('oc-fallback').value !== priv.fallback)
+          || (typeof priv.exception === 'boolean' && byId('oc-exception').checked !== priv.exception);
+        showView(model.view || 'overview');
+        if (['mixed','openai','anthropic'].includes(priv.provider)) byId('oc-provider').value = priv.provider;
+        if (['same','cross'].includes(priv.fallback)) byId('oc-fallback').value = priv.fallback;
+        if (typeof priv.exception === 'boolean') byId('oc-exception').checked = priv.exception;
+        if (settingsChanged) updateFallback();
+      }
+      function answer() {
+        const input = byId('oc-question').value.trim();
+        if (!input) return;
+        const response = byId('oc-answer');
+        response.replaceChildren();
+        const add = (tag, text, className) => { const element = document.createElement(tag); element.textContent = text; if (className) element.className = className; response.append(element); };
+        add('h3','Exempelsvar · inget agentuppdrag har startats');
+        if (/konsolid|kapital|fta|likvid/i.test(input)) {
+          add('p','Föreslagen ingång: Aktuarie & analys. Samordning med kapital och BI behöver behörig teamdelegering.');
+          add('p','Konsolideringen kan ännu inte förklaras som ett beräknat utfall. Först behövs en definierad fördelningsmodell, värderade tillgångar och avstämt underlag på samma datum.');
+          add('p','Nästa ledningsfråga: prioritera ett gemensamt underlagsförslag. Ingen kvot eller förändring har beräknats.','oc-note');
+        } else if (/kostnad|budget|modell/i.test(input)) {
+          add('p','Föreslagen ingång: agentekonomins läsunderlag. Analysuppdraget avgränsas till perioden 20–25 oktober i skissens exempeldata.');
+          add('p','Exempelutfall: den dagliga kostnaden går från 12,80 till 30,60 USD. Compliance står för 58,90 av periodens totalt 128,40 USD. Det visar var en fördjupning bör börja, men förklarar inte orsaken.');
+          add('p','Begär därefter underlag om uppdragsvolym, modellval, reservanrop och kvalitetsutfall innan en besparing rekommenderas. Källa: syntetisk serie i denna skiss.','oc-note');
+        } else {
+          add('p','Förslag: avgränsa vilket mått, vilken period och vilket team frågan gäller. Visa föreslaget uppdrag och budget innan något arbete startas.');
+          add('p','Den riktiga frågeingången planeras i OC-3. Den här skissen kör inga analyser.','oc-note');
+        }
+        response.hidden = false;
+        remember();
+      }
+      function updateFallback() {
+        const mixed = byId('oc-provider').value === 'mixed';
+        byId('oc-fallback').disabled = mixed;
+        byId('oc-fallback').options[0].textContent = mixed ? 'Rollernas konfigurerade reserver' : 'Endast vald leverantör';
+        byId('oc-policy-preview').hidden = true;
+        previewPolicy = null;
+      }
+      function preview() {
+        const provider = byId('oc-provider').value, fallback = byId('oc-fallback').value, exception = byId('oc-exception').checked;
+        const label = provider === 'openai' ? 'OpenAI' : 'Anthropic';
+        let text = provider === 'mixed' ? 'Rollerna fast, standard och deep behåller den blandade primär- och reservpolicyn i exemplet.' : 'Rollerna fast, standard och deep använder godkända modeller från ' + label + ' för nya körningar. ' + (fallback === 'same' ? 'Reservkedjan begränsas till samma leverantör.' : 'Reserv hos den andra leverantören är uttryckligen tillåten.');
+        text += exception ? ' Compliance behåller ett synligt teamundantag och följer därför inte ett exklusivt globalt leverantörsval.' : ' Inga teamundantag är valda.';
+        byId('oc-policy-description').textContent = text;
+        previewPolicy = {provider,fallback,exception};
+        byId('oc-policy-preview').hidden = false;
+        byId('oc-apply-policy').textContent = 'Prova valet i skissen';
+        remember();
+      }
+      tabs.forEach((tab,index) => {
+        tab.addEventListener('click', () => { showView(tab.dataset.view); remember(); });
+        tab.addEventListener('keydown', event => {
+          if (!['ArrowRight','ArrowDown','ArrowLeft','ArrowUp','Home','End'].includes(event.key)) return;
+          event.preventDefault();
+          const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length-1 : (index + (['ArrowRight','ArrowDown'].includes(event.key) ? 1 : -1) + tabs.length) % tabs.length;
+          tabs[next].focus(); showView(tabs[next].dataset.view); remember();
+        });
+      });
+      root.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => { showView(button.dataset.go); remember(); }));
+      root.querySelectorAll('[data-preset]').forEach(button => button.addEventListener('click', () => {
+        byId('oc-question').value = button.dataset.preset === 'cost' ? 'Varför har agentkostnaden ökat, och vad bör vi följa upp?' : 'Vilket underlag behövs för att följa konsolideringen?';
+        showView('questions'); answer();
+      }));
+      byId('oc-question-form').addEventListener('submit', event => { event.preventDefault(); answer(); });
+      byId('oc-detail-button').addEventListener('click', () => { const panel = byId('oc-decision-detail'); panel.hidden = !panel.hidden; byId('oc-detail-button').setAttribute('aria-expanded',String(!panel.hidden)); });
+      ['oc-provider','oc-fallback','oc-exception'].forEach(id => byId(id).addEventListener('change', () => { updateFallback(); remember(); }));
+      byId('oc-preview-policy').addEventListener('click', preview);
+      byId('oc-apply-policy').addEventListener('click', () => {
+        if (!previewPolicy) return;
+        const label = {mixed:'blandad',openai:'OpenAI',anthropic:'Anthropic'}[previewPolicy.provider];
+        byId('oc-policy-state').textContent = 'Provat i skissen · ' + label + (previewPolicy.exception ? ' + teamundantag' : '');
+        byId('oc-apply-policy').textContent = 'Visas i skissen · inget sparat';
+      });
+      updateFallback();
+      restore(window.openai && window.openai.widgetState);
+      window.addEventListener('openai:set_globals', event => { const globals = event.detail && event.detail.globals; if (globals && globals.widgetState) restore(globals.widgetState); });
+    })();
+  </script>
+</div>
