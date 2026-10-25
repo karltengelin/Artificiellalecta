@@ -28,7 +28,7 @@
       {{ nav("/arbetsgivare", "Arbetsgivare", path.startswith("/arbetsgivare")) }}
       {{ nav("/handelselogg", "Händelselogg", path.startswith("/handelselogg")) }}
       {{ nav("/parametrar", "Parametrar", path.startswith("/parametrar")) }}
-      {{ nav("/floden", "Flöden", path.startswith("/floden")) }}
+      {% if flows_available %}{{ nav("/floden", "Flöden", path.startswith("/floden")) }}{% endif %}
     </nav>
     <div class="who">
       <span class="db db--{{ settings.database }}" title="Databas">{{ settings.database_label }}</span>

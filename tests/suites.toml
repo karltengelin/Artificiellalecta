@@ -137,7 +137,7 @@ security = ["tests/test_services_access.py", "tests/test_services_transactions.p
 # Alla matchande regler förenas. dependents utvidgar sedan kodändringens urval transitivt.
 [[rules]]
 paths = [
-  "tests/conftest.py", "tests/__init__.py", "tests/suites.toml",
+  "tests/conftest.py", "tests/__init__.py", "tests/suites.toml", "tests/flow_helpers.py",
   "tests/test_agents_loop.py", "tests/test_services_postgres.py", "tests/test_services_transactions.py",
   "tests/test_services_write_ops.py", "tests/test_services_enrollment.py", "tests/test_web_changes.py",
   "pyproject.toml", "src/models/**", "src/testing/**", "scripts/testing/**", ".github/**",

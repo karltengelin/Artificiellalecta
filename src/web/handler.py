@@ -97,6 +97,7 @@ def render(
         "rules": service(request).rules,
         "pending_approvals": pending,
         "database_available": pending is not None,
+        "flows_available": getattr(request.app.state, "flow_console", None) is not None,
         "environment_choices": SWITCHABLE_DATABASES,
     }
     response = templates.TemplateResponse(request, template, {**base, **(context or {})}, status_code=status_code)

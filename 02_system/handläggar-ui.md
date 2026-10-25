@@ -204,8 +204,12 @@ Rättas lönen för en månad som har premie, länkar resultatsidan direkt till 
 Handläggaren utför ändringarna direkt. En agent kan bara föreslå en ny version, och förslaget avgörs i
 `/godkannanden`. Procentsatser skrivs som andel (0,045 = 4,5 %) och visas i procent.
 
-**Flöden (Fas 3c, 3c-3, B-035).** Flödet `rule_change_parameter` från regeländring till verifierad
-produktparameter ([flaggskeppsflöde.md](flaggskeppsflöde.md) §6–7).
+**Flöden (Fas 3c, 3c-3, B-035; avgränsat enligt B-037).** Flödet `rule_change_parameter` från regeländring till verifierad
+produktparameter ([flaggskeppsflöde.md](flaggskeppsflöde.md) §6–7). Sidorna och adaptern finns som
+återanvändbar kod. De ansluts inte automatiskt i någon datakälla, och menyvalet
+visas bara med en uttryckligen ansluten `FlowConsole`. Direktåtkomst utan
+anslutning visar att förmågan ännu inte är tillgänglig. Tabellen nedan beskriver
+sidorna när en konsol är ansluten, vilket regressionstesterna gör uttryckligen.
 
 > **Tillfälligt hem.** Flöden och produktparametrar är beslut på bolagsnivå, inte handläggning av enskilda
 > försäkrade, och flödet kör compliance och aktuarie, som inte hör till det här området. De ligger här för att
@@ -235,11 +239,16 @@ produktparameter ([flaggskeppsflöde.md](flaggskeppsflöde.md) §6–7).
   Handläggaren avgör dem på sidan efter att ha kontrollerat körjournalen och kön.
 - **Grinden ersätter inte kön.** Aktiveringen lägger ett förslag från `compliance_agent` i `/godkannanden`, och
   flödet går vidare först när förslaget är avgjort där.
-- **Bara demo och `svc_test`.** I Lakebase visar sidan varför flödena saknas: `migrate_flows.py` är inte körd där.
-  Agentstegen körs med en **skriptad demomodell** (FakeProvider) som bara kan köra den fiktiva källan
-  K-SIM-ITP-2027: inga modellanrop och ingen kostnad. Verktygen, gatewayerna, mandatet och körjournalen körs
-  ändå på riktigt. Agentrollen simuleras, och regelpaketet prövas som om det gällde, som för demoförslagen.
-  Riktiga modellanrop hör till 3c-V.
+- **Ingen skriptad agentväg.** Den tidigare demomodellen och den automatiska kopplingen
+  till `/floden` är borttagna på operatörens uppdrag (B-037). Databasvalet ändrar inte
+  regelkatalogens giltighetsdatum för flödets skull. `FlowConsole.build` kräver en
+  uttrycklig AI-klient och använder de tjänstelager den får. En verifierad anslutning
+  med teamroller, modeller och flödestabeller återstår. FakeProvider används bara som
+  uttryckligt testunderlag i regressionstesterna för flödet.
+- **Verifiering.** Definition v2 jämför lagrade parameterversioner före och efter
+  giltighetsdagen med det godkända beslutet. Den skapar ingen syntetisk person eller
+  demonstrationspremie och säger inget om övriga verksamhetsmotorers färdigställande.
+  Äldre flödesdefinitioner får inte köras vidare som v2; historiken behålls för avstämning.
 
 Antalet väntande förslag visas i menyn. Det hämtas med `count_approval_requests`, som inte läser
 personuppgifter och därför inte loggas. Ett godkännande som krockar med dagens läge, till exempel för

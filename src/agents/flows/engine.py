@@ -1,7 +1,7 @@
 """Flödesmotorn (Fas 3c 3c-2, B-035, flaggskeppsflöde.md §6, harness.md §10.3–10.4).
 
     engine = FlowEngine(session_factory, [definition], runtime=runtime, trusted=service)
-    flow = engine.start("rule_change_parameter", {"source_handle": "K-SIM-ITP-2027"}, actor=operator)
+    flow = engine.start("rule_change_parameter", {"source_handle": source_handle}, actor=operator)
     flow = engine.run_next(flow.flow_id, expected_version=flow.version, actor=operator)   # agentsteg
     flow = engine.decide_gate(flow.flow_id, expected_version=flow.version, actor=operator,
                               decision="approved", seen_hash=flow.gate_hashes["g1"])
@@ -50,9 +50,16 @@ from agents.flows.definition import (
     ManualStep,
     Step,
     SystemOutcome,
-    SystemStep,
 )
-from agents.flows.store import FlowConflictError, FlowError, bound_hash, bump, canonical_hash, load, next_flow_id
+from agents.flows.store import (
+    FlowConflictError,
+    FlowError,
+    bound_hash,
+    bump,
+    canonical_hash,
+    load,
+    next_flow_id,
+)
 from agents.gateways import Gateways
 from agents.run import RunResult, RunStatus
 from agents.skills import SkillRegistry
@@ -206,11 +213,16 @@ class FlowEngine:
         with self._session_factory() as s:
             flow, steps, decisions = load(s, flow_id)
             self._check_version(flow, expected_version)
+            definition = self._definition(flow.flow_type)
+            if flow.definition_version != definition.version:
+                raise FlowError(
+                    f"Flödet använder definition v{flow.definition_version}, men tillgänglig version är "
+                    f"v{definition.version}. Stäm av det äldre flödet innan ett nytt startas"
+                )
             if flow.status == "waiting_approval":
                 return self._observe_approval(s, flow, steps, expected_version, approval)
             if flow.status != "running":
                 raise FlowError(f"Flödet {flow_id} är {flow.status} – inget steg att köra")
-            definition = self._definition(flow.flow_type)
             step_def = definition.step(flow.current_step)
             if step_def.kind not in ("agent", "system"):
                 raise FlowError(f"Steget '{step_def.key}' är {step_def.kind} och körs inte av motorn")

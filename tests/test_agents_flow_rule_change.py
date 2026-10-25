@@ -1,7 +1,7 @@
 """Flödet `rule_change_parameter` (Fas 3c 3c-3, B-035, flaggskeppsflöde.md §2 och §7).
 
 Hela flödet körs mot demobeståndet i minnet genom adaptern för UI:t (`FlowConsole`) med den
-skriptade demomodellen: tolkning, grind 1, insikt, grind 2 med version, giltighet och B-nummer,
+uttryckligen injicerad FakeProvider i testet: tolkning, grind 1, insikt, grind 2 med version, giltighet och B-nummer,
 regeltexten, aktiveringen i godkännandekön under compliance-agentens identitet (val C) och
 verifieringen med `ReleaseEvidence`. Därtill grindarnas kontroller, regelgolvet före
 2026-11-01, verifiering av en återkallad version och adapterns gränser.
@@ -10,6 +10,7 @@ verifieringen med `ReleaseEvidence`. Därtill grindarnas kontroller, regelgolvet
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import date
 from decimal import Decimal
 
@@ -20,12 +21,11 @@ from sqlalchemy.pool import StaticPool
 from agents.flows import FlowDefinition, FlowError, GateStep, ManualStep
 from agents.flows.console import FlowBusyError, FlowConsole
 from agents.flows.definitions import DEFINITIONS, RULE_CHANGE_PARAMETER, RuleTextCommit
-from agents.flows.definitions.rule_change_parameter import synthetic_profile
-from agents.flows.demo_model import interpretation_script
 from ai.providers.fake import text_result
 from services import Actor, OperationContext, ProductRuleCatalog, ServiceLayer
 from services.db import session_factory_for
 from services.operations import common
+from tests.flow_helpers import CHANGE, flow_client, interpretation_script
 from utils.demo_data import create_demo_database
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
@@ -51,7 +51,7 @@ def db():
 
 def build(factory, tmp_path, *, today: date = TODAY) -> tuple[FlowConsole, ServiceLayer]:
     service = ServiceLayer(session_factory=factory, rules=ProductRuleCatalog(today=today))
-    console = FlowConsole.build(factory, trusted=service, agent_service=service, journal_dir=tmp_path / "runs",
+    console = FlowConsole.build(factory, trusted=service, agent_service=service, ai=flow_client(), journal_dir=tmp_path / "runs",
                                 drafts_dir=tmp_path / "utkast")
     return console, service
 
@@ -71,14 +71,14 @@ def approve(console, flow, gate, details=None, note=None):
                           seen_hash=flow.gate_hashes[gate], note=note, details=details)
 
 
-def to_g2(console):
-    flow = console.start(SOURCE, OPERATOR)
+def to_g2(console, source=SOURCE):
+    flow = console.start(source, OPERATOR)
     flow = approve(console, step(console, flow), "g1", note="Tolkningen stämmer")
     return step(console, flow)
 
 
-def to_activation(console, details=ADOPTION):
-    flow = approve(console, to_g2(console), "g2", details=details)
+def to_activation(console, details=ADOPTION, *, source=SOURCE):
+    flow = approve(console, to_g2(console, source), "g2", details=details)
     flow = console.complete_manual(flow.flow_id, flow.version, OPERATOR, {"commit": "a1b2c3d", "note": "PR-013 v1.1"})
     return step(console, flow)
 
@@ -108,7 +108,7 @@ class TestHelaFlodet:
         assert output["evidence"]["sources"][0]["fictional"] is True
         assert tolkning.artifact_refs == (
             f"utkast:compliance/{tolkning.run_id}/konsekvensanalys.md",
-            f"utkast:compliance/{tolkning.run_id}/regeldiff-pr-itp1-013.md")
+            f"utkast:compliance/{tolkning.run_id}/regeldiff.md")
         assert (tmp_path / "utkast" / "compliance" / tolkning.run_id / "konsekvensanalys.md").exists()
         assert tolkning.result["run"]["cost_usd"] == 0.0  # skriptad modell
 
@@ -145,14 +145,7 @@ class TestHelaFlodet:
         assert (evidence["before"]["value"], evidence["before"]["valid_to"]) == ("66", "2026-12-31")
         assert (evidence["after"]["value"], evidence["after"]["rule_version"]) == ("67", "1.1")
         assert evidence["after"]["decision_ref"] == "FLOW-000001 G2 B-036"
-        before, after = evidence["preview_before"], evidence["preview_after"]
-        assert (before["period_month"], before["in_age_window"], Decimal(before["total_premium_sek"])) == (
-            "2026-12-01", False, Decimal("0.00"))
-        assert (after["period_month"], after["in_age_window"]) == ("2027-01-01", True)
-        assert Decimal(after["total_premium_sek"]) > 0
-        assert after["parameter_version"] == "PR-ITP1-013 v1.1 från 2027-01-01"
-        assert after["base_amount_assumed_from"] == 2026  # demobeståndet saknar IBB 2027
-        assert evidence["profile"]["birth_date"] == "1960-07-15"
+        assert not {"profile", "preview_before", "preview_after"} & evidence.keys()
 
     def test_utan_b_nummer_ar_beslutet_grinden(self, setup):
         console, service = setup
@@ -172,7 +165,8 @@ class TestGrindarna:
         answer = json.loads(script[-1].text)
         answer["parameter_changes"].append({**answer["parameter_changes"][0], "key": "premium_age_start",
                                             "current_value": "25", "new_value": "24"})
-        console.demo_model.load([*script[:-1], text_result(json.dumps(answer, ensure_ascii=False))])
+        console.engine.runtime = replace(console.engine.runtime, ai=flow_client(
+            interpretation_responses=[*script[:-1], text_result(json.dumps(answer, ensure_ascii=False))]))
         flow = console.engine.run_next(flow.flow_id, expected_version=flow.version, actor=OPERATOR)
         with pytest.raises(FlowError, match="föreslår 2 parameterändringar"):
             approve(console, flow, "g1")
@@ -254,29 +248,25 @@ class TestAktiveringOchVerifiering:
         evidence = flow.step("verifiering").result["evidence"]
         assert flow.status == "completed" and evidence["verified"] is False
         assert any("66" in p for p in evidence["problems"])
-        assert any("ändras inte" in p for p in evidence["problems"])
-
-    @pytest.mark.parametrize("key, current, new, birth", [
-        ("premium_age_end", "66", "67", date(1960, 7, 15)),
-        ("premium_age_end", "66", "65", date(1961, 7, 15)),
-        ("premium_age_start", "25", "24", date(2002, 7, 15)),
-        ("premium_rate_low", "0.045", "0.05", date(1985, 5, 15)),
-    ])
-    def test_syntetisk_profil(self, key, current, new, birth):
-        profile = synthetic_profile(key, Decimal(current), Decimal(new), date(2027, 1, 1))
-        assert profile.birth_date == birth and profile.monthly_salary_sek > 0
-        assert "Syntetisk profil" in profile.description
-
 
 # --- adaptern för UI:t ------------------------------------------------------------------------------
 
 
 class TestAdaptern:
-    def test_demomodellen_kor_bara_demokallan(self, setup):
+    def test_kallor_ar_inte_bundna_till_ett_scenario(self, setup):
         console, _ = setup
-        assert [d.handle for d in console.sources()] == [SOURCE]
-        with pytest.raises(FlowError, match="bara köra den fiktiva källan"):
-            console.start("kallandringar", OPERATOR)
+        assert {SOURCE, "kallandringar"} <= {d.handle for d in console.sources()}
+        flow = console.start("kallandringar", OPERATOR)
+        assert flow.input["source_handle"] == "kallandringar"
+        with pytest.raises(FlowError, match="tillgängliga bevakningsunderlag"):
+            console.start("okand-kalla", OPERATOR)
+
+    def test_modellklient_maste_anges(self, db):
+        service = ServiceLayer(session_factory=db)
+        with pytest.raises(TypeError, match="ai"):
+            FlowConsole.build(db, trusted=service, agent_service=service)
+        with pytest.raises(ValueError, match="AI-klient måste anges"):
+            FlowConsole.build(db, trusted=service, agent_service=service, ai=None)
 
     def test_en_korning_at_gangen(self, setup):
         console, _ = setup
@@ -290,12 +280,38 @@ class TestAdaptern:
             console._lock.release()
         assert console.get(flow.flow_id).version == flow.version  # inget steg taget
 
-    def test_skriptet_toms_efter_korningen(self, setup):
-        console, _ = setup
-        flow = step(console, console.start(SOURCE, OPERATOR))
-        assert flow.status == "waiting_gate"
-        assert console.demo_model._script == []
-
     def test_avbrutna_steg_markeras_vid_start(self, setup):
         console, _ = setup
         assert console.mark_interrupted() == []
+
+    def test_aldre_demokorning_far_inte_fortsatta_med_ny_definition(self, setup, db):
+        from sqlalchemy import update
+
+        from models import Flow
+
+        console, _ = setup
+        flow = console.start(SOURCE, OPERATOR)
+        with db() as session:
+            session.execute(update(Flow).where(Flow.flow_id == flow.flow_id).values(definition_version="1"))
+        with pytest.raises(FlowError, match="definition v1"):
+            step(console, flow)
+        assert console.get(flow.flow_id).version == flow.version
+
+
+@pytest.mark.parametrize("key,old,new,rule", [
+    ("premium_age_end", "66", "67", "PR-ITP1-013"),
+    ("premium_age_start", "25", "26", "PR-ITP1-013"),
+    ("premium_rate_low", "0.045000", "0.050000", "PR-ITP1-001"),
+])
+@pytest.mark.parametrize("source", [SOURCE, "kallandringar"])
+def test_olika_beslut_anvander_samma_verksamhetsflode(db, tmp_path, key, old, new, rule, source):
+    console, service = build(db, tmp_path)
+    change = {**CHANGE, "key": key, "current_value": old, "new_value": new, "rule_id": rule}
+    console.engine.runtime = replace(console.engine.runtime, ai=flow_client(source=source, change=change))
+    flow = to_activation(console, source=source)
+    service.approve(flow.step("aktivering").approval_id, OperationContext(actor=OPERATOR))
+    flow = step(console, step(console, flow))
+    evidence = flow.step("verifiering").result["evidence"]
+    assert evidence["verified"] is True
+    assert (evidence["key"], Decimal(evidence["after"]["value"]), evidence["after"]["rule_id"]) == (
+        key, Decimal(new), rule)

@@ -53,8 +53,8 @@ def actor(request: Request):
 def _not_configured() -> ErrorView:
     return ErrorView(
         "blocked", "Flödena finns inte i den här miljön",
-        "Flödesmotorns tabeller är inte införda i Lakebase (migrate_flows.py är inte körd), och riktiga "
-        "modellanrop hör till 3c-V. Flödena körs i demo- och testdatabasen.", 409, nothing_changed=True,
+        "Regeländringsflöden är ännu inte anslutna till den här arbetsytan. "
+        "En verifierad koppling till teamens modeller och data behövs innan de kan användas.", 409, nothing_changed=True,
     )
 
 
