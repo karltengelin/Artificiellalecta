@@ -175,7 +175,16 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 - [x] **2026-10-25** **3c-T: Teamen** `compliance` och `aktuarie` – profiler i `ecosystem.yaml` (ledande `compliance_agent` och `actuary_agent`, modellrollen `deep`) och instruktioner i `02_system/agenter/`. Poddarna `regelverk` (gatewayverktygen och `get_product_parameters`), `dokument` (`write_draft`) och `bestand` (`estimate_parameter_change_impact`) är monterade. Körpolicy, profil, dispatcher och skillkatalog stöder skills som är gatewayverktyg: samma omslag `{data, reason}`, ingen nivå i tjänstelagret, och gatewayens säkerhetsnej blir nekat. **Parametermandat** (`ParameterChangeMandate`, `RunRequest.parameter_change_ref`): beståndsinsikten är dold utan godkänt förslag och nekas för andra värden, giltighetsdagar eller horisonter än det godkända – horisonten binds också. **Resultatscheman** (`src/agents/results.py`): `InterpretationProposal` och `PortfolioImpactResult` tvingas av AI-lagret och prövas mot körningen. Angivna källor ska vara lästa och utkast skrivna, och beräkningen läggs till oförändrad ur verktygets svar; annars `needs_human`. **Uppdragsmallar** (`src/agents/assignments.py`): `request_for_interpretation`, `mandate_from_interpretation`, `request_for_impact` och `run_assignment`. 37 nya tester (`tests/test_agents_teams.py`) mot FakeProvider och demobeståndet. **Kvar till 3c-V:** databasroll för aktuarien och röktest mot riktig modell
 - [ ] **3c-V: Röktest och demomanus** – demo och `svc_test`, sedan Lakebase efter backup, roll `agent_aktuarie` och OK
 - [ ] **3c-1: Delegering mellan team** – `delegate_to_team` med strukturerat uppdrag, `parent_run_id`, djup- och kostnadstak (§6.1)
-- [ ] **3c-2: Flödesmotor** – persisterat tillstånd och godkännandesteg; tabeller för flöden, godkännanden och körjournal i `databasschema.md` (körning mot Lakebase enligt AGENTS.md §4.5)
+- [x] **2026-10-25** **3c-2: Flödesmotor** – tabellerna `flows`, `flow_steps` och `flow_gate_decisions` (`databasschema.md` §9i, `src/models/flow.py`) och motorn i `src/agents/flows/`.
+  - **Definitioner** som kod med agent-, grind-, manuella och systemsteg.
+  - **Låsning:** villkorlig UPDATE på flödets version, så att två klick ger en körning och en konflikt.
+  - **Grindar** binder hashen av underlaget operatören såg. Godkända grindar räknas om innan nästa steg, och ändrat underlag stoppar flödet. Avslag ger `rejected`.
+  - **Manuella steg** valideras mot stegets modell, t.ex. en commit-referens.
+  - **Systemsteg** kan vänta på ett förslag i godkännandekön utan att ersätta det godkännandet.
+  - **Avbrott:** ett oväntat avbrott eller en omstart ger `reconciliation_required`, och operatören avgör om steget körs igen.
+  - **Spårbarhet:** agentsteg körs med `run_assignment` och får `flow_id` och `flow_step_id` i uppdraget och körjournalen. Körjournalen ligger kvar i `logs/agent_runs/` (val J).
+  - **Migrationen** `migrate_flows.py` är verifierad mot isolerad Postgres men **inte körd mot Lakebase**.
+  - **Tester:** 27 nya: 24 med ett testflöde i flaggskeppets form mot FakeProvider (`tests/test_agents_flows.py`, testgruppen `orchestration`) och 3 för migrationen (`tests/test_migration_flows.py`).
 - [ ] **3c-3: Första flödet** – regelförändrings-/flaggskeppsflödet (§6.2)
 
 **Senare:** MCP-exponering av poddar (§9), anropsloggen i databasen, kostnadsindikatorer per team. *(Lakebase-rollen för PII-poddar är flyttad till före aktivering av `kunddata`, se operatörspunkten under 3b-3.)*

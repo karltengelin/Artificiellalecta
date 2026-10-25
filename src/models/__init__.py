@@ -9,6 +9,7 @@ from .base import Base
 from .base_amount import BaseAmount
 from .case import Case
 from .employer import Employer
+from .flow import Flow, FlowGateDecision, FlowStep
 from .insured_person import InsuredPerson
 from .operation_event import OperationEventRecord
 from .policy import Policy
@@ -27,6 +28,9 @@ __all__ = [
     "BaseAmount",
     "Case",
     "Employer",
+    "Flow",
+    "FlowGateDecision",
+    "FlowStep",
     "InsuredPerson",
     "OperationEventRecord",
     "Policy",
