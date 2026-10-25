@@ -29,6 +29,18 @@ Se MASTER_CONTEXT §7 för fullständig översikt.
 Se [kodbas och skriptkatalog](02_system/skriptkatalog.md) för verktyg, beroenden,
 körordning och vilka kommandon som läser eller ändrar data.
 
+## Tester
+
+Testerna kan köras per verksamhetsområde, teknisk del eller efter Git-ändringar med
+kända beroenden. Se [teststrategin](02_system/teststrategi.md) för grupper, miljöer och
+när hela sviten behövs. Framtida områden utan tester redovisas uttryckligen.
+
+```powershell
+python scripts/testing/run_tests.py --list
+python scripts/testing/run_tests.py --changed --base origin/main
+python scripts/testing/run_tests.py --suite reporting --run
+```
+
 ## Grafisk design
 
 **Digital klarhet** är bolagets valda grafiska riktning (B-034): indigo, ljusa

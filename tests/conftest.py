@@ -35,6 +35,8 @@ from models import (
 from services.db import session_factory_for
 from services.parameters import default_rows as default_parameter_rows
 
+pytest_plugins = ["testing.pytest_plugin"]
+
 
 def seed_insurance(session_factory) -> SimpleNamespace:
     with session_factory() as s:

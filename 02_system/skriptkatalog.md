@@ -18,6 +18,7 @@ Det finns ingen separat kodbas per delprojekt eller avdelning (B-015/B-024).
 | utils | Databasanslutning, backup/återställning, återanvändbar migrationskod och demobeståndet för handläggar-UI:t, med den äldre kohorten födda 1959–1962 (B-035 val K) |
 | web | Handläggar-UI:t (Fas 4): FastAPI-sidor som bara anropar tjänstelagret, se [handläggar-ui.md](handläggar-ui.md) |
 | agents | Harness: körpolicy, skill-register, dispatcher, agentloop, körjournal, ärendekörningar och gatewayerna `regelverk` och `dokument` (`agents/gateways/`, 3c-G) |
+| testing | Testkatalog, ändringsstyrt urval och pytest-markörer; se [teststrategin](teststrategi.md) |
 | övriga skill-mappar | Förberedd struktur; ytterligare förmågor byggs enligt fasplanen |
 
 ## Var finns körverktygen?
@@ -27,6 +28,7 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 
 | Kategori | Skript | Syfte | Sidoeffekt/beroende |
 |---|---|---|---|
+| testing | [run_tests.py](../scripts/testing/run_tests.py) | Visa grupper eller välj tester efter område/Git-ändringar och beroenden | Planering som standard; `--run` kör lokala tester. `--postgres` tillåter isolerade databasprov enligt AGENTS §4.5. Otestade målområden markeras; se [teststrategin](teststrategi.md) |
 | setup | [create_tables.py](../scripts/setup/create_tables.py) | Skapa tabeller som saknas | Skriver schema; uppgraderar inte befintliga tabeller |
 | setup | [grant_agent_role.py](../scripts/setup/grant_agent_role.py) | Ge ett agentteams databasroll exakt sina rättigheter (`harness.md` §5.1) | Torrkörning som standard (förkontroll, nuvarande rättigheter, SQL); `--apply` ändrar rättigheter – samordna enligt AGENTS.md §4.5. Rollen skapas av operatören |
 | setup | [seed_base_amounts.py](../scripts/setup/seed_base_amounts.py) | Lägg in/uppdatera IBB 2023–2026 | Skriver årsparametrar; tabellen måste finnas |
