@@ -103,6 +103,13 @@ Varje team har en egen orkestrerare – men det är **teamets ledande agent**, i
 
 **Ingen VD-agent i v1.** Operatören är högsta orkestrerare. Kända tvärgående processer körs av flödesmotorn (§6.2); ad hoc-samarbete sker via delegering mellan ledande agenter (§6.1).
 
+**Planerad VD-arbetsyta (2026-10-25):** [operatörscentralen](operatörscentral.md)
+samlar bolagsläge, teamens arbete, agentekonomi och inriktningsbeslut. En gemensam
+frågeingång planeras för att avgränsa uppdrag, nå rätt teamledare och sammanställa
+källbundna svar. Den får inget självständigt VD-mandat eller större befogenheter;
+samordning över flera team kräver 3c-1. Enskilda ärenden och deras godkännanden
+stannar i specialistvyer. Produktplan och beroenden: projekt 10.
+
 ### 3.3 Teamindelning
 
 De tio befintliga agenterna (`agentkarta.md`) fördelas på sju team:
@@ -364,11 +371,17 @@ Byggs efter harness (§12).
 
 ## 10. Kostnad och budget
 
+Ledningsuppföljningen och den planerade styrvyn samlas i
+[operatörscentralen](operatörscentral.md#4-agentkostnader-och-nytta), projekt 10.
+Visa uppskattad kostnad, okänd kostnad och leveranser tillsammans; rot-, barn-
+och fortsättningskörningar får inte dubbelräknas. Global modell-/reservpolicy
+och budgetaktivering är planerade operatörsfunktioner, inte nya agentskills.
+
 | Nivå | Mekanism |
 |------|----------|
 | Anrop | AI-lagret beräknar uppskattad kostnad per anrop och loggar den med team, agent och körning |
 | Körning | Harness summerar kostnaden och stoppar vid agentens `max_cost_usd` |
-| Team | Kostnad per team ur anropsloggen; senare som indikator i BI (delprojekt 2) och företagsöversikten (delprojekt 8) |
+| Team | Kostnad per team ur anropsloggen; planerad uppföljning i operatörscentralen (delprojekt 10), samordnad med BI (delprojekt 2) |
 | Hård spärr | Kostnadstak per workspace/projekt hos leverantören – gäller även om koden skulle fallera |
 
 ---

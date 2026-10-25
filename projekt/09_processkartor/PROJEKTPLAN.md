@@ -31,6 +31,10 @@ Föreslagen arbetsordning:
 3. Handläggningsärende: operatör/agent → tjänst → eventuellt godkännande → ändring och händelselogg.
 4. Premie till kapital, garanti och pensionsutbetalning, med avstämningspunkter.
 5. Aktuariell värdering och riskberäkning → granskning → BI/rapportering.
+6. VD-fråga → avgränsat uppdrag → teamledare → underlag/svar → inriktningsbeslut
+   och uppföljning, för [operatörscentralen](../10_operatörscentral/PROJEKTPLAN.md).
+   Märk som målflöde tills frågeingång och delegering är byggda; håll
+   specialistvyer och enskilda handläggarärenden utanför VD-flödet.
 
 ## Hur kartorna hålls trovärdiga
 

@@ -13,6 +13,13 @@ som försörjer operatörens dashboard, Genie/agentfrågor och kontrollerade rap
 Regeländringar är ett användningsfall bland flera. Se
 [DASHBOARD_DESIGN.md](DASHBOARD_DESIGN.md) för första förslaget till frågor, mått och dataflöde.
 
+**Samordning med projekt 10 (2026-10-25):** den planerade
+[operatörscentralen](../10_operatörscentral/PROJEKTPLAN.md) samlar VD-överblick,
+team/agentkostnader, frågor mot data och inriktningsbeslut. Projekt 2 äger
+fortsatt BI-mått, historik och Databricks-dashboard enligt B-029. Samma granskade
+mått försörjer central och fördjupning; konsolidering visas som ej beräknad tills
+modellunderlaget finns. Rutinärenden och deras godkännanden ligger i specialistvyer.
+
 ## Status
 
 🟡 Första avgränsade analysen implementerad och mergad till main: premieeffekt av ett

@@ -116,7 +116,7 @@ Se §4b för hur arbetet mot dessa områden struktureras i konkreta delprojekt.
 
 ## 4b. Delprojektöversikt (program) — B-024
 
-Arbetet mot visionen i §1 struktureras i nio namngivna delprojekt plus ett tvärgående arkitekturramverk. B-024 inrättade de åtta första; delprojekt 9 lades till 2026-10-11 på operatörens begäran, utan nytt beslutsnummer. Varje delprojekt har en projektmapp i `projekt/` (se §7) med en `PROJEKTPLAN.md` som ger ett avgränsat uppdrag – tänkt att kunna ges till Codex eller en egen Claude Code-session utan att den behöver känna till hela repot.
+Arbetet mot visionen i §1 struktureras i tio namngivna delprojekt plus ett tvärgående arkitekturramverk. B-024 inrättade de åtta första; delprojekt 9 lades till 2026-10-11 och delprojekt 10 (operatörscentral på VD-nivå) planerades 2026-10-25 på operatörens begäran, utan nytt beslutsnummer. Varje delprojekt har en projektmapp i `projekt/` (se §7) med en `PROJEKTPLAN.md` som ger ett avgränsat uppdrag – tänkt att kunna ges till Codex eller en egen Claude Code-session utan att den behöver känna till hela repot.
 
 Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentation/kod in i projektmappen – den pekar bara till var den befintliga grunden ligger. Kod, när den byggs, läggs under det centrala `src/`-trädet (B-015) snarare än i egna per-projekt-src-mappar, för att inte bryta den enda importerbara paketroten.
 
@@ -131,6 +131,14 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🟡 Första version (statisk, 2026-10-12) | `projekt/08_företagsöversikt/foretagsoversikt.html` |
 | 9 | Processkartor | `projekt/09_processkartor/` | Processkartor över agenternas arbete: utlösare, mandat, verktyg, resultat och godkännanden; levererar till delprojekt 8 | 🟡 Plan upplagd | Första målflödet i `projekt/02_bi_insikter/DASHBOARD_DESIGN.md` |
+| 10 | Operatörscentral | `projekt/10_operatörscentral/` | Karls VD-arbetsyta: bolagsläge, konsolidering när underlag finns, team/agentkostnader, datafrågor och inriktningsbeslut om modellpolicy och budget | 🟡 Plan och första interaktiva skiss; ej driftsatt | Projekt 2:s BI-design, harness/AI-lager och specialistgränssnitt |
+
+**Operatörscentral på VD-nivå:** projekt 10 samlar ledningsöverblick och styrning.
+Enskilda handläggarärenden och deras godkännanden stannar i specialiserade gränssnitt;
+centralen visar trender, teamresultat och väsentliga ledningsfrågor. Den gemensamma
+frågeingången planeras via teamens ledande agenter, med Karl som högsta beslutsfattare.
+Projekt 2 äger BI-måtten enligt B-029, medan projekt 8 behåller sin projektkarta.
+Se `02_system/operatörscentral.md`; planer och skiss aktiverar inga nya befogenheter.
 
 **Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Agenterna körs i en harness – allt runt modellen som gör den till en agent (loop, instruktioner, verktyg, kontexthantering, guardrails) – med samma motor för alla team, konfigurerad per team med teamets verktyg och guardrails. Ramverket är beslutat i B-026 och beskrivs i `02_system/agentekosystem.md`; det vidareutvecklar B-008/B-009/B-016. Kvarvarande öppna frågor listas där (§13).
 
@@ -198,6 +206,7 @@ Artificiellalecta/
 │   ├── databasschema.md            ← Tabellstruktur och SQLAlchemy-modeller (B-018, B-022)
 │   ├── ai_abstraktion.md           ← AI-lagret: utvärdering, gränssnitt, roller, nycklar (B-009/B-025)
 │   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
+│   ├── operatörscentral.md         ← Planerad VD-arbetsyta, datafrågor, agentekonomi och styrning
 │   ├── flaggskeppsflöde.md          ← Fas 3c: flödesmotor och minimal flaggskeppsdemo (B-035)
 │   ├── tjänstelager.md             ← Operationer för handläggare, agenter och skript (B-028)
 │   ├── tjänstelager_operationer.md ← Genererad förteckning: operationer, agentnivå och skäl (T4)
@@ -236,7 +245,7 @@ Artificiellalecta/
 │   ├── designsprak.md
 │   └── digital_klarhet.html         ← Bevarad referens med exempeldata
 │
-├── projekt/                         ← Delprojektens PROJEKTPLAN.md (B-024, se §4b)
+├── projekt/                         ← Delprojektens PROJEKTPLAN.md (B-024 + operatörsuppdrag, se §4b)
 │   ├── 01_ärendehantering/
 │   ├── 02_bi_insikter/
 │   ├── 03_kundportal/
@@ -245,7 +254,8 @@ Artificiellalecta/
 │   ├── 06_avdelningsfunktioner/
 │   ├── 07_kundchattbot/
 │   ├── 08_företagsöversikt/
-│   └── 09_processkartor/
+│   ├── 09_processkartor/
+│   └── 10_operatörscentral/         ← VD-plan, skiss och koppling till BI/harness
 │
 ├── src/                            ← All Python-kod
 │   ├── agents/                     ← Harness, körpolicy och gateways (regelverk, dokument)

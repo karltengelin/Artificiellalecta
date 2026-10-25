@@ -9,6 +9,12 @@ låtsasbolagets uppbyggnad: övergripande områden att gå in i på djupet, för
 skisser över hur systemen hänger ihop. Detta är ett verktyg åt projektledaren, inte en del av det
 simulerade bolaget självt.
 
+**Gräns mot projekt 10 (2026-10-25):** [operatörscentralen](../10_operatörscentral/PROJEKTPLAN.md)
+är den planerade arbetsytan för Karl som VD, med löpande bolagsläge, team,
+agentkostnader, datafrågor och styrning. Projekt 8 behåller projektledarens
+förklarande karta över organisation, system, byggstatus och beroenden.
+Den befintliga statiska HTML-översikten görs inte om till ett driftsgränssnitt.
+
 ## Status
 
 🟡 Första version 2026-10-12; uppdaterad 2026-10-24:

@@ -8,11 +8,12 @@
 
 ## 🗂️ Program & delprojekt (B-024)
 
-Hela programmet (visionen om ett AI-native tjänstepensionsbolag) är strukturerat i nio delprojekt, se `MASTER_CONTEXT.md` §4b och mappen `projekt/`. Fasplanen och prioritetslistorna nedan är oförändrade och gäller fortsatt – de hör hemma under specifika delprojekt enligt denna mappning:
+Hela programmet (visionen om ett AI-native tjänstepensionsbolag) är strukturerat i tio delprojekt, se `MASTER_CONTEXT.md` §4b och mappen `projekt/`. Fasplanen och prioritetslistorna nedan är oförändrade och gäller fortsatt – de hör hemma under specifika delprojekt enligt denna mappning:
 
 - Fas 1 (premiemotor) + regelverksutbyggnad → **Delprojekt 4: Produktregelverk & villkor**
 - Fas 2 (paper trading) → **Delprojekt 5: Kapitalförvaltning**
 - Fas 4/5 (handläggar-UI + handläggaragent) → **Delprojekt 1: Ärendehantering**
+- Operatörscentral på VD-nivå → **Delprojekt 10**, plan och skiss 2026-10-25; samordnar BI (projekt 2) och harness utan att flytta detaljarbetet från specialistgränssnitten
 
 Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsoversikt.html`) och 9 (Processkartor) är påbörjade och har sina nästa steg i respektive `projekt/<nr>_<namn>/PROJEKTPLAN.md`. Delprojekt 3 (Kundportal), 6 (Avdelningsfunktioner) och 7 (Kundchattbot) är ännu inte byggda. För 3 och 6 finns sedan 2026-10-25 en första precisering av beroenden och byggbehov för månadssimulering; detaljerade byggplaner återstår. Uppgifterna bryts ut i projektplanerna allt eftersom projekten påbörjas. Tvärgående behov samlas under **Månadssimulering – byggluckor och samordning** nedan.
 
@@ -27,7 +28,7 @@ Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsov
 1. **Fas 1 – Försäkringssystemet (premiemotorn):** ITP1-domändokument, tabellerna `policies` + `premium_transactions`, premieberäkning som skill, genererad premiehistorik. **Fas 1f – Tjänstelagret** (`02_system/tjänstelager.md`): alla operationer mot försäkringssystemet via ett gemensamt lager som handläggar-UI, agenter och skript använder, med agentåtkomst per operation (bl.a. *endast handläggare*) och händelselogg. Regelstyrda beräkningar och operationer (uttag, paus, garanti, pensionsbelopp) bygger på produktreglerna från delprojekt 4, antagna som PR-ITP1 v1.0 (B-031, gäller från 2026-11-01)
 2. **Fas 2 – Kapitalförvaltning (paper trading, B-019):** placeringsriktlinje i `05_styrdokument/`, tabellerna `portfolios`/`portfolio_holdings`/`trades`, marknadsdata via gratis-API, regelstyrd förvaltningslogik med beslutslogg. Simulerad wallet – inget riktigt kapital (B-003)
 3. **Fas 3 – AI-abstraktionslagret (B-009):** blockerar all agentkod – byggs före agenterna. ✅ **2026-10-11** byggt i `src/ai/` (B-025). Fortsättning enligt B-026 (`02_system/agentekosystem.md` §12): **Fas 3b** harness v1 (skill-register, poddar, agentloop, körjournal) efter Fas 4 och före Fas 5, **Fas 3c** delegering och flödesmotor inför flaggskeppsscenariot
-4. **Fas 4 – Handläggar-UI (B-020):** FastAPI-backend ovanpå tjänstelagret (Fas 1f) + tabellvyer + godkännandekö + inbyggd Claude (se utredningen under 🔵 nedan). Handläggaren gör ändringar för kund via tjänstelagrets operationer. Kundportal byggs senare på samma backend. ✅ **2026-10-12** v1 byggd (S1–S5, se sektionen Fas 4 nedan) – utan inbyggd Claude, som kommer efter harness
+4. **Fas 4 – Handläggar-UI (B-020):** FastAPI-backend ovanpå tjänstelagret (Fas 1f), verksamhetsvyer och godkännandekö. Handläggaren gör ändringar för kund via tjänstelagrets operationer. Kundportal byggs senare på samma backend. ✅ **2026-10-12** v1 byggd (S1–S5, se sektionen Fas 4 nedan). Den breda operatörschatten och VD-överblicken planeras separat i projekt 10 under 🔵; specialistvyerna behåller detaljhandläggningen
 5. **Fas 5 – Handläggaragent + `cases`-tabell + första skills**
 
 ---
@@ -146,7 +147,7 @@ Design och drift: `02_system/handläggar-ui.md`. Kod: `src/web/` (FastAPI + Jinj
 - [ ] **Ändra arbetsgivarens uppgifter** (`update_employer_details`) och **arbetsgivarens avslut/paus** med avanmälan av alla försäkrade
 - [ ] **Försäkringsbesked vid anslutning** (villkor §14, PR-ITP1-029) – `external`, med kommunikationsagenten
 - [ ] **Interna id:n i UI:ts adresser** i stället för personnummer, när verklig autentisering eller kundportalen byggs
-- [ ] **Inbyggd Claude i handläggar-UI:t** – efter harness (Fas 3b), se utredningen under 🔵
+- [ ] **Gemensam operatörschatt via teamledare** – planeras på VD-nivå i projekt 10 (OC-3, 🔵 nedan), modelloberoende via AI-lagret och harness; handläggarvyerna behåller detaljarbetet
 
 ---
 
@@ -166,7 +167,12 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 - [x] **2026-10-24** **3b-8: Tester och röktest** – agentkörningar mot `FakeProvider` utan nätverk, plus ett röktest mot riktig modell. *Klart: FakeProvider-tester för hela kedjan (3b-1–3b-6) och demokörningen `src/agents/demo.py`. Röktestet `python scripts/diagnostics/smoke_test_agent.py --run` är förberett: handläggaragenten mot det fiktiva demobeståndet i minnet, bara läsning och beräkning, billigaste modellen per leverantör, tak 6 modellsteg och 0,10 USD; utan `--run` görs inga anrop. **Kört 2026-10-24** mot båda leverantörerna (`claude-haiku-4-5`, `gpt-6-luna`): alla kontroller gröna – premien 2 025 kr via verktyget, läsning ur beståndet, inga förslag, 2 modellsteg och 3 verktygsanrop var, totalt 0,012 USD. Första körningen avslöjade två fel som är rättade: Anthropics strikta läge avvisade `minimum` i verktygsschemat (AI-lagret flyttar nu värdegränser till beskrivningen, `src/ai/schema.py`) och journalen läckte namn via fri text (se 3b-6)*
 - [ ] **3b-9: Admin-sida – Agentteam → Körgränser** *(tillagd 2026-10-12 på operatörens begäran)* – operatören kan se effektiva gränser och ändra kostnadsbudget, modellsteg, verktygsanrop, aktiv tidsgräns och delegeringsgränser per team/agent. Validera värden och arv mellan globala, team-, agent- och rotgränser. Spara varaktigt med konfigurationsversion och ändringslogg (tid, aktör, tidigare och nytt värde); bestäm relationen till `ecosystem.yaml` så att samma inställning inte får två sanningskällor. Nya körningar använder den nya versionen; pågående körningar behåller sin version. Endast autentiserad operatör får ändra; befogenheter och godkännandekrav hanteras separat. **Beroenden:** handläggar-UI:t (Fas 4), 3b-1 och 3b-4; delegeringskontroller aktiveras med 3c-1. Inställningarna hör till harness, utanför försäkringstjänstelagret. Startgränser: `02_system/harness.md` §6.3.
 
+*Operatörsyta för 3b-9:* planeras som en del av projekt 10:s styrning (OC-5).
+Körgränsernas källa och verkställighet ligger kvar i harness; ingen separat
+budgetmodell byggs i gränssnittet. Se [VD-planen](projekt/10_operatörscentral/PROJEKTPLAN.md).
+
 **Fas 3c – Samverkan (inför flaggskeppsscenariot)**
+
 - [x] **2026-10-25** **3c-0: Designstopp** – beslutsförslag [`02_system/flaggskeppsflöde.md`](02_system/flaggskeppsflöde.md): flödesmotorn, parametrar som versionerad data (`product_parameters`), teamen compliance och aktuarie, gateways för `regelverk`, `dokument` och `bestand`, och en minimal flaggskeppsdemo (fiktiv premieålder 66 → 67). Godkänt med valen A–L och loggat som **B-035**
 - [x] **2026-10-25** **3c-P1: Produktparametrar som data** – `product_parameters` (`databasschema.md` §9h) med startvärden från 2023-01-01, `PremiumParameters` i premiemotorn (dagens konstanter är standard), uppslag per premiemånad i `services/parameters.py` för förhandsberäkningen och premierättelsen, versionerna i `calculation_basis`, och läsoperationen `get_product_parameters` (`AGENT`, `tjänstelager.md` §9.4). Migrationen `migrate_product_parameters.py` räknar om varje premie och rullar tillbaka vid minsta avvikelse. `agent_forsakring` får `SELECT` på tabellen i `agent_roles.py`. 24 tester (`tests/test_product_parameters.py`), även mot isolerad Postgres. **Infört i Lakebase 2026-10-25** efter operatörens OK (AGENTS.md §4.5): backup `backups/20261025T090949Z`, torrkörning och `--apply` – alla 15 097 premier räknades om identiskt, radantalen oförändrade, en andra körning gjorde ingenting – därefter `grant_agent_role.py --apply` (dagens rättigheter plus `SELECT` på `product_parameters`). Verifierat med rollens egen anslutning genom agentens tjänstelager: `get_product_parameters` ger de sex startvärdena, förhandsberäkningen 2 025,00 kr för 45 000 kr med versionen i underlaget; rollen har bara `SELECT` på tabellen
 - [x] **2026-10-25** **3c-P2: Ändra parametrar** – `schedule_product_parameter_change` (`APPROVAL`) och `withdraw_product_parameter_change` (`HUMAN_ONLY`) med överlappskontroll, ingen retroaktivitet, värde- och samstämmighetskontroller och radlås (`tjänstelager.md` §9.4); UI-sidan `/parametrar` med nyckeltal, versioner, formulär och återkallelse (`handläggar-ui.md` §4). Ingen schemaändring. 27 nya tester (`tests/test_product_parameter_changes.py`, `tests/test_web_parameters.py`); verifierat i webbläsaren mot demodatabasen, även på mobilbredd. Agenter kan föreslå först från 2026-11-01
@@ -252,9 +258,65 @@ produktscope. Paketen A–C är förslag att avgränsa vid designstart, inga nya
 - [ ] **Sätta upp koppling Cowork ↔ Gmail** (MCP)
 - [x] **2026-07-12** **Generera testdata** – fiktiva kunder, policys, transaktioner. Arbetsgivare och försäkrade 2026-05-16, försäkringar och premiehistorik 2023–2026 i Fas 1d; återskapat i nya Lakebase-projektet 2026-10-11
 
-## 🔵 Utredning & planering – admin-gränssnitt med inbyggd Claude
+## 🔵 Operatörscentral på VD-nivå – projekt 10
 
-- [ ] **Designa och bygg admin-UI med inbyggd Claude-agent** *(kopplat till B-017)*
+**Preciserat på Karls uppdrag 2026-10-25.** Den tidigare utredningen om en
+admin-flik med inbyggd Claude utvecklas till en modelloberoende ledningsyta:
+bolagsläge, team/agentkostnader, frågor mot data och inriktningsbeslut.
+Handläggarärenden och deras godkännanden stannar i specialiserade gränssnitt.
+Det tidigare förslaget om fria fil-/CRUD-verktyg ersätts av harnessens behöriga
+verktyg och domängateways; FastAPI/Jinja2/HTMX återanvänds.
+
+Gemensam plan och beroenden: [Projekt 10](projekt/10_operatörscentral/PROJEKTPLAN.md).
+Tekniska gränser: [operatörscentralen](02_system/operatörscentral.md).
+Byggpaketen nedan ändrar inte B-028:s fasordning eller prioriteten på pågående arbete.
+
+- [x] **2026-10-25 Plan och första skiss** – VD-avgränsning, ansvar mot projekt 2/8 och harness, OC-0–6 samt interaktiv designreferens med syntetiska exempel; ingen produktionsfunktion aktiverad
+- [ ] **OC-0: Design och kontrakt** – granska mått, ledningseskaleringar, teamrouting, autentisering och en auktoritativ källa för versionssatt modell-/budgetpolicy
+- [ ] **OC-1: Läsbar VD-översikt** – bolagsläge, team och leveranser med period, miljö, färskhet och underlag; saknade ekonomiska mått visas som ej beräknat
+- [ ] **OC-2: Agentekonomi** – kostnad per team/modell/uppdrag, avstämning mot loggar, okänd kostnad, reservförsök och ingen dubbelräkning mellan rot/barn/fortsättningar; resultat och kvalitet följs tillsammans med kostnad
+- [ ] **OC-3: Fråga bolaget** – gemensam ingång via teamledare, källbundna svar och mandat/budget; börja med ett team per uppdrag, automatisk samordning kräver 3c-1
+- [ ] **OC-4: Ledningsunderlag** – sammanfattade inriktningsfrågor med alternativ, konsekvenser och uppföljning; inga rutinärenden eller generell handläggarkö
+- [ ] **OC-5: Modellpolicy och budget** – global OpenAI-/Anthropic-/blandad policy, uttrycklig reservpolicy och teamundantag; förhandsgranskning, autentisering, versionssatt aktivering och ändringslogg. Återanvänd 3b-9 för körgränser; bygg ingen parallell budgetkälla
+- [ ] **OC-6: Ekonomisk fördjupning och VD-scenario** – konsolidering/kapital/FTA/likviditet när projekt 2/5/6 levererar verifierade grunder, samt acceptans enligt projektplanen
+
+**Första föreslagna byggleverans:** OC-0 → OC-1 med en smal OC-2, därefter
+frågor till ett team åt gången. Styrskrivningar och teamöverskridande uppdrag
+öppnas först med respektive verifierat beroende. Inga nya externa konton skapas
+inom planen. B-029:s BI-inriktning består.
+
+---
+
+## 💭 Att utreda / oklart
+
+- [x] **2026-10-11** **Git branch-strategi** – en namngiven branch per uppgift och AI-verktyg, merge till main efter operatörens OK (B-023, `AGENTS.md` §4)
+- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(ramverk beslutat i B-026: sidoeffektsklasser, `02_system/agentekosystem.md` §5.3. Godkännandekön och flaggan* endast handläggare *finns i tjänstelagret sedan Fas 1f T3 – tabellen `approval_requests`, `02_system/tjänstelager.md` §4 och §6, B-028. Gränssnittet för kön finns i handläggar-UI:t sedan Fas 4 (`/godkannanden`). Kvar: externa handlingar som utskick)*
+- [ ] Loggning och spårbarhet – hur sparas agentbeslut? *(ramverk beslutat i B-025/B-026: anropslogg `02_system/ai_abstraktion.md` §10 + körjournal `02_system/agentekosystem.md` §4.3. Tjänstelagrets händelselogg finns i Lakebase sedan Fas 1f T3a (`operation_events`); körjournalen byggs i Fas 3b och dess lagring i Lakebase avgörs i Fas 3c)*
+- [ ] Backup-strategi för databas och dokument *(aktualiserad 2026-10-11: Lakebase-projektet försvann. Genererad data återskapas med skripten, men data som skapas av handläggare och agenter via tjänstelagret – händelselogg, godkännanden, ändringar – går inte att återskapa. Delvis löst samma dag: `scripts/maintenance/backup_database.py` och `restore_database.py`, backup togs före T3. Kvar: schemalagd körning. Dokumenten versioneras i git)*
+
+---
+
+## ✅ Klart
+
+- [x] **2026-05-14** Skriva MASTER_CONTEXT.md
+- [x] **2026-05-14** Skapa beslutslogg
+- [x] **2026-05-14** Skapa att-göra-lista (detta dokument)
+- [x] **2026-05-14** Ta emot regelverkskarta som grund för `04_regulatoriskt/`
+- [x] **2026-05-14** Koppla Cowork till GitHub-repot Artificiellalecta via connector
+- [x] **2026-05-14** Lägga upp grunddokumenten i repot (MASTER_CONTEXT, BESLUTSLOGG, ATT_GORA, regelverkskarta) som första commit
+- [x] **2026-05-14** Skriva `.gitignore` – exkludera API-nycklar, `.env`, databasfiler, cache, virtuella miljöer m.m.
+- [x] **2026-05-14** Beslut om databas – PostgreSQL via Supabase (B-014)
+- [x] **2026-05-16** Databasschema, SQLAlchemy-modeller (`employers`, `insured_persons`), mockdatagenerator och seed-script
+
+---
+
+## 🗄️ Arkiv
+
+### Äldre adminutredning – arkiverad 2026-10-25
+
+**Historiskt underlag, ersatt av projekt 10 ovan.** Följ operatörscentralens plan och dagens harnessgränser; de äldre teknikförslagen nedan är inte aktiv bygginstruktion.
+
+- **Designa och bygg admin-UI med inbyggd Claude-agent** *(kopplat till B-017)*
 
   Målet är en admin-flik i bolagets webbgränssnitt där operatören kan chatta
   med Claude direkt i bolagskontext – utan att behöva öppna Cowork separat
@@ -308,33 +370,6 @@ produktscope. Paketen A–C är förslag att avgränsa vid designstart, inga nya
 
   **Beroenden:** Databricks Lakebase-instans måste vara uppsatt (se hög-prioritet).
   Bolagsmappens slutliga sökväg måste vara bestämd.
-
----
-
-## 💭 Att utreda / oklart
-
-- [x] **2026-10-11** **Git branch-strategi** – en namngiven branch per uppgift och AI-verktyg, merge till main efter operatörens OK (B-023, `AGENTS.md` §4)
-- [ ] Hur ska godkännandeflöden fungera (mail till kund ska godkännas innan utskick)? *(ramverk beslutat i B-026: sidoeffektsklasser, `02_system/agentekosystem.md` §5.3. Godkännandekön och flaggan* endast handläggare *finns i tjänstelagret sedan Fas 1f T3 – tabellen `approval_requests`, `02_system/tjänstelager.md` §4 och §6, B-028. Gränssnittet för kön finns i handläggar-UI:t sedan Fas 4 (`/godkannanden`). Kvar: externa handlingar som utskick)*
-- [ ] Loggning och spårbarhet – hur sparas agentbeslut? *(ramverk beslutat i B-025/B-026: anropslogg `02_system/ai_abstraktion.md` §10 + körjournal `02_system/agentekosystem.md` §4.3. Tjänstelagrets händelselogg finns i Lakebase sedan Fas 1f T3a (`operation_events`); körjournalen byggs i Fas 3b och dess lagring i Lakebase avgörs i Fas 3c)*
-- [ ] Backup-strategi för databas och dokument *(aktualiserad 2026-10-11: Lakebase-projektet försvann. Genererad data återskapas med skripten, men data som skapas av handläggare och agenter via tjänstelagret – händelselogg, godkännanden, ändringar – går inte att återskapa. Delvis löst samma dag: `scripts/maintenance/backup_database.py` och `restore_database.py`, backup togs före T3. Kvar: schemalagd körning. Dokumenten versioneras i git)*
-
----
-
-## ✅ Klart
-
-- [x] **2026-05-14** Skriva MASTER_CONTEXT.md
-- [x] **2026-05-14** Skapa beslutslogg
-- [x] **2026-05-14** Skapa att-göra-lista (detta dokument)
-- [x] **2026-05-14** Ta emot regelverkskarta som grund för `04_regulatoriskt/`
-- [x] **2026-05-14** Koppla Cowork till GitHub-repot Artificiellalecta via connector
-- [x] **2026-05-14** Lägga upp grunddokumenten i repot (MASTER_CONTEXT, BESLUTSLOGG, ATT_GORA, regelverkskarta) som första commit
-- [x] **2026-05-14** Skriva `.gitignore` – exkludera API-nycklar, `.env`, databasfiler, cache, virtuella miljöer m.m.
-- [x] **2026-05-14** Beslut om databas – PostgreSQL via Supabase (B-014)
-- [x] **2026-05-16** Databasschema, SQLAlchemy-modeller (`employers`, `insured_persons`), mockdatagenerator och seed-script
-
----
-
-## 🗄️ Arkiv
 
 ### Guide: Skapa Supabase-projekt *(arkiverad 2026-07-08 – databasval ersatt av B-018/Databricks Lakebase)*
 
