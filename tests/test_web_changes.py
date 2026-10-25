@@ -20,6 +20,7 @@ from models import (
     PolicyBenefit,
     PolicyState,
     PremiumTransaction,
+    ProductParameter,
     SalaryReport,
 )
 
@@ -188,6 +189,26 @@ def test_forhandsberakning_sparar_ingenting(web):
     })
     assert response.status_code == 200
     assert "2 025,00 kr" in response.text
+    assert snapshot(web) == before
+
+
+def test_forhandsberakning_visar_andrade_parametrar_utan_gamla_granser_eller_satser(web):
+    with web.session_factory() as s:
+        for key, value in (("premium_rate_low", "0.05"), ("premium_age_end", "40")):
+            s.scalars(select(ProductParameter).where(ProductParameter.key == key)).one().value = Decimal(value)
+    before = snapshot(web)
+    response = post(web, "/berakna/premie", {
+        "pensionable_salary_sek": "45 000", "period_month": "2026-10", "personal_id_number": ANNA,
+    })
+    assert response.status_code == 200
+    assert "Utanför gällande åldersfönster" in response.text  # Anna är 41 år, gränsen är 40
+    assert "25–66" not in response.text
+    eligible = post(web, "/berakna/premie", {
+        "pensionable_salary_sek": "45 000", "period_month": "2026-10", "personal_id_number": "199204171236",
+    })
+    assert eligible.status_code == 200
+    assert "2 250,00 kr" in eligible.text  # 5 %, inte den tidigare satsen 4,5 %
+    assert "4,5 %-delen" not in eligible.text
     assert snapshot(web) == before
 
 

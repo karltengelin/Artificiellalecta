@@ -25,6 +25,12 @@ och luckor. Sidan är statisk och uppdateras manuellt; siffror och status gälle
 sidhuvudet. Naturligt att uppdatera i takt med att övriga delprojekt tar form – annars blir
 översikten inaktuell.
 
+**Avgränsning efter nulägesgenomgången 2026-10-25:** HTML-filerna bevaras som den
+daterade ögonblicksbilden ovan. Uppgifter om 15 operationer, kommande `cases`
+och återstående harness-röktest beskriver läget på bascommitten, inte dagens
+byggstatus. Använd `MASTER_CONTEXT.md`, `ATT_GORA.md` och respektive projektplan
+för aktuellt nuläge. En framtida uppdatering behöver ny datering och källinventering.
+
 Uppdateringen 24 oktober omfattar handläggar-UI v1, samtliga 15 tjänsteoperationer,
 harness 3b-1–6 och den införda databasrollen, kapitalets beslutsutkast och lokala
 modeller samt kod- och testinventeringen. Byggt lokalt, infört i Lakebase och

@@ -65,7 +65,7 @@ All kod som anropar AI-modeller ska gå via ett **abstraktionslager**, inte dire
 Default vid ny funktion är att bygga en skill som en befintlig agent får tillgång till – inte att skapa en ny agent. Nya agenter skapas endast när mandatet är fundamentalt annorlunda.
 
 ### 3.3 Delat skillsbibliotek med behörighetsmodell
-Alla skills ligger centralt i `03_skills/`. Varje agent har en deklarerad lista över vilka skills den får använda. Skills som rör personuppgifter har begränsad behörighet (GDPR, dataminimering).
+Skills dokumenteras centralt i `03_skills/`. Ren beräkningskod ligger i `src/skills/`; agentverktyg återanvänder tjänstelagrets operationer och domängateways genom harnessens skill-register. Körpolicyn i `src/agents/ecosystem.yaml` bestämmer agenternas poddar och begränsningar. Skills som rör personuppgifter kräver dessutom resursmandat och begränsad databasroll (GDPR, dataminimering).
 
 ### 3.4 Hybrid dataarkitektur
 Strukturerad data i databas, regler och processer som textfiler. Speglar hur verkliga bolag arbetar.
@@ -109,11 +109,11 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 | Område | Beskrivning | Status |
 |--------|-------------|--------|
 | Kapitalförvaltning | Placering av premiereserver, portföljövervakning | 🟡 Påbörjat – styrdokumentshierarki och placeringsriktlinje som beslutsutkast (Fas 2a/2b); datamodell för paper trading byggd/testad lokalt (Fas 2c, 2026-10-24), ej skapad i Lakebase. Antagande, gateway, marknadsdata och förvaltningslogik återstår |
-| Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🟡 Påbörjat – aktuariell grund (SIM-modell) och parameterregister, infört genom B-031; beräkningsmotor och reservberäkning saknas |
-| Kundadministration | Policys, premiehantering, förmånstagare | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026, tjänstelager med läs- och skrivoperationer, inklusive anslutning av ny försäkrad och stamdata (B-028, B-030, B-032) |
-| Ärende­hantering | Inkommande ärenden, handläggning, svar | 🟡 Påbörjat – handläggar-UI v1 (Fas 4) med sök, översikt, ändringar, godkännandekö och händelselogg via tjänstelagret; ärenden (`cases`) och handläggaragent saknas |
-| Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🟡 Påbörjat – regelverkskarta, källregister, underlag per regelverk och tio tolkningar (delprojekt 4); minimal styrdokumentshierarki och placeringsriktlinje finns som beslutsutkast, övriga styrdokument återstår |
-| Rapportering | FI-rapporter, intern rapportering, revisionsunderlag | 🔲 Ej påbörjat |
+| Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🟡 SIM-grund och parameterregister införda genom B-031; agentprofil och premieeffektanalys för parameterändringar byggda. Modellverifiering 3c-V samt reserv-, garanti- och ALM-motorer återstår |
+| Kundadministration | Försäkringar, löneunderlag och premiehantering inom ITP1 ålderspension utan efterlevande-/återbetalningsskydd | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026, tjänstelager med läs- och skrivoperationer, inklusive anslutning av ny försäkrad och stamdata (B-028, B-030, B-032) |
+| Ärende­hantering | Inkommande ärenden, handläggning, svar | 🟡 Handläggar-UI v1 och ärenden med handläggaragent för `salary_report` byggda (Fas 4/5). `cases` och agentrollens rättigheter finns i Lakebase. Slutverifiering av agentflödet från 2026-11-01, fler ärendetyper och självständiga körningar återstår |
+| Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🟡 Regelverkskarta, källregister, underlag och tio tolkningar finns. Compliance-profil, källäsning, utkast och parametertolkning byggda; modellverifiering 3c-V och generell regeländringshantering återstår. Styrdokumentshierarki och placeringsriktlinje är beslutsutkast |
+| Rapportering | Tillämpliga myndighetsrapporter, intern rapportering, revisionsunderlag | 🟡 Rapportmall och avgränsade analysrapporter finns; rapportkontrakt, samlad verksamhetsrapportering och rapporteringsagent återstår |
 | Internrevision | Kontroller, granskning, avvikelsehantering | 🔲 Ej påbörjat |
 
 Se §4b för hur arbetet mot dessa områden struktureras i konkreta delprojekt.
@@ -128,14 +128,14 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 
 | Nr | Delprojekt | Projektmapp | Kort scope | Status | Befintlig grund |
 |----|-----------|-------------|------------|--------|-----------------|
-| 1 | Ärendehantering & handläggar-UI | `projekt/01_ärendehantering/` | Handläggarens gränssnitt + bakomliggande backend för att handläggningar ska påverka systemen | 🟡 Handläggar-UI v1 byggt och verifierat i Lakebase (Fas 4, lokalt); ärenden och agent återstår | Fas 4/5, B-020, `src/web/` |
-| 2 | BI & insikter | `projekt/02_bi_insikter/` | Koppla försäkringssystem + databaser till indikatorer/BI; agent som svarar på datafrågor | 🟡 Första analysen byggd (premieeffekt av hypotetiskt IBB); dashboard och Genie beslutade, ej driftsatta | B-018 (Lakebase), B-029, `src/analytics/` |
+| 1 | Ärendehantering & handläggar-UI | `projekt/01_ärendehantering/` | Handläggarens gränssnitt + bakomliggande backend för att handläggningar ska påverka systemen | 🟡 Handläggar-UI v1 verifierat i Lakebase. Ärenden och agent för löneunderlag byggda; `cases`/roll införda i Lakebase. Slutverifiering av agentflödet återstår från 2026-11-01 | Fas 4/5, B-020/B-033, `src/web/`, `src/agents/case_runs.py` |
+| 2 | BI & insikter | `projekt/02_bi_insikter/` | Koppla försäkringssystem + databaser till indikatorer/BI; agent som svarar på datafrågor | 🟡 IBB-analys och tjänsteoperation för parameterändringars premieeffekt byggda; dashboard och Genie beslutade, ej driftsatta | B-018 (Lakebase), B-029, `src/analytics/`, `src/services/operations/portfolio_impact.py` |
 | 3 | Kundportal | `projekt/03_kundportal/` | Låtsas-hemsida: se pension, förmåner, pausa/skjuta upp utbetalning | 🔲 Ej påbörjat | Nämnd som senare fas i B-020 |
 | 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟢 Dokumentunderlag klart och infört (B-031, gäller från 2026-11-01); kodbygge separat | `01_domän/`, `04_regulatoriskt/` |
 | 5 | Kapitalförvaltning | `projekt/05_kapitalförvaltning/` | Paper trading-portfölj + gränssnitt för att analysera innehav och styra allokering | 🟡 Fas 2a/2b: dokumentutkast; 2c: datamodell byggd/testad lokalt, ej i Lakebase. Antagande och handelsfunktion återstår | Fas 2, B-019, `05_styrdokument/` |
 | 6 | Avdelningsfunktioner | `projekt/06_avdelningsfunktioner/` | Funktioner per avdelning, bl.a. en aktuariell modul för premiesättning kopplad till FI-krav | 🔲 Ej påbörjat | — |
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
-| 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🟡 Första version (statisk, 2026-10-12) | `projekt/08_företagsöversikt/foretagsoversikt.html` |
+| 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🟡 Historisk statisk ögonblicksbild, uppdaterad 2026-10-24; dagens nuläge finns i grunddokumenten och projektplanerna | `projekt/08_företagsöversikt/foretagsoversikt.html` |
 | 9 | Processkartor | `projekt/09_processkartor/` | Processkartor över agenternas arbete: utlösare, mandat, verktyg, resultat och godkännanden; levererar till delprojekt 8 | 🟡 Plan upplagd | Första målflödet i `projekt/02_bi_insikter/DASHBOARD_DESIGN.md` |
 | 10 | Operatörscentral | `projekt/10_operatörscentral/` | Karls VD-arbetsyta: bolagsläge, konsolidering när underlag finns, team/agentkostnader, datafrågor och inriktningsbeslut om modellpolicy och budget | 🟡 Plan och första interaktiva skiss; ej driftsatt | Projekt 2:s BI-design, harness/AI-lager och specialistgränssnitt |
 
@@ -205,7 +205,7 @@ Artificiellalecta/
 │   ├── produktregler/              ← Produktpaket PR-ITP1 v1.0, 34 regler (B-031)
 │   ├── parametrar/                 ← Parameterregister och SCB:s dödlighetstabell
 │   ├── historik/                   ← Tidigare villkorsversioner
-│   └── processer_översikt.md       (kommer)
+│   └── processer_översikt.md       ← verksamhetsförmågor, byggluckor och månadssimulering
 │
 ├── 02_system/                      ← Systemdokumentation
 │   ├── arkitektur.md               (kommer)
@@ -213,7 +213,7 @@ Artificiellalecta/
 │   ├── ai_abstraktion.md           ← AI-lagret: utvärdering, gränssnitt, roller, nycklar (B-009/B-025)
 │   ├── agentekosystem.md           ← Team, skill-poddar, samverkan, modellval (B-026)
 │   ├── operatörscentral.md         ← Planerad VD-arbetsyta, datafrågor, agentekonomi och styrning
-│   ├── flaggskeppsflöde.md          ← Fas 3c: flödesmotor och minimal flaggskeppsdemo (B-035)
+│   ├── flaggskeppsflöde.md          ← avgränsat parameterändringsflöde och separat framtida visningsscenario (B-035/B-037)
 │   ├── tjänstelager.md             ← Operationer för handläggare, agenter och skript (B-028)
 │   ├── tjänstelager_operationer.md ← Genererad förteckning: operationer, agentnivå och skäl (T4)
 │   ├── handläggar-ui.md            ← Handläggar-UI:t: start, databasval, sidor och gränser (Fas 4)

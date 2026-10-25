@@ -26,6 +26,11 @@ modellunderlaget finns. Rutinärenden och deras godkännanden ligger i specialis
 hypotetiskt IBB för en vald månad. Karl har godkänt detta BI-spår parallellt med Claude Codes
 tjänstearbete. Ren beräkning, offline-backup och Markdownrapport; inga databasskrivningar.
 
+Sedan Fas 3c finns dessutom `src/analytics/parameter_impact.py` och tjänsteoperationen
+`estimate_parameter_change_impact`, monterad i podden `bestand` för Aktuarieagenten.
+Den räknar godkända parameterändringars premieeffekt per år med aggregat och
+sekretessgräns. Det är en återanvändbar analysgrund, inte samlad ekonomisk BI.
+
 Se [ANALYSDESIGN.md](ANALYSDESIGN.md) för antaganden, datakvalitet och fortsatt integration,
 och [EXEMPELANALYS.md](EXEMPELANALYS.md) för ett helt syntetiskt exempel.
 Dashboarden i Databricks AI/BI, gemensamma mått och Genie för insikter är beslutad inriktning
@@ -37,7 +42,7 @@ Dashboard och Genie-integration är ännu inte driftsatta; dashboardens konkreta
 
 - Fastställ dashboardens måttdefinitioner, värderingsgrunder och första rapportmottagare.
 - Verifiera Unity Catalog, SQL Warehouse och Genie-stöd i den faktiska Databricks-miljön.
-- Integrera läsning genom gemensamma tjänster när Claudes T3/T4-arbete är integrerat.
+- Integrera återstående BI-läsning genom det byggda tjänstelagret (T1–T4 klara). Återanvänd befintliga analysfunktioner och `bestand`-verktyget där definitioner och mandat passar.
 - Fastställ historisk arbetsgivarkoppling och löneunderlagens betydelse vid flera försäkringar.
 - Utöka till hela beståndet, månadstrender och kvalitetskontroller som inkluderar saknade premier.
 - Bestäm åtkomst och rapportkontrakt innan insikter exponeras för agenter.
@@ -59,7 +64,5 @@ Dashboard och Genie-integration är ännu inte driftsatta; dashboardens konkreta
 
 - Hur används Databricks konkret för BI – separat lagringslager, direkta queries mot Lakebase,
   eller något annat?
-- Hur exponeras insikter för en agent (verktyg/skill vs. färdiga rapporter)?
-- Relation till det tvärgående agentekosystemet (`02_system/agentekosystem.md`) – är
-  BI-agenten en egen agent eller en skill på en befintlig? Ekosystemramverket (B-026) lutar mot
-  en skill-pod `bestand` (aggregerade nyckeltal) + Data scientist-agenten i team `aktuarie`.
+- Hur exponeras fler insikter genom verktyg och rapporter med gemensamma mått och mandat? Ett första `bestand`-verktyg finns redan för Aktuarieagenten.
+- Utgå från B-026:s teamstruktur och skills före nya agenter. Precisera arbetsdelningen mellan befintlig Aktuarieagent, planerad Data scientist-specialist och nya analysverktyg; en separat BI-agent är inte beslutad. Kopplingen till Genie återstår att utforma och verifiera.

@@ -423,7 +423,7 @@ Egen Lakebase-roll för PII-poddar är flyttad från *Senare* till före aktiver
 ## 13. Öppna frågor
 
 - **Internrevision:** eget oberoende team – när, och med vilka poddar (läsåtkomst till journaler och anropsloggar)?
-- **Lagring av körjournalen** i Lakebase – tabellschema i `databasschema.md` när Fas 3c påbörjas. (Godkännandekön och händelseloggen får tabeller redan i Fas 1f, se `tjänstelager.md` §9.)
+- **Lagring av körjournalen** i Lakebase – lokal journal i `logs/agent_runs/` är byggd sedan Fas 3b. Lagringsbeslut och eventuellt tabellschema i `databasschema.md` återstår under Fas 3c, tillsammans med retention, åtkomst och avstämning. Godkännandekön och tjänstelagrets händelselogg finns redan i Lakebase (`tjänstelager.md` §9).
 - **Formatet för agentdefinitioner:** ✅ avgjort 2026-10-12 – samlad `src/agents/ecosystem.yaml` (`harness.md` §3.3), byggd i Fas 3b-1 2026-10-24. MD-filerna är instruktioner och ger inga befogenheter.
 - **Utvärderingsuppsättningar** per agent/skill för att kunna byta modell med belägg.
 - **Ledningsfunktion:** behövs en agent för tvärgående prioritering (VD-roll) – eller förblir operatören och flödesmotorn den rollen?

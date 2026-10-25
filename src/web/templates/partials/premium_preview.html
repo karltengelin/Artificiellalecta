@@ -2,9 +2,9 @@
 <div class="alert alert--info">
   <strong class="alert__title">Förhandsberäkning {{ preview.period_month | month }} – sparas inte</strong>
   <p class="alert__message">Premie <strong>{{ preview.total_premium_sek | sek }}</strong>
-    ({{ preview.amount_low_sek | sek }} på 4,5 %-delen och {{ preview.amount_high_sek | sek }} på 30 %-delen),
+    ({{ preview.amount_low_sek | sek }} på den lägre premiedelen och {{ preview.amount_high_sek | sek }} på den högre premiedelen),
     inkomstbasbelopp {{ preview.income_base_amount_sek | sek(0) }}.
-    {% if preview.in_age_window is false %}Utanför åldersfönstret 25–66 – ingen premie.{% endif %}</p>
+    {% if preview.in_age_window is false %}Utanför gällande åldersfönster – ingen premie.{% endif %}</p>
   <p class="muted small">PR-ITP1-001 premietrappan, via <code>calculate_premium_preview</code>.</p>
 </div>
 {% elif error %}

@@ -275,11 +275,11 @@ Modellval och avgränsning stämdes av med operatören 2026-10-12 (**B-032**, un
   - ny person hos en aktiv ITP-arbetsgivare;
   - tillhörighet senast i dag, inte före anställningen och inte före arbetsgivarens ITP-anslutning;
   - retroaktiv anslutning;
-  - person under 25 år, med `premium_paying` och ordinarie premie från 25-årsmånaden (PR-ITP1-013). Premiemotorns åldersfönster ger ingen premie före dess.
+  - person under premieåldern, med `premium_paying`. Åldersgränserna läses ur samma versionerade produktparametrar som premieberäkningen, för tillhörighetens startmånad (PR-ITP1-013). `premium_from_month` anger beräknad premiestart enligt den månadens gräns; senare regeländringar kan påverka den faktiska premiestarten. Startvärdena är 25/66 år och ändras inte av denna koppling.
 - *Blockeras:*
   - VD, ägare, utlandsanställd eller avstående, som kräver uttryckligt beslut (PR-ITP1-012);
   - tillhörighet i framtiden;
-  - 66 år eller äldre vid start (frivillig premie 66–67, PR-ITP1-016);
+  - uppnådd slutålder för ordinarie premie vid start, enligt startmånadens parametrar; frivillig premie kräver separat prövning (PR-ITP1-016);
   - arbetsgivare som inte är aktiv eller har annat avtal än ITP (B-002);
   - befintligt personnummer med avslutad anställning. Återanställning och arbetsgivarbyte kräver anställningshistorik som modellen saknar.
 - *Konflikt:* personen finns redan som aktiv. Två samtidiga anslutningar som räknar fram samma försäkringsnummer stoppas av unikhetsregeln (verifierat mot Postgres).
@@ -304,7 +304,7 @@ Modellval och avgränsning stämdes av med operatören 2026-10-12 (**B-032**, un
 
 **`list_employers`** visar organisationsnummer, namn, status, anslutningsdag och antal aktiva försäkrade, utan kontaktpersoner. Listan läser inga personuppgifter och loggas inte.
 
-**Regelversioner i de byggda fallen.** Beräkningar använder periodens parametrar: premiemånadens IBB ur `base_amounts`, och en rättelse stoppas om radens sparade IBB avviker. Regelstatus och filversion vid verkställigheten skrivs i händelseloggen (§4). Före giltighetsdagen för PR-ITP1 v1.0 (2026-11-01, B-031) är operationerna handläggarstöd enligt kommande regler. Begränsning: det finns ännu ingen låst regelversion per händelse eller beräkning (t.ex. `PR-ITP1-001 v1.0` i `calculation_basis`) och ingen markering av teknisk driftsättning. Det behövs för flaggskeppsflödet regel → produktion och bör stämmas av med delprojekt 4.
+**Regelversioner i de byggda fallen.** Premieberäkningar använder premiemånadens IBB och versionerade produktparametrar. Parameterversionerna följer med i `calculation_basis.parameters`; anslutning prövar åldersgränserna för tillhörighetens startmånad. En rättelse stoppas om ursprungspremien inte kan reproduceras ur sitt underlag. Regelstatus och filversion vid verkställigheten skrivs i händelseloggen (§4). Parameterändringsflödet har `ReleaseEvidence` som kontrollerar lagrade versioner före/efter giltighetsdagen. Detta är inte en allmän versionslåst releasekedja för samtliga verksamhetshändelser, regeltexter, system- och processändringar; den bredare spårbarheten återstår enligt B-037. Före 2026-11-01 (B-031) är operationerna handläggarstöd enligt kommande regler.
 
 ---
 

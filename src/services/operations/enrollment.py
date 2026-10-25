@@ -6,16 +6,17 @@ ITP1-tillhörigheten. Försäkringens `signed_date` och `start_date` är
 tillhörighetsdagen (databasen kräver start ≥ tecknad, så registreringsdagen kan
 inte vara tecknad vid retroaktiv anslutning – den står i händelseloggen).
 
-Premieålder är en separat fråga (PR-ITP1-012): en person under 25 ansluts med
-`premium_paying` och ordinarie premie från 25-årsmånaden (PR-ITP1-013) –
-premiemotorns åldersfönster ger ingen premie före dess. Anslutningen skapar
-ingen premie och skickar inget försäkringsbesked (villkor §14 – ett senare
+Premieålder är en separat fråga (PR-ITP1-012): en person under premieåldern ansluts
+med `premium_paying`. Åldersgränserna läses ur samma versionerade parametrar som
+premiemotorn, för tillhörighetens startmånad (PR-ITP1-013). Beräknad premiestart
+utgår från den månadens gräns; senare regeländringar prövas vid premieberäkningen.
+Anslutningen skapar ingen premie och skickar inget försäkringsbesked (villkor §14 – ett senare
 `external`-steg).
 
 Blockeras (manuell prövning): VD, ägare, utlandsanställd eller avstående
 (uttryckligt anslutnings-/undantagsbeslut, PR-ITP1-012), tillhörighet i
-framtiden, 66 år eller äldre vid tillhörighetens start (frivillig premie 66–67
-kräver arbetsgivarens beslut, PR-ITP1-016), arbetsgivare som inte är aktiv,
+framtiden, uppnådd slutålder för ordinarie premie vid tillhörighetens start
+(frivillig premie kräver separat prövning enligt PR-ITP1-016), arbetsgivare som inte är aktiv,
 anslutning före arbetsgivarens ITP-anslutning, och befintligt personnummer med
 avslutad anställning (återanställning eller ny arbetsgivare kräver
 anställningshistorik som modellen saknar). Ett aktivt befintligt personnummer
@@ -35,6 +36,7 @@ from models import Employer, InsuredPerson, Policy, PolicyBenefit, PolicyState
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import BlockedError, ConflictError, NotFoundError
 from services.operations import common
+from services.parameters import premium_parameters
 
 EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 PHONE_PATTERN = r"^\+?[0-9 ()-]{6,30}$"
@@ -99,7 +101,9 @@ class EnrollmentResult(BaseModel):
     policy_number: str
     start_date: date = Field(description="Försäkringens start = ITP1-tillhörighetens start")
     state: str
-    premium_from_month: date = Field(description="Första månad med ordinarie premie (25-årsmånaden eller starten)")
+    premium_from_month: date = Field(
+        description="Beräknad premiestart enligt åldersgränsen för tillhörighetens startmånad; senare regeländringar kan påverka"
+    )
     information_letter_sent: bool = Field(description="Försäkringsbesked (villkor §14) – skickas i ett senare steg")
     note: str
 
@@ -109,7 +113,7 @@ class EnrollmentResult(BaseModel):
     description=(
         "Ansluter en ny anställd (PR-ITP1-012): skapar den försäkrade, en ITP1-försäkring med "
         "ålderspension och läget premiebetalande från den dokumenterade ITP1-tillhörigheten. Ordinarie "
-        "premie från 25-årsmånaden (PR-ITP1-013). Skapar ingen premie och skickar inget besked."
+        "premie enligt produktparametrarna för startmånaden (PR-ITP1-013). Skapar ingen premie och skickar inget besked."
     ),
     kind=OperationKind.WRITE,
     rules=["PR-ITP1-012", "PR-ITP1-013"],
@@ -155,14 +159,17 @@ def enroll_insured_person(ctx: OperationContext, data: EnrollmentInput) -> Enrol
         )
 
     born = common.birth_date(data.personal_id_number)
-    month_25, month_66 = common.month_offset(born, 25), common.month_offset(born, 66)
     start_month = common.month_of(data.itp1_start_date)
-    if start_month >= month_66:
+    params = premium_parameters(session, start_month)
+    age_start_month = common.month_offset(born, params.age_start)
+    age_end_month = common.month_offset(born, params.age_end)
+    if start_month >= age_end_month:
         raise BlockedError(
-            f"Personen fyller 66 år {month_66:%Y-%m}, före eller samma månad som tillhörigheten börjar – ingen "
-            "ordinarie premie (PR-ITP1-013). Frivillig premie 66–67 kräver arbetsgivarens beslut (PR-ITP1-016)"
+            f"Personen fyller {params.age_end} år {age_end_month:%Y-%m}, före eller samma månad som tillhörigheten "
+            "börjar – ingen ordinarie premie enligt startmånadens parametrar (PR-ITP1-013). "
+            "Frivillig premie kräver separat prövning enligt PR-ITP1-016"
         )
-    premium_from = max(start_month, month_25)
+    premium_from = max(start_month, age_start_month)
 
     person = InsuredPerson(
         personal_id_number=data.personal_id_number,
@@ -199,7 +206,9 @@ def enroll_insured_person(ctx: OperationContext, data: EnrollmentInput) -> Enrol
 
     if premium_from > start_month:
         note = (
-            f"Avtalet är registrerat. Ordinarie premie från 25-årsmånaden {premium_from:%Y-%m} (PR-ITP1-013). "
+            f"Avtalet är registrerat. Beräknad ordinarie premie från {params.age_start}-årsmånaden "
+            f"{premium_from:%Y-%m} enligt parametrarna för {start_month:%Y-%m} (PR-ITP1-013); "
+            "senare regeländringar kan påverka premiestarten. "
             "Försäkringsbesked skickas i ett senare steg."
         )
     else:
