@@ -4,14 +4,15 @@
 <section class="search">
   <h1>Sök försäkrad</h1>
   <form class="search__form" action="/sok" method="get" role="search">
-    <label for="q">Personnummer eller försäkringsnummer</label>
+    <label for="q">Namn, personnummer eller försäkringsnummer</label>
     <div class="search__row">
-      <input id="q" name="q" type="search" value="{{ query or '' }}" placeholder="ÅÅÅÅMMDD-NNNN eller AL-000123"
-             autocomplete="off" autofocus required>
+      <input id="q" name="q" type="search" value="{{ query or '' }}" placeholder="Anna Andersson, ÅÅÅÅMMDD-NNNN eller AL-000123"
+             autocomplete="off" maxlength="200" autofocus required>
       <button type="submit">Sök</button>
     </div>
   </form>
-  <p><a class="button secondary" href="/forsakrade/ny">Anslut ny försäkrad</a></p>
+  <p class="form__actions"><a class="button secondary" href="/forsakrade">Visa beståndet</a>
+    <a class="button secondary" href="/forsakrade/ny">Anslut ny försäkrad</a></p>
   {% if message %}<div class="alert alert--invalid" role="alert"><p class="alert__message">{{ message }}</p></div>{% endif %}
   {% include "partials/error_box.html" %}
   {% if settings.database != "lakebase" %}

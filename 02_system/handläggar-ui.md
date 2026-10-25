@@ -139,13 +139,29 @@ Agentförslagen prövas mot regelpaketet som om det redan gällde, men bara i de
 
 | Adress | Innehåll | Operationer |
 |---|---|---|
-| `/` och `/sok?q=` | Sök på personnummer (ÅÅÅÅMMDD-NNNN) eller försäkringsnummer (AL-…) | – |
+| `/` och `/sok?q=` | Personnummer (ÅÅÅÅMMDD-NNNN) och försäkringsnummer (AL-…) öppnar översikten; namnsökning öppnar beståndsurvalet | – |
+| `/forsakrade` | Bestånd: namnsökning, person-/försäkringsnummer, arbetsgivare, nuvarande försäkringsläge, antal och sidindelning | `list_insured_persons`, `list_employers` |
 | `/forsakrade/{pnr}` | Översikt: person, anställning, aktuell lön, försäkringar med läge och kapital | `get_insured_overview` |
 | `/forsakringar/{nr}` | Samma översikt, med försäkringen markerad | `get_insured_overview` |
 | `/forsakrade/{pnr}/loneunderlag` | Löneunderlag per månad med alla versioner | `get_insured_overview`, `get_salary_reports` |
 | `/forsakringar/{nr}/premier` | Premiehistorik med urval på månader och summa betalt | `get_insured_overview`, `get_premium_history` |
 
 Varje sidvisning loggas som läsning av personuppgifter (vem tittade på vem). Läsresultatet loggas inte.
+
+**Bestånd.** Menyvalet **Bestånd** och länken **Visa beståndet** öppnar listan i den datakälla
+som sidhuvudet visar. Den läser direkt från vald databas via tjänstelagret; ingen lokal kopia
+eller synkning tillkommer. Antalet träffar avser personer, även när någon har flera försäkringar.
+Personer utan försäkring finns med och kan väljas med **Utan försäkring**.
+
+Sökord matchar delar av namn, personnummer eller försäkringsnummer. Alla namndelar ska matcha,
+oavsett ordning och stora/små bokstäver (även ÅÄÖ). Arbetsgivarfiltret avser personens nuvarande
+arbetsgivare. Lägesfiltret matchar minst en försäkring med en öppen lägesperiod (`valid_to IS NULL`),
+inte historiska perioder. Alla personens försäkringar visas i raden. Personens anställningsstatus
+visas separat. Sidorna har 25, 50 eller 100 personer; urvalet följer med sidlänkarna och ett nytt
+urval börjar på första sidan. Länkarna öppnar befintliga person- och försäkringsöversikter.
+
+`list_insured_persons` är `HUMAN_ONLY` och PII-klassad. Varje sökning eller sidbyte loggas med
+handläggare och urval, utan resultatlistan. Databasfel visas som fel och ger inget tomt reservbestånd.
 
 **Skrivformulär (S2).** Formulären visar operationens beskrivning, produktregler med status och vad
 agenter får göra med operationen enligt registret och regelgolvet. Varje formulär kräver en motivering.

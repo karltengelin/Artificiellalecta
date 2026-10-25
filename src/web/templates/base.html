@@ -21,7 +21,8 @@
   <header class="topbar{% if settings.is_production %} topbar--prod{% endif %}">
     <a class="brand" href="/"><span class="brand__mark" aria-hidden="true"></span>Artificiellalecta <span class="brand__sub">Handläggare</span></a>
     <nav class="mainnav" aria-label="Huvudmeny">
-      {{ nav("/", "Sök", path == "/" or path.startswith("/forsakrade")) }}
+      {{ nav("/", "Sök", path == "/" or path == "/sok") }}
+      {{ nav("/forsakrade", "Bestånd", path.startswith("/forsakrade") or path.startswith("/forsakringar")) }}
       {{ nav("/arenden", "Ärenden", path.startswith("/arenden")) }}
       {% call nav("/godkannanden", "Godkännanden", path.startswith("/godkannanden")) %}{% if pending_approvals %}<span class="count" title="Väntande förslag">{{ pending_approvals }}</span>{% endif %}{% endcall %}
       {{ nav("/arbetsgivare", "Arbetsgivare", path.startswith("/arbetsgivare")) }}

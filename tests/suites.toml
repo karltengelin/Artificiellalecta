@@ -5,7 +5,7 @@ version = 1
 [suites.insurance]
 description = "Anställning, försäkring och ärenden"
 status = "partial"
-tests = ["tests/test_services_enrollment.py", "tests/test_services_cases.py", "tests/test_models_cases.py", "tests/test_services_operations.py"]
+tests = ["tests/test_services_enrollment.py", "tests/test_services_cases.py", "tests/test_models_cases.py", "tests/test_services_operations.py", "tests/test_services_insured_listing.py"]
 dependents = ["agents", "web", "tooling"]
 
 [suites.premiums]
@@ -83,7 +83,7 @@ dependents = ["agents", "web", "tooling"]
 [suites.services]
 description = "Gemensamma tjänstekontrakt, åtkomst och transaktioner"
 status = "active"
-tests = ["tests/test_services_access.py", "tests/test_services_contract.py", "tests/test_services_service.py", "tests/test_services_transactions.py", "tests/test_services_persistence.py", "tests/test_services_postgres.py", "tests/test_services_listing.py", "tests/test_services_operations.py", "tests/test_services_write_ops.py", "tests/test_services_cases.py", "tests/test_services_enrollment.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_portfolio_impact.py"]
+tests = ["tests/test_services_access.py", "tests/test_services_contract.py", "tests/test_services_service.py", "tests/test_services_transactions.py", "tests/test_services_persistence.py", "tests/test_services_postgres.py", "tests/test_services_listing.py", "tests/test_services_operations.py", "tests/test_services_insured_listing.py", "tests/test_services_write_ops.py", "tests/test_services_cases.py", "tests/test_services_enrollment.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_portfolio_impact.py"]
 dependents = ["agents", "web", "tooling"]
 
 [suites.agents]
@@ -101,7 +101,7 @@ dependents = ["agents", "services", "web", "tooling"]
 [suites.web]
 description = "HTTP, formulär och handläggarflöden"
 status = "active"
-tests = ["tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_design_web_css.py"]
+tests = ["tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_design_web_css.py"]
 dependents = ["tooling"]
 
 [suites.data]

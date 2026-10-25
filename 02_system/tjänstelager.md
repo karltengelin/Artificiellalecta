@@ -211,6 +211,7 @@ Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelop
 | Operation | Typ | Produktregler | PII | Register |
 |-----------|-----|---------------|-----|----------|
 | `get_insured_overview` | `read` | – | Ja | `AGENT` |
+| `list_insured_persons` | `read` | – | Ja | `HUMAN_ONLY` |
 | `get_premium_history` | `read` | – | Ja | `AGENT` |
 | `get_salary_reports` | `read` | – | Ja | `AGENT` |
 | `calculate_premium_preview` | `compute` | PR-ITP1-001 | Nej | `AGENT` |
@@ -228,6 +229,14 @@ Regelspecifika operationer (uttag, paus, återupptagande, garanti, pensionsbelop
 | `list_employers` | `read` | – | Nej | `AGENT` |
 
 `list_approval_requests`, `count_approval_requests` och `get_operation_events` byggdes för handläggar-UI:t (Fas 4). De läser godkännandekön och händelseloggen som operationer, så att även läsningen av dem loggas. De är `HUMAN_ONLY`: kön och loggen är handläggarens kontrollyta, och agenter ska inte se andras ärenden (B-006). Händelseloggen per försäkrad väljs på indata och resultat (personnummer, försäkringsnummer, premieradens id), eftersom loggen saknar en egen kolumn för berörda objekt (§7).
+
+**Beståndsurval:** `list_insured_persons` är handläggarens paginerade personlista och är
+`HUMAN_ONLY`. Den söker bokstavliga delar av namn (alla namndelar i valfri ordning, även ÅÄÖ),
+personnummer och försäkringsnummer samt filtrerar på nuvarande arbetsgivare och försäkringsläge.
+Läge avser öppen period (`valid_to IS NULL`); personer med flera matchande försäkringar räknas
+en gång. `no_policy` väljer personer utan försäkring. Resultatet innehåller namn, personnummer,
+personstatus, arbetsgivare och försäkringsnummer med nuvarande läge, aldrig lön, kontakt eller
+kapital. Högst 100 personer hämtas per sida. Loggen sparar urvalet, utan resultatlistan.
 
 ### 9.1 Skrivoperationerna i T3 – vad som stöds och vad som blockeras
 
