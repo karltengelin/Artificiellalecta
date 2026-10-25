@@ -69,6 +69,12 @@ utökar inte produktregelprojektets implementation eller innebär ett nytt produ
 
 ## Flaggskeppsscenario
 
+Scenariot är ett möjligt senare visningsexempel. Produktregelverket ska stödja
+bolagets löpande verksamhet och generella hantering av relevanta regeländringar;
+utformning och prioritering styrs av verksamhetsbehov enligt MASTER_CONTEXT §1
+(operatörens förtydligande 2026-10-25). Exemplet nedan beställer ingen särskild
+demo-funktion eller ändring av produktens regler.
+
 Dokumenterat första scenario: ny IBB-årsparameter → tolkning och berörd
 premietrappa → ändringsbesked/konsekvens för bestånd → byggsessionens
 kod-/testkoppling. Scenariot har en verklig återkommande regelkälla och

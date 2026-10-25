@@ -11,9 +11,15 @@ Målet är att bygga ett komplett, simulerat tjänstepensionsbolag som administr
 
 Detta är en **sandbox/simuleringsmiljö** – inga riktiga kunder, inget riktigt kapital. Syftet är att bygga fungerande processer, system och agenter som speglar hur ett verkligt bolag fungerar.
 
-**Programvision (B-024):** Utöver att bygga produkten (ovan) är det övergripande målet att visa upp ett **AI-native tjänstepensionsbolag** – en organisation där agentteam utför det löpande arbete som avdelningarna i ett riktigt bolag skulle göra (handläggning, kapitalförvaltning, aktuariellt arbete, regelefterlevnad, rapportering, kundkommunikation), och där system och data är byggda för att vara tillgängliga för vilken AI-agent som helst att arbeta mot – inte bara de agenter som byggs i detta projekt.
+**Programvision (B-024, förtydligad av operatören 2026-10-25):** Målet är ett **artificiellt men hypotetiskt fungerande, AI-native tjänstepensionsföretag**. Agentteam utför det löpande arbete som avdelningarna i ett riktigt bolag skulle göra (handläggning, kapitalförvaltning, aktuariellt arbete, regelefterlevnad, rapportering, kundkommunikation). System och data byggs för att vara tillgängliga för behöriga AI-agenter även utanför dem som byggs i detta projekt. Verksamhetens behov, sammanhängande processer och kontrollkrav styr arkitektur och prioriteringar.
 
-**Flaggskeppsscenario:** Det viktigaste som ska kunna demonstreras när programmet är klart är ett fullständigt, spårbart flöde från regelverksändring till produktion: en ändring i ett nationellt regelverk (t.ex. ändrad pensionsålder) tolkas av agenter till konkreta produktregler, dessa produktregler sätts i produktion i försäkringssystemet, och agenterna tar fram en business insight om hur ändringen påverkar det befintliga beståndet – allt på ett strömlinjeformat och säkert sätt, med människa-i-loopen (§3.5) på kritiska steg.
+**Regeländringar som verksamhetsförmåga:** Bolaget ska kunna hantera ändrade lagar, föreskrifter och kollektivavtal och deras följder för produktregler, villkor, bestånd, beräkningar, system, processer, styrdokument, rapportering och kommunikation. Arbetet ska vara spårbart från källa och konsekvensanalys till godkända åtgärder och uppföljning, med människa-i-loopen (§3.5) på kritiska steg. Vilka delar som berörs avgörs av den aktuella ändringen; parameterändring är ett av flera möjliga fall.
+
+**Demonstrationer:** När bolagets förmågor finns ska de kunna visas genom utvalda scenarier, bland annat en regeländring från källa till genomförande och beståndsinsikt. Scenarierna är exempel på ordinarie verksamhet och får inte styra företagets arkitektur, datamodeller eller byggordning. Ingen hårdkodad demo-knapp eller förutbestämd demoberättelse ska byggas in i bolagets ordinarie arbetsytor. Särskilda testdata, simuleringskällor, skriptade modeller och visningsmanus hålls avgränsade från verksamhetslogiken. Återanvändbara verktyg och flöden verifieras löpande på flera relevanta fall; en lyckad demonstration är inte ett mått på att hela företaget fungerar.
+
+Förtydligandet ovan kommer från operatörens instruktion i chatten 2026-10-25.
+[Förslag till formalisering i beslutsloggen](02_system/bolagsvision_beslutsforslag.md)
+finns för godkännande. B-024 och B-035 bevaras som historiska beslut; detta dokumentförtydligande ändrar ingen kod, produktregel eller behörighet.
 
 Programmet struktureras i ett antal namngivna delprojekt, se §4b.
 

@@ -60,7 +60,11 @@ syntetiska. Den gör inga modellanrop och ändrar inga riktiga inställningar.
 ## Leveranser och byggordning
 
 Detta är arbetspaket inom projekt 10, inte nya programfaser. B-028:s byggordning
-och B-035:s flaggskeppsarbete består. Läsbar överblick kan byggas innan alla
+består. B-035 beskriver en första avgränsad implementation; fortsatt arbete styrs av
+verksamhetsbehoven enligt MASTER_CONTEXT §1 (operatörens förtydligande 2026-10-25).
+Centralen ska ge tillgång till ordinarie bolagsförmågor. Scenariobundna testdata,
+skriptade modeller och visningsmanus får ingen hårdkodad demo-knapp här.
+Läsbar överblick kan byggas innan alla
 ekonomiska motorer finns; saknade mått visas som **ej beräknat**.
 
 | Paket | Leverans och klart-kriterium | Beroenden |
