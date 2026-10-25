@@ -23,14 +23,14 @@ Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsov
 
 Övergripande ordning för de kommande byggfaserna. Detaljuppgifter ligger under respektive prioritetsrubrik nedan.
 
-**Styrande förtydligande från operatören 2026-10-25:** vi bygger ett artificiellt men
+**Styrande förtydligande (B-037, godkänt 2026-10-25):** vi bygger ett artificiellt men
 hypotetiskt fungerande, AI-native tjänstepensionsföretag. Verksamhetsbehov och faktiska
 beroenden styr prioriteringen. Regeländringshantering är en generell förmåga; ett särskilt
 visningsscenario ger ingen egen prioritet eller nytt beroende i byggordningen. Ingen
 hårdkodad demo-knapp ska införas i bolagets ordinarie arbetsytor. Testning av byggda
 förmågor fortsätter löpande; demonstrationsmanus planeras när förmågorna finns.
 Se [MASTER_CONTEXT §1](MASTER_CONTEXT.md#1-vision-och-syfte) och
-[beslutsförslaget](02_system/bolagsvision_beslutsforslag.md).
+[det godkända beslutsunderlaget](02_system/bolagsvision_beslutsforslag.md).
 
 **Justerad byggordning 2026-10-11 (B-028):** försäkringssystemet först (Fas 1 inklusive tjänstelagret, Fas 1f), därefter handläggar-UI:t ovanpå tjänstelagret (Fas 4), och sist agentlagret – harness (Fas 3b) följt av handläggaragenten (Fas 5). Agentverktygen byggs som tunna omslag runt tjänstelagrets operationer. Kapitalförvaltningen (Fas 2) är oberoende och kan gå parallellt. Fasnumren är oförändrade; ordningen är **1 → 1f → 4 → 3b → 5 → 3c**.
 

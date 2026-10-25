@@ -8,6 +8,49 @@
 
 ## Beslut
 
+### B-037 | 2026-10-25 | Verksamhetsdrivet AI-native tjänstepensionsföretag
+
+**Beslut:** Operatören godkände beslutstexten i `02_system/bolagsvision_beslutsforslag.md` i chatten 2026-10-25. Följande gäller för fortsatt arbete:
+
+1. **Verksamheten styr.** Arkitektur, datamodeller, gränssnitt och prioriteringar
+   utgår från företagets verksamhetsbehov, sammanhängande processer och kontroller.
+   Agentteam utför arbete genom gemensamma verktyg, med tydliga mandat, spårbarhet
+   och mänskliga beslut där det krävs. Produktscope ITP1 ålderspension och sandbox
+   med fiktiva kunder och kapital består.
+2. **Generell regeländringsförmåga.** Företaget ska kunna upptäcka och tolka
+   relevanta lag-, föreskrifts- och avtalsändringar, bedöma konsekvenser och
+   förbereda, genomföra och följa upp godkända åtgärder. Bedömningen kan omfatta
+   produktregler, villkor, bestånd, beräkningar, system, processer, styrdokument,
+   rapportering och kommunikation. Den aktuella ändringen avgör vilka delar
+   som berörs. En parameterändring täcker bara en del av denna förmåga.
+3. **Demonstrationer visar byggda förmågor.** Regeländringsscenariot är ett av
+   flera möjliga exempel att visa när företagets förmågor finns. Ett bestämt
+   scenario får inte styra företagets utformning eller ges egen prioritet i
+   byggordningen. Ingen hårdkodad demo-knapp eller förutbestämd demoberättelse
+   ska byggas in i ordinarie arbetsytor. Vanliga åtgärder för att starta och
+   följa verksamhetsuppdrag och flöden ska finnas enligt respektive mandat.
+4. **Test och visning avgränsas.** Fiktiva scenariokällor, särskilda testbestånd,
+   skriptade modeller och visningsmanus hålls avgränsade från verksamhetslogiken.
+   Återanvändbar infrastruktur från tidigare arbete behålls. Byggda funktioner
+   verifieras löpande på relevanta normal- och avvikelsefall; en lyckad visning
+   bevisar inte att hela verksamhetsförmågan är färdig.
+
+**Motivering:** Ett hypotetiskt fungerande företag behöver kunna hantera löpande
+arbete och varierande händelser. Ett utvalt exempel kan visa resultatet men
+ger inte ett tillräckligt underlag för företagets arkitektur eller prioritering.
+
+**Relation till tidigare beslut:** Preciserar B-024:s programvision och B-035:s
+roll som avgränsad första implementation. B-035:s tidigare demo som första mål
+ska inte styra fortsatt bolagsbygge. B-036:s gemensamma plattform och teamområden
+består och används för ordinarie verksamhet. Tidigare beslut bevaras i loggen.
+
+**Konsekvenser:**
+- MASTER_CONTEXT §1 och berörda planer utgår från verksamhetsbehov; ett visningsscenario har ingen egen prioritet i byggordningen.
+- Verifiering av byggda funktioner skiljs från senare visningsmanus. Scenariobundet teststöd behöver avgränsas före integration i ordinarie arbetsytor.
+- Beslutet ändrar ingen körkod, databas, produktregel, behörighet eller godkännandegräns. Tidigare beslut bevaras i loggen.
+
+---
+
 ### B-036 | 2026-10-25 | En plattform med teamområden och operatörscentralen som nav
 
 **Beslut:** Operatören godkände inriktningen i chatten 2026-10-25 och bad om att beslutet loggas.

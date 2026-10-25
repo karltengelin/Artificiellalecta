@@ -1,8 +1,8 @@
-# Beslutsförslag: verksamhetsdrivet AI-native tjänstepensionsföretag
+# Beslutsunderlag: verksamhetsdrivet AI-native tjänstepensionsföretag
 
 > **Datum:** 2026-10-25
-> **Status:** Förslag till formalisering av operatörens förtydligande i chatten.
-> Inte infört i BESLUTSLOGG.md; inget beslutsnummer reserverat.
+> **Status:** Godkänt av operatören i chatten 2026-10-25 och infört som **B-037**
+> i [BESLUTSLOGG.md](../BESLUTSLOGG.md#b-037--2026-10-25--verksamhetsdrivet-ai-native-tjänstepensionsföretag).
 
 ## Bakgrund
 
@@ -14,7 +14,7 @@ Operatören har förtydligat att målet är ett artificiellt men hypotetiskt fun
 AI-native tjänstepensionsföretag. Regeländringshantering är en av företagets
 verksamhetsförmågor. En demonstration väljs senare för att visa vad företaget kan.
 
-## Föreslagen beslutstext
+## Godkänd beslutstext
 
 1. **Verksamheten styr.** Arkitektur, datamodeller, gränssnitt och prioriteringar
    utgår från företagets verksamhetsbehov, sammanhängande processer och kontroller.
@@ -52,12 +52,12 @@ består och används för ordinarie verksamhet. Tidigare beslut bevaras i loggen
 
 Operatörens förtydligande har skrivits in i MASTER_CONTEXT §1 och speglats i
 README, ATT_GORA, agentekosystemet och planerna för flöden och operatörscentral.
-BESLUTSLOGG.md och DEMO_ANTECKNINGAR.md är oförändrade.
+Beslutet är infört som B-037 i BESLUTSLOGG.md. DEMO_ANTECKNINGAR.md är oförändrad.
 
 Vid fortsatt planering skiljs verifiering av det byggda parameterändringsflödet
 från ett senare visningsmanus. Scenariobundna antaganden behöver granskas före
 integration i ordinarie arbetsytor. Detta dokument ändrar ingen körkod,
 databas, produktregel, behörighet eller godkännandegräns.
 
-Efter operatörens godkännande kan beslutet få nästa lediga nummer och införas
-i BESLUTSLOGG.md, med hänvisningar från berörda dokument.
+Operatörens godkännande och införandet som B-037 har följts upp med hänvisningar
+från MASTER_CONTEXT, ATT_GORA och det historiska underlaget för B-035.

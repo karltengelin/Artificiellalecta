@@ -11,15 +11,15 @@ Målet är att bygga ett komplett, simulerat tjänstepensionsbolag som administr
 
 Detta är en **sandbox/simuleringsmiljö** – inga riktiga kunder, inget riktigt kapital. Syftet är att bygga fungerande processer, system och agenter som speglar hur ett verkligt bolag fungerar.
 
-**Programvision (B-024, förtydligad av operatören 2026-10-25):** Målet är ett **artificiellt men hypotetiskt fungerande, AI-native tjänstepensionsföretag**. Agentteam utför det löpande arbete som avdelningarna i ett riktigt bolag skulle göra (handläggning, kapitalförvaltning, aktuariellt arbete, regelefterlevnad, rapportering, kundkommunikation). System och data byggs för att vara tillgängliga för behöriga AI-agenter även utanför dem som byggs i detta projekt. Verksamhetens behov, sammanhängande processer och kontrollkrav styr arkitektur och prioriteringar.
+**Programvision (B-024, B-037):** Målet är ett **artificiellt men hypotetiskt fungerande, AI-native tjänstepensionsföretag**. Agentteam utför det löpande arbete som avdelningarna i ett riktigt bolag skulle göra (handläggning, kapitalförvaltning, aktuariellt arbete, regelefterlevnad, rapportering, kundkommunikation). System och data byggs för att vara tillgängliga för behöriga AI-agenter även utanför dem som byggs i detta projekt. Verksamhetens behov, sammanhängande processer och kontrollkrav styr arkitektur och prioriteringar.
 
 **Regeländringar som verksamhetsförmåga:** Bolaget ska kunna hantera ändrade lagar, föreskrifter och kollektivavtal och deras följder för produktregler, villkor, bestånd, beräkningar, system, processer, styrdokument, rapportering och kommunikation. Arbetet ska vara spårbart från källa och konsekvensanalys till godkända åtgärder och uppföljning, med människa-i-loopen (§3.5) på kritiska steg. Vilka delar som berörs avgörs av den aktuella ändringen; parameterändring är ett av flera möjliga fall.
 
 **Demonstrationer:** När bolagets förmågor finns ska de kunna visas genom utvalda scenarier, bland annat en regeländring från källa till genomförande och beståndsinsikt. Scenarierna är exempel på ordinarie verksamhet och får inte styra företagets arkitektur, datamodeller eller byggordning. Ingen hårdkodad demo-knapp eller förutbestämd demoberättelse ska byggas in i bolagets ordinarie arbetsytor. Särskilda testdata, simuleringskällor, skriptade modeller och visningsmanus hålls avgränsade från verksamhetslogiken. Återanvändbara verktyg och flöden verifieras löpande på flera relevanta fall; en lyckad demonstration är inte ett mått på att hela företaget fungerar.
 
-Förtydligandet ovan kommer från operatörens instruktion i chatten 2026-10-25.
-[Förslag till formalisering i beslutsloggen](02_system/bolagsvision_beslutsforslag.md)
-finns för godkännande. B-024 och B-035 bevaras som historiska beslut; detta dokumentförtydligande ändrar ingen kod, produktregel eller behörighet.
+Förtydligandet ovan är godkänt och loggat som **B-037** efter operatörens
+godkännande i chatten 2026-10-25. [Beslutsunderlaget](02_system/bolagsvision_beslutsforslag.md)
+finns bevarat. B-024 och B-035 bevaras som historiska beslut; dokumentförtydligandet ändrar ingen kod, produktregel eller behörighet.
 
 Programmet struktureras i ett antal namngivna delprojekt, se §4b.
 

@@ -5,7 +5,7 @@
 > **Underlag:** MASTER_CONTEXT §1 (flaggskeppsscenariot); `02_system/agentekosystem.md` §5.4, §6.2 och §12; `02_system/harness.md` §4.2–4.3, §5.1–5.2, §9.2–9.3 och §10; `02_system/Agentsystem/regelförändringsflöde.md`; `04_regulatoriskt/03_bevakning/kallandringar.md`; PR-ITP1-001, -013, -016 och -032; `01_domän/parametrar/PARAMETERREGISTER.md`; `src/skills/calculation/calculate_itp1_premium.py`; `src/analytics/premium_impact.py`.
 > **Bygger på:** B-016, B-017, B-024, B-026, B-028, B-031, B-033.
 
-> **Läsanvisning efter operatörens förtydligande 2026-10-25:** detta är B-035:s
+> **Läsanvisning efter B-037 (2026-10-25):** detta är B-035:s
 > historiska beslutsunderlag och ett avgränsat test-/visningsscenario. Bolagets
 > mål är ett hypotetiskt fungerande AI-native tjänstepensionsföretag enligt
 > [MASTER_CONTEXT §1](../MASTER_CONTEXT.md#1-vision-och-syfte). Verksamhetsbehov
@@ -15,7 +15,7 @@
 > ordinarie arbetsytor. Röktest av byggda funktioner skiljs från ett senare
 > visningsmanus. Valen och den ursprungliga byggordningen nedan bevaras som
 > beslutshistorik; de ger inte demonstrationen företräde framför verksamhetsbehov.
-> [Beslutsförslag för formalisering](bolagsvision_beslutsforslag.md).
+> [Godkänt beslutsunderlag för B-037](bolagsvision_beslutsforslag.md).
 
 ---
 
