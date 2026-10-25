@@ -59,6 +59,11 @@ UI:t ligger tillfälligt i handläggar-UI:t, och flyttar hit i OC-7 (se nedan).
   chattens modeller. Befintliga scopes, PII-gränser och godkännanden gäller.
 - **Flöden och produktparametrar hör hemma här (OC-7).** En regeländring är ett
   beslut på bolagsnivå och inte handläggning av enskilda försäkrade.
+  - Arbetsytan byggs för ordinarie verksamhetsuppdrag med aktuella källor och
+    underlag. B-035:s specifika scenario och skriptade modell är teststöd;
+    ingen hårdkodad demo-knapp byggs in i centralen. Före integration behöver
+    scenariobundna antaganden skiljas från återanvändbara funktioner.
+    Se MASTER_CONTEXT §1 (operatörens förtydligande 2026-10-25).
   - Centralen når flödena genom adaptern `agents.flows.console.FlowConsole`,
     precis som handläggar-UI:t gör i dag. Motorn och definitionerna i
     `src/agents/flows/` ändras inte vid en flytt.

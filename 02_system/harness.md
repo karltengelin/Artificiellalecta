@@ -682,7 +682,15 @@ Valda startgränser: djup högst 2, högst 3 barn totalt per rot, ingen återgå
 
 Ett väntande barn returnerar run-/approval-referenser och propagagerar väntan till föräldern/flödet. Inga öppna modellkonversationer står och pollar medan människan granskar. Dubbel beställning med samma task-id ska hitta samma barn eller stoppas för avstämning, inte skapa ett nytt.
 
-### 10.3 Flödesmotor och flaggskepp
+### 10.3 Flödesmotor och regeländringshantering
+
+**Operatörens förtydligande 2026-10-25:** flödesmotorn byggs för återanvändbara
+verksamhetsflöden i det hypotetiska AI-native företaget (MASTER_CONTEXT §1).
+Regeländringen nedan är en målbild för sådan verksamhet; berörda steg avgörs av
+ändringens konsekvenser. B-035:s avgränsade parameterändring och demostöd beskriver
+bara en del av förmågan. Demonstrationer väljs senare bland byggda förmågor och
+får ingen hårdkodad demo-knapp i bolagets ordinarie arbetsytor. Äldre hänvisningar
+till flaggskeppet och dess byggsteg i denna utredning ska läsas mot den avgränsningen.
 
 Flödesdefinitionen bestämmer ordning, in-/utdatascheman, villkor och grindar. Modellen får lösa en avgränsad uppgift inom ett steg. En grind binder käll-, underlags-, regel-, parameter- och kodversion där de är relevanta; ändrat underlag gör tidigare grind inaktuell.
 

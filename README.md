@@ -2,6 +2,12 @@
 
 Simulerat tjänstepensionsbolag för utbildnings- och utvecklingsändamål. Bolaget administrerar **ålderspension inom kollektivavtalet ITP1** och drivs som en sandbox för att utforska hur ett tjänstepensionsbolag fungerar – med stöd av AI-agenter och automatiserade processer.
 
+Målet är ett **artificiellt men hypotetiskt fungerande, AI-native tjänstepensionsföretag**.
+Verksamhetens behov styr bygget. Regeländringshantering är en generell verksamhetsförmåga;
+framtida demonstrationer visar den tillsammans med andra ordinarie förmågor. Företaget
+ska inte anpassas till ett bestämt demoscenario eller få en hårdkodad demo-knapp.
+Se [visionen och avgränsningen av demonstrationer](MASTER_CONTEXT.md#1-vision-och-syfte).
+
 **Detta är inte ett riktigt försäkringsbolag.** Inga riktiga kunder, ingen riktig data, inget riktigt kapital.
 
 ## Kom igång

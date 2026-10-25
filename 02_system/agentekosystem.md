@@ -8,7 +8,7 @@
 
 ## 1. Syfte och designmål
 
-Ramverket beskriver hur bolagets agenter organiseras, vilka förmågor de får, hur de samarbetar och hur de når AI-modellerna – så att varje delprojekt (MASTER_CONTEXT §4b) bygger sina agenter på samma sätt och flaggskeppsscenariot (§1) kan köras över avdelningsgränserna.
+Ramverket beskriver hur bolagets agenter organiseras, vilka förmågor de får, hur de samarbetar och hur de når AI-modellerna – så att varje delprojekt (MASTER_CONTEXT §4b) bygger på samma grund för bolagets löpande verksamhet och arbete över avdelningsgränserna. Verksamhetsbehov styr utformningen; demonstrationsscenarier visar senare de förmågor som finns (MASTER_CONTEXT §1, operatörens förtydligande 2026-10-25).
 
 **Designmål:**
 
@@ -245,7 +245,7 @@ Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen
 
 **Byggt i Fas 3c 3c-T (B-035):** `regelverk`, `dokument` och `bestand` finns i `src/agents/ecosystem.yaml`, monterade på teamen `compliance` och `aktuarie` (`bestand` bara på `aktuarie`). Avvikelser från tabellen: `bestand` har sidoeffekten `read`, eftersom `estimate_parameter_change_impact` är en läsoperation. `dokument` skriver bara utkast i körningens egen arbetsyta. `regelverk` har även `get_product_parameters`.
 
-`bestand` är nyckeln till flaggskeppets "business insight": den ger aggregerade svar utan att någon agent behöver personuppgifter, och är samma förmåga som BI-delprojektet (2) behöver.
+`bestand` ger aggregerade svar för löpande analys och konsekvensbedömning utan att någon agent behöver personuppgifter, och är samma förmåga som BI-delprojektet (2) behöver. En regeländringsdemonstration kan använda den för beståndsinsikt.
 
 ### 5.5 Planerad gemensam rapport- och presentationsförmåga
 
@@ -312,7 +312,9 @@ Flöden är **deterministisk kod**, inte en LLM som bestämmer ordningen. Ett fl
 
 Modellen är agent-factorys `Orchestrator`/`WorkflowStep` (steg, villkor, obligatoriska steg) – utökad med persisterat tillstånd, godkännandegrindar och strukturerade svar per steg i stället för fritext.
 
-**Flaggskeppsflödet** (MC §1) som flöde över teamen:
+**Regeländring som exempel på verksamhetsflöde över teamen** (MC §1). Stegen anpassas
+efter vad ändringen faktiskt berör. Tabellen beskriver målbilden; den byggda,
+avgränsade parameterändringen enligt B-035 är inte hela förmågan:
 
 | Steg | Team (roll) | Uppgift | Pod(ar) | Godkännande |
 |------|-------------|---------|---------|-------------|
@@ -322,7 +324,7 @@ Modellen är agent-factorys `Orchestrator`/`WorkflowStep` (steg, villkor, obliga
 | 4 | aktuarie (`deep`) | Beståndsinsikt: hur många berörs, effekt på premier och kapital | bestand, berakning | Nej (rapport) |
 | 5 | kommunikation (`standard`) | Utkast till kundinformation, om relevant | kommunikation | Ja – externt utskick (§3.5) |
 
-Det befintliga `02_system/Agentsystem/regelförändringsflöde.md` täcker steg 1, 3 och 5; steg 2 och 4 tillkommer med flaggskeppet. Dokumentkedjan källa → tolkning → produktregel följer arbetssättet i `projekt/04_produktregelverk/ARBETSSATT.md`.
+Det befintliga `02_system/Agentsystem/regelförändringsflöde.md` täcker steg 1, 3 och 5; steg 2 och 4 kompletterar målbilden för verksamhetens regeländringshantering. Dokumentkedjan källa → tolkning → produktregel följer arbetssättet i `projekt/04_produktregelverk/ARBETSSATT.md`.
 
 ---
 
@@ -411,7 +413,7 @@ och budgetaktivering är planerade operatörsfunktioner, inte nya agentskills.
 | **3** ✅ | AI-lagret (`src/ai/`) med roller, team-nycklar, verktygsgränssnitt, anropslogg, fejkleverantör | Allt nedan |
 | **1f** | Tjänstelagret (`tjänstelager.md`): operationskontrakt, agentåtkomst inkl. *endast handläggare*, godkännandekö, händelselogg, första läs- och skrivoperationerna | Fas 4 och alla agentverktyg |
 | **3b** | Harness v1 (efter Fas 4): `ecosystem.yaml`, skill-register ovanpå tjänstelagret, behörighetsfilter, agentloop, körjournal (JSONL), första poddarna | Fas 5 – handläggaragenten |
-| **3c** | Delegering mellan team, flödesmotor med persisterat tillstånd (Lakebase-tabeller), regelförändringsflödet. Designstopp med en minimal flaggskeppsdemo som första mål: `flaggskeppsflöde.md` (B-035) | Flaggskeppsscenariot |
+| **3c** | Delegering mellan team, flödesmotor med persisterat tillstånd (Lakebase-tabeller) och regeländringshantering. B-035:s första avgränsade implementation beskrivs i `flaggskeppsflöde.md`; fortsatt bygge följer verksamhetsbehov enligt MASTER_CONTEXT §1 | Återanvändbar samverkan och spårbara verksamhetsflöden |
 | Senare | MCP-exponering av poddar, databas-sink för anropsloggen, kostnadsindikatorer | B-017/B-024 fullt ut, BI |
 
 Egen Lakebase-roll för PII-poddar är flyttad från *Senare* till före aktiveringen av första PII-podden (`harness.md` §5.1, `ATT_GORA.md` under 3b-3).
