@@ -54,6 +54,6 @@ gränssnitt sker stegvis enligt ATT_GORA.
 - Python ≥ 3.11
 - Databricks Lakebase (serverless Postgres) via SQLAlchemy (B-018)
 - Modellagnostisk AI-arkitektur (OpenAI + Anthropic) via eget abstraktionslager i `src/ai/`
-- Handläggar-UI: FastAPI + Jinja2 + HTMX ovanpå tjänstelagret, bara lokalt (`python scripts/web/start_ui.py` eller skrivbordsgenvägen från `scripts/web/install_desktop_shortcut.py`, se `02_system/handläggar-ui.md`)
+- Handläggar-UI: FastAPI + Jinja2 + HTMX ovanpå tjänstelagret, bara lokalt. Vanlig skrivbordsgenväg använder Lakebase (8765); separat DEMO-genväg och `python scripts/web/start_ui.py` använder lokal övningsdata (8767). Installera genvägarna med `python scripts/web/install_desktop_shortcut.py`. Ingen synkning mellan miljöerna; se [handläggar-ui.md](02_system/handläggar-ui.md)
 - Markdown som primärt informationsformat
 - Git + GitHub för versionskontroll

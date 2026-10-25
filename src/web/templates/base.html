@@ -35,6 +35,12 @@
   <div class="prodbanner" role="alert">Lakebase-beståndet: ändringar sparas på riktigt och loggas i händelseloggen.</div>
   {% endif %}
   <main class="page">
+    {% if settings.database != "lakebase" %}
+    <div class="alert alert--info" role="status">{{ settings.database_label }}. Uppgifterna är separata från Lakebase och synkas inte dit.</div>
+    {% endif %}
+    {% if not database_available %}
+    <div class="alert alert--error" role="alert">Kan inte läsa från {{ settings.database_label }}. Kontrollera databasanslutningen. Ingen annan databas används automatiskt.</div>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
   <footer class="footer">

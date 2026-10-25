@@ -26,10 +26,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 #: Databaser UI:t kan köras mot, med etikett för sidhuvudet.
 DATABASES = {
-    "demo": "Demodatabas (lokal SQLite)",
-    "svc_test": "svc_test (isolerad Postgres)",
-    "lakebase": "Lakebase – skarpt bestånd",
+    "demo": "DEMO – lokal övningsdata",
+    "svc_test": "TEST – separat testbestånd",
+    "lakebase": "Lakebase – gemensamt bestånd",
 }
+
+DEFAULT_PORTS = {"lakebase": 8765, "svc_test": 8766, "demo": 8767}
 
 _HANDLER_ID = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,99}$")
 

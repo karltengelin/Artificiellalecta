@@ -44,20 +44,29 @@ Lakebase-tabellerna och i händelseloggen. UI:t är tjänstelagrets första klie
 ## 3. Starta
 
 ```powershell
-python scripts/web/start_ui.py                    # demodatabas, http://127.0.0.1:8765
+python scripts/web/start_ui.py --db lakebase      # gemensamt bestånd, http://127.0.0.1:8765
+python scripts/web/start_ui.py                    # demodatabas, http://127.0.0.1:8767
 python scripts/web/start_ui.py --reset-demo       # skapa demodatabasen på nytt
 python scripts/web/start_ui.py --db svc_test --port 8766
 ```
 
-I Claude-appen finns startkonfigurationerna `handlaggare-ui` och `handlaggare-ui-svc-test` i `.claude/launch.json`.
+I Claude-appen finns `handlaggare-ui` (Lakebase), `handlaggare-ui-demo` och
+`handlaggare-ui-svc-test` i `.claude/launch.json`.
 
 **Skrivbordsgenväg (Windows).** Kör `python scripts/web/install_desktop_shortcut.py` en gång från
-huvudcheckouten. Det lägger genvägen *Artificiellalecta – handläggare* på skrivbordet, med märket
-som ikon: den indigofärgade rutan ur `src/design/icon.py`, med färgen ur tokenfilen. Genvägen kör
-`scripts/web/open_ui.ps1`. Skriptet startar servern i ett eget minimerat fönster om den inte redan
-kör, väntar tills UI:t svarar och öppnar `http://127.0.0.1:8765` i webbläsaren. Stäng serverfönstret
-för att stoppa UI:t. Genvägen använder demodatabasen. `--db lakebase` ger en separat genväg mot
-beståndet, och lägger man inte till den finns ingen genväg till Lakebase.
+huvudcheckouten. Det uppdaterar den vanliga genvägen *Artificiellalecta – handläggare* till
+**Lakebase** och skapar *Artificiellalecta – handläggare (DEMO)* för lokal övningsdata.
+Märket används som ikon (`src/design/icon.py`). `--db` installerar bara den valda genvägen;
+`--dry-run` visar resultatet utan att skriva. En äldre separat genväg med suffixet *(Lakebase)*
+kan finnas kvar; den vanliga genvägen är nu ingången till beståndet.
+
+Genvägarna kör `scripts/web/open_ui.ps1`, som startar servern dolt om den inte redan kör.
+Standard är Lakebase på **8765**, separat testbestånd på **8766** och demo på **8767**.
+En egen port kan anges med `-Port` (eller `--port` i Pythonkommandona).
+Startskriptet kontrollerar `/_instance` innan webbläsaren öppnas. En körande app med fel databas,
+en okänd app eller en äldre version utan miljökontroll blockeras med ett tydligt fel.
+Den gamla servern måste då stoppas, eller en annan port väljas; skriptet stoppar inga processer.
+För att kunna stoppa en server i terminalen kan den i stället startas med `start_ui.py` ovan.
 
 | Variabel / flagga | Standard | Innehåll |
 |---|---|---|
@@ -70,8 +79,20 @@ beståndet, och lägger man inte till den finns ingen genväg till Lakebase.
 | `svc_test` | Schemat `handlaggare_ui` i `SERVICES_TEST_POSTGRES_URL` | Skapas med demobeståndet om schemat är tomt. Vägrar om adressen är `DATABASE_URL` |
 | `lakebase` | Beståndet via `DATABASE_URL` | Skapas aldrig. Schemaändringar görs bara med migrationsskript (T3-mönstret) |
 
-Lakebase används aldrig av sig självt, trots att `DATABASE_URL` finns i `.env`. Mot beståndet visar
-sidhuvudet en röd varning. Första skarpa skrivningen föregås av backup och operatörens OK
+Pythonkommandot utan databasval behåller demoläget; den vanliga genvägen väljer Lakebase
+uttryckligen med `--db lakebase`. `DATABASE_URL` i `.env` räcker alltså inte för att ändra
+utvecklingskommandots databasval. Sidhuvudet visar **Lakebase – gemensamt bestånd**,
+**DEMO – lokal övningsdata** eller **TEST – separat testbestånd**. Mot Lakebase finns även en röd varning.
+Ett läsfel i menyn visas som ett anslutningsfel på sidan; appen byter aldrig automatiskt till demo.
+`/_instance` visar bara appens identitet och valda databasläge, inga anslutningsuppgifter,
+och är ingen kontroll av databasanslutningen.
+
+**Ingen synkning finns mellan miljöerna.** Sökningar och ändringar går via tjänstelagret direkt
+mot den valda databasen. Demo är ett eget övningsbestånd, inte en cache av Lakebase.
+Att välja Lakebase flyttar inga uppgifter från demo; eventuella manuella demoändringar måste
+jämföras och föras över kontrollerat om de ska bevaras.
+
+Första skarpa skrivningen föregås av backup och operatörens OK
 (AGENTS.md §4.5).
 
 **Demobeståndet** innehåller fyra fiktiva personer och två agentförslag i godkännandekön:

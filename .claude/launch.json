@@ -4,8 +4,14 @@
     {
       "name": "handlaggare-ui",
       "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
-      "runtimeArgs": ["scripts/web/start_ui.py", "--db", "demo", "--port", "8765"],
+      "runtimeArgs": ["scripts/web/start_ui.py", "--db", "lakebase", "--port", "8765"],
       "port": 8765
+    },
+    {
+      "name": "handlaggare-ui-demo",
+      "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
+      "runtimeArgs": ["scripts/web/start_ui.py", "--db", "demo", "--port", "8767"],
+      "port": 8767
     },
     {
       "name": "handlaggare-ui-svc-test",

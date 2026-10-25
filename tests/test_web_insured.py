@@ -174,6 +174,36 @@ def test_lakebasevarning_syns_i_sidhuvudet(web):
     web.app.state.settings = WebSettings(database="lakebase", allowed_hosts=("testserver",))
     response = web.client.get("/")
     assert "Lakebase-beståndet: ändringar sparas på riktigt" in response.text
+    assert "Lakebase – gemensamt bestånd" in response.text
+
+
+def test_demolaget_visar_att_uppgifterna_inte_synkas(web):
+    response = web.client.get("/")
+    assert "DEMO – lokal övningsdata" in response.text
+    assert "separata från Lakebase och synkas inte dit" in response.text
+
+
+@pytest.mark.parametrize("database", ["demo", "svc_test", "lakebase"])
+def test_startkontrollen_visar_miljon_utan_att_lasa_databasen(web, monkeypatch, database):
+    web.app.state.settings = WebSettings(database=database, allowed_hosts=("testserver",))
+    monkeypatch.setattr(web.service, "execute", lambda *a, **kw: pytest.fail("Ingen databasfråga i miljökontrollen"))
+    response = web.client.get("/_instance")
+    assert response.json() == {"application": "artificiellalecta-handlaggare", "database": database}
+    assert response.headers["cache-control"] == "no-store"
+
+
+def test_databasfel_visas_utan_att_vaxla_till_demo(web, monkeypatch):
+    web.app.state.settings = WebSettings(database="lakebase", allowed_hosts=("testserver",))
+
+    def unavailable(*args, **kwargs):
+        raise ConnectionError("hemlig anslutningsinformation")
+
+    monkeypatch.setattr(web.service, "execute", unavailable)
+    response = web.client.get("/")
+    assert "Kan inte läsa från Lakebase – gemensamt bestånd" in response.text
+    assert "Ingen annan databas används automatiskt" in response.text
+    assert "hemlig anslutningsinformation" not in response.text
+    assert web.client.get("/_instance").json()["database"] == "lakebase"
 
 
 # --- gränsen mot tjänstelagret --------------------------------------------------------------------
