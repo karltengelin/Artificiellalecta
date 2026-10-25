@@ -17,6 +17,7 @@
 
 operations:
   get_insured_overview: AGENT          # läsning, personuppgifter (loggas)
+  list_insured_persons: HUMAN_ONLY    # handläggarens beståndslista över personer (loggas); ingen bred agentåtkomst
   get_premium_history: AGENT           # läsning, personuppgifter (loggas)
   get_salary_reports: AGENT            # läsning av löneunderlag, personuppgifter (loggas)
   calculate_premium_preview: AGENT     # beräkning enligt PR-ITP1-001, sparar ingenting

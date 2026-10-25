@@ -9,6 +9,7 @@ from services.operations import (  # noqa: F401
     employers,
     enrollment,
     insured,
+    insured_listing,
     journal,
     persons,
     policies,

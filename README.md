@@ -61,3 +61,7 @@ gränssnitt sker stegvis enligt ATT_GORA.
 I handläggargränssnittets sidhuvud kan du välja **Datakälla** och växla mellan Lakebase
 (Postgres) och lokal demo (SQLite). Valet öppnar den andra miljöns startsida i samma flik;
 databaserna förblir separata. Se [miljövalet](02_system/handläggar-ui.md#byta-datakälla-i-gränssnittet).
+
+Menyvalet **Bestånd** visar försäkrade i vald datakälla. Sök på namn eller nummer, filtrera på
+arbetsgivare och nuvarande försäkringsläge och öppna personens översikt från listan. Antal och
+sidindelning avser personer; läsningarna loggas via tjänstelagret.

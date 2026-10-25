@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Bestånd · Försäkrade{% endblock %}
+{% block content %}
+<h1>Försäkrade</h1>
+<p class="muted">Bestånd i {{ settings.database_label }}. En rad per försäkrad.</p>
+{% include "partials/error_box.html" %}
+{% if result %}
+<form class="panel stock-filters" action="/forsakrade" method="get" role="search">
+  <div class="stock-filters__query">
+    <label for="q">Namn, personnummer eller försäkringsnummer</label>
+    <input id="q" name="q" type="search" value="{{ filters.q }}" maxlength="200" autocomplete="off"
+           placeholder="Hela eller delar av namn och nummer">
+  </div>
+  <div>
+    <label for="employer_org_number">Arbetsgivare</label>
+    <select id="employer_org_number" name="employer_org_number">
+      <option value="">Alla arbetsgivare</option>
+      {% for employer in employers %}
+      <option value="{{ employer.org_number }}"{% if employer.org_number == filters.employer_org_number %} selected{% endif %}>{{ employer.name }} · {{ employer.org_number }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="policy_state">Nuvarande försäkringsläge</label>
+    <select id="policy_state" name="policy_state">
+      <option value="">Alla lägen</option>
+      {% for value, text in states.items() %}
+      <option value="{{ value }}"{% if value == filters.policy_state %} selected{% endif %}>{{ text }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="page_size">Rader per sida</label>
+    <select id="page_size" name="page_size">
+      {% for size in [25, 50, 100] %}<option value="{{ size }}"{% if size == result.page_size %} selected{% endif %}>{{ size }}</option>{% endfor %}
+      {% if result.page_size not in [25, 50, 100] %}<option selected value="{{ result.page_size }}">{{ result.page_size }}</option>{% endif %}
+    </select>
+  </div>
+  <div class="form__actions stock-filters__actions">
+    <button type="submit">Sök och filtrera</button>
+    <a href="/forsakrade">Rensa urval</a>
+    <a href="/forsakrade/ny">Anslut ny försäkrad</a>
+  </div>
+</form>
+<p class="muted small">Namnsökning söker på alla angivna namndelar, oavsett ordning. Försäkringsläge matchar minst en av personens försäkringar. Alla personens försäkringar visas.</p>
+<p role="status"><strong>{{ result.total|number }} {{ "träff" if result.total == 1 else "träffar" }}</strong> av {{ result.total_in_database|number }} försäkrade.</p>
+{% if result.persons %}
+<div class="table-wrap">
+<table class="table">
+  <caption>Försäkrade i valt urval</caption>
+  <thead><tr><th scope="col">Namn och personnummer</th><th scope="col">Arbetsgivare</th><th scope="col">Försäkringar och nuvarande läge</th></tr></thead>
+  <tbody>
+  {% for person in result.persons %}
+  <tr>
+    <td><a href="/forsakrade/{{ person.personal_id_number }}"><strong>{{ person.first_name }} {{ person.last_name }}</strong></a>
+      <div>{{ person.personal_id_number|pnr }}</div><div class="muted small">{{ person.status|label("person_status") }}</div></td>
+    <td>{{ person.employer.name }}<div class="muted small">{{ person.employer.org_number }}</div></td>
+    <td>{% for policy in person.policies %}
+      <div><a href="/forsakringar/{{ policy.policy_number }}">{{ policy.policy_number }}</a> · {{ policy.current_state|label("policy_state") if policy.current_state else "Läge saknas" }}</div>
+      {% else %}<span class="muted">Ingen försäkring</span>{% endfor %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<nav class="pagination" aria-label="Sidindelning för beståndet">
+  <span>Visar {{ first_row }}–{{ last_row }} · Sida {{ result.page }} av {{ result.page_count }}</span>
+  <div>{% if previous_url %}<a class="button secondary" rel="prev" href="{{ previous_url }}">Föregående</a>{% endif %}
+    {% if next_url %}<a class="button secondary" rel="next" href="{{ next_url }}">Nästa</a>{% endif %}</div>
+</nav>
+{% else %}
+<section class="panel"><h2>Inga försäkrade matchar urvalet</h2><p>Prova andra sökord eller <a href="/forsakrade">rensa urvalet</a>.</p></section>
+{% endif %}
+{% else %}
+<p><a href="/forsakrade">Visa beståndet utan filter</a></p>
+{% endif %}
+{% endblock %}
