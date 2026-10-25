@@ -24,6 +24,7 @@
       {% call nav("/godkannanden", "Godkännanden", path.startswith("/godkannanden")) %}{% if pending_approvals %}<span class="count" title="Väntande förslag">{{ pending_approvals }}</span>{% endif %}{% endcall %}
       {{ nav("/arbetsgivare", "Arbetsgivare", path.startswith("/arbetsgivare")) }}
       {{ nav("/handelselogg", "Händelselogg", path.startswith("/handelselogg")) }}
+      {{ nav("/parametrar", "Parametrar", path.startswith("/parametrar")) }}
     </nav>
     <div class="who">
       <span class="db db--{{ settings.database }}" title="Databas">{{ settings.database_label }}</span>

@@ -337,13 +337,29 @@ Beslutat av operatören 2026-10-25 (**B-035**, underlag i `02_system/flaggskepps
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
 | `get_product_parameters` | `read` | Nej | `AGENT` | Värdena som gäller en dag (standard i dag) och alla versioner med giltighet, tillstånd (gällande, kommande, upphörd, återkallad), produktregel, källa och beslut |
+| `schedule_product_parameter_change` | `write` | Nej | `APPROVAL` | Ny version från en framtida månadsförsta; den föregående avslutas dagen före (3c-P2) |
+| `withdraw_product_parameter_change` | `write` | Nej | `HUMAN_ONLY` | Drar tillbaka en version som inte börjat gälla; den föregående gäller igen tills vidare (3c-P2) |
 
 **Premieberäkningen följer parametrarna för premiemånaden.** `calculate_premium_preview` och `correct_premium_transaction` slår upp premieålder, satser och brytpunkter i `product_parameters` och skickar dem till premiemotorn. Versionerna står i `calculation_basis` (`parameters`, `age_window`).
 
 - *Stoppas:* en parameter saknas för månaden (`NotFoundError`), två giltiga versioner av samma parameter samma månad, eller en premieålder som inte är hela år (`BlockedError`). Ingen tyst reserv.
 - *Undantag:* finns tabellen inte (Lakebase före migrationen) används paketets värden PR-ITP1 v1.0 i koden, märkt i `calculation_basis`.
 
-Skrivoperationerna `schedule_product_parameter_change` (`APPROVAL`) och `withdraw_product_parameter_change` (`HUMAN_ONLY`) kommer i 3c-P2.
+Skrivoperationerna bär produktreglerna PR-ITP1-001, -013 och -032 (respektive -032) och är därför `HUMAN_ONLY` för agenter till 2026-11-01. Därefter får en agent föreslå en ny version, men aldrig dra tillbaka en.
+
+**`schedule_product_parameter_change`** – parameter, nytt värde, giltighetsdag (månadsförsta), regelns nya version, källa och beslut. Regeln följer parametern (åldrar PR-ITP1-013, satser och brytpunkter PR-ITP1-001). Versionen sparas med aktören som verkställde den; vid ett godkänt agentförslag står förslagsställaren i kön och händelseloggen.
+
+- *Stöds:* en ny version från tidigast nästa månad; den gällande versionen avslutas dagen före.
+- *Blockeras:* giltighet i innevarande eller passerad månad (ingen retroaktivitet, PR-ITP1-032); premieålder som inte är hela år mellan 16 och 80; premiesats utanför 0–1 (andel); brytpunkt som inte är positiv; parametrar som inte hänger ihop dagen ändringen börjar gälla (premieåldern från ska vara lägre än till, brytpunkten lägre än lönetaket).
+- *Konflikt:* det finns redan en senare version (dra tillbaka den först – en kommande version per parameter i taget); en version, även återkallad, finns redan från samma dag; värdet är detsamma som det gällande.
+
+**`withdraw_product_parameter_change`** – parameter och giltighetsdag.
+
+- *Stöds:* en version som inte börjat gälla; den föregående får tillbaka `valid_to = NULL`.
+- *Blockeras:* versionen har redan börjat gälla – då ändras värdet bara med en ny version.
+- *Konflikt:* en senare version finns. *Saknas:* ingen giltig version från dagen.
+
+En återkallad version ligger kvar som historik. Samma giltighetsdag kan inte återanvändas för parametern (unik nyckel och dag); välj en annan månad.
 
 ## 10. Öppna frågor
 

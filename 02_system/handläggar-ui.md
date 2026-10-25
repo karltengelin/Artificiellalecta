@@ -121,6 +121,17 @@ Rättas lönen för en månad som har premie, länkar resultatsidan direkt till 
 | `/handelselogg` | Hela loggen, senaste först, med urval på operation och utfall. Läsningar visas på begäran | `get_operation_events` |
 | `/forsakrade/{pnr}/handelser` | Händelser som rör den försäkrade | `get_operation_events` |
 
+**Produktparametrar (Fas 3c, 3c-P2, B-035).**
+
+| Adress | Innehåll | Operationer |
+|---|---|---|
+| `/parametrar` | Gällande värden i dag som nyckeltal, alla versioner med giltighet, tillstånd, regel, källa och beslut, och formuläret för en ny version | `get_product_parameters` |
+| `/parametrar/ny` (POST) | Schemalägg en ny version från en framtida månad, med regelns nya version, källa, beslut och motivering | `schedule_product_parameter_change` |
+| `/parametrar/aterkalla` (POST) | Dra tillbaka en kommande version med motivering; föregående version gäller då vidare | `withdraw_product_parameter_change` |
+
+Handläggaren utför ändringarna direkt. En agent kan bara föreslå en ny version, och förslaget avgörs i
+`/godkannanden`. Procentsatser skrivs som andel (0,045 = 4,5 %) och visas i procent.
+
 Antalet väntande förslag visas i menyn. Det hämtas med `count_approval_requests`, som inte läser
 personuppgifter och därför inte loggas. Ett godkännande som krockar med dagens läge, till exempel för
 att handläggaren redan har registrerat underlaget, rullas tillbaka i sin helhet. Förslaget ligger då kvar

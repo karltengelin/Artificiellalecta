@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf, op_info with context %}
+{% set fe = error.field_errors if error else {} %}
+{% block title %}Produktparametrar{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <h1>Produktparametrar</h1>
+  <p class="muted small">Värdena som premieberäkningen använder, i versioner med giltighet (B-035). Premiemotorn tar den version
+    som gäller premiemånaden. Historiska premier räknas aldrig om (PR-ITP1-032).</p>
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+  {% if not listing.table_present %}
+  <div class="alert alert--info" role="status"><p>Tabellen <code>product_parameters</code> finns inte i databasen ännu.
+    Premieberäkningen använder paketets värden PR-ITP1 v1.0 i koden tills migrationen körts.</p></div>
+  {% endif %}
+
+  <h2>Gäller i dag, {{ listing.on_date | iso_date }}</h2>
+  <dl class="metrics">
+    {% for key, (name, unit, help) in parameters.items() %}
+    <div class="metric"><dt>{{ name }}</dt><dd>{% if key in listing.effective %}{{ display(key, listing.effective[key]) }}{% else %}<span class="muted">ej angivet</span>{% endif %}</dd></div>
+    {% endfor %}
+  </dl>
+</section>
+
+{% if listing.table_present %}
+<section class="panel">
+  <h2>Versioner</h2>
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Parameter</th><th class="num">Värde</th><th>Gäller</th><th>Tillstånd</th><th>Regel, källa och beslut</th><th></th></tr></thead>
+    <tbody>
+      {% for key, (name, unit, help) in parameters.items() %}
+      {% for v in by_key[key] %}
+      <tr{% if v.state == "kommande" %} class="is-highlight"{% elif v.state in ("upphörd", "återkallad") %} class="is-superseded"{% endif %}>
+        <td>{% if loop.first %}<strong>{{ name }}</strong><br><code class="small">{{ key }}</code>{% endif %}</td>
+        <td class="num">{{ display(key, v.value) }}</td>
+        <td class="nowrap">{{ v.valid_from | iso_date }}<br><span class="muted small">{{ "t.o.m. " ~ (v.valid_to | iso_date) if v.valid_to else "tills vidare" }}</span></td>
+        <td><span class="pill{% if state_pills[v.state] %} pill--{{ state_pills[v.state] }}{% endif %}">{{ v.state | capitalize }}</span></td>
+        <td class="small">{{ v.rule_id }} v{{ v.rule_version }}<br><span class="muted">{{ v.source_ref }} · {{ v.decision_ref }}</span></td>
+        <td class="actions">
+          {% if v.state == "kommande" %}
+          <details>
+            <summary>Dra tillbaka</summary>
+            <form method="post" action="/parametrar/aterkalla" class="decide__form">
+              {{ csrf() }}
+              <input type="hidden" name="key" value="{{ key }}">
+              <input type="hidden" name="valid_from" value="{{ v.valid_from.isoformat() }}">
+              <label for="f-reason-{{ key }}">Motivering</label>
+              <input id="f-reason-{{ key }}" name="reason" required placeholder="Varför dras versionen tillbaka?">
+              <button type="submit" class="danger">Dra tillbaka</button>
+            </form>
+          </details>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted small">En parameter kan ha en kommande version åt gången. Den går att dra tillbaka tills den börjar gälla; därefter
+    ändras värdet bara med en ny version.</p>
+</section>
+
+<section class="panel" id="ny-version">
+  <h2>Schemalägg en ny version</h2>
+  <div class="formgrid">
+    <form method="post" action="/parametrar/ny" class="form">
+      {{ csrf() }}
+      <div class="row">
+        {% call field("key", "Parameter", fe) %}
+        <select id="f-key" name="key" required>
+          {% for key, (name, unit, help) in parameters.items() %}
+          <option value="{{ key }}" {% if values.get("key") == key %}selected{% endif %}>{{ name }} ({{ unit }})</option>
+          {% endfor %}
+        </select>
+        {% endcall %}
+        {% call field("value", "Nytt värde", fe, "År, andel (0,045 = 4,5 %) eller antal IBB") %}
+        <input id="f-value" name="value" inputmode="decimal" value="{{ values.get('value', '') }}" required>
+        {% endcall %}
+        {% call field("valid_from", "Gäller från premiemånad", fe, "Tidigast nästa månad") %}
+        <input id="f-valid_from" type="month" name="valid_from" value="{{ values.get('valid_from', '') }}" required>
+        {% endcall %}
+      </div>
+      <div class="row">
+        {% call field("rule_version", "Regelns nya version", fe, "T.ex. 1.1") %}
+        <input id="f-rule_version" name="rule_version" value="{{ values.get('rule_version', '') }}" required>
+        {% endcall %}
+        {% call field("source_ref", "Källa", fe, "Id i källregistret") %}
+        <input id="f-source_ref" name="source_ref" value="{{ values.get('source_ref', '') }}" required>
+        {% endcall %}
+        {% call field("decision_ref", "Beslut", fe, "B-nummer eller grindbeslut") %}
+        <input id="f-decision_ref" name="decision_ref" value="{{ values.get('decision_ref', '') }}" required>
+        {% endcall %}
+      </div>
+      {{ reason(values, fe, "T.ex. antagen regeländring och var regeltexten förts in") }}
+      <div class="form__actions">
+        <button type="submit">Schemalägg</button>
+      </div>
+    </form>
+    {{ op_info(op) }}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

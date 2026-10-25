@@ -21,6 +21,8 @@ operations:
   get_salary_reports: AGENT            # läsning av löneunderlag, personuppgifter (loggas)
   calculate_premium_preview: AGENT     # beräkning enligt PR-ITP1-001, sparar ingenting
   get_product_parameters: AGENT        # produktparametrarna med versioner (B-035), inga personuppgifter
+  schedule_product_parameter_change: APPROVAL    # ny parameterversion från en framtida månad (B-035); agenten föreslår
+  withdraw_product_parameter_change: HUMAN_ONLY  # dra tillbaka en kommande version (B-035)
 
   # Godkännandekön och händelseloggen (Fas 4, handläggar-UI:t). Handläggarens kontrollyta:
   # agenter ser inte kön eller loggen (dataminimering, B-006) – kan öppnas genom en ändring här.
