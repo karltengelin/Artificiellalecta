@@ -20,7 +20,7 @@ Karl är högsta beslutsfattare. Den gemensamma frågeingången samordnar uppdra
 via teamens ledande agenter och sammanställer underlag; den får inget eget
 VD-mandat och inga utökade data- eller skrivrättigheter.
 
-**En plattform med teamområden (inriktning från Karl 2026-10-25).** Bolaget får
+**En plattform med teamområden (B-036).** Bolaget får
 en gemensam webbplattform, inte en app per team. Samma server, Digital klarhet,
 formulärskydd och, när den finns, inloggning.
 

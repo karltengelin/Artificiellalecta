@@ -1,7 +1,7 @@
 # Handläggar-UI:t
 
 > **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5). **Verifierat skarpt i Lakebase 2026-10-12** (S6, se ATT_GORA): verifieringsposten AL-000499.
-> **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret), B-032 (anslutning, stamdata och arbetsgivare)
+> **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret), B-032 (anslutning, stamdata och arbetsgivare), B-036 (försäkringsteamets område på plattformen)
 > **Kod:** `src/web/` · **Start:** `python scripts/web/start_ui.py` · **Tester:** `tests/test_web_*.py`
 > **Relaterat:** [tjänstelager.md](tjänstelager.md), [tjänstelager_operationer.md](tjänstelager_operationer.md), `projekt/01_ärendehantering/PROJEKTPLAN.md`
 
@@ -13,7 +13,7 @@ Ett lokalt webbgränssnitt där handläggaren söker fram en försäkrad och gö
 Lakebase-tabellerna och i händelseloggen. UI:t är tjänstelagrets första klient. Agenterna
 (Fas 3b/5) använder senare samma operationer, med samma spår i loggen (B-017).
 
-**Försäkringsteamets område.** På bolagets gemensamma plattform är handläggar-UI:t försäkringsteamets
+**Försäkringsteamets område (B-036).** På bolagets gemensamma plattform är handläggar-UI:t försäkringsteamets
 område, och operatörscentralen är startsidan ([projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md),
 OC-8). Här nås bara försäkringsteamets agent, handläggaragenten. Flöden över flera team och andra teams
 agenter hör hemma i centralen respektive i teamens egna områden.

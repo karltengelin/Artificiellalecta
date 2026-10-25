@@ -18,7 +18,7 @@ webbplattform, där varje team har ett eget område. Försäkringsteamets områd
 dagens handläggar-UI. Compliance, aktuarie och senare team får egna områden.
 Ett område exponerar bara teamets egen agent, och centralen länkar till alla
 områden och visar deras läge. Arbete över flera team startas härifrån som flöden
-(OC-7, OC-8 i [projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md)).
+(B-036; OC-7, OC-8 i [projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md)).
 
 En ledningsfråga ska innehålla frågeställning, period, ansvarigt team,
 underlagsreferenser, alternativ, konsekvenser, osäkerhet och föreslagen
