@@ -14,8 +14,8 @@ Rapportens fakta, beräkningar, diagramserier och redaktionella kolumnbredder
 hur den används för en fullständig rapport. Dess extra seriefärger hör till
 exemplet och utökar inte den gemensamma paletten.
 
-Detta är lokal rapportgenerering. Dokumentgateway, agentverktyg,
-genereringsskill, kundbrev, presentationer och en generell Markdown-konverterare
+Detta är lokal rapportgenerering. Rapportexport genom dokumentgatewayen, agentverktyg
+för generering, kundbrev, presentationer och en generell Markdown-konverterare
 återstår. Extern inlämning eller publicering följer ordinarie godkännanden.
 
 ## Beroenden och typsnitt

@@ -106,7 +106,7 @@ teams:
       max_context_bytes: 40000
       max_wall_seconds: 180
 
-  # Flaggskeppsdemon (B-035, flaggskeppsflöde.md §5). Inga kundpersonuppgifter, inga skrivningar
+  # Första avgränsade regel- och analysverktygen (B-035/B-037). Inga kundpersonuppgifter, inga skrivningar
   # i försäkringssystemet – write gäller bara utkast i körningens arbetsyta.
   compliance:
     lead: compliance_agent

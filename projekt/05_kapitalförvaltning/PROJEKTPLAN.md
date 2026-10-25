@@ -52,4 +52,4 @@ Modellerna registreras automatiskt för befintligt `create_tables.py`, som inte 
 - Karl beskriver sig som osäker på kapitalförvaltningsdomänen – förslaget är att börja med en
   enkel, regelstyrd standardlösning (redan beslutat i B-019) och vidareutveckla analysgränssnittet
   i en senare iteration, snarare än att designa allt på en gång
-- Hur ser analysgränssnittet ut (egen vy i handläggar-UI:t, eller fristående)?
+- Hur utformas kapitalförvaltningsteamets analys- och arbetsvyer inom den gemensamma plattformen (B-036, projekt 10 OC-8)? Centralen ger överblick och länkar till detaljarbetet i teamområdet; mått och BI-fördjupning samordnas med projekt 2. En separat applikation är inte det aktuella vägvalet.

@@ -8,13 +8,21 @@ händelselogg orörda.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
 from sqlalchemy import func, select
 
-from models import Employer, InsuredPerson, OperationEventRecord, Policy, PolicyBenefit, PolicyState
+from models import (
+    Employer,
+    InsuredPerson,
+    OperationEventRecord,
+    Policy,
+    PolicyBenefit,
+    PolicyState,
+    ProductParameter,
+)
 from services import (
     AccessDeniedError,
     Actor,
@@ -100,6 +108,69 @@ def test_under_25_ansluts_med_premie_fran_25_arsmanaden(insurance_db):
     result = service(insurance_db).execute("enroll_insured_person", HUMAN, enrollment(personal_id_number=YOUNG)).output
     assert result.premium_from_month == date(2028, 5, 1)
     assert "25-årsmånaden 2028-05" in result.note
+
+
+def change_age(db, key: str, value: int, valid_from: date) -> None:
+    """Ny version i en isolerad testdatabas; inga produktregler eller startvärden ändras."""
+    with db.session_factory() as s:
+        old = s.scalars(select(ProductParameter).where(ProductParameter.key == key)).one()
+        old.valid_to = valid_from - timedelta(days=1)
+        s.add(ProductParameter(
+            key=key, value=Decimal(value), unit="years", valid_from=valid_from,
+            rule_id="PR-ITP1-013", rule_version="test-2", source_ref="testkälla",
+            decision_ref="testbeslut", created_by="test",
+        ))
+
+
+@pytest.mark.parametrize(("age", "year"), [(24, 2027), (26, 2029)])
+def test_premiestart_foljer_versionerad_startalder(insurance_db, age, year):
+    change_age(insurance_db, "premium_age_start", age, date(2026, 9, 1))
+    result = service(insurance_db).execute("enroll_insured_person", HUMAN, enrollment(personal_id_number=YOUNG)).output
+    assert result.premium_from_month == date(year, 5, 1)
+    assert f"{age}-årsmånaden {year}-05" in result.note
+
+
+def test_anslutning_och_premieberakning_foljer_samma_slutalder_och_giltighet(insurance_db):
+    change_age(insurance_db, "premium_age_end", 69, date(2026, 9, 1))
+    svc = service(insurance_db)
+    # En framtida version får inte ändra prövningen av en äldre startmånad.
+    with pytest.raises(BlockedError, match="66 år"):
+        svc.execute("enroll_insured_person", HUMAN, enrollment(
+            personal_id_number=OLD, employment_start_date="2026-08-01", itp1_start_date="2026-08-31",
+        ))
+    result = svc.execute("enroll_insured_person", HUMAN, enrollment(
+        personal_id_number=OLD, itp1_start_date="2026-09-15",
+    )).output
+    assert result.premium_from_month == date(2026, 9, 1)
+    preview = svc.execute("calculate_premium_preview", HUMAN, {
+        "monthly_salary_sek": "41000", "birth_date": "1958-02-02", "period_month": "2026-09-01",
+    }).output
+    assert preview.in_age_window is True
+    assert preview.calculation_basis["age_window"] == [25, 69]
+
+
+def test_anslutning_stoppar_vid_den_andrade_slutaldersmanaden(insurance_db):
+    change_age(insurance_db, "premium_age_end", 34, date(2026, 4, 1))
+    svc = service(insurance_db)
+    before = counts(insurance_db)
+    with pytest.raises(BlockedError, match="34 år 2026-04"):
+        svc.execute("enroll_insured_person", HUMAN, enrollment(
+            employment_start_date="2026-04-01", itp1_start_date="2026-04-01",
+        ))
+    assert counts(insurance_db) == before
+    result = svc.execute("enroll_insured_person", HUMAN, enrollment(
+        employment_start_date="2026-03-01", itp1_start_date="2026-03-31",
+    )).output
+    assert result.start_date == date(2026, 3, 31)
+
+
+def test_saknad_aldersparameter_stoppar_anslutning_utan_skrivning(insurance_db):
+    with insurance_db.session_factory() as s:
+        s.scalars(select(ProductParameter).where(ProductParameter.key == "premium_age_end")).one().status = "withdrawn"
+    before = counts(insurance_db)
+    with pytest.raises(NotFoundError, match="premium_age_end"):
+        service(insurance_db).execute("enroll_insured_person", HUMAN, enrollment())
+    assert counts(insurance_db) == before
 
 
 def test_retroaktiv_anslutning_skapar_inga_premier(insurance_db):

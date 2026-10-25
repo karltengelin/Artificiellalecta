@@ -9,8 +9,12 @@ faktiskt påverkar systemen och databaserna bakom: policys, förmåner, tillstå
 
 ## Status
 
-🟡 **Handläggar-UI v1 byggt och verifierat i Lakebase (Fas 4, 2026-10-12)**, lokalt och utan inloggning. Ärenden (`cases`), inbyggd
-Claude och handläggaragent återstår. Byggs enligt B-020 före kundportalen (projekt 3).
+🟡 **Handläggar-UI v1 byggt och verifierat i Lakebase (Fas 4, 2026-10-12)**, lokalt och utan inloggning.
+Ärenden och handläggaragent för `salary_report` är byggda (F5-1–4, B-033).
+`cases` och agentrollens rättigheter infördes i Lakebase 2026-10-24. Kvar i
+F5-5–6: slutverifiering av agentförslag och hela ärendeflödet från 2026-11-01.
+Självständiga körningar och fler ärendetyper återstår. Den breda modelloberoende
+bolagsdialogen planeras i projekt 10; den är ingen separat Claude-chatt i detta projekt.
 
 Handläggaren kan i v1:
 - söka en försäkrad på personnummer eller försäkringsnummer och se översikt, löneunderlag, premiehistorik
@@ -36,10 +40,11 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 
 - **Tjänstelagret (Fas 1f, B-028).** UI:t anropar bara dess operationer. Se `02_system/tjänstelager.md`.
 - **Fas 3 (AI-abstraktionslagret, B-009)** ✅ byggdes 2026-10-11 i `src/ai/`.
-  - Den inbyggda Claude-chatten och handläggaragenten kräver dessutom harness (Fas 3b), ✅ byggd 2026-10-24
+  - Handläggaragenten använder dessutom harness (Fas 3b), ✅ byggd 2026-10-24
     i `src/agents/` (3b-1–3b-8, röktestet gick igenom hos båda leverantörerna), se `02_system/harness.md`.
-- **`cases`-tabellen** finns inte än. Att definiera den ingår i det här projektets scope: designstopp i
-  [ARENDEN_BESLUTSFORSLAG.md](ARENDEN_BESLUTSFORSLAG.md). `OperationContext.case_id` finns redan i tjänstelagret.
+- **`cases`-tabellen** och ärendeoperationerna är byggda enligt
+  [ARENDEN_BESLUTSFORSLAG.md](ARENDEN_BESLUTSFORSLAG.md), godkänt som B-033.
+  Tabellen och agentrollens läsrätt finns i Lakebase; slutverifiering enligt F5-5–6 återstår.
 
 ## Befintlig grund i repot
 
@@ -60,8 +65,9 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
   - arbetsgivarens uppgifter och avslut
   - försäkringsbesked
   - interna id:n i adresserna
-- `cases`-tabell och ärendeflöde, tillsammans med handläggaragenten (Fas 5): designstopp i [ARENDEN_BESLUTSFORSLAG.md](ARENDEN_BESLUTSFORSLAG.md), godkänt och loggat som B-033; byggs i stegen F5-1–F5-6.
-- Inbyggd Claude efter harness (Fas 3b).
+- Slutverifiera agentförslag och hela ärendeflödet i F5-5–6 från 2026-11-01; nuvarande regelstatus får inte kringgås.
+- Bygg självständiga ärendekörningar först med bakgrundsarbetaren och enligt F5-7:s mandat/budget.
+- Samordna modelloberoende bolagsdialog med [projekt 10](../10_operatörscentral/PROJEKTPLAN.md), OC-3, och försäkringsteamets område med OC-8 (B-036).
 
 ## Öppna designfrågor
 
@@ -76,9 +82,10 @@ arbetsgivarfil, systemskapade avvikelser och tidsfristuppföljning efter `salary
 
 ### Befintliga gränssnittsfrågor
 
-Se `ATT_GORA.md` 🔵:
-- **Sessionshistorik** för chatten.
-- **Filrättigheter.**
+Se `ATT_GORA.md` 🔵 och projekt 10 för den breda dialogens historik och verktygsmandat.
+Fria fil-/CRUD-rättigheter i den äldre adminutredningen är inte bygginstruktion.
+
+Kvar i detta projekt:
 - **Autentisering.** I v1 körs UI:t bara lokalt utan inloggning, och verklig autentisering behövs före
   kundportalen.
 - **Delad backend med kundportalen.** Tjänstelagret är redan gemensamt.

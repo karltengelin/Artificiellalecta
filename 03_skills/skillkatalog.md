@@ -1,6 +1,6 @@
 # Skillkatalog
 
-> Centralt index över alla skills (B-007). En skill = instruktion (MD) i `03_skills/<kategori>/` + implementation (Python) i `src/skills/<category>/` enligt mappningen i MASTER_CONTEXT §7 / B-015.
+> Centralt index över skills (B-007). Ren beräkningskod finns i `src/skills/<category>/` med instruktioner i `03_skills/<kategori>/` (B-015). Agentverktyg registreras i harness och återanvänder tjänstelagrets operationer eller domängateways; varje verktyg behöver inte en separat implementation i `src/skills/`. Körpolicyn styr tillgängliga poddar och begränsningar.
 >
 > **Uppdatera detta dokument när en skill skapas, ändras eller tas bort.** Skills med PII-åtkomst ska ha uttrycklig behörighetslista (B-006).
 

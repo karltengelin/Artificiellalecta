@@ -74,7 +74,7 @@
   <h2>Ansluten: {{ r.first_name }} {{ r.last_name }}</h2>
   <dl class="kv">
     <dt>Försäkring</dt><dd><a href="/forsakringar/{{ r.policy_number }}">{{ r.policy_number }}</a> · {{ r.state | label('policy_state') }} från {{ r.start_date | iso_date }}</dd>
-    <dt>Ordinarie premie från</dt><dd>{{ r.premium_from_month | month }}</dd>
+    <dt>Beräknad premiestart</dt><dd>{{ r.premium_from_month | month }}</dd>
     <dt>Arbetsgivare</dt><dd>{{ r.employer_org_number }}</dd>
     <dt>Försäkringsbesked</dt><dd>{{ "Skickat" if r.information_letter_sent else "Inte skickat – görs i ett senare steg (villkor §14)" }}</dd>
   </dl>

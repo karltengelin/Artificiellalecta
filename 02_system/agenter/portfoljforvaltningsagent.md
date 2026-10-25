@@ -12,7 +12,7 @@
 
 ## Mandat
 
-Ansvarar för förvaltning av bolagets placeringstillgångar. Övervakar portföljsammansättning, exponeringar och avkastning mot fastställda placeringsriktlinjer. Förbereder investeringsbeslut och ombalanseringar för manuellt godkännande. Arbetar inom de ramar som styrdokument och regulatoriska krav sätter (bl.a. LTF och Solvens II-krav på kapitalplacering).
+Planerat mandat: förvaltning av bolagets placeringstillgångar, övervakning av portföljsammansättning, exponeringar och avkastning samt förslag till investeringsbeslut och ombalanseringar. Utgångspunkten är projektets LTF/IORP II-regim och tillämplighetsbedömningen i `04_regulatoriskt/regelverkskarta.md`; Solvens II-krav ska inte antas automatiskt. Placeringsriktlinjen är ännu ett beslutsutkast. Förvaltningsfunktion, verktyg och agentprofil måste byggas och verifieras innan mandatet kan utföras.
 
 Alla transaktioner och portföljförändringar kräver manuellt godkännande innan genomförande (§3.5 människa-i-loopen).
 
