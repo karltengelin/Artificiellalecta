@@ -20,7 +20,7 @@ from sqlalchemy import inspect, or_, select
 from sqlalchemy.orm import Session
 
 from models import ProductParameter
-from services.errors import BlockedError, NotFoundError
+from services.errors import BlockedError, NotFoundError, ServiceError
 from skills.calculation.calculate_itp1_premium import (
     DEFAULT_PARAMETERS,
     PremiumParameters,
@@ -96,18 +96,24 @@ def has_parameter_table(session: Session) -> bool:
     return inspect(session.connection()).has_table(ProductParameter.__tablename__)
 
 
-def versions_on(session: Session, on: date, keys=tuple(PREMIUM_FIELDS)) -> dict[str, ProductParameter]:
-    """Den version av varje parameter som gäller dagen `on` (ej återkallad)."""
-    rows = session.scalars(
+def _valid_rows(session: Session, keys, first: date, last: date) -> list[ProductParameter]:
+    """Giltiga (ej återkallade) versioner som överlappar dagarna first–last."""
+    return list(session.scalars(
         select(ProductParameter).where(
             ProductParameter.key.in_(keys),
             ProductParameter.status == "valid",
-            ProductParameter.valid_from <= on,
-            or_(ProductParameter.valid_to.is_(None), ProductParameter.valid_to >= on),
+            ProductParameter.valid_from <= last,
+            or_(ProductParameter.valid_to.is_(None), ProductParameter.valid_to >= first),
         )
-    ).all()
+    ).all())
+
+
+def _pick(rows, on: date) -> dict[str, ProductParameter]:
+    """Versionen av varje parameter som gäller dagen `on` – två giltiga versioner stoppar."""
     found: dict[str, ProductParameter] = {}
     for row in rows:
+        if row.valid_from > on or (row.valid_to is not None and row.valid_to < on):
+            continue
         if row.key in found:
             raise BlockedError(
                 f"Produktparametern {row.key} har två giltiga versioner {on:%Y-%m-%d} "
@@ -117,12 +123,12 @@ def versions_on(session: Session, on: date, keys=tuple(PREMIUM_FIELDS)) -> dict[
     return found
 
 
-def premium_parameters(session: Session, period_month: date) -> PremiumParameters:
-    """Premiemotorns parametrar för premiemånaden, med versionerna för calculation_basis."""
-    month = period_month.replace(day=1)
-    if not has_parameter_table(session):
-        return PremiumParameters(versions={"källa": FALLBACK_LABEL})
-    found = versions_on(session, month)
+def versions_on(session: Session, on: date, keys=tuple(PREMIUM_FIELDS)) -> dict[str, ProductParameter]:
+    """Den version av varje parameter som gäller dagen `on` (ej återkallad)."""
+    return _pick(_valid_rows(session, keys, on, on), on)
+
+
+def _build(found: dict[str, ProductParameter], month: date) -> PremiumParameters:
     missing = [key for key in PREMIUM_FIELDS if key not in found]
     if missing:
         raise NotFoundError(
@@ -140,6 +146,36 @@ def premium_parameters(session: Session, period_month: date) -> PremiumParameter
     return PremiumParameters(**values, versions={key: label(found[key]) for key in PREMIUM_FIELDS})
 
 
+def premium_parameters(session: Session, period_month: date) -> PremiumParameters:
+    """Premiemotorns parametrar för premiemånaden, med versionerna för calculation_basis."""
+    month = period_month.replace(day=1)
+    if not has_parameter_table(session):
+        return PremiumParameters(versions={"källa": FALLBACK_LABEL})
+    return _build(versions_on(session, month), month)
+
+
+def monthly_premium_parameters(session: Session, months) -> dict[date, PremiumParameters | ServiceError]:
+    """Parametrarna för en följd av premiemånader med en enda fråga (prognoser, 3c-B).
+
+    Samma regler som premium_parameters, men en månad som inte går att slå upp får sitt
+    fel som värde i stället för att stoppa hela följden – anroparen visar den som ej beräknad.
+    """
+    months = sorted({m.replace(day=1) for m in months})
+    if not months:
+        return {}
+    if not has_parameter_table(session):
+        fallback = PremiumParameters(versions={"källa": FALLBACK_LABEL})
+        return {m: fallback for m in months}
+    rows = _valid_rows(session, tuple(PREMIUM_FIELDS), months[0], months[-1])
+    result: dict[date, PremiumParameters | ServiceError] = {}
+    for month in months:
+        try:
+            result[month] = _build(_pick(rows, month), month)
+        except ServiceError as exc:
+            result[month] = exc
+    return result
+
+
 __all__ = [
     "DEFAULTS",
     "DEFAULT_PARAMETERS",
@@ -148,6 +184,7 @@ __all__ = [
     "default_rows",
     "has_parameter_table",
     "label",
+    "monthly_premium_parameters",
     "plain",
     "premium_parameters",
     "versions_on",

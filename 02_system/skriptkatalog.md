@@ -12,10 +12,10 @@ Det finns ingen separat kodbas per delprojekt eller avdelning (B-015/B-024).
 | services | Affärsoperationer, in-/utdata, åtkomst, produktregelkontroll, godkännanden och händelser |
 | skills/calculation | Ren ITP1-premieberäkning, återanvänd av operationer och analyser |
 | ai | Modellroller, leverantörsadaptrar, strukturerade svar, nycklar och anropslogg |
-| analytics | Första scenarioberäkningen och adapter för offline-backup |
+| analytics | Rena beståndsberäkningar: IBB-scenariot, adapter för offline-backup och konsekvensen av en ändrad produktparameter med undertryckning (`parameter_impact.py`, används av `estimate_parameter_change_impact`, 3c-B) |
 | design | Digital klarhets tokenfil (B-034), webbens CSS-variabler som härleds ur den (`web_css.py`) och märket som ikon (`icon.py`) |
 | reporting | [Återanvändbar rapportmall i Digital klarhet](../06_design/rapportmall.md) och exempelrapport om agentnyttjande: fiktiv data, PDF/Markdown och diagram. Ingen aktiverad skill |
-| utils | Databasanslutning, backup/återställning, återanvändbar migrationskod och demobeståndet för handläggar-UI:t |
+| utils | Databasanslutning, backup/återställning, återanvändbar migrationskod och demobeståndet för handläggar-UI:t, med den äldre kohorten födda 1959–1962 (B-035 val K) |
 | web | Handläggar-UI:t (Fas 4): FastAPI-sidor som bara anropar tjänstelagret, se [handläggar-ui.md](handläggar-ui.md) |
 | agents | Harness: körpolicy, skill-register, dispatcher, agentloop, körjournal, ärendekörningar och gatewayerna `regelverk` och `dokument` (`agents/gateways/`, 3c-G) |
 | övriga skill-mappar | Förberedd struktur; ytterligare förmågor byggs enligt fasplanen |
@@ -30,7 +30,7 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | setup | [create_tables.py](../scripts/setup/create_tables.py) | Skapa tabeller som saknas | Skriver schema; uppgraderar inte befintliga tabeller |
 | setup | [grant_agent_role.py](../scripts/setup/grant_agent_role.py) | Ge ett agentteams databasroll exakt sina rättigheter (`harness.md` §5.1) | Torrkörning som standard (förkontroll, nuvarande rättigheter, SQL); `--apply` ändrar rättigheter – samordna enligt AGENTS.md §4.5. Rollen skapas av operatören |
 | setup | [seed_base_amounts.py](../scripts/setup/seed_base_amounts.py) | Lägg in/uppdatera IBB 2023–2026 | Skriver årsparametrar; tabellen måste finnas |
-| demo | [generate_mock_data.py](../scripts/demo/generate_mock_data.py) | Skapa fiktiva personer och arbetsgivare | Skriver CSV, standardmål `data/`; ingen databas |
+| demo | [generate_mock_data.py](../scripts/demo/generate_mock_data.py) | Skapa fiktiva personer och arbetsgivare, med den äldre kohorten födda 1959–1962 (B-035 val K) | Skriver CSV, standardmål `data/`; ingen databas. `--older-cohort-only` skriver bara kohorten till `insured_persons_older_cohort.csv`, kopplad till en befintlig `employers.csv` och med stabila id; `--no-older-cohort` utan den |
 | demo | [seed_mock_data.py](../scripts/demo/seed_mock_data.py) | Läs CSV till Lakebase | Skriver personer/arbetsgivare; `--reset` tar bort tabeller/data; `--dry-run` läser bara CSV |
 | demo | [generate_premium_history.py](../scripts/demo/generate_premium_history.py) | Skapa fiktiva försäkringar och premiehistorik | Skriver databas; kräver personer och IBB. `--dry-run` läser databasen men skriver inte |
 | maintenance | [backup_database.py](../scripts/maintenance/backup_database.py) | Spara faktisk databasstruktur och data | Läser databas och skriver backupfiler |

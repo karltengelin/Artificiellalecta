@@ -12,6 +12,7 @@ from services.operations import (  # noqa: F401
     journal,
     persons,
     policies,
+    portfolio_impact,
     premiums,
     product_parameters,
     salary,

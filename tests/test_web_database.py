@@ -12,13 +12,16 @@ from models import ApprovalRequestRecord, InsuredPerson, PremiumTransaction
 from services import ProductRuleCatalog
 from services.db import session_factory_for
 from services.operations import common
-from utils.demo_data import PERSONS, create_demo_database
+from skills.calculation.calculate_itp1_premium import is_in_age_window
+from utils.demo_data import OLDER_COHORT, PERSONS, create_demo_database
 from web.config import WebConfigError
 from web.database import demo_engine, svc_test_engine
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
 
 TODAY = date(2026, 10, 12)
+#: De fyra personerna och den äldre kohorten (B-035 val K)
+DEMO_PERSONS = len(PERSONS) + len(OLDER_COHORT)
 
 
 @pytest.fixture(autouse=True)
@@ -43,8 +46,12 @@ def test_demobestandet_har_personer_premier_och_tva_forslag():
     engine = memory_engine()
     create_demo_database(engine, today=TODAY)
     persons, premiums, proposals = counts(engine)
-    assert persons == len(PERSONS) == 4
-    assert premiums == 21 + 21 + 12 + 4
+    assert (len(PERSONS), len(OLDER_COHORT), persons) == (4, 31, DEMO_PERSONS)
+    # Kohorten: en premie per månad 2025-01–2026-09 i premieåldern (de äldsta har passerat 66)
+    months = [date(2025 + i // 12, i % 12 + 1, 1) for i in range(21)]
+    cohort = sum(is_in_age_window(p.birth_date, m) for p in OLDER_COHORT for m in months)
+    assert 0 < cohort < 31 * 21
+    assert premiums == 21 + 21 + 12 + 4 + cohort
     assert proposals == 2
 
 
@@ -64,7 +71,7 @@ def test_demofilen_skapas_en_gang_och_ateranvands(tmp_path):
                                     proposed_by="test", status="rejected"))
     first.dispose()
     second = demo_engine(path)  # befintlig fil: inget nytt bestånd, inga tabeller skapas om
-    assert counts(second)[0] == 4
+    assert counts(second)[0] == DEMO_PERSONS
     with session_factory_for(second)() as s:
         assert s.get(ApprovalRequestRecord, "x" * 32) is not None
     second.dispose()
@@ -81,7 +88,7 @@ def test_ny_tabell_laggs_till_i_befintlig_demofil(tmp_path):
     first.dispose()
     second = demo_engine(path)
     assert "cases" in inspect(second).get_table_names()
-    assert counts(second)[0] == 4
+    assert counts(second)[0] == DEMO_PERSONS
     second.dispose()
 
 
