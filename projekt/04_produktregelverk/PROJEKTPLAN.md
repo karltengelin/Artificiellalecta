@@ -59,6 +59,14 @@ bokslut, DORA-/GDPR-policies och faktisk hållbarhetsinformation är
 verksamhetsprocesser i andra delprojekt. Det är inte öppna produktval
 som lämnas till en språkmodell i byggsessionen.
 
+## Överlämning till löpande verksamhet
+
+[Processöversikten](../../01_domän/processer_översikt.md) skiljer färdiga regelunderlag
+från kvarstående verksamhetsmotorer (V-02–06, V-10–12). Föreslagna paket A/B samlar
+premie/fakturering/mottagning respektive pension/kapital/månadsavräkning. De behöver
+bygguppdrag, ansvar och tester i samordning med projekt 1/6 och 5; denna hänvisning
+utökar inte produktregelprojektets implementation eller innebär ett nytt produktbeslut.
+
 ## Flaggskeppsscenario
 
 Dokumenterat första scenario: ny IBB-årsparameter → tolkning och berörd

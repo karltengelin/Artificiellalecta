@@ -26,6 +26,24 @@ regelverk och svensk lag, och att organisera låtsasbolaget (avdelningar, mandat
 
 ## Öppna designfrågor
 
+### Konkretisering för månadssimulering
+
+Behoven är samlade i [processöversikten](../../01_domän/processer_översikt.md).
+De här delarna ska avgränsas till bygguppdrag innan en full pensionsmånad kan verifieras:
+
+- **V-10, ekonomi:** bokföring och avstämningsunderlag för premier, placeringar, pension,
+  avgifter, skatt och eget kapital; ingående balans och månadsbokslut.
+- **V-11, aktuarie/risk:** garanti-/reserv-/FTA-/ALM- och finansieringskontroller med
+  verifierade motorer. Den dokumenterade SIM-grunden är metodunderlag, inte färdig beräkningskod.
+- **V-12, rapportering:** välj tillsammans med projekt 2 första interna månadsrapporten,
+  därefter tillämpliga skatte-/tillsyns-/partsrapporter med bestämd mottagare och period.
+- **Paket B och S-04:** föreslagen samordning med projekt 1 och 5 för pensions-/månadsavräkning
+  och ett ekonomiskt avstämt startbestånd. Byggansvaret behöver fastställas vid designstart.
+
+Målbilden ovan innebär inga nya agentmandat, rapporteringskrav eller flytt av beslutat projektscope.
+
+### Organisation
+
 - Ett delprojekt per avdelning, eller en gemensam modul som växer per avdelning? (Karl nämner att
   det kan behövas ett projekt per viktig avdelning)
 - Hur mappas verkliga tjänstepensionsbolags avdelningsstruktur till det simulerade bolaget?

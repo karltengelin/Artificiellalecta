@@ -14,7 +14,7 @@ Hela programmet (visionen om ett AI-native tjänstepensionsbolag) är strukturer
 - Fas 2 (paper trading) → **Delprojekt 5: Kapitalförvaltning**
 - Fas 4/5 (handläggar-UI + handläggaragent) → **Delprojekt 1: Ärendehantering**
 
-Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsoversikt.html`) och 9 (Processkartor) är påbörjade och har sina nästa steg i respektive `projekt/<nr>_<namn>/PROJEKTPLAN.md`. Delprojekt 3 (Kundportal), 6 (Avdelningsfunktioner) och 7 (Kundchattbot) har ännu inga detaljerade uppgifter. Även de bryts ut till egna listor i sina projektplaner allt eftersom de påbörjas, istället för att trängas in i denna lista.
+Delprojekt 2 (BI & insikter), 8 (Företagsöversikt, första version `foretagsoversikt.html`) och 9 (Processkartor) är påbörjade och har sina nästa steg i respektive `projekt/<nr>_<namn>/PROJEKTPLAN.md`. Delprojekt 3 (Kundportal), 6 (Avdelningsfunktioner) och 7 (Kundchattbot) är ännu inte byggda. För 3 och 6 finns sedan 2026-10-25 en första precisering av beroenden och byggbehov för månadssimulering; detaljerade byggplaner återstår. Uppgifterna bryts ut i projektplanerna allt eftersom projekten påbörjas. Tvärgående behov samlas under **Månadssimulering – byggluckor och samordning** nedan.
 
 ---
 
@@ -194,11 +194,31 @@ Fas 3b är klar (3b-1–3b-8). Nästa steg är ärendet som agentens arbetsenhet
 - [ ] **F5-5: Lakebase** – migration och rättigheter för `agent_forsakring` på `cases` efter backup och operatörens OK (AGENTS.md §4.5); skarp verifiering. *2026-10-24, efter operatörens OK: backup `backups/20261024T191154Z` (17 164 rader), torrkörning, `migrate_cases.py --apply` (tabellen `cases` med villkor, nycklar och index; övriga radantal oförändrade, bl.a. 501 försäkrade och 15 097 premietransaktioner) och `grant_agent_role.py --apply` (dagens rättigheter plus `SELECT` på `cases`). Verifierat med rollens egen anslutning: läser `cases` och beståndet, nekas UPDATE, DELETE, INSERT och radlås på `cases`; `get_case` genom agentens tjänstelager når tabellen. **Kvar:** skarp verifiering med ett märkt verifieringsärende via UI:t mot Lakebase, som S6 – agentförslaget kan läggas först från 2026-11-01*
 - [ ] **F5-6: Röktest av hela flödet** – ärende → agent → förslag → godkännande → stängt, efter 2026-11-01
 
+## 🧩 Månadssimulering – byggluckor och samordning
+
+Tillagt **2026-10-25** på operatörens begäran efter kartläggning av löpande verksamhet.
+Gemensamt underlag och gap-ID:n: [processöversikten](01_domän/processer_översikt.md).
+Detta fångar behov för fortsatt planering; det ändrar inte beslutad fasordning eller
+produktscope. Paketen A–C är förslag att avgränsa vid designstart, inga nya fasnummer.
+
+- [ ] **Paket A: sammanhängande premie- och betalningsflöde (V-01–03)** – samordna befintliga punkter om anställningshistorik och premie ur löneunderlag med faktura, kompletteringsinstruktion, bankhändelse, matchning, delbetalning och underlag till kapital/garanti. Fastställ gemensamma kontrakt och verifieringsfall mellan projekt 1, 4, 5 och 6; undvik dubbla motorer
+- [ ] **Paket B: pensions- och månadsavräkning (V-04–06, V-11)** – avgränsa ett bygguppdrag för uttagsdelar, separat premie-/pensions-/betalningsförlopp, historiska garantier, kapitaljournal, månadsrätt/skuld, skatt, bankkvitton, dödsfall och slutavräkning. Följ PR-020:s månadsordning; klargör samordningen mellan projekt 1/6 och kapitalförvaltningen. Kundportalen ska använda samma tjänsteoperationer
+- [ ] **Paket C: månadssimulator – design och ansvar** – avgränsa S-01–06 nedan och välj hur befintlig harness/flödesmotor återanvänds. Ett första avgränsat premiescenario kan byggas före full pensionsmånad; märk kvarstående led. Projekt 9 dokumenterar, men äger inte därmed en ny runtime
+- [ ] **S-01: simuleringsklocka och kalender** – gemensamt affärsdatum, bankdagar, förfallodatum och periodslut; håll verklig loggtid och aktiva körbudgetar åtskilda från simulerad tid, med oförändrade behörighets- och godkännandekrav
+- [ ] **S-02: händelsegenerator/scenario** – versionsbundet scenario med seed, ordning, volymer, beroenden och testhändelser för löner, anställningar, kundval och avvikelser
+- [ ] **S-03: simulerade motparter** – arbetsgivare/kund/bank och vid behov rapportmottagare med meddelanden, svar, fördröjning, retur och okänt utfall genom definierade kontrakt
+- [ ] **S-04: avstämt startbestånd** – pensionsplaner, historiska garantier, kassa/portfölj, fordringar, skulder och eget kapital. Befintlig mockhistorik och B-035:s äldre kohort är delunderlag, inte ett komplett ekonomiskt startläge
+- [ ] **S-05: isolerad körning och återställning** – scenario-/köridentitet, startpunkt, återställning och fortsatt körning efter beslut; återanvänd befintlig backup och körjournal där det passar
+- [ ] **S-06: facit och månadens acceptanskontroller** – oberoende väntade utfall, avstämningar, inga dubbla ekonomiska effekter, rättigheter/tidsfrister samt kvalitet och agentkostnad. Konkretisera processöversiktens åtta acceptanskriterier med testbelopp
+- [ ] **Ekonomi och aktuariella kontroller (V-10–11)** – bryt ned projekt 6:s målbild till bokförings-/avstämningsmodell, månadsbokslut samt garanti-/reserv-/FTA-/ALM- och finansieringskontroller. Premiehistorik, kundkapital och reserv är olika underlag
+- [ ] **Rapportkontrakt för simuleringen (V-12)** – välj första interna månadsrapporten och senare externa rapporter; fastställ mottagare, tillämplighet, period, mått, datakällor, granskning och kvitto. Inget generellt månatligt rapportkrav till kollektivavtalsparterna antas
+- [ ] **Ärendetyper, intag och kommunikation (V-08–09)** – konkretisera fortsättningen efter `salary_report`: arbetsgivarfil, regelstyrda avvikelser, pensionsbegäranden och klagomål med tidsfrister, samt verifierat sakunderlag, mottagare, godkända besked och leveranskvitton
+
 ## 🟡 Medium prioritet – domänkartläggning
 
 - [x] **2026-10-11** Specificera AI-abstraktionslagret i `02_system/ai_abstraktion.md` – LiteLLM, OpenRouter och egen wrapper utvärderade; egen tunn wrapper beslutad (B-025) och byggd i `src/ai/` (Anthropic Messages API + OpenAI Responses API, roller `fast`/`standard`/`deep` med reserv hos andra leverantören, team-nycklar, anropslogg, 81 tester). Agentekosystemet designat i `02_system/agentekosystem.md` (B-026)
 - [ ] **Operatör: lägg in API-nycklar och kör röktestet** – `ANTHROPIC_API_KEY` och `OPENAI_API_KEY` i `.env`, sedan `pip install -e .[dev]` i huvudrepots `.venv` och `python scripts/diagnostics/smoke_test_ai.py` (några ören). Verifierar båda adaptrarna, verktygsloop och korsleverantörsreserv mot riktiga API:er
-- [ ] **Kartlägga processer** i `01_domän/processer_översikt.md` (kundärenden, premiehantering, rapportering, etc.)
+- [ ] **Kartlägga processer** i [`01_domän/processer_översikt.md`](01_domän/processer_översikt.md) – första verksamhets- och gapöversikt dokumenterad 2026-10-25, med byggluckor, samordning och acceptanskriterier för månadssimulering. Detaljerade processkartor och verifierade nulägesflöden återstår i projekt 9
 - [x] **2026-07-12** Skriva ut försäkringsvillkor för ITP1 ålderspension i `01_domän/försäkringsvillkor.md` *(gjordes i Fas 1a)*
 - [x] **2026-10-12** **Dokumentera aktuariell SIM-grund** – låst SCB-tabell 2025, unisex, förbättring och marginal, oändlig svans, garantidelar, annuiteter, arvsvinst och bolagsfinansiering i `01_domän/aktuariell_grund.md` och `01_domän/parametrar/PARAMETERREGISTER.md`, med räkneexempel i leveranskontrollen. Produktinriktning B-027; införd som del av PR-ITP1 v1.0 genom B-031, gäller från 2026-11-01. Professionell tariffvalidering för verklig verksamhet är en separat aktivitet.
 - [x] **2026-05-15** **Designa regelförändringsflöde** – multi-agent-flöde som triggas när ett regelverk ändras: compliance-agent gör tolkning och konsekvensanalys, utvecklaragent identifierar kodpåverkan, kommunikationsagent förbereder ev. kundkommunikation. Dokumenterat i `02_system/Agentsystem/regelförändringsflöde.md` och utökat till flaggskeppsflödet i `02_system/agentekosystem.md` §6.2 (B-026). Ett av undantagen från B-008 (kräver olika mandat). Implementeras i Fas 3c (3c-3)
