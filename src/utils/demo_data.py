@@ -41,6 +41,8 @@ from models import (
 )
 from services import Actor, OperationContext, ProductRuleCatalog, ServiceError, ServiceLayer
 from services.db import session_factory_for
+from services.parameters import add_missing_defaults as add_missing_parameters
+from services.parameters import default_rows as default_parameter_rows
 from skills.calculation.calculate_itp1_premium import calculate_itp1_premium
 
 DEMO_AGENT = Actor.agent("demo_handlaggaragent", team="forsakring")
@@ -99,11 +101,16 @@ def add_missing_demo_tables(engine: Engine) -> None:
     demo- och testdatabaserna – Lakebase-schemat ändras med migrationsskripten.
     """
     Base.metadata.create_all(engine)
+    # Produktparametrarna (B-035) i en demo- eller testdatabas som skapades före 3c-P1
+    with session_factory_for(engine)() as s:
+        if add_missing_parameters(s):
+            s.commit()
 
 
 def seed_demo_stock(session_factory) -> None:
     with session_factory() as s:
         s.add_all(BaseAmount(year=y, income_base_amount_sek=Decimal(v)) for y, v in IBB.items())
+        s.add_all(default_parameter_rows())
         employers = {}
         for data in EMPLOYERS:
             employer = Employer(**data)

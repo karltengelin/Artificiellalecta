@@ -12,6 +12,7 @@ from sqlalchemy import select
 from models import BaseAmount, Policy, PolicyBenefit, PremiumTransaction
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import NotFoundError
+from services.parameters import premium_parameters
 from skills.calculation.calculate_itp1_premium import calculate_itp1_premium
 
 ZERO = Decimal("0.00")
@@ -100,7 +101,7 @@ class PremiumPreviewInput(BaseModel):
     monthly_salary_sek: Decimal = Field(ge=0, description="Pensionsmedförande månadslön i kronor")
     period_month: date = Field(description="Premiemånaden – avgör vilket inkomstbasbelopp som gäller")
     birth_date: date | None = Field(
-        default=None, description="Födelsedatum – om angivet kontrolleras åldersfönstret 25–66"
+        default=None, description="Födelsedatum – om angivet kontrolleras åldersfönstret enligt produktparametrarna (25–66 i PR-ITP1 v1.0)"
     )
 
     @field_validator("period_month")
@@ -123,7 +124,7 @@ class PremiumPreview(BaseModel):
     name="calculate_premium_preview",
     description=(
         "Förhandsberäknar ITP1-premien för en månadslön en viss månad enligt premietrappan, "
-        "med rätt inkomstbasbelopp för året. Sparar ingenting."
+        "med rätt inkomstbasbelopp för året och de produktparametrar som gäller månaden. Sparar ingenting."
     ),
     kind=OperationKind.COMPUTE,
     rules=["PR-ITP1-001"],
@@ -139,6 +140,7 @@ def calculate_premium_preview(ctx: OperationContext, data: PremiumPreviewInput) 
         base_amount.income_base_amount_sek,
         birth_date=data.birth_date,
         period_month=data.period_month if data.birth_date else None,
+        parameters=premium_parameters(session, data.period_month),
     )
     return PremiumPreview(
         period_month=data.period_month,

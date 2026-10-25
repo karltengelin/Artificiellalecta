@@ -6,6 +6,10 @@ Domänregler: 01_domän/ITP1_regelverk.md §2-§4, §8
 Ren beräkningsfunktion utan sidoeffekter: hämtar ingen data, skriver inga
 transaktioner. Anroparen ansvarar för lön och IBB (tabellen base_amounts).
 
+Premiesatser, brytpunkter och åldersfönster kommer som `PremiumParameters`
+(B-035). Tjänstelagret slår upp dem i tabellen product_parameters för
+premiemånaden; utan parametrar gäller paketets värden PR-ITP1 v1.0 nedan.
+
 Avrundning: delbeloppen (4,5 %- och 30 %-delen) avrundas var för sig till
 hela ören (ROUND_HALF_UP); totalen är summan av de avrundade delarna. Så
 stämmer komponenterna alltid exakt med totalen, vilket krävs för
@@ -35,6 +39,26 @@ _CENT = Decimal("0.01")
 
 
 @dataclass(frozen=True)
+class PremiumParameters:
+    """Produktparametrar för premieberäkningen (B-035, databasschema §9h).
+
+    `versions` anger varifrån varje värde kommer (parameter → version) och sparas
+    i calculation_basis. Tomt för standardvärdena.
+    """
+
+    rate_low: Decimal = RATE_LOW
+    rate_high: Decimal = RATE_HIGH
+    breakpoint_low_ibb: Decimal = BREAKPOINT_LOW_IBB
+    breakpoint_high_ibb: Decimal = BREAKPOINT_HIGH_IBB
+    age_start: int = AGE_PREMIUM_START
+    age_end: int = AGE_PREMIUM_END
+    versions: dict[str, str] = field(default_factory=dict, compare=False)
+
+
+DEFAULT_PARAMETERS = PremiumParameters()
+
+
+@dataclass(frozen=True)
 class PremiumCalculation:
     """Resultat av en premieberäkning för en månad."""
 
@@ -52,14 +76,17 @@ def months_since_birth(birth_date: date, period_month: date) -> int:
     )
 
 
-def is_in_age_window(birth_date: date, period_month: date) -> bool:
-    """True om premiemånaden ligger i fönstret 25-66 år (månadsupplösning).
+def is_in_age_window(
+    birth_date: date, period_month: date, parameters: PremiumParameters = DEFAULT_PARAMETERS
+) -> bool:
+    """True om premiemånaden ligger i åldersfönstret (månadsupplösning).
 
-    Premie betalas fr.o.m. månaden personen fyller 25 t.o.m. månaden innan
-    personen fyller 66 (regelverket §4).
+    Premie betalas fr.o.m. månaden personen fyller `age_start` t.o.m. månaden
+    innan personen fyller `age_end` – med standardvärdena 25 och 66
+    (regelverket §4, PR-ITP1-013).
     """
     months = months_since_birth(birth_date, period_month)
-    return AGE_PREMIUM_START * 12 <= months < AGE_PREMIUM_END * 12
+    return parameters.age_start * 12 <= months < parameters.age_end * 12
 
 
 def calculate_itp1_premium(
@@ -67,6 +94,7 @@ def calculate_itp1_premium(
     income_base_amount_sek: Decimal | str | int,
     birth_date: date | None = None,
     period_month: date | None = None,
+    parameters: PremiumParameters | None = None,
 ) -> PremiumCalculation:
     """Beräknar ITP1 ålderspensionspremie för en månad.
 
@@ -74,8 +102,9 @@ def calculate_itp1_premium(
         monthly_salary_sek: Pensionsmedförande lön för månaden (>= 0).
         income_base_amount_sek: IBB för premieåret (> 0), ur base_amounts.
         birth_date: Den försäkrades födelsedatum. Om satt krävs period_month,
-            och premien blir 0 utanför åldersfönstret 25-66.
+            och premien blir 0 utanför åldersfönstret (25-66 som standard).
         period_month: Premiemånaden (dag ignoreras).
+        parameters: Produktparametrar för premiemånaden; standard är PR-ITP1 v1.0.
 
     Raises:
         ValueError: negativ lön, icke-positivt IBB, eller birth_date utan
@@ -94,22 +123,23 @@ def calculate_itp1_premium(
     if birth_date is not None and period_month is None:
         raise ValueError("period_month krävs när birth_date anges.")
 
-    breakpoint_low = BREAKPOINT_LOW_IBB * ibb / 12
-    breakpoint_high = BREAKPOINT_HIGH_IBB * ibb / 12
+    p = parameters or DEFAULT_PARAMETERS
+    breakpoint_low = p.breakpoint_low_ibb * ibb / 12
+    breakpoint_high = p.breakpoint_high_ibb * ibb / 12
 
     in_age_window: bool | None = None
     if birth_date is not None and period_month is not None:
-        in_age_window = is_in_age_window(birth_date, period_month)
+        in_age_window = is_in_age_window(birth_date, period_month, p)
 
     if in_age_window is False:
         amount_low = Decimal("0.00")
         amount_high = Decimal("0.00")
     else:
-        amount_low = (RATE_LOW * min(salary, breakpoint_low)).quantize(
+        amount_low = (p.rate_low * min(salary, breakpoint_low)).quantize(
             _CENT, rounding=ROUND_HALF_UP
         )
         high_base = max(Decimal(0), min(salary, breakpoint_high) - breakpoint_low)
-        amount_high = (RATE_HIGH * high_base).quantize(_CENT, rounding=ROUND_HALF_UP)
+        amount_high = (p.rate_high * high_base).quantize(_CENT, rounding=ROUND_HALF_UP)
 
     total = amount_low + amount_high
 
@@ -117,14 +147,17 @@ def calculate_itp1_premium(
         "ibb": str(ibb),
         "breakpoint_low": str(breakpoint_low.quantize(_CENT)),
         "breakpoint_high": str(breakpoint_high.quantize(_CENT)),
-        "rate_low": str(RATE_LOW),
-        "rate_high": str(RATE_HIGH),
+        "rate_low": str(p.rate_low),
+        "rate_high": str(p.rate_high),
         "amount_low": str(amount_low),
         "amount_high": str(amount_high),
         "monthly_salary": str(salary),
     }
     if in_age_window is not None:
         basis["in_age_window"] = in_age_window
+    if p.versions:
+        basis["age_window"] = [p.age_start, p.age_end]
+        basis["parameters"] = dict(p.versions)
 
     return PremiumCalculation(
         total_premium_sek=total,

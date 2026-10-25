@@ -61,6 +61,7 @@ FORSAKRING = RoleGrants(
         "policy_benefits",
         "policy_states",
         "premium_transactions",
+        "product_parameters",  # premieberäkningens parametrar (B-035); kräver migrate_product_parameters.py först
         "salary_reports",
     ),
     insert=("approval_requests", "operation_events"),

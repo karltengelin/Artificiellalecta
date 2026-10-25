@@ -330,6 +330,21 @@ Skrivningarna saknar produktregel och är därmed `HUMAN_ONLY` för agenter äve
 - *Blockeras:* förslag i ärendet väntar i godkännandekön – de avgörs först; `approved` utan genomförd ändring i ärendet, alltså varken ett godkänt agentförslag eller en utförd skrivning med ärendets `case_id`.
 - *Konflikt:* ärendet är redan stängt.
 
+### 9.4 Produktparametrar (Fas 3c, 3c-P1) – vad som stöds och vad som blockeras
+
+Beslutat av operatören 2026-10-25 (**B-035**, underlag i `02_system/flaggskeppsflöde.md`). Tabellen `product_parameters` (`databasschema.md` §9h). Kod: `src/services/parameters.py` (uppslag) och `src/services/operations/product_parameters.py`.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `get_product_parameters` | `read` | Nej | `AGENT` | Värdena som gäller en dag (standard i dag) och alla versioner med giltighet, tillstånd (gällande, kommande, upphörd, återkallad), produktregel, källa och beslut |
+
+**Premieberäkningen följer parametrarna för premiemånaden.** `calculate_premium_preview` och `correct_premium_transaction` slår upp premieålder, satser och brytpunkter i `product_parameters` och skickar dem till premiemotorn. Versionerna står i `calculation_basis` (`parameters`, `age_window`).
+
+- *Stoppas:* en parameter saknas för månaden (`NotFoundError`), två giltiga versioner av samma parameter samma månad, eller en premieålder som inte är hela år (`BlockedError`). Ingen tyst reserv.
+- *Undantag:* finns tabellen inte (Lakebase före migrationen) används paketets värden PR-ITP1 v1.0 i koden, märkt i `calculation_basis`.
+
+Skrivoperationerna `schedule_product_parameter_change` (`APPROVAL`) och `withdraw_product_parameter_change` (`HUMAN_ONLY`) kommer i 3c-P2.
+
 ## 10. Öppna frågor
 
 - **Fyraögonprincip** (två olika människor) är inte möjlig med en operatör – framtida option per operation.

@@ -13,5 +13,6 @@ from services.operations import (  # noqa: F401
     persons,
     policies,
     premiums,
+    product_parameters,
     salary,
 )

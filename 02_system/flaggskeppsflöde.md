@@ -80,7 +80,7 @@ enligt parameterregistrets avsnitt *Parameterändring* (värde, enhet, giltighet
 | `rule_id`, `rule_version` | `VARCHAR` | Produktregeln som bär värdet, t.ex. `PR-ITP1-013` `1.1` |
 | `source_ref` | `VARCHAR(60)` | Källan i källregistret |
 | `decision_ref` | `VARCHAR(60)` | Beslutet: flödets grindbeslut, B-nummer eller seed |
-| `status` | `VARCHAR(20)` | `scheduled`, `active` och `withdrawn`. Status härleds av datum men lagras för index |
+| `status` | `VARCHAR(20)` | `valid` eller `withdrawn`. Om en version är kommande, gällande eller upphörd härleds av datumen (ändrat vid bygget, 3c-P1: ett lagrat tillstånd skulle bli inaktuellt när datumet passeras) |
 | `created_by`, `created_at` | | Som övriga tabeller |
 
 Unikt på `(key, valid_from)`. Intervallen får inte överlappa; tjänstelagret kontrollerar det i samma

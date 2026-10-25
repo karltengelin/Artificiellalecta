@@ -33,6 +33,7 @@ from models import (
     PremiumTransaction,
 )
 from services.db import session_factory_for
+from services.parameters import default_rows as default_parameter_rows
 
 
 def seed_insurance(session_factory) -> SimpleNamespace:
@@ -41,6 +42,7 @@ def seed_insurance(session_factory) -> SimpleNamespace:
             [
                 BaseAmount(year=2025, income_base_amount_sek=Decimal("80600")),
                 BaseAmount(year=2026, income_base_amount_sek=Decimal("83400")),
+                *default_parameter_rows(),
             ]
         )
         employer = Employer(org_number="5560000001", name="Testbolaget AB", affiliation_date=date(2010, 1, 1))
