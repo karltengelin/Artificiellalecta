@@ -17,6 +17,7 @@ from .policy_state import PolicyState
 from .portfolio import Portfolio
 from .portfolio_holding import PortfolioHolding
 from .premium_transaction import PremiumTransaction
+from .product_parameter import ProductParameter
 from .salary_report import SalaryReport
 from .trade import Trade
 
@@ -34,6 +35,7 @@ __all__ = [
     "Portfolio",
     "PortfolioHolding",
     "PremiumTransaction",
+    "ProductParameter",
     "SalaryReport",
     "Trade",
 ]

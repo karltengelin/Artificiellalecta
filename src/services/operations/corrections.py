@@ -39,6 +39,7 @@ from models import BaseAmount, InsuredPerson, Policy, PolicyBenefit, PremiumTran
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import BlockedError, ConflictError, NotFoundError
 from services.operations import common
+from services.parameters import premium_parameters
 from skills.calculation.calculate_itp1_premium import calculate_itp1_premium
 
 RULES = ["PR-ITP1-001", "PR-ITP1-014", "PR-ITP1-017", "PR-ITP1-019", "PR-ITP1-032"]
@@ -107,7 +108,10 @@ def correct_premium_transaction(ctx: OperationContext, data: PremiumCorrectionIn
 
     ibb = _income_base_amount(session, original)
     born = common.birth_date(person.personal_id_number)
-    reproduced = calculate_itp1_premium(original.pensionable_salary_sek, ibb, birth_date=born, period_month=month)
+    params = premium_parameters(session, month)
+    reproduced = calculate_itp1_premium(
+        original.pensionable_salary_sek, ibb, birth_date=born, period_month=month, parameters=params
+    )
     if reproduced.total_premium_sek != original.amount_sek:
         raise BlockedError(
             f"Ursprungsraden går inte att räkna fram igen ({original.amount_sek} kr enligt raden, "
@@ -121,7 +125,9 @@ def correct_premium_transaction(ctx: OperationContext, data: PremiumCorrectionIn
             f"{report.pensionable_salary_sek} kr). Rätta först underlaget med register_salary_report"
         )
 
-    corrected = calculate_itp1_premium(data.corrected_salary_sek, ibb, birth_date=born, period_month=month)
+    corrected = calculate_itp1_premium(
+        data.corrected_salary_sek, ibb, birth_date=born, period_month=month, parameters=params
+    )
     previous_total = original.amount_sek + sum((r.amount_sek for r in linked), Decimal(0))
     received = sum((r.amount_sek for r in [original, *linked] if r.status == "paid"), Decimal(0))
     difference = corrected.total_premium_sek - previous_total

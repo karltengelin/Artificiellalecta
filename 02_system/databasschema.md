@@ -253,7 +253,7 @@ Tabellen är **append-only**: en rättelse är en ny version som pekar på den d
 
 **Designnoter:**
 - Naturlig nyckel (`year`) som PK – parametertabell, inget behov av surrogatnyckel
-- Brytpunkterna (7,5 IBB/12 och 30 IBB/12) lagras **inte** utan härleds i kod – en enda sanning, ingen risk för inkonsekvent avrundning i data
+- Brytpunkternas belopp lagras **inte** utan härleds i kod ur IBB – en enda sanning, ingen risk för inkonsekvent avrundning i data. Multiplarna (7,5 och 30 IBB) är produktparametrar i `product_parameters` (§9h, B-035)
 - Seedas med IBB 2023–2026 ur `01_domän/ITP1_regelverk.md` §6
 
 ---
@@ -513,6 +513,33 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 
 ---
 
+## 9h. Tabell: `product_parameters` – Produktparametrar som versionerad data
+
+**Domän:** Parametrar som styr premieberäkningen, i versioner med giltighetsintervall (Fas 3c, B-035). En regeländring som bara ändrar ett värde – t.ex. premieåldern – kan därmed nå produktion som en ny version, utan kodändring. Premiemotorn tar parametrarna som indata (`PremiumParameters`); tjänstelagret slår upp versionen som gäller premiemånaden (`services/parameters.py`) och sparar versionerna i `calculation_basis` (`parameters`, `age_window`). Följer parameterregistrets avsnitt *Parameterändring*: värde, enhet, giltighet, källa och beslut.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | |
+| `key` | `VARCHAR(60)` | NOT NULL, CHECK | `premium_age_start`, `premium_age_end`, `premium_rate_low`, `premium_rate_high`, `premium_breakpoint_low_ibb`, `premium_breakpoint_high_ibb` |
+| `value` | `NUMERIC(12,6)` | NOT NULL, CHECK ≥ 0 | Värdet i parameterns enhet; åldrar måste vara hela år (kontrolleras vid uppslag) |
+| `unit` | `VARCHAR(20)` | NOT NULL, CHECK | `years`, `rate` eller `ibb` |
+| `valid_from` | `DATE` | NOT NULL, CHECK månadsförsta | Första premiemånad som omfattas |
+| `valid_to` | `DATE` | NULL, CHECK ≥ `valid_from` | Sista dag; NULL = tills vidare |
+| `rule_id` / `rule_version` | `VARCHAR(20)` / `VARCHAR(10)` | NOT NULL | Produktregeln som bär värdet, t.ex. `PR-ITP1-013` `1.0` |
+| `source_ref` | `VARCHAR(60)` | NOT NULL | Källa i källregistret, t.ex. `K-ITP-FIL` |
+| `decision_ref` | `VARCHAR(60)` | NOT NULL | Beslutet – B-nummer, flödets grindbeslut eller `B-035 startvärden` |
+| `status` | `VARCHAR(20)` | NOT NULL, CHECK | `valid` eller `withdrawn`. Om en version är kommande, gällande eller upphörd härleds av datumen |
+| `created_by` | `VARCHAR(100)` | NOT NULL | Aktören som lade versionen |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL | Standardtidsstämplar |
+
+Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma nyckel samma dag stoppar beräkningen (`BlockedError`) i stället för att en väljs tyst; en saknad parameter för månaden stoppar beräkningen (`NotFoundError`). Överlappskontroll vid nya versioner görs av skrivoperationerna i 3c-P2.
+
+**Startvärden från 2023-01-01** – samma som premiehistoriken 2023–2026 räknats med: premieålder 25–66 (PR-ITP1-013), satserna 4,5 och 30 % och brytpunkterna 7,5 och 30 IBB (PR-ITP1-001), `decision_ref` `B-035 startvärden`.
+
+**Läses av** `get_product_parameters` (`AGENT`, inga personuppgifter), förhandsberäkningen och premierättelsen. **Skrivs av** migrationen (startvärden) och – från 3c-P2 – `schedule_product_parameter_change` (`APPROVAL`) och `withdraw_product_parameter_change` (`HUMAN_ONLY`). Inga personuppgifter.
+
+---
+
 ## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**
@@ -538,7 +565,7 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 
 - **Tabellen `insured_persons` är PII-bärande** (B-006). Skills som läser/skriver mot den ska deklareras med behörighetslista.
 - **Maskning vid analys:** Data scientist-agenten arbetar mot anonymiserade vyer eller aggregat, inte rå PII.
-- **Databasroller och radnivåsäkerhet:** `app_backend` (Lakebase, B-018) äger tabellerna och används av handläggar-UI:t, skripten och provkörningen av agentförslag. Försäkringsagenten ansluter med den begränsade rollen `agent_forsakring` (2026-10-24, `harness.md` §5.1): SELECT på försäkringstabellerna och `cases` (Fas 5, verkställt i Lakebase 2026-10-24), INSERT på `approval_requests` och `operation_events` (plus SELECT på deras `created_at`/`updated_at` för INSERT … RETURNING), ingen UPDATE/DELETE och inga kapitaltabeller. Rättigheterna står i `src/utils/agent_roles.py`. Kundscope verkställs i harness (`src/agents/scope.py`); radnivåsäkerhet används inte ännu.
+- **Databasroller och radnivåsäkerhet:** `app_backend` (Lakebase, B-018) äger tabellerna och används av handläggar-UI:t, skripten och provkörningen av agentförslag. Försäkringsagenten ansluter med den begränsade rollen `agent_forsakring` (2026-10-24, `harness.md` §5.1): SELECT på försäkringstabellerna och `cases` (Fas 5, verkställt i Lakebase 2026-10-24) samt `product_parameters` (B-035, efter migrationen), INSERT på `approval_requests` och `operation_events` (plus SELECT på deras `created_at`/`updated_at` för INSERT … RETURNING), ingen UPDATE/DELETE och inga kapitaltabeller. Rättigheterna står i `src/utils/agent_roles.py`. Kundscope verkställs i harness (`src/agents/scope.py`); radnivåsäkerhet används inte ännu.
 
 ---
 
@@ -550,6 +577,7 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 - **Fas 1f T3 (2026-10-11) – första ändringen av en befintlig tabell:** gjord med ett kontrollerat migrationsskript, `scripts/migrations/migrate_t3_schema.py`, i stället för Alembic (som skulle kräva ett nytt beroende – föreslaget som eget steg). Skriptet skapar `salary_reports` och lägger till `premium_transactions.corrects_transaction_id` med sin CHECK och sitt index i **en** transaktion (Postgres-DDL är transaktionell), kontrollerar förutsättningarna först, visar SQL med `--dry-run`, ändrar inga befintliga rader och verifierar radantalen efteråt. Verifierat 2026-10-11 mot en isolerad Postgres 17 (`svc_test`): migrationen från det gamla schemat med data ger samma kolumner, constraints och index som `create_all`, är idempotent och lämnar radantalen oförändrade (`tests/test_services_postgres.py`). Körs mot Lakebase först efter backup (`scripts/maintenance/backup_database.py`) och avstämning enligt AGENTS.md §4.5. `create_all` används inte för den befintliga tabellen. **Ordning:** migrationen är bakåtkompatibel (äldre kod påverkas inte), men koden från Fas 1f T3 läser `corrects_transaction_id` – migrationen ska därför vara körd innan den koden används mot Lakebase. Migrerat i Lakebase 2026-10-11 efter backup `backups/20261011T151353Z` och dry-run; radantalen oförändrade (15 097 premietransaktioner), en andra körning gjorde ingenting
 - **Portabla modeller för tester (2026-10-11):** modellerna kan även skapas i en SQLite-databas i minnet, så att tjänstelagret (B-028) testas utan att röra Lakebase. JSON-kolumner är `JSON` med `JSONB`-variant för Postgres, de partiella unika indexen har även `sqlite_where`, och kontrollen att `period_month` är den första i månaden finns i en Postgres- och en SQLite-variant (`ddl_if`). Postgres-DDL:en är verifierat identisk före och efter ändringen – Lakebase påverkas inte och ingen migration behövs. Testdatabasen byggs i `tests/conftest.py` (`insurance_db`).
 - **Fas 5 F5-1 (2026-10-24) – tabellen `cases` (§9g, B-033):** skapas med `scripts/migrations/migrate_cases.py` (`utils/migration_cases.py`), inte `create_all` – den skulle även skapa kapitalförvaltningens tabeller, som inte finns i Lakebase. Skriptet skapar bara `cases` och dess index i en transaktion, kontrollerar att de refererade tabellerna finns, torrkör som standard och kräver `--apply` och `--backup` för en skarp körning, ändrar inga befintliga rader och verifierar radantalen. Verifierat mot isolerad Postgres (`svc_test`, `tests/test_migration_cases.py`): resultatet är identiskt med `create_all`, idempotent och lämnar övriga tabeller orörda. Villkoret för ärendenumret använder `SUBSTR` i stället för `LIKE 'CASE-%'`, eftersom procenttecknet dubbleras när DDL:en kompileras för psycopg2. `details` sparar Pythons `None` som SQL `NULL` (`none_as_null`), så att `NOT NULL` gäller. **Skapad i Lakebase 2026-10-24 efter backup `backups/20261024T191154Z` och torrkörning, med operatörens OK (AGENTS.md §4.5); radantalen i övriga tabeller oförändrade**. Agentrollens läsrätt på `cases` sattes därefter med `grant_agent_role.py --apply`
+- **Fas 3c 3c-P1 (2026-10-25) – tabellen `product_parameters` (§9h, B-035):** skapas med `scripts/migrations/migrate_product_parameters.py` (`utils/migration_product_parameters.py`) enligt samma mönster som `cases`: bara den nya tabellen och dess index, en transaktion, torrkörning som standard, `--apply` kräver `--backup`, radantalen kontrolleras. Migrationen lägger dessutom in startvärdena och **räknar om varje ordinarie premierad** med de lästa parametrarna – minsta avvikelse rullar tillbaka allt. Även torrkörningen gör kontrollen, i en transaktion som rullas tillbaka. Verifierat mot isolerad Postgres (`tests/test_product_parameters.py`): demobeståndet räknas om identiskt, idempotent, och en ändrad premie stoppar migrationen. Tills tabellen finns används paketets värden i koden, märkt i `calculation_basis`. **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --apply` (agentrollen får `SELECT` på tabellen). Inte körd mot Lakebase
 
 ---
 

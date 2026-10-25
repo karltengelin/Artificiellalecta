@@ -20,6 +20,7 @@ operations:
   get_premium_history: AGENT           # läsning, personuppgifter (loggas)
   get_salary_reports: AGENT            # läsning av löneunderlag, personuppgifter (loggas)
   calculate_premium_preview: AGENT     # beräkning enligt PR-ITP1-001, sparar ingenting
+  get_product_parameters: AGENT        # produktparametrarna med versioner (B-035), inga personuppgifter
 
   # Godkännandekön och händelseloggen (Fas 4, handläggar-UI:t). Handläggarens kontrollyta:
   # agenter ser inte kön eller loggen (dataminimering, B-006) – kan öppnas genom en ändring här.
