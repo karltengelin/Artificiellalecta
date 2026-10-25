@@ -92,6 +92,30 @@ mot den valda databasen. Demo är ett eget övningsbestånd, inte en cache av La
 Att välja Lakebase flyttar inga uppgifter från demo; eventuella manuella demoändringar måste
 jämföras och föras över kontrollerat om de ska bevaras.
 
+### Byta datakälla i gränssnittet
+
+Välj **Lakebase – gemensamt bestånd (Postgres)** eller **Demo – lokal övningsdata (SQLite)**
+i sidhuvudets **Datakälla** och klicka **Byt miljö**. Bytet går till målmiljöns startsida
+och gäller bara den aktuella fliken. Andra flikar, öppna ärenden och deras servrar behåller
+sina databasanslutningar. Inga formulär-, person- eller ärendeuppgifter följer med bytet.
+
+Målmiljön kontrolleras via `/_instance` (app, databasläge och stöd för miljöväljaren).
+Om porten är ledig startas en separat lokal server från samma checkout och Pythonmiljö;
+på Windows körs den dolt. Om porten används av fel eller en äldre app visas ett fel.
+En påbörjad start återanvänds vid nytt försök; inga befintliga processer stoppas automatiskt.
+Lakebase och demo använder standardportarna **8765** respektive **8767** som mål även om
+den nuvarande servern har startats med en egen port. Testmiljön `svc_test` startas inte från väljaren.
+
+Med JavaScript varnas du före byte om ett skrivformulär har osparade ändringar. Avbryter du,
+eller misslyckas miljökontrollen, är formuläret kvar med sina värden. Byte blockeras medan
+en HTMX-skrivning eller agentkörning pågår. JavaScriptet lagrar inga formulärdata i cookies
+eller webbläsarlagring. Utan JavaScript fungerar miljöval som ett vanligt formulär, men
+varningen och bevarandet av osparade fält vid ett misslyckat byte saknas.
+
+`POST /miljo` kräver samma formulärtoken som övriga skrivformulär och accepterar bara
+Lakebase eller demo. Det utför ingen försäkringsoperation och ändrar inte serverns databasläge.
+Webbläsarens referrerpolicy hindrar att den gamla sidans personnummeradress skickas till målmiljön.
+
 Första skarpa skrivningen föregås av backup och operatörens OK
 (AGENTS.md §4.5).
 

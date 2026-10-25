@@ -188,7 +188,7 @@ def test_startkontrollen_visar_miljon_utan_att_lasa_databasen(web, monkeypatch, 
     web.app.state.settings = WebSettings(database=database, allowed_hosts=("testserver",))
     monkeypatch.setattr(web.service, "execute", lambda *a, **kw: pytest.fail("Ingen databasfråga i miljökontrollen"))
     response = web.client.get("/_instance")
-    assert response.json() == {"application": "artificiellalecta-handlaggare", "database": database}
+    assert response.json() == {"application": "artificiellalecta-handlaggare", "database": database, "environment_switching": True}
     assert response.headers["cache-control"] == "no-store"
 
 

@@ -55,6 +55,7 @@ def test_stilarken_lankas_med_innehallsversion_sa_att_gammal_cache_inte_anvands(
         request=type("R", (), {"url": type("U", (), {"path": "/"})()})(),
         settings=type("S", (), {"is_production": False, "database": "demo", "database_label": "Demo", "handler_id": "karl"})(),
         pending_approvals=0,
+        environment_choices={},
     )
     assert f'href="/static/app.css?v={version}"' in html
     assert f'href="/static/tokens.css?v={version}"' in html

@@ -20,7 +20,7 @@ from starlette.concurrency import run_in_threadpool
 
 from services import Actor, OperationContext, ServiceLayer
 from web import presenters
-from web.config import WebSettings
+from web.config import SWITCHABLE_DATABASES, WebSettings
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -39,10 +39,9 @@ templates.env.globals["field_names"] = presenters.FIELD_NAMES
 
 
 def static_version() -> str:
-    """Kort innehållshash för stilarken. Läggs som ?v= på länkarna, så att webbläsaren
-    hämtar nya filer efter en ändring i stället för en cachad gammal version."""
+    """Kort innehållshash för CSS och JavaScript, så att ändringar hämtas direkt."""
     digest = hashlib.sha256()
-    for path in sorted(STATIC_DIR.glob("*.css")):
+    for path in sorted(p for p in STATIC_DIR.iterdir() if p.suffix in {".css", ".js"}):
         digest.update(path.name.encode() + b"\0" + path.read_bytes())
     return digest.hexdigest()[:12]
 
@@ -98,6 +97,7 @@ def render(
         "rules": service(request).rules,
         "pending_approvals": pending,
         "database_available": pending is not None,
+        "environment_choices": SWITCHABLE_DATABASES,
     }
     response = templates.TemplateResponse(request, template, {**base, **(context or {})}, status_code=status_code)
     if push_url:

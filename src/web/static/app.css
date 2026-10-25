@@ -41,6 +41,13 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: .9em; }
 .mainnav .count { display: inline-block; min-width: 1.4em; padding: 0 .35em; margin-left: .3em; border-radius: 1em; background: var(--status-warning-bg); color: var(--status-warning-text); border: 1px solid var(--status-warning-line); font-size: .78rem; text-align: center; font-weight: var(--font-weight-heading); }
 .who { display: flex; gap: var(--space-3); align-items: center; font-size: .85rem; color: var(--color-text-muted); }
 .who strong { color: var(--color-text); font-weight: var(--font-weight-emphasis); }
+.environment-picker { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: .85rem; }
+.environment-picker label { font-weight: var(--font-weight-emphasis); }
+.environment-picker select { max-width: 100%; }
+.environment-picker [data-environment-message] { color: var(--color-text-muted); }
+.environment-confirm { max-width: min(500px, calc(100% - 2rem)); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: var(--space-5); color: var(--color-text); background: var(--color-surface); }
+.environment-confirm::backdrop { background: color-mix(in srgb, var(--color-text) 40%, transparent); }
+.environment-confirm__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
 .db { padding: .1rem .6rem; border-radius: 1rem; background: var(--color-background); border: 1px solid var(--color-border); color: var(--color-text); }
 .db--lakebase { background: var(--status-error-bg); border-color: var(--status-error-line); color: var(--status-error-text); font-weight: var(--font-weight-heading); }
 .prodbanner { background: var(--status-error-bg); color: var(--status-error-text); padding: var(--space-2) var(--space-5); font-weight: var(--font-weight-emphasis); border-bottom: 1px solid var(--status-error-line); }

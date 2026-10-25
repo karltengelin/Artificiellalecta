@@ -32,6 +32,10 @@ DATABASES = {
 }
 
 DEFAULT_PORTS = {"lakebase": 8765, "svc_test": 8766, "demo": 8767}
+SWITCHABLE_DATABASES = {
+    "lakebase": "Lakebase – gemensamt bestånd (Postgres)",
+    "demo": "Demo – lokal övningsdata (SQLite)",
+}
 
 _HANDLER_ID = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,99}$")
 

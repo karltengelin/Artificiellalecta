@@ -101,7 +101,7 @@ dependents = ["agents", "services", "web", "tooling"]
 [suites.web]
 description = "HTTP, formulär och handläggarflöden"
 status = "active"
-tests = ["tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_insured.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_design_web_css.py"]
+tests = ["tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_design_web_css.py"]
 dependents = ["tooling"]
 
 [suites.data]
