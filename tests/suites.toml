@@ -107,7 +107,7 @@ dependents = ["tooling"]
 [suites.data]
 description = "Datamodeller, backup och migrationer"
 status = "active"
-tests = ["tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_flows.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
+tests = ["tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_flows.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
 dependents = []
 
 [suites.design]
