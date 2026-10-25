@@ -13,6 +13,13 @@ ledningsfråga, exempelvis ett återkommande kvalitetsproblem eller en budgetavv
 Väsentlighet, tidsfönster och ansvarig måste preciseras; inga automatiska
 eskaleringströsklar införs genom planen.
 
+**Plattform med teamområden.** Centralen är startsidan i en gemensam
+webbplattform, där varje team har ett eget område. Försäkringsteamets område är
+dagens handläggar-UI. Compliance, aktuarie och senare team får egna områden.
+Ett område exponerar bara teamets egen agent, och centralen länkar till alla
+områden och visar deras läge. Arbete över flera team startas härifrån som flöden
+(OC-7, OC-8 i [projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md)).
+
 En ledningsfråga ska innehålla frågeställning, period, ansvarigt team,
 underlagsreferenser, alternativ, konsekvenser, osäkerhet och föreslagen
 uppföljning. Att Karl väljer en inriktning verkställer inte automatiskt en
@@ -55,8 +62,10 @@ UI:t ligger tillfälligt i handläggar-UI:t, och flyttar hit i OC-7 (se nedan).
   - Centralen når flödena genom adaptern `agents.flows.console.FlowConsole`,
     precis som handläggar-UI:t gör i dag. Motorn och definitionerna i
     `src/agents/flows/` ändras inte vid en flytt.
-  - Läsvyn kan komma med OC-1. Grindbeslut, manuella steg, avstämning och
-    parameterversioner kommer med centralens autentiserade skrivväg (§7).
+  - Flöden startas och drivs härifrån med samma operatörsidentitet och
+    formulärskydd som handläggar-UI:t (B-017). Kravet på autentisering i §7
+    gäller styrvägen för modellpolicy och budget, inte flödenas steg.
+    Flödenas egna skydd består: version, bunden hash och godkännandekön.
   - Grindarna ersätter inte godkännandekön (`harness.md` §4.2). Förslag som gäller
     bolagsbeslut, till exempel en ny parameterversion, visas här, men kön ägs
     fortfarande av tjänstelagret och förslagen avgörs genom `ServiceLayer.approve/reject`.
