@@ -202,6 +202,12 @@ Handläggaren utför ändringarna direkt. En agent kan bara föreslå en ny vers
 **Flöden (Fas 3c, 3c-3, B-035).** Flödet `rule_change_parameter` från regeländring till verifierad
 produktparameter ([flaggskeppsflöde.md](flaggskeppsflöde.md) §6–7).
 
+> **Tillfälligt hem.** Flöden och produktparametrar är beslut på bolagsnivå, inte handläggning av enskilda
+> försäkrade. De ligger här för att handläggar-UI:t var det enda gränssnittet när 3c-3 byggdes, och de flyttar
+> till operatörscentralen i OC-7 ([projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md),
+> [operatörscentral.md](operatörscentral.md) §2). Bygg därför inte ut `/floden` och `/parametrar` här, utöver
+> rättningar. Det som ska kunna återanvändas läggs i `src/agents/flows/` och i adaptern `FlowConsole`.
+
 | Adress | Innehåll | Motorn |
 |---|---|---|
 | `/floden` | Flödena med status och aktuellt steg, och *Starta flöde* med en källa ur regelverksgatewayen | `list`, `start` |

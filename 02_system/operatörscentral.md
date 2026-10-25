@@ -37,6 +37,8 @@ flowchart TD
 Pilarna beskriver målbilden. Frågeingång, sammanställningar och styrväg är ännu
 inte implementerade. Flödesmotorn 3c-2 finns på main `66d1add`; 3c-1-delegering,
 VD-routning, 3b-9-inställningsvy och BI-dashboardens drift återstår vid planstart.
+Det första flödet, `rule_change_parameter`, och dess UI `/floden` kom i 3c-3.
+UI:t ligger tillfälligt i handläggar-UI:t, och flyttar hit i OC-7 (se nedan).
 
 - Återanvänd FastAPI/Jinja2/HTMX och Digital klarhet. Ingen ny frontendplattform
   krävs. Ett separat navigationsområde för ledning är ett designförslag;
@@ -48,6 +50,16 @@ VD-routning, 3b-9-inställningsvy och BI-dashboardens drift återstår vid plans
   De får en egen betrodd operatörsväg till rätt konfiguration/gateway.
 - Ingen generell SQL-, fil-, shell- eller nätverksåtkomst introduceras för
   chattens modeller. Befintliga scopes, PII-gränser och godkännanden gäller.
+- **Flöden och produktparametrar hör hemma här (OC-7).** En regeländring är ett
+  beslut på bolagsnivå och inte handläggning av enskilda försäkrade.
+  - Centralen når flödena genom adaptern `agents.flows.console.FlowConsole`,
+    precis som handläggar-UI:t gör i dag. Motorn och definitionerna i
+    `src/agents/flows/` ändras inte vid en flytt.
+  - Läsvyn kan komma med OC-1. Grindbeslut, manuella steg, avstämning och
+    parameterversioner kommer med centralens autentiserade skrivväg (§7).
+  - Grindarna ersätter inte godkännandekön (`harness.md` §4.2). Förslag som gäller
+    bolagsbeslut, till exempel en ny parameterversion, visas här, men kön ägs
+    fortfarande av tjänstelagret och förslagen avgörs genom `ServiceLayer.approve/reject`.
 
 ## 3. Data för bolagsläge och team
 

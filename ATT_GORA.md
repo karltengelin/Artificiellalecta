@@ -198,6 +198,7 @@ budgetmodell byggs i gränssnittet. Se [VD-planen](projekt/10_operatörscentral/
   - **Verifieringen** ger `ReleaseEvidence`: versionerna före och efter, och förhandsberäkningen för en syntetisk profil, i demon 0 kr → 2 025 kr. Förhandsberäkningen kan räkna med senast fastställda IBB och säger det (`latest_base_amount`), eftersom demobeståndet saknar IBB 2027.
   - **UI:t** når motorn genom adaptern `src/agents/flows/console.py`. Formulären bär version och `seen_hash`. *Kör nästa steg* körs synkront. Sidorna har avstämning, avbrott, utkast och körjournal, och `mark_interrupted` körs vid start.
   - **Miljöer:** bara demo och `svc_test`, med en skriptad demomodell (FakeProvider) för K-SIM-ITP-2027. I Lakebase förklarar sidan varför flödena saknas.
+  - **Tillfälligt hem:** handläggar-UI:t. Flöden och parametrar flyttar till operatörscentralen i OC-7.
   - **Rättat i motorn (3c-2):** kön lästes inom flödets transaktion och väntade då på flödets eget skrivlås i demodatabasens SQLite-fil.
   - **Verifierat** i webbläsaren mot demodatabasen, från källa till verifierad parameter, även på smal skärm.
   - **Tester:** 39 nya: 23 i `tests/test_agents_flow_rule_change.py` och 16 i `tests/test_web_flows.py`.
@@ -279,6 +280,7 @@ Byggpaketen nedan ändrar inte B-028:s fasordning eller prioriteten på pågåen
 - [ ] **OC-4: Ledningsunderlag** – sammanfattade inriktningsfrågor med alternativ, konsekvenser och uppföljning; inga rutinärenden eller generell handläggarkö
 - [ ] **OC-5: Modellpolicy och budget** – global OpenAI-/Anthropic-/blandad policy, uttrycklig reservpolicy och teamundantag; förhandsgranskning, autentisering, versionssatt aktivering och ändringslogg. Återanvänd 3b-9 för körgränser; bygg ingen parallell budgetkälla
 - [ ] **OC-6: Ekonomisk fördjupning och VD-scenario** – konsolidering/kapital/FTA/likviditet när projekt 2/5/6 levererar verifierade grunder, samt acceptans enligt projektplanen
+- [ ] **OC-7: Flöden och produktparametrar** *(tillagd 2026-10-25 på operatörens begäran)* – flytta `/floden` (3c-3) och `/parametrar` från handläggar-UI:t hit, där de hör hemma som bolagsbeslut. Först en läsvy (med OC-1), därefter åtgärderna när centralens autentiserade skrivväg finns. Återanvänd adaptern `FlowConsole`. Kön ägs fortfarande av tjänstelagret, och förslag som gäller bolagsbeslut visas här
 
 **Första föreslagna byggleverans:** OC-0 → OC-1 med en smal OC-2, därefter
 frågor till ett team åt gången. Styrskrivningar och teamöverskridande uppdrag

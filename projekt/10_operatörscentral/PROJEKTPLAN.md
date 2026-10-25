@@ -53,6 +53,7 @@ ekonomiska motorer finns; saknade mått visas som **ej beräknat**.
 | OC-4: Ledningsunderlag | Prioriterade, sammanfattade frågor med alternativ, konsekvenser, ägare och beslutsspår. Rutinärenden stannar i specialistvyer. Eskaleringsvillkor granskas före aktivering | OC-1/2; definierade domängränser och rapportkontrakt |
 | OC-5: Modellpolicy och budget | Autentiserad Karl kan förhandsgranska och aktivera versionssatt policy för nya körningar: globalt val, rollmappning, teamundantag, reservpolicy och körbudget. Granskning visar berörda team och faktisk effekt | OC-0, AI-lagret och 3b-9; inga styrskrivningar före autentisering och ändringslogg |
 | OC-6: Ekonomisk fördjupning och acceptans | Konsolidering, FTA, kapital och likviditet ansluts när respektive modell är verifierad; period- och grundversioner går att följa. Sammanhängande VD-scenario godkänt | Projekt 2, 5 och 6; definierad konsoliderings-/fördelningsmodell |
+| OC-7: Flöden och produktparametrar | Bolagsflöden (först regeländringsflödet `rule_change_parameter`, B-035) och produktparametrarna har sitt hem här i stället för i handläggar-UI:t. Först en läsvy: flöden med status, steg, resultat, kostnad, grindbeslut och väntande förslag. Därefter åtgärderna: starta, kör nästa steg, grindbeslut, manuella steg, avstämning och parameterversioner. Förslag i godkännandekön som gäller bolagsbeslut visas här; kön ägs fortfarande av tjänstelagret. `/floden` och `/parametrar` i handläggar-UI:t tas bort eller blir länkar när åtgärderna fungerar här | Flödesadaptern `agents.flows.console.FlowConsole` (3c-3); OC-1 för läsvyn; OC:s skrivväg med autentisering (§7 i arkitekturen) för åtgärderna |
 
 **Rekommenderad första byggleverans:** OC-0 följt av OC-1 och en smal OC-2:
 bolagsöversikt med ärligt markerade dataluckor, teamstatus samt agentkostnader ur
@@ -60,13 +61,22 @@ befintliga loggar. Därefter frågor till ett team åt gången. Automatisk
 samordning över flera team och skrivande styrning öppnas först med sina beroenden.
 Inga kalendertider eller generell omprioritering av pågående arbete är beslutade.
 
+**Flöden har tillfälligt hem i handläggar-UI:t.** Regeländringsflödet byggdes i
+3c-3 som `/floden` i handläggar-UI:t, eftersom det var det enda gränssnittet med
+lokal server, formulärskydd och godkännandekön. En regeländring är ett beslut på
+bolagsnivå och inte handläggning av enskilda försäkrade. Därför flyttar flödena
+hit i OC-7, och produktparametrarna (`/parametrar`) med dem. Flytten är billig:
+motor, definitioner och demomodell ligger i `src/agents/flows/`, och webben når
+dem bara genom adaptern `FlowConsole`. Den kan användas av vilket gränssnitt som
+helst, även ett kommandoradsverktyg eller Cowork (B-017).
+
 ## Ansvar och samordning
 
 | Område | Äger |
 |---|---|
 | Projekt 10 | VD-upplevelse, navigation, ledningsunderlag och samlad operatörscentral |
 | Projekt 2: BI & insikter | Gemensamma mått, historik, analys-/Genie-underlag och Databricks-dashboard enligt B-029 |
-| Harness och AI-lagret | Teamrouting, körpolicy, budgetverkställighet, körspår, modellroller och leverantörsval |
+| Harness och AI-lagret | Teamrouting, körpolicy, budgetverkställighet, körspår, modellroller och leverantörsval, flödesmotorn och flödesdefinitionerna |
 | Projekt 1 och övriga specialistytor | Enskilda ärenden, domänhandlingar och deras godkännanden |
 | Projekt 5 och 6 | Kapitalvärdering, ekonomi, aktuariella motorer och underlag för konsolidering/risk |
 | Projekt 8 och 9 | Projektkarta respektive processkartor som förklarar hur bolaget hänger ihop |
