@@ -79,4 +79,5 @@ på VD-nivå: bolagsläge och konsolidering när underlagen finns, teamens arbet
 agentkostnader, frågor mot data samt inriktningsbeslut om modellpolicy och budget.
 Handläggarärenden hanteras fortsatt i specialistgränssnitt. Plan och
 [första interaktiva skiss](projekt/10_operatörscentral/SKISS.md) finns;
-operatörscentralen är ännu inte driftsatt.
+[OC-0:s beslutsförslag med val A–X](02_system/operatörscentral_beslutsforslag.md)
+är framtaget 2026-10-26 och väntar på godkännande. Operatörscentralen är ännu inte driftsatt.

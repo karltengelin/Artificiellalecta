@@ -2,7 +2,8 @@
 
 > Planeringsuppdrag från Karl i chatten 2026-10-25. Ingår i programmet
 > AI-native tjänstepensionsbolag. Inget nytt beslutsnummer loggas genom planen.
-> **Status:** plan och första interaktiva skiss; ingen driftsatt operatörscentral.
+> **Status:** plan, första interaktiva skiss och OC-0-beslutsförslag med val A–X
+> framtaget 2026-10-26. Designbeslut återstår; ingen driftsatt operatörscentral.
 
 ## Syfte och avgränsning
 
@@ -69,7 +70,7 @@ ekonomiska motorer finns; saknade mått visas som **ej beräknat**.
 
 | Paket | Leverans och klart-kriterium | Beroenden |
 |---|---|---|
-| OC-0: Avgränsning och kontrakt | Mått- och händelsekontrakt, ledningseskaleringar, frågerouting, autentisering och auktoritativ lagring för styrinställningar preciserade. Denna plan och skissen är första underlag | Projekt 2, 6 och harness; designavstämning med Karl |
+| OC-0: Avgränsning och kontrakt | [Beslutsförslag A–X](../../02_system/operatörscentral_beslutsforslag.md) framtaget 2026-10-26: mått/händelser, ledningseskaleringar, frågerouting, autentisering och gemensamt policyregister för OC-5/3b-9. Dokumentleverans framtagen; godkännande och implementation återstår | Projekt 2, 6 och harness; designbeslut av Karl |
 | OC-1: Läsbar ledningsöversikt | Navigerbar vy för bolagsläge, team, kostnader och fördjupning. Visar datakälla, period, färskhet, underlag och verklig implementeringsstatus. Ingen person- eller ärendelista | Befintlig FastAPI/Jinja2/HTMX-grund och granskade läsadaptrar; B-029 för BI |
 | OC-2: Agentekonomi och uppföljning | Summeringar kan stämmas av mot anropslogg och körjournal. Testfall för reservanrop, fel, okänd kostnad och föräldra-/barnkörningar; inga dubblerade kostnader | AI-logg, harnessjournal och stabila körreferenser; delegeringsdata när 3c-1 finns |
 | OC-3: Gemensam frågeingång | Fråga routas till rätt teamledare med avgränsat mandat och budget. Svaret visar underlag, datum och ansvarigt team. Saknat underlag blir ett tydligt svar | Befintliga agentprofiler och behöriga analysverktyg; samordnade barnuppdrag kräver 3c-1 |
@@ -132,6 +133,10 @@ försäkringsmotorer. Tekniska gränser och planerade kontrakt finns i
 
 ## Återstående designval
 
+[OC-0:s beslutsförslag](../../02_system/operatörscentral_beslutsforslag.md)
+preciserar kontrakten och rekommenderar val A–X. Följande frågor är ännu inte
+beslutade genom att förslaget har skrivits:
+
 - Hur och när Databricks-dashboarden bäddas in; en gemensam måttdefinition
   ska ligga bakom både översikten och BI-fördjupningen.
 - Hur loggar indexeras och hur teamens uppdrag/leveranser får gemensamma referenser.
@@ -139,6 +144,10 @@ försäkringsmotorer. Tekniska gränser och planerade kontrakt finns i
 - Hur styrinställningar lagras och versionssätts tillsammans med befintlig
   YAML-konfiguration; en auktoritativ källa per inställning.
 - Vilka teamundantag och reservpolicyer som ska vara standard vid leverantörsbyte.
+
+Förslaget innehåller också acceptansfall och införandegrindar. Godkända
+kontrakt ersätter inte domängodkännanden eller verifiering av läsadaptrar,
+3c-1, 3c-V, autentisering och budgetverkställighet i respektive byggpaket.
 
 Beslut som behöver loggas formuleras som förslag till Karl. Denna plan för inte
 in nya poster i BESLUTSLOGG och aktiverar inga befogenheter.

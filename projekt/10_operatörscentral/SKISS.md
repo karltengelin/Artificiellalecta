@@ -30,6 +30,10 @@ VD-frågor, om team/kostnader har rätt tyngd och om frågeingången är tillrä
 framträdande. Färdiga måttdefinitioner, eskaleringströsklar och operatörens
 styrmandat fastställs i OC-0; skissen avgör dem inte.
 
+[Beslutsförslag A–X](../../02_system/operatörscentral_beslutsforslag.md)
+finns sedan 2026-10-26 för den avstämningen. Det är ännu inte godkänt;
+skissens exempelvärden och interaktioner innebär inga aktiverade kontrakt.
+
 Se [projektplanen](PROJEKTPLAN.md) och [arkitekturunderlaget](../../02_system/operatörscentral.md).
 
 ## Leveranskontroll 2026-10-25

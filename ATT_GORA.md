@@ -178,6 +178,10 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 - [ ] **3b-9: Admin-sida – Agentteam → Körgränser** *(tillagd 2026-10-12 på operatörens begäran)* – operatören kan se effektiva gränser och ändra kostnadsbudget, modellsteg, verktygsanrop, aktiv tidsgräns och delegeringsgränser per team/agent. Validera värden och arv mellan globala, team-, agent- och rotgränser. Spara varaktigt med konfigurationsversion och ändringslogg (tid, aktör, tidigare och nytt värde); bestäm relationen till `ecosystem.yaml` så att samma inställning inte får två sanningskällor. Nya körningar använder den nya versionen; pågående körningar behåller sin version. Endast autentiserad operatör får ändra; befogenheter och godkännandekrav hanteras separat. **Beroenden:** handläggar-UI:t (Fas 4), 3b-1 och 3b-4; delegeringskontroller aktiveras med 3c-1. Inställningarna hör till harness, utanför försäkringstjänstelagret. Startgränser: `02_system/harness.md` §6.3.
 
 *Operatörsyta för 3b-9:* planeras som en del av projekt 10:s styrning (OC-5).
+*2026-10-26:* [OC-0:s beslutsförslag, val R–W](02_system/operatörscentral_beslutsforslag.md#8-en-auktoritativ-modell-budgetpolicy--rw)
+föreslår samma policyregister och aktiveringskontrakt för båda vyerna.
+Designgodkännande, autentisering, lagring och implementation återstår;
+dagens YAML/env gäller tills en kontrollerad övergång är verifierad.
 Körgränsernas källa och verkställighet ligger kvar i harness; ingen separat
 budgetmodell byggs i gränssnittet. Se [VD-planen](projekt/10_operatörscentral/PROJEKTPLAN.md).
 
@@ -291,7 +295,7 @@ Tekniska gränser: [operatörscentralen](02_system/operatörscentral.md).
 Byggpaketen nedan ändrar inte B-028:s fasordning eller prioriteten på pågående arbete.
 
 - [x] **2026-10-25 Plan och första skiss** – VD-avgränsning, ansvar mot projekt 2/8 och harness, OC-0–6 samt interaktiv designreferens med syntetiska exempel; ingen produktionsfunktion aktiverad
-- [ ] **OC-0: Design och kontrakt** – granska mått, ledningseskaleringar, teamrouting, autentisering och en auktoritativ källa för versionssatt modell-/budgetpolicy
+- [ ] **OC-0: Design och kontrakt** – [beslutsförslag med val A–X](02_system/operatörscentral_beslutsforslag.md) framtaget **2026-10-26**: mått- och händelsekontrakt, ledningseskaleringar, teamrouting, autentisering och en auktoritativ modell-/budgetkälla gemensam med 3b-9. Endast dokument; designgodkännande återstår, inga runtimeändringar
 - [ ] **OC-1: Läsbar VD-översikt** – bolagsläge, team och leveranser med period, miljö, färskhet och underlag; saknade ekonomiska mått visas som ej beräknat
 - [ ] **OC-2: Agentekonomi** – kostnad per team/modell/uppdrag, avstämning mot loggar, okänd kostnad, reservförsök och ingen dubbelräkning mellan rot/barn/fortsättningar; resultat och kvalitet följs tillsammans med kostnad
 - [ ] **OC-3: Fråga bolaget** – gemensam ingång via teamledare, källbundna svar och mandat/budget; börja med ett team per uppdrag, automatisk samordning kräver 3c-1

@@ -85,6 +85,13 @@ Namnen på nya komponenter och fält nedan är **föreslagna kontrakt**. De finn
 
 ## 3. Befogenheter: vilka regler vinner?
 
+**OC-0-förslag 2026-10-26:** [Val R–W i operatörscentralens beslutsförslag](operatörscentral_beslutsforslag.md#8-en-auktoritativ-modell-budgetpolicy--rw)
+preciserar en gemensam lagring och aktiveringsväg för OC-5 och 3b-9, samt
+gränsen mellan operativa modell-/budgetval och befogenheter. Det är ännu
+inte godkänt eller infört. Källtabellen och YAML-arbetsgången nedan beskriver
+fortsatt dagens grund; de migrerade driftfälten får en ny källa först vid
+ett separat godkänt och verifierat införande.
+
 ### 3.1 En kedja av begränsningar
 
 Teamets mandat har två delar. Texten förklarar ansvaret för människor och modellen. Den körbara delen är tillåtna poddar, handlingstyper, resurser och delegeringsmål. Ett mandat som bara står i en prompt är inte verkställt.
