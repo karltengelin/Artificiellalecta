@@ -339,7 +339,7 @@ Det befintliga `02_system/Agentsystem/regelförändringsflöde.md` täcker steg 
 | Ledande agents ordinarie arbete med verktyg, utkast, handläggning | `standard` |
 | Regeltolkning, konsekvensanalys, aktuariella bedömningar, granskning av andras arbete | `deep` |
 
-- **Modellbyte är konfiguration** – `src/ai/ai_config.yaml` för permanenta ändringar, `AI_ROLE_<ROLL>` för tillfälliga.
+- **Modellbyte är konfiguration** – i dagens implementation `src/ai/ai_config.yaml` för permanenta ändringar, `AI_ROLE_<ROLL>` för tillfälliga. B-038:s beslutade fortsättning flyttar operativa modellval till gemensamt PolicyStore för OC-5/3b-9 vid verifierad övergång; då nekas dold env-överstyrning i hanterat läge. Modellkatalog och befogenheter ligger kvar i granskad Git-konfiguration. Se [OC-0 §8](operatörscentral_beslutsforslag.md#8-en-auktoritativ-modell-budgetpolicy--rw).
 - **Utvärdering:** samma uppgift körs med olika rollmappningar, och resultat och kostnad jämförs via anropsloggen. Fasta utvärderingsuppsättningar per agent/skill är en öppen fråga (§13).
 - **Second opinion (option):** ett compliance-kritiskt steg kan köras på båda leverantörerna och avvikelser flaggas för operatören – ett praktiskt sätt att utnyttja modellagnostiken som kontrollmekanism.
 
@@ -380,13 +380,16 @@ Ledningsuppföljningen och den planerade styrvyn samlas i
 Visa uppskattad kostnad, okänd kostnad och leveranser tillsammans; rot-, barn-
 och fortsättningskörningar får inte dubbelräknas. Global modell-/reservpolicy
 och budgetaktivering är planerade operatörsfunktioner, inte nya agentskills.
+Designen är godkänd genom B-038. OC-5 och 3b-9 ska dela policyregister och
+aktiveringskontrakt; implementation och kontrollerad övergång återstår.
+Periodbudget öppnas först med en gemensam verifierad reservationsbok.
 
 | Nivå | Mekanism |
 |------|----------|
 | Anrop | AI-lagret beräknar uppskattad kostnad per anrop och loggar den med team, agent och körning |
 | Körning | Harness summerar kostnaden och stoppar vid agentens `max_cost_usd` |
 | Team | Kostnad per team ur anropsloggen; planerad uppföljning i operatörscentralen (delprojekt 10), samordnad med BI (delprojekt 2) |
-| Hård spärr | Kostnadstak per workspace/projekt hos leverantören – gäller även om koden skulle fallera |
+| Leverantörskontroll | Separata leverantörsgränser kan komplettera den egna budgetkontrollen; faktisk spärrverkan måste verifieras och ersätter inte B-038:s budgetbok eller avstämning |
 
 ---
 

@@ -1,12 +1,14 @@
 # OC-0 – beslutsförslag för operatörscentralens kontrakt
 
-> **Datum:** 2026-10-26. **Version:** 0.1. **Status:** förslag för Karls beslut;
-> val A–X är rekommendationer, inte fattade beslut eller aktiverade funktioner.
+> **Datum:** 2026-10-26. **Version:** 0.1. **Status:** rekommendationerna A–X
+> godkända av Karl i chatten 2026-10-26, utan avvikelser, loggat som **B-038**.
+> Designen är beslutad; funktionerna är inte implementerade genom dokumentet.
 > **Omfattning:** endast Markdown. Ingen kod, databasändring, ny behörighet eller
-> styrinställning införs. Inget nytt B-nummer reserveras eller förs in i beslutsloggen.
+> styrinställning införs. [B-038](../BESLUTSLOGG.md#b-038--2026-10-26--oc-0-operatörscentralens-kontrakt-och-gemensamma-modell-budgetpolicy)
+> dokumenterar operatörens godkännande separat.
 > **Ägare:** projekt 10; måttägarskap hos projekt 2 och respektive domän består.
 
-## 1. Beslut som efterfrågas
+## 1. Godkända beslutsval
 
 Centralen blir bolagets ledningsyta enligt B-036, med gemensamma mått,
 spårbara frågor och kontrollerad modell-/budgetstyrning. Karl förblir
@@ -14,12 +16,10 @@ beslutsfattare. Frågeingången blir ingen ny agent med VD-befogenheter.
 Förslaget preciserar [arkitekturunderlaget](operatörscentral.md) och
 [projektplanen](../projekt/10_operatörscentral/PROJEKTPLAN.md).
 
-Varje bokstav kan godkännas, ändras eller skjutas upp separat. Tabellen anger
-det rekommenderade valet och ett konkret alternativ. Detaljer och villkor
-i angiven paragraf ingår i respektive val. Vid godkännande behöver avvikelser
-och uppskjutna val anges; de får inte behandlas som tyst godkända.
-Val R–W beskriver en sammanhängande styrväg. Om Git-alternativet i R/S väljs
-behöver aktivering och införande i U/X anpassas innan det blir bygginstruktion.
+Tabellen bevarar de rekommendationer och alternativ som Karl granskade.
+Samtliga rekommendationer A–X är godkända genom B-038. Detaljer och villkor
+i angiven paragraf ingår i respektive val; genomförandet återstår.
+Val R–W beskriver en sammanhängande styrväg. Git-alternativet i R/S valdes inte.
 
 | Val | Rekommendation | Alternativ och avvägning | Kontrakt |
 |---|---|---|---|
@@ -125,8 +125,8 @@ underlagsversion; ett gammalt affärsdatum är inte i sig ett importfel.
 
 ### 3.3 Första måttkatalogen
 
-Detta är föreslagna definitioner att granska inom projekt 2, inga nya
-domänberäkningar eller färdiga läsadaptrar. Senare ekonomiska mått kräver
+Definitionerna är godkända som design genom B-038; projekt 2 och domänägaren
+verifierar läsadaptrar och beräkningskontroller före publicering. Senare ekonomiska mått kräver
 egna versionssatta definitioner innan de får talvärden.
 
 | Mått-id | Population, beräkning och period | Ägare och mognad |
@@ -628,12 +628,14 @@ Prov byggs först lokalt med syntetiska fixtures/FakeProvider och oberoende
 förväntade belopp. Databastransaktioner och verklig integration verifieras
 separat när respektive byggpaket är beställt; inget produktionsskript körs nu.
 
-### 9.3 Föreslagen beslutstext och senare dokumentuppdatering
+### 9.3 Godkännande och dokumentuppdatering
 
-Förslag till beslut, utan beslutsnummer:
+Karl godkände rekommendationerna 2026-10-26 med ”jag tycker dina
+rekommendationer verkar bra. kör på denna planen”. B-038 dokumenterar
+godkännandet utan avvikelser. Beslutets innebörd:
 
-> Operatören godkänner OC-0:s val A–X enligt dokumentets version 0.1, med
-> uttryckligen angivna avvikelser/uppskjutna val. Operatörscentralen använder
+> Operatören godkänner OC-0:s rekommendationer A–X enligt dokumentets version
+> 0.1 utan avvikelser eller uppskjutna val. Operatörscentralen använder
 > gemensamma mått- och händelsekontrakt, aggregerade ledningseskaleringar och
 > avgränsad routing via befintliga teamledare. OC-5 och 3b-9 använder samma
 > versionssatta policyregister, med autentiserad, förhandsgranskad aktivering
@@ -641,11 +643,11 @@ Förslag till beslut, utan beslutsnummer:
 > Ingen kod, migration, extern tjänst eller runtimepolicy aktiveras genom
 > designbeslutet. Periodbudget och flerteamrouting kräver sina verifierade beroenden.
 
-Efter Karls godkännande föreslås en separat, godkänd post i BESLUTSLOGG och
-samordnad uppdatering av harnessens källtabell (§3.2/3.3), AI-lagrets
-konfigurationsbeskrivning, projekt 2:s måttkatalog och ATT_GORA:s bygguppdrag.
-Fram till dess gäller dagens YAML/env och befintliga körvägar. OC-0:s
-dokumentleverans kan markeras framtagen; designbeslut och funktioner är öppna.
+Godkännandet och gränsen mellan beslutad design och befintlig implementation
+är införda i BESLUTSLOGG, projektplanen, harness-, AI- och BI-underlagen samt
+gemensamma statusdokument. Dagens YAML/env och befintliga körvägar gäller
+tills övergången är implementerad och verifierad. OC-0 är klar som design-
+och dokumentleverans; OC-1–8 och 3b-9 är fortsatt byggarbete.
 
 ## 10. Underlag och avgränsningar
 

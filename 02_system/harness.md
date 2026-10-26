@@ -85,12 +85,13 @@ Namnen på nya komponenter och fält nedan är **föreslagna kontrakt**. De finn
 
 ## 3. Befogenheter: vilka regler vinner?
 
-**OC-0-förslag 2026-10-26:** [Val R–W i operatörscentralens beslutsförslag](operatörscentral_beslutsforslag.md#8-en-auktoritativ-modell-budgetpolicy--rw)
+**OC-0, B-038, 2026-10-26:** [Godkända val R–W i operatörscentralens underlag](operatörscentral_beslutsforslag.md#8-en-auktoritativ-modell-budgetpolicy--rw)
 preciserar en gemensam lagring och aktiveringsväg för OC-5 och 3b-9, samt
-gränsen mellan operativa modell-/budgetval och befogenheter. Det är ännu
-inte godkänt eller infört. Källtabellen och YAML-arbetsgången nedan beskriver
-fortsatt dagens grund; de migrerade driftfälten får en ny källa först vid
-ett separat godkänt och verifierat införande.
+gränsen mellan operativa modell-/budgetval och befogenheter. Designen är
+godkänd men ännu inte införd. Källtabellen och YAML-arbetsgången nedan
+beskriver dagens implementation; operativa gränser flyttar till gemensamt
+PolicyStore först vid kontrollerad, verifierad migrering. OC-5 och 3b-9
+använder då samma aktiveringsväg, medan befogenheter ligger kvar i Git.
 
 ### 3.1 En kedja av begränsningar
 
@@ -135,7 +136,7 @@ flowchart LR
 | Vad operationen gör, schema, klass, produktregler och PII | `Operation` i tjänstelagrets register | Tjänstelager och dispatcher |
 | Försäkringsoperationernas agentnivå och golv | `access_register.yaml`, `services/access.py`, produktreglernas status | Försäkringstjänstelagret; harness använder `decision()` |
 | Verkställighetsregler utanför försäkringssystemet | Respektive gateways granskade kontrakt, resursmandat och godkännandekrav | Dispatcher och respektive gateway; inte försäkringens register |
-| Teammandat, poddmontering, nekade skills, resurser och budget | Föreslagen `ecosystem.yaml` | Policykompilator och dispatcher |
+| Teammandat, poddmontering, nekade skills, resurser och budget | `ecosystem.yaml` i dagens implementation; operativa gränser flyttar till PolicyStore vid B-038:s införande | Policykompilator och dispatcher |
 | Aktuellt kund-/ärendescope, mål och flödessteg | Betrodd `RunRequest` från UI/flöde | Dispatcher och datagateway |
 | Hur agenten ska arbeta och uttrycka sig | Agentens MD-instruktion och skillinstruktioner | Modell; ger inga rättigheter |
 | Faktisk data-/filåtkomst | Databasroller, resursgateway och isolerad körmiljö | Infrastruktur och betrodd kod |
@@ -150,6 +151,11 @@ Här ska ingen andra kopia av registerraderna skapas i `ecosystem.yaml`. Den fö
 MD-filerna behåller mandatbeskrivning, arbetsgång och exempel. De får inte överstyra körprofilen. Startvalideringen kontrollerar att rätt instruktion hör till rätt agent och att metadata inte motsäger teamtillhörigheten. En framtida uppdelning av YAML-filen är möjlig bakom samma schema; den kompilerade profilen ska fortfarande vara en enda ögonblicksbild.
 
 Konfigurationen versionshanteras och ändras genom granskad merge. Ingen agent får skriva den, åtkomstregistret, sina instruktioner eller gällande produktregler i sin verksamhetskörning.
+
+B-038 skiljer framöver denna befogenhetskonfiguration från operativa
+modell-/budgetval. De senare aktiveras av autentiserad operatör via samma
+versionssatta PolicyStore för OC-5/3b-9 när övergången är verifierad.
+Inget driftval får vidga poddar, resurser eller domänbehörigheter.
 
 ### 3.4 Fullständigt konfigurationsexempel: första försäkringsprofilen
 

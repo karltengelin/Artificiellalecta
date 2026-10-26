@@ -6,8 +6,8 @@
 
 > **OC-0, 2026-10-26:** [Beslutsförslag med val A–X](operatörscentral_beslutsforslag.md)
 > preciserar mått, händelser, eskaleringar, routing, autentisering och gemensam
-> modell-/budgetpolicy för OC-5 och 3b-9. Förslaget väntar på Karls beslut och
-> ersätter ännu inte dagens konfiguration eller befintliga behörighetsvägar.
+> modell-/budgetpolicy för OC-5 och 3b-9. Rekommendationerna A–X är godkända
+> genom B-038. Implementationen återstår; dagens konfiguration och befintliga behörighetsvägar består.
 
 ## 1. VD-nivå och specialiserade arbetsytor
 
@@ -85,9 +85,9 @@ UI:t ligger tillfälligt i handläggar-UI:t, och flyttar hit i OC-7 (se nedan).
 Varje mått behöver stabilt id, definition, enhet, population, datum/period,
 datakälla/miljö, beräknad tid, modell-/grundversion, ägare, underlagsreferenser
 och status: utfall, prognos, scenario, ej beräknat, saknas eller inaktuellt.
-Föreslagna scheman, första måttdefinitioner och separata statusfält finns i
-[OC-0 §3](operatörscentral_beslutsforslag.md#3-måttkontrakt--bf), för granskning
-med projekt 2. Olika miljöer och perioder
+Designgodkända scheman, första måttdefinitioner och separata statusfält finns i
+[OC-0 §3](operatörscentral_beslutsforslag.md#3-måttkontrakt--bf), B-038.
+Läsadaptrar och kontroller verifieras med projekt 2. Olika miljöer och perioder
 summeras inte ihop. Diagram och chatt använder samma måttkontrakt.
 
 Konsolidering visas först när tillämplig fördelnings-/återbäringsmodell,
@@ -161,8 +161,8 @@ när jämförbart underlag finns. Ändringen valideras även mot strukturerade
 svar och verktygskontrakt. Ett leverantörsval garanterar inte likvärdig kvalitet.
 
 En inställning har **en auktoritativ källa**. [OC-0 §8](operatörscentral_beslutsforslag.md#8-en-auktoritativ-modell-budgetpolicy--rw)
-föreslår ett gemensamt policyregister för OC-5 och 3b-9, med kontrollerad
-övergång från dagens YAML/env. Lagringsvalet är ännu inte beslutat; ingen dold överstyrning eller
+beskriver ett gemensamt policyregister för OC-5 och 3b-9, med kontrollerad
+övergång från dagens YAML/env. Designen är beslutad genom B-038 men ännu inte införd; ingen dold överstyrning eller
 separat kopia i UI:t. Aktiv konfiguration och eventuell env-överstyrning ska
 gå att förklara. API-nycklar ligger kvar utanför repot och visas aldrig.
 

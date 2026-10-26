@@ -80,4 +80,5 @@ agentkostnader, frågor mot data samt inriktningsbeslut om modellpolicy och budg
 Handläggarärenden hanteras fortsatt i specialistgränssnitt. Plan och
 [första interaktiva skiss](projekt/10_operatörscentral/SKISS.md) finns;
 [OC-0:s beslutsförslag med val A–X](02_system/operatörscentral_beslutsforslag.md)
-är framtaget 2026-10-26 och väntar på godkännande. Operatörscentralen är ännu inte driftsatt.
+är godkänt 2026-10-26 genom B-038. OC-0:s designleverans är klar;
+implementation och driftsättning återstår.
