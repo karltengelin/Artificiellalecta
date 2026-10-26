@@ -180,6 +180,12 @@ class TestStruktureradeSvar:
             make_client(alpha).ask_structured("Bedöm", Bedomning)
         assert "kanske" in info.value.raw_text
 
+    def test_avklippt_svar_anger_utdatataket(self):
+        cut = replace(text_result('{"kraver_eskalering": tr'), stop_reason="max_tokens")
+        with pytest.raises(StructuredOutputError, match="utdatataket") as info:
+            make_client(FakeProvider([cut])).ask_structured("Bedöm", Bedomning)
+        assert info.value.stop_reason == "max_tokens"
+
     def test_avbojt_svar_ger_structuredoutputerror_i_ask_structured(self):
         refusal = replace(text_result(""), stop_reason="refusal")
         with pytest.raises(StructuredOutputError, match="refusal"):
