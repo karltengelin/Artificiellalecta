@@ -178,6 +178,10 @@ Begrepp och design: `02_system/agentekosystem.md` (§1 begrepp, §4–6, §12 by
 - [ ] **3b-9: Admin-sida – Agentteam → Körgränser** *(tillagd 2026-10-12 på operatörens begäran)* – operatören kan se effektiva gränser och ändra kostnadsbudget, modellsteg, verktygsanrop, aktiv tidsgräns och delegeringsgränser per team/agent. Validera värden och arv mellan globala, team-, agent- och rotgränser. Spara varaktigt med konfigurationsversion och ändringslogg (tid, aktör, tidigare och nytt värde); bestäm relationen till `ecosystem.yaml` så att samma inställning inte får två sanningskällor. Nya körningar använder den nya versionen; pågående körningar behåller sin version. Endast autentiserad operatör får ändra; befogenheter och godkännandekrav hanteras separat. **Beroenden:** handläggar-UI:t (Fas 4), 3b-1 och 3b-4; delegeringskontroller aktiveras med 3c-1. Inställningarna hör till harness, utanför försäkringstjänstelagret. Startgränser: `02_system/harness.md` §6.3.
 
 *Operatörsyta för 3b-9:* planeras som en del av projekt 10:s styrning (OC-5).
+*2026-10-26, B-038:* [OC-0:s godkända val R–W](02_system/operatörscentral_beslutsforslag.md#8-en-auktoritativ-modell-budgetpolicy--rw)
+beslutar samma policyregister och aktiveringskontrakt för båda vyerna.
+Autentisering, lagring och implementation återstår;
+dagens YAML/env gäller tills en kontrollerad övergång är verifierad.
 Körgränsernas källa och verkställighet ligger kvar i harness; ingen separat
 budgetmodell byggs i gränssnittet. Se [VD-planen](projekt/10_operatörscentral/PROJEKTPLAN.md).
 
@@ -297,9 +301,9 @@ Tekniska gränser: [operatörscentralen](02_system/operatörscentral.md).
 Byggpaketen nedan ändrar inte B-028:s fasordning eller prioriteten på pågående arbete.
 
 - [x] **2026-10-25 Plan och första skiss** – VD-avgränsning, ansvar mot projekt 2/8 och harness, OC-0–6 samt interaktiv designreferens med syntetiska exempel; ingen produktionsfunktion aktiverad
-- [ ] **OC-0: Design och kontrakt** – granska mått, ledningseskaleringar, teamrouting, autentisering och en auktoritativ källa för versionssatt modell-/budgetpolicy
-- [ ] **OC-1: Läsbar VD-översikt** – bolagsläge, team och leveranser med period, miljö, färskhet och underlag; saknade ekonomiska mått visas som ej beräknat
-- [ ] **OC-2: Agentekonomi** – kostnad per team/modell/uppdrag, avstämning mot loggar, okänd kostnad, reservförsök och ingen dubbelräkning mellan rot/barn/fortsättningar; resultat och kvalitet följs tillsammans med kostnad
+- [x] **2026-10-26 OC-0: Design och kontrakt** – [rekommendationerna A–X](02_system/operatörscentral_beslutsforslag.md) godkända genom **B-038**: mått- och händelsekontrakt, ledningseskaleringar, teamrouting, autentisering och en auktoritativ modell-/budgetkälla gemensam med 3b-9. Klar som design- och dokumentleverans; implementation sker i OC-1–8 och 3b-9, inga runtimeändringar
+- [x] **2026-10-26 OC-1: Läsbar VD-översikt** – lokalt byggd/testad på `/central`: bolagsläge, team, kostnadsvy och måttunderlag med period, miljö och källreferenser. Saknade ekonomiska motorer markeras som ej beräknat och leverans-/kvalitetsmått som ej uppmätt. Integration mot Lakebase/BI återstår; [drift och begränsningar](02_system/operatörscentral_drift.md)
+- [ ] **OC-2: Agentekonomi** – **smal lokal leverans byggd/testad 2026-10-26:** manifest, idempotent metadataindex och fördelning per team/modell/hashat uppdrag, okänd kostnad och loggtäckning utan dubblering av ackumulerade rot-/barn-/fortsättningsbelopp. Full försöks-/prisavstämning, loggrotation och leverans-/kvalitetsproducenter återstår; se driftbeskrivningen
 - [ ] **OC-3: Fråga bolaget** – gemensam ingång via teamledare, källbundna svar och mandat/budget; börja med ett team per uppdrag, automatisk samordning kräver 3c-1
 - [ ] **OC-4: Ledningsunderlag** – sammanfattade inriktningsfrågor med alternativ, konsekvenser och uppföljning; inga rutinärenden eller generell handläggarkö
 - [ ] **OC-5: Modellpolicy och budget** – global OpenAI-/Anthropic-/blandad policy, uttrycklig reservpolicy och teamundantag; förhandsgranskning, autentisering, versionssatt aktivering och ändringslogg. Återanvänd 3b-9 för körgränser; bygg ingen parallell budgetkälla
@@ -307,7 +311,7 @@ Byggpaketen nedan ändrar inte B-028:s fasordning eller prioriteten på pågåen
 - [ ] **OC-7: Flöden och produktparametrar** *(B-036)* – bolagsflöden startas och drivs från centralen. Flytta `/floden` (3c-3) och `/parametrar` från handläggar-UI:t hit, där de hör hemma som bolagsbeslut. Återanvänd adaptern `FlowConsole`. Samma operatörsidentitet och formulärskydd som i dag; styrvägens autentisering (OC-5) behövs inte för flödena. Kön ägs fortfarande av tjänstelagret, och förslag som gäller bolagsbeslut visas här
 - [ ] **OC-8: Plattform och teamområden** *(B-036)* – en gemensam webbplattform med centralen som startsida och ett område per team. Handläggar-UI:t blir försäkringsteamets område. Compliance och aktuarie får egna områden med uppdrag, körningar, utkast och resultat, och senare team får sina när de byggs. Ett område exponerar bara teamets egen agent, och ett test vaktar gränsen. Centralen länkar till varje område och visar dess läge
 
-**Första föreslagna byggleverans:** OC-0 → OC-1 med en smal OC-2, därefter
+**Första byggleveransen enligt B-038 är lokalt byggd:** OC-1 med en smal OC-2, därefter
 frågor till ett team åt gången. Styrskrivningar och teamöverskridande uppdrag
 öppnas först med respektive verifierat beroende. Inga nya externa konton skapas
 inom planen. B-029:s BI-inriktning består.

@@ -53,7 +53,7 @@ dependents = []
 [suites.insights]
 description = "Beståndsanalys och scenario"
 status = "partial"
-tests = ["tests/test_analytics_premium_impact.py", "tests/test_portfolio_impact.py"]
+tests = ["tests/test_analytics_premium_impact.py", "tests/test_portfolio_impact.py", "tests/test_management.py"]
 dependents = ["services", "tooling"]
 
 [suites.simulation]
@@ -101,7 +101,7 @@ dependents = ["agents", "services", "web", "tooling"]
 [suites.web]
 description = "HTTP, formulär och handläggarflöden"
 status = "active"
-tests = ["tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_flows.py", "tests/test_design_web_css.py"]
+tests = ["tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_flows.py", "tests/test_web_operator.py", "tests/test_design_web_css.py"]
 dependents = ["tooling"]
 
 [suites.data]
@@ -165,7 +165,7 @@ paths = ["src/web/**", "scripts/web/start_ui.py", "scripts/web/open_ui.ps1", "sc
 suites = ["web"]
 
 [[rules]]
-paths = ["src/analytics/**", "scripts/analysis/**"]
+paths = ["src/analytics/**", "src/management/**", "scripts/analysis/**"]
 suites = ["insights"]
 
 [[rules]]

@@ -196,6 +196,17 @@ Alla typer är Pydantic-modeller och kan serialiseras till JSON – körjournale
 
 ## 6. Modellval och konfiguration
 
+**Beslutad fortsättning, B-038 (2026-10-26):**
+[OC-0 §8](operatörscentral_beslutsforslag.md#8-en-auktoritativ-modell-budgetpolicy--rw)
+anger ett gemensamt PolicyStore för OC-5 och 3b-9. Efter verifierad migrering
+ägs operativa rollkedjor, leverantörsval och teamundantag där; modellkatalog,
+förmågor och priser behålls som granskad, versionsbunden Git-konfiguration.
+Hanterat läge tillåter ingen dold `AI_ROLE_*`-/`AI_CONFIG_FILE`-överstyrning.
+Hela kedjan, även reserv och explicit modellreferens, begränsas av tillåtna
+leverantörer. Exklusivt val får ingen korsleverantörsreserv. Rot, barn och
+fortsättningar behåller sin bundna policyversion. Detta är beslutad design,
+inte implementerad styrning; YAML/env-beteendet nedan gäller tills övergången är verifierad.
+
 ### 6.1 Roller
 
 Agenter och flöden väljer en **roll** – vilken modell rollen pekar på är konfiguration.

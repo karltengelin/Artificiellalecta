@@ -88,6 +88,35 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .tabs a[aria-current=page] { color: var(--color-link); border-bottom-color: var(--color-brand); }
 
 .panel { background: var(--color-surface); border-radius: var(--radius-card); padding: var(--space-5); margin-bottom: var(--space-5); }
+
+/* Operatörscentral: samma designvärden, inga egna färg- eller modellinställningar. */
+.oc-heading { display: flex; justify-content: space-between; gap: var(--space-5); align-items: start; }
+.oc-heading h1 { font-size: 2rem; margin-bottom: var(--space-2); }
+.oc-eyebrow { color: var(--color-link); font-size: .75rem; font-weight: 700; letter-spacing: .08em; }
+.oc-readonly { max-width: 240px; color: var(--color-text-muted); font-size: .85rem; }
+.oc-tabs { margin-bottom: var(--space-4); }
+.oc-context { display: flex; justify-content: space-between; gap: var(--space-4); align-items: center; }
+.oc-context p { margin: 0; font-size: .85rem; }
+.oc-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+.oc-metric, .oc-team { min-width: 0; margin-bottom: 0; }
+.oc-metric h3, .oc-team h3 { margin-top: 0; font-size: 1rem; }
+.oc-metric p:not(.oc-value), .oc-team p { font-size: .88rem; }
+.oc-value { font-size: 2rem; line-height: 1.25; font-weight: 700; margin: var(--space-4) 0; font-variant-numeric: tabular-nums; }
+.oc-value small { font-size: .85rem; font-weight: 500; color: var(--color-text-muted); }
+.oc-value--missing { font-size: 1.5rem; color: var(--color-text-muted); }
+.oc-meta { color: var(--color-text-muted); }
+.oc-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-5); }
+.oc-table { overflow-x: auto; }
+.oc-table caption { text-align: left; color: var(--color-text-muted); margin-bottom: var(--space-3); }
+.oc-definition summary { cursor: pointer; font-weight: 700; }
+.oc-ref, .oc-team li, .oc-definition dd { overflow-wrap: anywhere; }
+.oc-ref { font-family: ui-monospace, monospace; font-size: .8rem; color: var(--color-text-muted); }
+@media (max-width: 1000px) { .oc-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .oc-heading, .oc-context { flex-direction: column; }
+  .oc-metrics, .oc-columns { grid-template-columns: minmax(0, 1fr); }
+  .oc-readonly { max-width: none; }
+}
 .tabs + .panel { margin-top: var(--space-4); }
 .panel__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-3); }
 .panel__head h2 { margin: 0; }

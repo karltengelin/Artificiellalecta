@@ -11,6 +11,11 @@
 > Enskilda handläggarärenden och deras godkännanden hanteras i specialistvyer.
 > Måttens ägarskap och Databricks-inriktningen enligt B-029 består.
 
+> **OC-0, B-038, 2026-10-26:** [Gemensamt måttkontrakt och första katalog](../../02_system/operatörscentral_beslutsforslag.md#3-måttkontrakt--bf)
+> är godkända som designgrund för BI, central och agentsvar. Projekt 2 och
+> domänägaren verifierar definitionernas läsadaptrar och beräkningskontroller
+> före publicering; inga mått eller integrationer har driftsatts genom beslutet.
+
 ## Vad operatören ska kunna förstå
 
 Dashboarden ska besvara: hur stort är bolaget, kan vi bära våra pensionslöften, vad ändras

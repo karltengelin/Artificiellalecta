@@ -72,11 +72,16 @@ Menyvalet **Bestånd** visar försäkrade i vald datakälla. Sök på namn eller
 arbetsgivare och nuvarande försäkringsläge och öppna personens översikt från listan. Antal och
 sidindelning avser personer; läsningarna loggas via tjänstelagret.
 
-## Planerad operatörscentral
+## Operatörscentral
 
 [Projekt 10](projekt/10_operatörscentral/PROJEKTPLAN.md) planerar Karls arbetsyta
 på VD-nivå: bolagsläge och konsolidering när underlagen finns, teamens arbete,
 agentkostnader, frågor mot data samt inriktningsbeslut om modellpolicy och budget.
 Handläggarärenden hanteras fortsatt i specialistgränssnitt. Plan och
 [första interaktiva skiss](projekt/10_operatörscentral/SKISS.md) finns;
-operatörscentralen är ännu inte driftsatt.
+[OC-0:s beslutsförslag med val A–X](02_system/operatörscentral_beslutsforslag.md)
+är godkänt 2026-10-26 genom B-038. OC-0:s designleverans är klar;
+OC-1 och en smal OC-2 finns nu som lokal läsvy på `/central`, med bolagsmått,
+team, agentkostnader och underlag. Saknade värderingsmotorer och loggkällor
+visas uttryckligt som luckor. [Drift och begränsningar](02_system/operatörscentral_drift.md).
+Ingen modell-/budgetstyrning eller driftsatt Databricks-integration ingår.

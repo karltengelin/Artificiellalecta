@@ -51,6 +51,8 @@ class WebSettings:
     demo_path: Path = REPO_ROOT / "data" / "handlaggare_demo.db"  # *.db är gitignorerat
     #: Värdar som får anropa UI:t (Host-huvudet) – skydd mot DNS-rebinding
     allowed_hosts: tuple[str, ...] = field(default=("127.0.0.1", "localhost"))
+    operator_manifest: Path | None = None
+    operator_dataset_id: str | None = None
 
     def __post_init__(self) -> None:
         if not _HANDLER_ID.match(self.handler_id):
@@ -61,6 +63,12 @@ class WebSettings:
             raise WebConfigError(
                 f"Okänd databas '{self.database}' – välj {', '.join(DATABASES)} (HANDLAGGARE_DB)"
             )
+        if self.operator_dataset_id is not None and not re.fullmatch(r"[a-zA-Z0-9_.:-]{1,100}", self.operator_dataset_id):
+            raise WebConfigError("OPERATOR_DATASET_ID ska vara en kort datasetreferens utan personuppgifter")
+
+    @property
+    def dataset_ref(self) -> str:
+        return self.operator_dataset_id or f"{self.database}:current"
 
     @property
     def database_label(self) -> str:
@@ -78,4 +86,6 @@ class WebSettings:
         return cls(
             handler_id=os.environ.get("HANDLAGGARE_ID", "karl").strip() or "karl",
             database=os.environ.get("HANDLAGGARE_DB", "demo").strip() or "demo",
+            operator_manifest=Path(os.environ["OPERATOR_TELEMETRY_MANIFEST"]) if os.environ.get("OPERATOR_TELEMETRY_MANIFEST") else None,
+            operator_dataset_id=os.environ.get("OPERATOR_DATASET_ID") or None,
         )

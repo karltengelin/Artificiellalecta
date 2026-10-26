@@ -19,8 +19,12 @@
   {% set path = request.url.path %}
   {% macro nav(href, label, active) %}<a href="{{ href }}"{% if active %} aria-current="page"{% endif %}>{{ label }}{{ caller() if caller }}</a>{% endmacro %}
   <header class="topbar{% if settings.is_production %} topbar--prod{% endif %}">
-    <a class="brand" href="/"><span class="brand__mark" aria-hidden="true"></span>Artificiellalecta <span class="brand__sub">Handläggare</span></a>
+    <a class="brand" href="{{ '/central' if operator_page else '/' }}"><span class="brand__mark" aria-hidden="true"></span>Artificiellalecta <span class="brand__sub">{{ 'Operatörscentral' if operator_page else 'Handläggare' }}</span></a>
     <nav class="mainnav" aria-label="Huvudmeny">
+      {{ nav("/central", "Centralen", path.startswith("/central")) }}
+      {% if operator_page %}
+      {{ nav("/", "Försäkringsteamets arbetsyta", false) }}
+      {% else %}
       {{ nav("/", "Sök", path == "/" or path == "/sok") }}
       {{ nav("/forsakrade", "Bestånd", path.startswith("/forsakrade") or path.startswith("/forsakringar")) }}
       {{ nav("/arenden", "Ärenden", path.startswith("/arenden")) }}
@@ -29,6 +33,7 @@
       {{ nav("/handelselogg", "Händelselogg", path.startswith("/handelselogg")) }}
       {{ nav("/parametrar", "Parametrar", path.startswith("/parametrar")) }}
       {% if flows_available %}{{ nav("/floden", "Flöden", path.startswith("/floden")) }}{% endif %}
+      {% endif %}
     </nav>
     <div class="who">
       <span class="db db--{{ settings.database }}" title="Databas">{{ settings.database_label }}</span>
@@ -70,7 +75,10 @@
     </div>
   </dialog>
   <footer class="footer">
+    {% if operator_page %}Ledningsaggregat via försäkringstjänsten. Agentekonomi från deklarerade loggkällor. Läsbar översikt enligt B-038.
+    {% else %}
     Alla läsningar och ändringar går via tjänstelagret och loggas med handläggare och motivering (B-028).
+    {% endif %}
   </footer>
 </body>
 </html>

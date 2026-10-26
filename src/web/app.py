@@ -33,6 +33,7 @@ from web.routes import (
     flows,
     insured,
     journal,
+    operator,
     parameters,
 )
 
@@ -81,6 +82,7 @@ def create_app(
     app.include_router(parameters.router)
     app.include_router(flows.router)
     app.include_router(environments.router)
+    app.include_router(operator.router)
 
     @app.get("/_instance")
     def instance(request: Request):

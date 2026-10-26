@@ -8,6 +8,69 @@
 
 ## Beslut
 
+### B-038 | 2026-10-26 | OC-0: operatörscentralens kontrakt och gemensamma modell-/budgetpolicy
+
+**Beslut:** Operatören godkände rekommendationerna A–X i
+`02_system/operatörscentral_beslutsforslag.md` version 0.1 i chatten
+2026-10-26: ”jag tycker dina rekommendationer verkar bra. kör på denna planen”.
+Inga avvikelser eller uppskjutna val angavs. Underlagets kontrakt och
+införandegrindar gäller som design för fortsatt bygge:
+
+1. **Ledningsyta och mått (A–F).** Läsbar överblick införs först. Projekt 2 och
+   domänägaren förvaltar gemensamma, versionssatta mått. Observationer binder
+   källa, miljö, period, grund och kvalitet; saknat underlag blir inte noll.
+   Centralen använder granskade aggregat med skydd mot små personsegment.
+2. **Händelser, kostnad och kvalitet (G–J).** Sanerade läsprojektioner har stabila
+   originalreferenser och idempotent import. Varje synligt AI-försök räknas en
+   gång. Känd kostnad, okänd möjlig debitering och täckning särredovisas utan
+   dubbelräkning av rot/barn/fortsättningar. Leverans och godkänd kvalitet skiljs åt.
+3. **Ledningseskaleringar (K–L).** Versionerade sandboxtrösklar och egna
+   ledningsunderlag används för systematiska avvikelser och inriktningsbeslut,
+   med ägare, alternativ, underlagsbindning och uppföljning. Rutinärenden
+   stannar hos specialisten. Inriktning ersätter inget domängodkännande.
+4. **Frågerouting (M–O).** Första ingången använder ett uttryckligen valt team
+   och dess befintliga ledande agent. Betrodd kod binder identitet, miljö,
+   period, källor, mandat och budget. Svar är källbundna och visar luckor.
+   Obyggda förmågor ger ingen låtsaskörning; automatisk flerteamrouting kräver 3c-1.
+5. **Autentisering (P–Q).** Nya bolagsfrågor och styrfunktioner använder en
+   verifierad lokal operatörssession, serverkontrollerade rättigheter och
+   sessionsbundet formulärskydd enligt underlaget. Styraktivering kräver
+   förhandsgranskning och nylig återautentisering. B-036:s befintliga väg
+   för flödessteg via FlowConsole och domänkö kvarstår utan krav på OC-5-inloggning.
+6. **En policykälla för OC-5 och 3b-9 (R–W).** Harness får ett gemensamt,
+   varaktigt PolicyStore med oföränderliga versioner och atomisk aktivering
+   per miljö, med Lakebase som lagringsinriktning. Efter kontrollerad migrering
+   äger det operativa modellval och körbudgetar; Git-konfiguration äger fortsatt
+   befogenheter och modellkatalog. Ingen dold YAML/env-överstyrning tillåts i
+   hanterat läge. Exklusiv leverantörspolicy gäller hela modellkedjan; synliga
+   teamundantag får inte kringgå den. Rot, barn och fortsättningar behåller
+   modell-/budgetversion och förbrukning. Periodbudget är inte aktiverad som
+   standard och kräver en gemensam verifierad reservationsbok.
+7. **Stegvis införande (X).** OC-1 med en smal OC-2 är nästa byggleverans.
+   Senare frågor, styrning, ekonomiska mått och flerteamrouting öppnas först
+   när respektive autentisering, verktyg, motor och kontraktsprov verifierats.
+
+**Motivering:** Gemensamma definitioner, stabila bevisreferenser och en enda
+styrkälla gör bolagsläge, kostnad och beslut jämförbara och spårbara utan att
+centralen bygger parallella domänmotorer eller vidgar agenternas befogenheter.
+
+**Övervägda alternativ:** Alternativen per val A–X finns i underlagets §1.
+Bland annat övervägdes enbart Git/YAML för driftval, enbart nya loggar med
+försöks-id, manuella ledningseskaleringar och att vänta ut alla körningar
+före policybyte. Rekommendationerna valdes i samtliga fall.
+
+**Konsekvenser:**
+- OC-0:s dokument- och designleverans är klar. OC-1–8 och 3b-9 är fortsatt byggarbete med underlagets beroenden och acceptansfall.
+- Ingen kod, migration, extern tjänst, databasroll eller runtimepolicy aktiveras genom beslutet. Dagens YAML/env gäller tills övergången är implementerad och verifierad.
+- Måttadaptrar och kontrollregler verifieras av respektive ägare. Beslutet inför inga rättsliga trösklar eller löften om exakta kostnadshårdtak.
+- Dokumentstatus och hänvisningar samordnas i projektplan, MASTER_CONTEXT, README, ATT_GORA, harness-, AI-, team- och BI-underlag. Ingen merge till main godkänns genom designbeslutet.
+
+**Preciserar:** B-025:s roll-/reservpolicy, B-026:s körpolicy och teamingångar,
+B-029:s gemensamma analysunderlag samt B-036:s operatörscentral. B-017/B-028:s
+domänvägar och B-037:s verksamhetsdrivna byggordning består.
+
+---
+
 ### B-037 | 2026-10-25 | Verksamhetsdrivet AI-native tjänstepensionsföretag
 
 **Beslut:** Operatören godkände beslutstexten i `02_system/bolagsvision_beslutsforslag.md` i chatten 2026-10-25. Följande gäller för fortsatt arbete:
