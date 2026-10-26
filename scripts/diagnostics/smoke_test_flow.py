@@ -4,12 +4,14 @@ Kör flödet `rule_change_parameter` genom samma adapter som UI:t (`FlowConsole`
 modeller för compliance (tolkning) och aktuarie (beståndsinsikt). Skriptet agerar operatör i
 grindarna och det manuella steget, märkt `rooktest`. Inget körs mot beståndet i Lakebase:
 
-| `--db`     | Databas                                                                 | Aktuariens roll |
-|------------|-------------------------------------------------------------------------|-----------------|
-| `demo`     | Demobeståndet i en SQLite-databas i minnet                              | simulerad       |
-| `svc_test` | Demobeståndet i ett eget schema i SERVICES_TEST_POSTGRES_URL, tas bort efteråt | riktig begränsad roll med `agent_aktuarie`s rättigheter, om en testroll finns |
+| `--db`     | Databas                                                                 | Teamens roller |
+|------------|-------------------------------------------------------------------------|----------------|
+| `demo`     | Demobeståndet i en SQLite-databas i minnet                              | simulerade     |
+| `svc_test` | Demobeståndet i ett eget schema i SERVICES_TEST_POSTGRES_URL, tas bort efteråt | riktiga begränsade roller med `agent_aktuarie`s och `agent_compliance`s rättigheter, när testroller finns |
 
-Compliance kör med det gemensamma tjänstelagret – teamet har ingen egen databasroll.
+Testrollerna är SERVICES_TEST_AKTUARIE_POSTGRES_URL och SERVICES_TEST_COMPLIANCE_POSTGRES_URL.
+Saknas de lånas SERVICES_TEST_AGENT_POSTGRES_URL för ett av teamen; ett team utan egen
+inloggning kör då med simulerad roll.
 
 Kontrollerna skiljer **verksamhetskontroller** (flödet, grindarna, mandatet, rollen och
 verifieringen ska fungera för alla källor) från **facit för scenariot** (vad just
@@ -111,18 +113,18 @@ def demo_database() -> Iterator[SimpleNamespace]:
     engine = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
     create_demo_database(engine, with_proposals=False)
     try:
-        yield SimpleNamespace(label="demo (SQLite i minnet)", factory=session_factory_for(engine), actuary_factory=None)
+        yield SimpleNamespace(label="demo (SQLite i minnet)", factory=session_factory_for(engine), team_factories={})
     finally:
         engine.dispose()
 
 
 @contextmanager
 def svc_test_database() -> Iterator[SimpleNamespace]:
-    """Eget schema i den isolerade testdatabasen, med aktuariens rättigheter på testrollen."""
+    """Eget schema i den isolerade testdatabasen, med teamens rättigheter på testrollerna."""
     from sqlalchemy import create_engine
 
     from services.db import session_factory_for
-    from utils.agent_roles import AKTUARIE
+    from utils.agent_roles import ROLE_GRANTS
     from utils.demo_data import create_demo_database
 
     url = os.environ.get("SERVICES_TEST_POSTGRES_URL")
@@ -130,31 +132,40 @@ def svc_test_database() -> Iterator[SimpleNamespace]:
         raise SystemExit("SERVICES_TEST_POSTGRES_URL saknas i .env")
     if url == os.environ.get("DATABASE_URL"):
         raise SystemExit("SERVICES_TEST_POSTGRES_URL är DATABASE_URL – röktestet körs aldrig mot beståndet")
-    agent_url = os.environ.get("SERVICES_TEST_AKTUARIE_POSTGRES_URL") or os.environ.get("SERVICES_TEST_AGENT_POSTGRES_URL")
-    if agent_url and agent_url in {os.environ.get("AGENT_AKTUARIE_DATABASE_URL"), os.environ.get("AGENT_FORSAKRING_DATABASE_URL")}:
-        raise SystemExit("Testrollens anslutning pekar på beståndet")
+    shared = os.environ.get("SERVICES_TEST_AGENT_POSTGRES_URL")
+    candidates = {team: os.environ.get(f"SERVICES_TEST_{team.upper()}_POSTGRES_URL") for team in ("aktuarie", "compliance")}
+    production = {os.environ.get(f"AGENT_{t.upper()}_DATABASE_URL") for t in ROLE_GRANTS} - {None}
+    if production & ({shared, *candidates.values()} - {None}):
+        raise SystemExit("En testrolls anslutning pekar på beståndet")
 
     name = f"rooktest_{uuid.uuid4().hex[:12]}"
     admin = create_engine(url)
     with admin.begin() as conn:
         conn.exec_driver_sql(f'CREATE SCHEMA "{name}"')
     engine = create_engine(url, connect_args={"options": f"-csearch_path={name}"})
-    agent_engine = None
+    agent_engines = []
     try:
         create_demo_database(engine, with_proposals=False)
-        actuary_factory = None
-        if agent_url:
+        team_factories, used = {}, set()
+        for team, own in candidates.items():
+            agent_url = own or shared
+            if not agent_url:
+                continue
             agent_engine = create_engine(agent_url, connect_args={"options": f"-csearch_path={name}"})
+            agent_engines.append(agent_engine)
             with agent_engine.connect() as conn:
                 login = conn.exec_driver_sql("SELECT current_user").scalar_one()
+            if login in used:  # samma inloggning kan bara bära ett teams rättigheter i schemat
+                continue
+            used.add(login)
             with engine.begin() as conn:
-                for statement in replace(AKTUARIE, role=login).statements(name):
+                for statement in replace(ROLE_GRANTS[team], role=login).statements(name):
                     conn.exec_driver_sql(statement)
-            actuary_factory = session_factory_for(agent_engine)
+            team_factories[team] = session_factory_for(agent_engine)
         yield SimpleNamespace(label=f"svc_test, schema {name} (tas bort efteråt)", factory=session_factory_for(engine),
-                              actuary_factory=actuary_factory)
+                              team_factories=team_factories)
     finally:
-        if agent_engine is not None:
+        for agent_engine in agent_engines:
             agent_engine.dispose()
         engine.dispose()
         with admin.begin() as conn:
@@ -183,12 +194,13 @@ def build_console(db, ai, rules_date: date, regulatory=None):
 
     rules = ProductRuleCatalog(today=rules_date)
     trusted = ServiceLayer(session_factory=db.factory, rules=rules)
-    compliance = ServiceLayer(session_factory=db.factory, validation_session_factory=db.factory, rules=rules)
-    actuary = ServiceLayer(session_factory=db.actuary_factory or db.factory, validation_session_factory=db.factory,
-                           agent_role="agent_aktuarie", rules=rules)
-    console = FlowConsole.build(db.factory, trusted=trusted, agent_service=compliance,
-                                team_services={"aktuarie": actuary}, simulated_role=db.actuary_factory is None,
-                                ai=ai, regulatory=regulatory)
+    teams = {
+        team: ServiceLayer(session_factory=db.team_factories.get(team, db.factory), validation_session_factory=db.factory,
+                           agent_role=f"agent_{team}", rules=rules)
+        for team in ("compliance", "aktuarie")
+    }
+    console = FlowConsole.build(db.factory, trusted=trusted, agent_service=teams["compliance"], team_services=teams,
+                                simulated_role=not db.team_factories, ai=ai, regulatory=regulatory)
     return console, trusted
 
 
@@ -401,7 +413,9 @@ def main() -> int:
 
     report = Report()
     with (demo_database() if args.db == "demo" else svc_test_database()) as db:
-        print(f"Databas: {db.label}; aktuariens roll: {'begränsad testroll' if db.actuary_factory else 'simulerad'}")
+        roles = ", ".join(f"{t} {'begränsad testroll' if t in db.team_factories else 'simulerad'}"
+                          for t in ("compliance", "aktuarie"))
+        print(f"Databas: {db.label}; roller: {roles}")
         main_scenario(db, ai, args.regeldatum, report)
         if args.avvikelser:
             deviation_scenarios(db, ai, args.regeldatum, report)

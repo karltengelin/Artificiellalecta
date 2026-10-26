@@ -82,7 +82,16 @@ AKTUARIE = RoleGrants(
     insert=("operation_events",),
 )
 
-ROLE_GRANTS = {"forsakring": FORSAKRING, "aktuarie": AKTUARIE}
+#: Compliance-teamet: produktparametrarna (get_product_parameters) och basbeloppen för
+#: förhandsberäkningen (calculate_premium_preview). Ingen individdata och inga förslag –
+#: aktiveringsförslaget i parameterflödet läggs av motorn med den betrodda anslutningen.
+COMPLIANCE = RoleGrants(
+    role="agent_compliance",
+    select=("base_amounts", "product_parameters"),
+    insert=("operation_events",),
+)
+
+ROLE_GRANTS = {"forsakring": FORSAKRING, "aktuarie": AKTUARIE, "compliance": COMPLIANCE}
 
 
 def inspect_role(conn: Connection, grants: RoleGrants, schema: str = "public") -> list[str]:
