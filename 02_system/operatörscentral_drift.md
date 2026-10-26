@@ -1,7 +1,7 @@
 # Operatörscentral – första läsleveransen OC-1/OC-2
 
 **Datum:** 2026-10-26. **Design:** B-038, [OC-0](operatörscentral_beslutsforslag.md).
-**Status:** lokal implementation på arbetsbranch; inte integrerad till main eller verifierad mot Lakebase.
+**Status:** lokalt byggd och verifierad läsimplementation; inte verifierad mot Lakebase.
 
 ## Öppna och använda
 
@@ -151,9 +151,12 @@ Därefter passerade 105 berörda regressionsprov och, efter sista måttändringe
 är godkända. De fyra vyerna, navigationen och utfällbart måttunderlag granskades
 i webbläsaren vid 499 px bredd. Kostnadstabellen med fixtureunderlag verifierades
 via HTTP-test; ingen syntetisk kostnadskälla kopplades in i den vanliga läsvyn.
+Inför integrationen med compliance-rollens uppdaterade main passerade
+1 110 lokala tester; 42 överhoppades och 36 valdes bort. Inga databas-/liveprov kördes.
 
 Verifiering mot Lakebase, gemensam loggdrift/rotation, komplett försöks- och
 prisversionering, historiska mått, leverans-/kvalitetsproducenter och
 fullständig OC-2-avstämning återstår. OC-3–8 och 3b-9 är separata byggpaket.
-Förändringar i MASTER_CONTEXT/ATT_GORA föreslås vid samordnad integration,
-eftersom parallellt 3c-V-arbete använder de gemensamma statusdokumenten.
+MASTER_CONTEXT och ATT_GORA har uppdaterats vid samordnad integration efter
+att compliance-rollens 3c-V-ändringar hämtats in. Ingen sådan databasändring
+utförs av operatörscentralen.

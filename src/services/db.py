@@ -60,6 +60,7 @@ def database_session_factory(url_env: str = "DATABASE_URL") -> SessionFactory:
 AGENT_ROLES = {
     "forsakring": ("agent_forsakring", "AGENT_FORSAKRING_DATABASE_URL"),
     "aktuarie": ("agent_aktuarie", "AGENT_AKTUARIE_DATABASE_URL"),
+    "compliance": ("agent_compliance", "AGENT_COMPLIANCE_DATABASE_URL"),
 }
 
 

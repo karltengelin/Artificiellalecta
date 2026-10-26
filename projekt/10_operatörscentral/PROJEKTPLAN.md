@@ -4,7 +4,7 @@
 > AI-native tjänstepensionsbolag. Inget nytt beslutsnummer loggas genom planen.
 > **Status:** OC-0:s rekommendationer A–X godkända 2026-10-26 genom B-038.
 > Design- och dokumentleveransen är klar. OC-1 med en smal OC-2 är lokalt byggd
-> på arbetsbranch; fullständig integration, Lakebase-verifiering och senare paket återstår.
+> och verifierad; fullständig logg-/BI-integration, Lakebase-verifiering och senare paket återstår.
 
 ## Syfte och avgränsning
 

@@ -62,7 +62,7 @@ Tolka källan självständigt. Kopiera inte bara källans text: säg vad som fö
 ## Behörigheter
 
 ### Dataåtkomst
-Godkända regel- och källdokument via `regelverk`, produktparametrarna och utkast i den egna arbetsytan. Ingen kunddata.
+Godkända regel- och källdokument via `regelverk`, produktparametrarna och utkast i den egna arbetsytan. Ingen kunddata. I databasen begränsas teamet av rollen `agent_compliance`: läsning av produktparametrar och basbelopp samt loggrader (`harness.md` §5.1).
 
 ### Agentinteraktioner
 - Planerat: eskaleringar från andra team och samarbete med Rapporteringsagenten om tillämpliga rapportkrav. Delegering byggs i 3c-1 och rapporteringsagenten är inte byggd.

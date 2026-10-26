@@ -137,7 +137,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🟡 Statisk ögonblicksbild uppdaterad 2026-10-25 mot main @ 5fd10ab: tio projekt, tre agentprofiler, 25 operationer och kvarstående verksamhetsbygge; inga livevärden | `projekt/08_företagsöversikt/foretagsoversikt.html` |
 | 9 | Processkartor | `projekt/09_processkartor/` | Processkartor över agenternas arbete: utlösare, mandat, verktyg, resultat och godkännanden; levererar till delprojekt 8 | 🟡 Plan upplagd | Första målflödet i `projekt/02_bi_insikter/DASHBOARD_DESIGN.md` |
-| 10 | Operatörscentral | `projekt/10_operatörscentral/` | Karls VD-arbetsyta: bolagsläge, konsolidering när underlag finns, team/agentkostnader, datafrågor och inriktningsbeslut om modellpolicy och budget | 🟡 OC-0:s design och kontrakt A–X godkända 2026-10-26 (B-038); skiss finns, implementation och drift återstår | Projekt 2:s BI-design, harness/AI-lager och specialistgränssnitt |
+| 10 | Operatörscentral | `projekt/10_operatörscentral/` | Karls VD-arbetsyta: bolagsläge, konsolidering när underlag finns, team/agentkostnader, datafrågor och inriktningsbeslut om modellpolicy och budget | 🟡 OC-0 godkänd (B-038); OC-1 och smal OC-2 lokalt byggda/testade 2026-10-26 på `/central`. Full logg-/BI-integration, Lakebase-verifiering och styrning återstår | Projekt 2:s BI-design, harness/AI-lager och specialistgränssnitt |
 
 **Operatörscentral på VD-nivå:** projekt 10 samlar ledningsöverblick och styrning.
 Enskilda handläggarärenden och deras godkännanden stannar i specialiserade gränssnitt;
@@ -149,6 +149,10 @@ Se `02_system/operatörscentral.md` och det godkända
 OC-5 och 3b-9 ska använda en gemensam versionssatt modell-/budgetkälla hos
 harness efter kontrollerad övergång från YAML/env. Befogenheter ligger kvar
 i granskad konfiguration; designbeslut och skiss aktiverar inga runtimefunktioner.
+Den första läsleveransen OC-1/smal OC-2 finns nu lokalt på `/central`, med
+bolagsaggregat, teamstatus, deklarerade kostnadsunderlag och synliga dataluckor.
+Se [drift och begränsningar](02_system/operatörscentral_drift.md). Styrning
+och nya agentuppdrag är fortfarande separata byggpaket.
 
 **Tvärgående: Agentekosystem-design.** Hur agenter organiseras i team med egna orkestrerare, delade skill-poddar, modellval och nyckelhantering (jfr tidigare experiment "agent-factory") är inte ett eget delprojekt utan det arkitekturramverk alla delprojekt ovan ska byggas enligt. Agenterna körs i en harness – allt runt modellen som gör den till en agent (loop, instruktioner, verktyg, kontexthantering, guardrails) – med samma motor för alla team, konfigurerad per team med teamets verktyg och guardrails. Ramverket är beslutat i B-026 och beskrivs i `02_system/agentekosystem.md`; det vidareutvecklar B-008/B-009/B-016. Kvarvarande öppna frågor listas där (§13).
 

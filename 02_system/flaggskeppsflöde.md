@@ -184,7 +184,7 @@ ser bara aggregat. Operatören skapar rollen i Databricks (val I).
 
 *Förberett i 3c-V (2026-10-26):* rättigheterna `AKTUARIE` i `src/utils/agent_roles.py`, anslutningen
 `AGENT_AKTUARIE_DATABASE_URL` och teamets eget tjänstelager i flödesmotorn (`AgentRuntime.team_services`).
-Provade mot isolerad Postgres; rollen finns ännu inte i Lakebase.
+Provade mot isolerad Postgres. Compliance-teamet har motsvarande roll `agent_compliance`. Båda rollerna har sina rättigheter i Lakebase sedan 2026-10-26 (`harness.md` §5.1).
 
 ## 6. Flödesmotorn
 
