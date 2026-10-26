@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Operatörscentral{% endblock %}
+{% block content %}
+{% if invalid_month %}
+<h1>Välj en kalendermånad</h1>
+<p>Översikten visar aktuell månad och de elva föregående. Inga fria person- eller datumurval görs.</p>
+<a href="/central">Till centralen</a>
+{% else %}
+<div class="oc-heading">
+  <div><p class="oc-eyebrow">BOLAGETS GEMENSAMMA ÖVERBLICK</p><h1>Operatörscentral</h1>
+    <p class="muted">Bolagsläge, team och agentekonomi. Underlaget avgör vad vi kan säga.</p></div>
+  <div class="oc-readonly"><span class="pill">Läsvy</span><p>Inga agentuppdrag eller styrändringar startas här.</p></div>
+</div>
+<nav class="tabs oc-tabs" aria-label="Centralens vyer">
+  {% for href, label, view in [('/central', 'Överblick', 'central'), ('/central/team', 'Team', 'team'), ('/central/kostnader', 'Agentkostnader', 'kostnader'), ('/central/underlag', 'Underlag', 'underlag')] %}
+  <a href="{{ href }}?month={{ selected_month }}"{% if active_view == view %} aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>
+<section class="panel oc-context" aria-label="Period och underlag">
+  <form method="get" class="filter">
+    <label for="oc-month">Månad</label><select name="month" id="oc-month">
+    {% for month in months %}<option value="{{ month.strftime('%Y-%m') }}"{% if month.strftime('%Y-%m') == selected_month %} selected{% endif %}>{{ month.strftime('%Y-%m') }}</option>{% endfor %}
+    </select><button type="submit" class="secondary">Visa</button>
+  </form>
+  <p class="muted">{{ settings.database_label }} · Dataset <strong>{{ dataset_ref }}</strong><br>
+    Lästa {{ now.strftime('%Y-%m-%d %H:%M') }} UTC · Bestånd avser läsdatum. Kostnadens period följer UTC.</p>
+</section>
+{% if source_failed %}<div class="alert alert--error" role="alert">Bolagsunderlaget kunde inte läsas. Måtten visar saknas; ingen annan datakälla används.</div>{% endif %}
+{% if active_view == 'central' %}
+<div class="panel__head"><h2>Bolagsläge</h2><span class="muted">Utfall · öppna månadsperioder är preliminära</span></div>
+<div class="oc-metrics">
+{% for metric in metrics %}
+  {% set definition = definitions[metric.metric_id] %}
+  <article class="panel oc-metric">
+    <h3>{{ definition.name }}</h3>
+    <p class="oc-value{% if metric.value is none %} oc-value--missing{% endif %}">
+      {% if metric.value is not none %}{% if definition.unit == 'personer' %}{{ metric.value | number }} <small>personer</small>{% else %}{{ metric.value | sek }}{% endif %}
+      {% else %}{{ {'not_calculated': 'Ej beräknat', 'missing': 'Saknas', 'suppressed': 'Undertryckt', 'stale': 'Inaktuellt'}.get(metric.availability, 'Saknas') }}{% endif %}
+    </p>
+    <p class="oc-meta">{{ metric.as_of_date if metric.as_of_date else selected_month }} · {{ {'verified': 'Kontrollerat aggregat', 'provisional': 'Preliminärt underlag', 'failed': 'Kontroll underkänd', 'unknown': 'Grund saknas'}[metric.quality] }}</p>
+    <p>{{ metric.note }}</p><a href="/central/underlag?month={{ selected_month }}#{{ metric.metric_id }}">Definition och källa <span aria-hidden="true">↗</span></a>
+  </article>
+{% endfor %}
+</div>
+<div class="oc-columns">
+  <section class="panel"><p class="oc-eyebrow">AGENTEKONOMI · {{ selected_month }}</p><h2>Känd del av kostnaden</h2>
+    <p class="oc-value">{% if telemetry.known is not none %}{{ '%.6f' | format(telemetry.known) }} <small>USD</small>{% else %}Okänd{% endif %}</p>
+    <p>{% if telemetry.known is not none %}{{ telemetry.attempts }} synliga försök, {{ telemetry.unknown }} med okänd kostnad.{% else %}Antal försök är okänt.{% endif %}</p>
+    <p class="muted">{% if telemetry.known is not none %}Ofullständig täckning. SDK-omförsök kan saknas; prisunderlaget är inte fakturaavstämt.{% else %}Inget verifierat kostnadsunderlag för vald miljö och dataset.{% endif %}</p>
+    <a href="/central/kostnader?month={{ selected_month }}">Se kostnadens underlag</a>
+  </section>
+  <section class="panel"><p class="oc-eyebrow">NÄSTA LEDNINGSSTEG</p><h2>Förstå underlaget först</h2>
+    <p>Ekonomiska värderingar saknar ännu verifierade motorer. Premiehistorik används därför inte som kapital eller åtagandevärde.</p>
+    <p>Leveranser och godkänd kvalitet kan ännu inte räknas. Ett avslutat körsegment är inte ett bevis på genomfört verksamhetsarbete.</p>
+    <a href="/central/team?month={{ selected_month }}">Följ teamens läge</a>
+  </section>
+</div>
+{% endif %}
+{% if active_view == 'team' %}
+<h2>Team och arbete</h2><p>Konfigurerad profil betyder inte verifierad verksamhetsförmåga. Körläget gäller endast deklarerade journaler i vald period.</p>
+{% if profile_error %}<div class="alert alert--error" role="alert">Körprofilerna kunde inte verifieras. Konfigurationsstatus är okänd.</div>{% endif %}
+<div class="oc-metrics">
+{% for team in teams %}<article class="panel oc-team"><h3>{{ team.name }}</h3>
+  <span class="pill">{{ 'Konfiguration okänd' if profile_error else 'Profil konfigurerad' if team.configured else 'Planerat team' }}</span>
+  {% if team.lead %}<p class="muted">Ledande agent: {{ team.lead }}</p>{% endif %}
+  {% if team.states %}<ul>{% for state, count in team.states.items() %}<li>{{ state }}: {{ count }} segment</li>{% endfor %}</ul>
+  {% else %}<p>Körläge okänt – inga avstämda körsegment i periodens underlag.</p>{% endif %}
+  <p class="muted">Leveranser: ej uppmätt · Kvalitet: ej uppmätt</p>
+  {% if team.id == 'forsakring' %}<a href="/">Öppna försäkringsteamets arbetsyta</a>{% else %}<p class="muted">Egen arbetsyta återstår i OC-8.</p>{% endif %}
+</article>{% endfor %}
+</div>
+{% endif %}
+{% if active_view == 'kostnader' %}
+<section class="panel"><div class="panel__head"><h2>Agentkostnader</h2><span class="pill">{{ 'Ofullständig täckning' if telemetry.coverage == 'partial' else 'Underlag saknas' }}</span></div>
+  <p class="oc-value">{% if telemetry.known is not none %}{{ '%.6f' | format(telemetry.known) }} <small>USD · känd del</small>{% else %}Okänd kostnad{% endif %}</p>
+  <p>{% if telemetry.known is not none %}{{ telemetry.attempts }} synliga försök · {{ telemetry.unknown }} med okänd kostnad.{% else %}Antal försök är okänt.{% endif %} Rot, barn och fortsättningar summeras från originalförsöken en gång.</p>
+  <p class="muted">Prisuppskattning i USD, inte leverantörsfaktura. Alla synliga fel-/reservförsök ingår när kostnaden är känd. Dolda SDK-omförsök och äldre prisversioner gör täckningen ofullständig.</p>
+  {% if telemetry.rows %}<div class="oc-table"><table class="table"><caption>Känd kostnad per team, modell och uppdrag · {{ selected_month }}</caption><thead><tr><th>Team / modell</th><th>Uppdrag</th><th class="num">Försök</th><th class="num">Känd USD</th><th class="num">Okända</th></tr></thead><tbody>
+    {% for row in telemetry.rows %}<tr><td><strong>{{ row.team }}</strong><br><span class="muted">{{ row.model }}</span></td><td>{{ row.task }}</td><td class="num">{{ row.attempts }}</td><td class="num">{{ '%.6f' | format(row.known) }}</td><td class="num">{{ row.unknown }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="empty">Ingen avstämd försöksfördelning att visa för detta dataset och denna period.</p>{% endif %}
+</section>
+{% if telemetry.unallocated_known is not none %}<section class="panel"><h2>Oallokerat underlag – separat från vald miljö</h2>
+  <p>{{ '%.6f' | format(telemetry.unallocated_known) }} USD känd del · {{ telemetry.unallocated_unknown }} försök med okänd kostnad.</p>
+  <p>Manifestet anger ingen miljö eller dataset för dessa poster. De ingår inte i totalsumman ovan och får inte fördelas genom gissning.</p>
+</section>{% endif %}
+{% endif %}
+{% if active_view == 'underlag' %}
+<h2>Definitioner och spårbarhet</h2><p>Definitionerna är gemensamma med BI-designen (B-029/B-038). Detta är aktuella läsobservationer, inte en lagrad historisk beståndsserie eller en driftsatt Databricks-dashboard.</p>
+{% for metric in metrics + cost_metrics %}{% set definition = definitions[metric.metric_id] %}
+<details class="panel oc-definition" id="{{ metric.metric_id }}"><summary>{{ definition.name }} <span class="muted">v{{ definition.definition_version }}</span></summary>
+  <dl class="facts"><div><dt>Mått-id</dt><dd>{{ metric.metric_id }}</dd></div><div><dt>Ägare</dt><dd>{{ definition.owner_team }}</dd></div><div><dt>Datakälla</dt><dd>{{ definition.source }}</dd></div><div><dt>Miljö / dataset</dt><dd>{{ metric.environment_id }} / {{ metric.dataset_ref }}</dd></div></dl>
+  <p>{{ definition.definition }} {{ definition.population }}</p><p>{{ definition.controls }} {{ definition.privacy }}</p>
+  <p>{{ definition.additivity }} Granskning: {{ definition.review_ref }}.</p>
+  <p class="muted">Observerad {{ metric.computed_at.isoformat() }} · Underlag genom {{ metric.data_through.isoformat() if metric.data_through else 'okänd tid' }} · Färskhetsgräns {{ definition.freshness_seconds }} s.</p>
+  <p class="oc-ref">Observation {{ metric.observation_id }}{% for reference in metric.evidence_refs %}<br>{{ reference }}{% endfor %}</p>
+</details>{% endfor %}
+<section class="panel"><h3>Körkonfiguration</h3><p class="oc-ref">{{ profile_ref or 'Kunde inte verifieras' }}</p>
+  <p>Profilerna läses från ecosystem.yaml. Inga modellval, körgränser eller behörigheter kan ändras här. Versionssatt styrning byggs i OC-5/3b-9.</p></section>
+{% endif %}
+{% if active_view in ['kostnader', 'team', 'underlag'] %}
+<section class="panel"><h2>Loggtäckning</h2><p>{{ telemetry.sources }} deklarerade filer lästa. Senaste källkontroll: {{ telemetry.checked_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.</p>
+  <p>Färskhet: {{ {'fresh': 'Källorna kontrollerade nu', 'stale': 'Inaktuellt – senaste lyckade kontroll äldre än 15 minuter', 'missing': 'Okänd'}[telemetry.freshness] }}{% if telemetry.last_success_at %}. Senast lyckad kontroll för samtliga källor: {{ telemetry.last_success_at.isoformat() }}{% endif %}.</p>
+  {% if telemetry.last_event_at %}<p>Senaste försöket i periodens underlag: {{ telemetry.last_event_at.isoformat() }}.</p>{% endif %}
+  {% for issue in telemetry.issues %}<p class="alert alert--info">{{ issue }}</p>{% endfor %}
+  <p class="muted">Ursprung och eventuell miljöbindning deklareras uttryckligt i ett lokalt manifest. Loggarnas råtext exponeras inte. Avsaknad av händelser bevisar inte felfri drift.</p>
+</section>{% endif %}
+{% endif %}
+{% endblock %}

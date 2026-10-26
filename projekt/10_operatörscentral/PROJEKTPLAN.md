@@ -3,7 +3,8 @@
 > Planeringsuppdrag från Karl i chatten 2026-10-25. Ingår i programmet
 > AI-native tjänstepensionsbolag. Inget nytt beslutsnummer loggas genom planen.
 > **Status:** OC-0:s rekommendationer A–X godkända 2026-10-26 genom B-038.
-> Design- och dokumentleveransen är klar; implementation och driftsättning återstår.
+> Design- och dokumentleveransen är klar. OC-1 med en smal OC-2 är lokalt byggd
+> på arbetsbranch; fullständig integration, Lakebase-verifiering och senare paket återstår.
 
 ## Syfte och avgränsning
 
@@ -71,8 +72,8 @@ ekonomiska motorer finns; saknade mått visas som **ej beräknat**.
 | Paket | Leverans och klart-kriterium | Beroenden |
 |---|---|---|
 | OC-0: Avgränsning och kontrakt | Klar som design- och dokumentleverans 2026-10-26: [rekommendationerna A–X](../../02_system/operatörscentral_beslutsforslag.md) godkända genom B-038. Mått/händelser, eskaleringar, routing, autentisering och gemensamt policyregister för OC-5/3b-9 är preciserade; implementation sker i följande paket | Projekt 2, 6 och harness; Karl har godkänt designen |
-| OC-1: Läsbar ledningsöversikt | Navigerbar vy för bolagsläge, team, kostnader och fördjupning. Visar datakälla, period, färskhet, underlag och verklig implementeringsstatus. Ingen person- eller ärendelista | Befintlig FastAPI/Jinja2/HTMX-grund och granskade läsadaptrar; B-029 för BI |
-| OC-2: Agentekonomi och uppföljning | Summeringar kan stämmas av mot anropslogg och körjournal. Testfall för reservanrop, fel, okänd kostnad och föräldra-/barnkörningar; inga dubblerade kostnader | AI-logg, harnessjournal och stabila körreferenser; delegeringsdata när 3c-1 finns |
+| OC-1: Läsbar ledningsöversikt | Lokalt byggd 2026-10-26: `/central` med bolagsläge, team, agentkostnader och måttunderlag. Läsadaptern ger granskade bestånds-/premieaggregat utan PII; ekonomiska motorer och leverans-/kvalitetsmått markeras som luckor. [Driftbeskrivning](../../02_system/operatörscentral_drift.md) | FastAPI/Jinja2/HTMX och B-038; integration och Lakebase-verifiering återstår |
+| OC-2: Agentekonomi och uppföljning | Smal lokal leverans 2026-10-26: manifest, idempotent metadataindex, kostnad per team/modell/hashat uppdrag, okänd kostnad, källtäckning och journalstatus. Full försöks-/prisavstämning, loggrotation och leverans-/kvalitetsproducenter återstår | AI-logg, harnessjournal och deklarerad käll-/miljöidentitet; delegeringsdata när 3c-1 finns |
 | OC-3: Gemensam frågeingång | Fråga routas till rätt teamledare med avgränsat mandat och budget. Svaret visar underlag, datum och ansvarigt team. Saknat underlag blir ett tydligt svar | Befintliga agentprofiler och behöriga analysverktyg; samordnade barnuppdrag kräver 3c-1 |
 | OC-4: Ledningsunderlag | Prioriterade, sammanfattade frågor med alternativ, konsekvenser, ägare och beslutsspår. Rutinärenden stannar i specialistvyer. Eskaleringsvillkor granskas före aktivering | OC-1/2; definierade domängränser och rapportkontrakt |
 | OC-5: Modellpolicy och budget | Autentiserad Karl kan förhandsgranska och aktivera versionssatt policy för nya körningar: globalt val, rollmappning, teamundantag, reservpolicy och körbudget. Granskning visar berörda team och faktisk effekt | OC-0, AI-lagret och 3b-9; inga styrskrivningar före autentisering och ändringslogg |
@@ -80,7 +81,7 @@ ekonomiska motorer finns; saknade mått visas som **ej beräknat**.
 | OC-7: Flöden och produktparametrar | Bolagsflöden startas och följs här, först regeländringsflödet `rule_change_parameter` (B-035): starta, kör nästa steg, grindbeslut, manuella steg, avstämning, utkast och körjournal. Produktparametrarnas versioner visas här. Förslag i godkännandekön som gäller bolagsbeslut visas också här; kön ägs fortfarande av tjänstelagret. Åtgärderna använder samma operatörsidentitet och formulärskydd som handläggar-UI:t (B-017) och behöver inte vänta på styrvägens autentisering i OC-5. `/floden` och `/parametrar` i handläggar-UI:t tas bort eller blir länkar när de fungerar här | Flödesadaptern `agents.flows.console.FlowConsole` (3c-3); plattformen i OC-8 |
 | OC-8: Plattform och teamområden | En gemensam webbplattform med operatörscentralen som startsida och ett område per team. Handläggar-UI:t blir försäkringsteamets område; om dagens adresser behålls eller samlas under ett prefix avgörs här. Compliance och aktuarie får egna områden med teamets uppdrag, körningar, utkast och resultat. Ett område exponerar bara teamets egen agent, och ett test vaktar gränsen. Centralen länkar till varje område och visar dess läge | Befintlig FastAPI/Jinja2/HTMX-grund; teamprofilerna i `ecosystem.yaml`; OC-1 för navet |
 
-**Nästa byggleverans enligt B-038:** OC-1 och en smal OC-2:
+**Första byggleveransen enligt B-038, nu lokalt byggd:** OC-1 och en smal OC-2:
 bolagsöversikt med ärligt markerade dataluckor, teamstatus samt agentkostnader ur
 befintliga loggar. Därefter frågor till ett team åt gången. Automatisk
 samordning över flera team och skrivande styrning öppnas först med sina beroenden.

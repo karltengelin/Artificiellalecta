@@ -11,6 +11,7 @@ from services.operations import (  # noqa: F401
     insured,
     insured_listing,
     journal,
+    management,
     persons,
     policies,
     portfolio_impact,

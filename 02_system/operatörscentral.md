@@ -1,13 +1,19 @@
 # Operatörscentral – arkitektur och planerade kontrakt
 
-> **Datum:** 2026-10-25. **Status:** planeringsunderlag på operatörens uppdrag;
-> inga nya runtimefunktioner, databasändringar eller styrinställningar aktiverade.
+> **Datum:** 2026-10-25, uppdaterat 2026-10-26. **Status:** beslutad design och
+> första lokala läsleverans OC-1/OC-2. Styrning och fullständig integration återstår;
+> inga styrinställningar eller databasändringar i Lakebase är aktiverade.
 > Produktägande och byggpaket: [Projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md).
 
 > **OC-0, 2026-10-26:** [Beslutsförslag med val A–X](operatörscentral_beslutsforslag.md)
 > preciserar mått, händelser, eskaleringar, routing, autentisering och gemensam
 > modell-/budgetpolicy för OC-5 och 3b-9. Rekommendationerna A–X är godkända
-> genom B-038. Implementationen återstår; dagens konfiguration och befintliga behörighetsvägar består.
+> genom B-038. Styrimplementationen återstår; dagens konfiguration och befintliga behörighetsvägar består.
+
+> **OC-1/OC-2, 2026-10-26:** första lokala läsleveransen finns på `/central`:
+> bolagsmått, team, kostnader och underlag. [Driftbeskrivningen](operatörscentral_drift.md)
+> skiljer byggda läsadaptrar från kvarstående fullständig logg-/BI-integration
+> och styrning. Ingen ändring av dagens runtimepolicy eller behörigheter ingår.
 
 ## 1. VD-nivå och specialiserade arbetsytor
 
