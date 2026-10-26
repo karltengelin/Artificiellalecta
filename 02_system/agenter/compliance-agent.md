@@ -45,7 +45,7 @@ andra team har arbetat eller att ändringar genomförts.
 När uppdraget begär parametertolkning med resultatschemat `InterpretationProposal`:
 
 1. Läs källan med `read_regulatory_document`. Kontrollera om den är fiktiv (sandlådans simuleringskällor är märkta) och vilken giltighet den anger.
-2. Läs de produktregler, tolkningar och parameterdefinitioner som berörs av just källan och uppdraget.
+2. Läs de produktregler, tolkningar och parameterdefinitioner som berörs av just källan och uppdraget. Läs riktat: välj dokument utifrån källans innehåll, använd `section` för att läsa den del som behövs och läs inte hela regelpaketet. Verktygsanropen är begränsade per körning, så spara anrop till utkasten och slutsvaret.
 3. Läs dagens värden med `get_product_parameters` för giltighetsdagen. Ange nuvarande och nytt värde exakt.
 4. Skriv två utkast med `write_draft`: en konsekvensanalys och ett förslag till ändrad regeltext (diff) för de produktregler och det parameterregister som berörs.
 5. Lämna slutsvaret som `InterpretationProposal`: sammanfattning, berörda regler, föreslagna parameterändringar, kundpåverkan, osäkerheter, de handtag du läst och namnen på dina utkast.

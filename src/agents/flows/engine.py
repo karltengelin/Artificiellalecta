@@ -24,7 +24,7 @@ Regler:
   `reconciliation_required`; ett kontrollerat avslut som inte är klart ger `failed`.
 
 Flödestabellerna skrivs med den betrodda anslutningen (`session_factory`); agenterna kör
-med sitt eget tjänstelager (`AgentRuntime.service`).
+med sitt teams tjänstelager (`AgentRuntime.service_for`).
 """
 
 from __future__ import annotations
@@ -74,7 +74,11 @@ STATUS_FOR_KIND = {"agent": "running", "system": "running", "gate": "waiting_gat
 
 @dataclass(frozen=True)
 class AgentRuntime:
-    """Det agentstegen körs med: AI-lagret, körpolicyn och agenternas tjänstelager."""
+    """Det agentstegen körs med: AI-lagret, körpolicyn och agenternas tjänstelager.
+
+    `team_services` ger ett team sitt eget tjänstelager (teamets databasroll, harness.md §5.1);
+    team som saknas där kör med `service`.
+    """
 
     ai: AIClient
     ecosystem: Ecosystem
@@ -82,6 +86,10 @@ class AgentRuntime:
     service: ServiceLayer
     gateways: Gateways | None = None
     journal_dir: Path | None = None
+    team_services: dict[str, ServiceLayer] = field(default_factory=dict)
+
+    def service_for(self, team: str) -> ServiceLayer:
+        return self.team_services.get(team, self.service)
 
 
 @dataclass(frozen=True)
@@ -264,7 +272,7 @@ class FlowEngine:
         request = request.model_copy(update={"flow_id": ctx.flow_id, "flow_step_id": step_id})
         mandate = step.mandate(ctx) if step.mandate is not None else None
         outcome = run_assignment(
-            runtime.ai, runtime.ecosystem, runtime.skills, runtime.service, request,
+            runtime.ai, runtime.ecosystem, runtime.skills, runtime.service_for(step.team), request,
             parameter_change=mandate, gateways=runtime.gateways, run_id=run_id, journal_dir=runtime.journal_dir,
         )
         if request.result_schema is not None and outcome.result.status == RunStatus.COMPLETED and outcome.result.output is None:

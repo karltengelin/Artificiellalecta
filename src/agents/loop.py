@@ -260,8 +260,12 @@ def run_agent(
                 output_schema=schema, max_output_tokens=profile.limits.max_output_tokens, step=step,
             )
         except AIError as exc:
-            return finish(RunStatus.FAILED, f"Modellanropet misslyckades: {type(exc).__name__}.",
-                          uncertainties=(_sanitize(exc),))
+            if getattr(exc, "stop_reason", None) == "max_tokens":
+                summary = (f"Svaret klipptes vid utdatataket ({profile.limits.max_output_tokens} tokens) "
+                           "och räknas inte som färdigt.")
+            else:
+                summary = f"Modellanropet misslyckades: {type(exc).__name__}."
+            return finish(RunStatus.FAILED, summary, uncertainties=(_sanitize(exc),))
         budget.steps += 1
         history.append(response.to_message())
         if response.cost_usd is not None:

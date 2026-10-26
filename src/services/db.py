@@ -57,7 +57,10 @@ def database_session_factory(url_env: str = "DATABASE_URL") -> SessionFactory:
 
 #: Agentteamens begränsade databasroller (harness.md §5.1) och deras anslutningar i .env.
 #: Rollernas rättigheter sätts med scripts/setup/grant_agent_role.py.
-AGENT_ROLES = {"forsakring": ("agent_forsakring", "AGENT_FORSAKRING_DATABASE_URL")}
+AGENT_ROLES = {
+    "forsakring": ("agent_forsakring", "AGENT_FORSAKRING_DATABASE_URL"),
+    "aktuarie": ("agent_aktuarie", "AGENT_AKTUARIE_DATABASE_URL"),
+}
 
 
 def agent_service_layer(team: str = "forsakring", **kwargs: Any) -> ServiceLayer:
