@@ -245,9 +245,10 @@ class AIClient:
         try:
             return schema.model_validate_json(response.text)
         except ValidationError as exc:
+            cut = " – svaret klipptes vid utdatataket (max_tokens)" if response.stop_reason == "max_tokens" else ""
             raise StructuredOutputError(
-                f"Svaret från {response.model_ref} validerar inte mot {schema.__name__}: {exc}",
-                raw_text=response.text,
+                f"Svaret från {response.model_ref} validerar inte mot {schema.__name__}{cut}: {exc}",
+                raw_text=response.text, stop_reason=response.stop_reason,
             ) from exc
 
     @staticmethod

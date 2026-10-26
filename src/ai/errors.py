@@ -25,11 +25,15 @@ class MissingKeyError(ConfigError):
 
 
 class StructuredOutputError(AIError):
-    """Modellens svar gick inte att validera mot det begärda schemat."""
+    """Modellens svar gick inte att validera mot det begärda schemat.
 
-    def __init__(self, message: str, *, raw_text: str = "") -> None:
+    `stop_reason` är svarets slut, t.ex. `max_tokens` när svaret klipptes vid utdatataket.
+    """
+
+    def __init__(self, message: str, *, raw_text: str = "", stop_reason: str | None = None) -> None:
         super().__init__(message)
         self.raw_text = raw_text
+        self.stop_reason = stop_reason
 
 
 class ProviderError(AIError):

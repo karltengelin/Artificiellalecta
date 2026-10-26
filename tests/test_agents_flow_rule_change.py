@@ -268,6 +268,24 @@ class TestAdaptern:
         with pytest.raises(ValueError, match="AI-klient måste anges"):
             FlowConsole.build(db, trusted=service, agent_service=service, ai=None)
 
+    def test_varje_team_kor_med_sitt_eget_tjanstelager(self, db, tmp_path):
+        """Aktuarien räknar med teamets roll (agent_aktuarie); compliance med det gemensamma."""
+        calls = []
+
+        class Recording(ServiceLayer):
+            def execute(self, name, ctx, data):
+                calls.append((self.agent_role, name))
+                return super().execute(name, ctx, data)
+
+        rules = ProductRuleCatalog(today=TODAY)
+        service = ServiceLayer(session_factory=db, rules=rules)
+        actuary = Recording(session_factory=db, validation_session_factory=db, agent_role="agent_aktuarie", rules=rules)
+        console = FlowConsole.build(db, trusted=service, agent_service=service, team_services={"aktuarie": actuary},
+                                    ai=flow_client(), journal_dir=tmp_path / "runs", drafts_dir=tmp_path / "utkast")
+        flow = to_g2(console)
+        assert flow.step("insikt").status == "completed"
+        assert calls == [("agent_aktuarie", "estimate_parameter_change_impact")]
+
     def test_en_korning_at_gangen(self, setup):
         console, _ = setup
         flow = console.start(SOURCE, OPERATOR)

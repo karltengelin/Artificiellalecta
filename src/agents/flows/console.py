@@ -5,7 +5,8 @@ Den anropar den här adaptern, som håller motorn med definitionerna, agenternas
 det betrodda tjänstelagret. Aktören är alltid handläggaren; motorn kräver en människa för
 grindbeslut, manuella steg, avstämning och avbrott.
 
-    console = FlowConsole.build(session_factory, trusted=service, agent_service=agent_service, ai=ai)
+    console = FlowConsole.build(session_factory, trusted=service, agent_service=agent_service, ai=ai,
+                                team_services={"aktuarie": agent_service_layer("aktuarie")})
     console.mark_interrupted()                        # när UI:t startar
     flow = console.start(source_handle, actor)
     flow = console.run_next(flow.flow_id, flow.version, actor)
@@ -66,6 +67,7 @@ class FlowConsole:
         *,
         trusted: ServiceLayer,
         agent_service: ServiceLayer,
+        team_services: dict[str, ServiceLayer] | None = None,
         simulated_role: bool = True,
         ai: AIClient,
         journal_dir: Path | None = None,
@@ -83,6 +85,7 @@ class FlowConsole:
             ai=ai, ecosystem=eco,
             skills=SkillRegistry.build(eco, default_registry), service=agent_service,
             gateways=Gateways(regulatory=regulatory, drafts=drafts), journal_dir=journal_dir,
+            team_services=dict(team_services or {}),
         )
         engine = FlowEngine(session_factory, DEFINITIONS, runtime=runtime, trusted=trusted)
         return cls(engine=engine, regulatory=regulatory, drafts=drafts, journal_dir=journal_dir,

@@ -67,7 +67,22 @@ FORSAKRING = RoleGrants(
     insert=("approval_requests", "operation_events"),
 )
 
-ROLE_GRANTS = {"forsakring": FORSAKRING}
+#: Aktuarieteamet (B-035 val I): beståndsinsikten läser individrader i betrodd kod och lämnar
+#: bara aggregat. Bara tabellerna estimate_parameter_change_impact och get_product_parameters
+#: läser – inga löner, premier, ärenden eller arbetsgivare. Inga förslag: ingen INSERT på kön.
+AKTUARIE = RoleGrants(
+    role="agent_aktuarie",
+    select=(
+        "base_amounts",
+        "insured_persons",
+        "policies",
+        "policy_states",
+        "product_parameters",
+    ),
+    insert=("operation_events",),
+)
+
+ROLE_GRANTS = {"forsakring": FORSAKRING, "aktuarie": AKTUARIE}
 
 
 def inspect_role(conn: Connection, grants: RoleGrants, schema: str = "public") -> list[str]:

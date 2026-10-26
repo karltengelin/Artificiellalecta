@@ -2,9 +2,9 @@
 
 Rollen skapas av operatören i Databricks (inloggning med lösenord, ingen superuser,
 inga medlemskap). Skriptet ansluter med DATABASE_URL (app_backend, tabellernas ägare)
-och ger exakt rättigheterna i src/utils/agent_roles.py: SELECT på försäkringstabellerna,
-INSERT på godkännandekön och händelseloggen (plus SELECT på deras tidsstämpelkolumner,
-som INSERT … RETURNING kräver), ingenting annat.
+och ger exakt rättigheterna i src/utils/agent_roles.py: SELECT på teamets tabeller,
+INSERT på händelseloggen och – för försäkringsteamet – godkännandekön (plus SELECT på
+tidsstämpelkolumnerna, som INSERT … RETURNING kräver), ingenting annat.
 
 Standard är torrkörning: förkontroller, nuvarande rättigheter och SQL som skulle köras.
 Inget ändras utan --apply. Ändrar databasens rättigheter – samordna enligt AGENTS.md §4.5.
@@ -12,6 +12,7 @@ Inget ändras utan --apply. Ändrar databasens rättigheter – samordna enligt 
 Användning (från repo-roten, i .venv):
     python scripts/setup/grant_agent_role.py                 # torrkörning, team forsakring
     python scripts/setup/grant_agent_role.py --apply         # kör GRANT i en transaktion
+    python scripts/setup/grant_agent_role.py --team aktuarie # torrkörning för agent_aktuarie
 """
 
 from __future__ import annotations

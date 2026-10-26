@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import json
+from dataclasses import replace
 from datetime import date
 from decimal import Decimal
 
@@ -340,6 +341,15 @@ class TestTolkning:
         outcome = run_assignment(ai_client(fake), eco, skills, service, request_for_interpretation(SOURCE),
                                  gateways=gateways, run_id="run-1", journal=journal("compliance", "compliance_agent"))
         assert outcome.result.status == RunStatus.FAILED and outcome.result.output is None
+
+    def test_avklippt_svar_vid_utdatataket_sags_tydligt(self, eco, skills, service, gateways):
+        """Röktestet 3c-V: tolkningen klipptes vid teamets utdatatak och validerade inte."""
+        cut = replace(text_result('{"summary": "Premieåldern höjs till 67 år och '), stop_reason="max_tokens")
+        outcome = run_assignment(ai_client(FakeProvider([cut])), eco, skills, service,
+                                 request_for_interpretation(SOURCE), gateways=gateways, run_id="run-1",
+                                 journal=journal("compliance", "compliance_agent"))
+        assert outcome.result.status == RunStatus.FAILED and outcome.result.output is None
+        assert "utdatataket" in outcome.result.summary
 
 
 class TestBestandsinsikt:

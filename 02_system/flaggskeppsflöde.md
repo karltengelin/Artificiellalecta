@@ -182,6 +182,10 @@ verktyget dolt), resultatschemana `InterpretationProposal` och `PortfolioImpactR
 `SELECT` på de tabeller beräkningen kräver och rätt att skriva loggrader, men ingen rätt till affärs-DML. Modellen
 ser bara aggregat. Operatören skapar rollen i Databricks (val I).
 
+*Förberett i 3c-V (2026-10-26):* rättigheterna `AKTUARIE` i `src/utils/agent_roles.py`, anslutningen
+`AGENT_AKTUARIE_DATABASE_URL` och teamets eget tjänstelager i flödesmotorn (`AgentRuntime.team_services`).
+Provade mot isolerad Postgres; rollen finns ännu inte i Lakebase.
+
 ## 6. Flödesmotorn
 
 **Tabeller** enligt `harness.md` §10.3:
