@@ -22,7 +22,7 @@
 | `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad med agentrollens läsrätt i Lakebase 2026-10-24. Slutverifiering av agentflödet återstår i F5-5–6 |
 | `product_parameters` | Versionerade premieåldrar, premiesatser och brytpunkter (§9h) | 🟢 Skapad och seedad i Lakebase 2026-10-25; agentrollens läsrätt satt. Förändringsoperationer finns; komplett flödesverifiering återstår i 3c-V |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
-| `flows` / `flow_steps` / `flow_gate_decisions` | Flödesmotorn i harness: flöden, steg och grindbeslut (§9i) | 🟡 Fas 3c 3c-2: modeller, motor och tester; migrationen verifierad mot isolerad Postgres, ej körd mot Lakebase |
+| `flows` / `flow_steps` / `flow_gate_decisions` | Flödesmotorn i harness: flöden, steg och grindbeslut (§9i) | 🟡 Fas 3c 3c-2: modeller, motor och tester; migrationen verifierad mot isolerad Postgres; 🟢 skapade i Lakebase 2026-10-26 efter backup `backups/20261026T200423Z` och operatörens OK (tomma, inga agenträttigheter) |
 
 **Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för försäkringens läge. Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
@@ -544,7 +544,7 @@ Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma 
 
 ## 9i. Tabeller: `flows`, `flow_steps` och `flow_gate_decisions` – Flödesmotorn
 
-> **Status:** Beslutade i **B-035** (`flaggskeppsflöde.md` §6, val E och J). Modeller, motor och lokala tester i Fas 3c 3c-2 (2026-10-25). Migrationen `scripts/migrations/migrate_flows.py` är verifierad mot isolerad Postgres men **inte körd mot Lakebase** – det kräver backup och operatörens OK (AGENTS.md §4.5).
+> **Status:** Beslutade i **B-035** (`flaggskeppsflöde.md` §6, val E och J). Modeller, motor och lokala tester i Fas 3c 3c-2 (2026-10-25). Migrationen `scripts/migrations/migrate_flows.py` är verifierad mot isolerad Postgres och **körd mot Lakebase 2026-10-26** efter backup `backups/20261026T200423Z` och operatörens OK (AGENTS.md §4.5): tre tomma tabeller ägda av `app_backend`, övriga radantal oförändrade, en andra körning gjorde ingenting. Agentrollerna har inga rättigheter på tabellerna – motorn skriver dem med den betrodda anslutningen.
 
 **Domän:** Ett flöde är en körning av en flödesdefinition i harness, t.ex. flaggskeppets regeländring: agentsteg, grindar där operatören beslutar, manuella steg och systemsteg. Tabellerna hör till harness (`src/agents/flows/`), inte till försäkringstjänstelagret (`harness.md` §4.3). De skrivs bara av flödesmotorn via den betrodda anslutningen, med operatören som aktör för grindbeslut och manuella steg. Agenternas körjournal ligger kvar som JSONL i `logs/agent_runs/` och länkas med `flow_steps.run_id` (val J). Ett förslag i tjänstelagrets godkännandekö länkas med `flow_steps.approval_id`; grinden ersätter aldrig det godkännandet.
 
