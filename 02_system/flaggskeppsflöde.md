@@ -213,7 +213,7 @@ Provade mot isolerad Postgres. Compliance-teamet har motsvarande roll `agent_com
   men kön ägs fortfarande av tjänstelagret.
 
 *Byggt i 3c-2 (2026-10-25):* `src/agents/flows/` (`definition.py`, `store.py`, `engine.py`) och `src/models/flow.py`,
-tabellerna i `databasschema.md` §9i, migrationen `scripts/migrations/migrate_flows.py` (inte körd mot Lakebase).
+tabellerna i `databasschema.md` §9i, migrationen `scripts/migrations/migrate_flows.py` (körd mot Lakebase 2026-10-26).
 Agentsteg körs med `run_assignment` (3c-T); ett systemsteg som lägger ett förslag i kön väntar på det
 (`waiting_approval`). Flödesdefinitionen `rule_change_parameter` och UI:t byggdes i 3c-3 (se nedan och §7).
 
