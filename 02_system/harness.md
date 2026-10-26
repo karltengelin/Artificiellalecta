@@ -433,11 +433,13 @@ Operatören har överlåtit val av startgränser. Följande värden väljs för 
 | Handläggare (`forsakring`) | 12 | 18 | 0,50 | 1 500 | 40 000 | 180 |
 | Kommunikation | 8 | 12 | 0,50 | 2 000 | 40 000 | 180 |
 | Kapital | 12 | 18 | 1,00 | 2 000 | 60 000 | 300 |
-| Aktuarie och compliance | 20 | 30 | 2,00 | 3 000 | 120 000 | 600 |
+| Aktuarie och compliance | 20 | 30 | 2,00 | 12 000 | 120 000 | 600 |
 | Ekonomi och inköp | 12 | 18 | 0,75 | 2 000 | 60 000 | 300 |
 | Utveckling | 20 | 30 | 2,00 | 3 000 | 120 000 | 600 |
 
-Globala tak för en enskild agent är 20 steg, 30 verktygsanrop, 2 USD, 4 000 utdatatokens, 120 000 kontextbyte och 600 sekunders aktiv tid. En specialist ärver högst teamets profil; uppdrag får bara sänka gränserna. En sammanhängande delegerad rotkörning får totalt högst **5 USD, 60 modellsteg, 90 verktygsanrop och 900 sekunders aktiv tid**, högst 3 barn och djup 2 (§10.2). Barn och fortsättningar använder samma budgetbok. Manuellt godkänd budgethöjning kräver ett nytt, journalfört uppdragsmandat; modellen kan inte höja taket.
+Globala tak för en enskild agent är 20 steg, 30 verktygsanrop, 2 USD, 12 000 utdatatokens, 120 000 kontextbyte och 600 sekunders aktiv tid. En specialist ärver högst teamets profil; uppdrag får bara sänka gränserna. En sammanhängande delegerad rotkörning får totalt högst **5 USD, 60 modellsteg, 90 verktygsanrop och 900 sekunders aktiv tid**, högst 3 barn och djup 2 (§10.2). Barn och fortsättningar använder samma budgetbok. Manuellt godkänd budgethöjning kräver ett nytt, journalfört uppdragsmandat; modellen kan inte höja taket.
+
+**Justerat efter röktestet 3c-V (2026-10-26, operatörens beslut):** utdatataket höjdes från 4 000 till 12 000 tokens globalt och för compliance och aktuarie, eftersom en tolkning med `claude-opus-5` klipptes vid 4 000 (resonemang och svar delar taket). Compliance-teamets verktygstak höjdes från 24 till 30 efter att `gpt-6-astra` nått taket under läsningen. Kostnadstaken i `ecosystem.yaml` (compliance 1,50 USD, aktuarie 1,00 USD per körning) är oförändrade och begränsar fortfarande förbrukningen.
 
 En lång godkännandeväntan använder ingen modell och ingen aktiv worker; tidsgränsen gäller aktivt arbete. Återupptagning nollställer inte förbrukningen. För första handläggaren är arbetsenheten **en tilldelad försäkrad och ett löneunderlag per körning**, med högst 24 månaders relevant historik. Masshantering kräver en separat granskad profil.
 
