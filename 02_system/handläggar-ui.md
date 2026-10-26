@@ -242,8 +242,9 @@ sidorna när en konsol är ansluten, vilket regressionstesterna gör uttrycklige
 - **Ingen skriptad agentväg.** Den tidigare demomodellen och den automatiska kopplingen
   till `/floden` är borttagna på operatörens uppdrag (B-037). Databasvalet ändrar inte
   regelkatalogens giltighetsdatum för flödets skull. `FlowConsole.build` kräver en
-  uttrycklig AI-klient och använder de tjänstelager den får. En verifierad anslutning
-  med teamroller, modeller och flödestabeller återstår. FakeProvider används bara som
+  uttrycklig AI-klient och använder de tjänstelager den får. Teamroller och flödestabeller
+  finns i Lakebase sedan 2026-10-26 och flödet är röktestat med riktiga modeller (3c-V);
+  någon verksamhetskoppling i UI:t görs inte här (OC-7). FakeProvider används bara som
   uttryckligt testunderlag i regressionstesterna för flödet.
 - **Verifiering.** Definition v2 jämför lagrade parameterversioner före och efter
   giltighetsdagen med det godkända beslutet. Den skapar ingen syntetisk person eller
