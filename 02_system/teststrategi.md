@@ -22,6 +22,7 @@ teamsamverkan har ett eget målområde. Ingen testfil behöver flyttas för denn
 - `dependents`: de grupper som använder gruppens kod. Sambandet följs transitivt vid kodändring.
 - Ändringsregler för kod, konfiguration, dokument och genererade underlag. Alla matchande regler förenas.
 - Egenskaperna `security`, `integration` och `postgres`, oberoende av verksamhetsområde.
+- Postgres-regler: vilka Postgres-prov en ändring berör (se Miljöer nedan). De väljer inga grupper.
 
 Status `active` betyder att gruppen används för befintlig kod; det är inget mått på fullständig
 kodtäckning. `partial` betyder att endast en del av målområdet är byggd/testad, exempelvis
@@ -55,6 +56,9 @@ python scripts/testing/run_tests.py --changed --base origin/main --run
 
 # Hela den befintliga lokala sviten
 python scripts/testing/run_tests.py --all --run
+
+# Ändringen med de Postgres-prov den berör, mot den isolerade testdatabasen
+python scripts/testing/run_tests.py --changed --base origin/main --run --postgres
 ```
 
 `--suite` kan upprepas; testfiler dedupliceras. Utan `--dependents` är det ett avsiktligt
@@ -93,14 +97,38 @@ Ett grönt resultat bevisar inte att ny kod utan relevanta tester fungerar.
 ## Miljöer och direkt pytest
 
 Körverktygets standard är **lokala tester**: det väljer bort markören `postgres` och
-tömmer testanslutningsvariablerna i underprocessen så att `.env` inte återaktiverar dem.
+tömmer alla fyra testanslutningsvariablerna i underprocessen så att `.env` inte återaktiverar dem.
 Det gör inga riktiga modellanrop. Röktest med verkliga modeller är separata diagnosskript.
 
-`--postgres` tillåter de valda Postgres-proven och kräver `SERVICES_TEST_POSTGRES_URL`;
-rollprov kräver också `SERVICES_TEST_AGENT_POSTGRES_URL`. De ska peka på en isolerad
-testdatabas. Befintliga skydd och projektets databaskoordinering enligt AGENTS.md §4.5 gäller.
-Kör dem vid ändringar i exempelvis låsning, databasroller eller migrationer; lokal SQLite
-verifierar inte Postgres radlås eller rättigheter.
+Postgres-proven körs bara efter ett **aktivt val**. Adresserna i `.env` räcker inte: proven
+med markören `postgres` hoppas över med ett skäl om inte `RUN_POSTGRES_TESTS=1` är satt i
+skalet. Värdet får inte ligga i `.env` – pytest vägrar starta då – så att proven inte blir
+standard igen. Mot den isolerade databasen tar de omkring åtta av sviten tio minuter
+(mätt 2026-10-27), medan resten av sviten tar ungefär två.
+
+`--postgres` sätter det aktiva valet för underprocessen och kräver `SERVICES_TEST_POSTGRES_URL`.
+Rollproven kräver också sin roll: `SERVICES_TEST_AGENT_POSTGRES_URL`, eller för aktuarie och
+compliance teamets egen adress med den gemensamma rollen som reserv. Adresserna ska peka på
+en isolerad testdatabas. Befintliga skydd och projektets databaskoordinering enligt
+AGENTS.md §4.5 gäller.
+
+**När Postgres-proven ska köras.** Katalogens Postgres-regler pekar ut vilka prov en ändring
+berör. `--changed` listar dem och varnar – före och efter en lokal körning – att de inte
+körts; med `--postgres` tas de med även om deras fil inte ingår i de valda grupperna.
+
+| Ändring i | Postgres-prov |
+|---|---|
+| `src/models/**`, `src/utils/migration*.py`, `scripts/migrations/**` | `test_services_postgres` och migreringsproven |
+| Tjänstelagrets transaktion, godkännandekö, tjänst och anslutning | `test_services_postgres`, agentrollens prov |
+| Låsande skrivoperationer och händelseloggen | `test_services_postgres` |
+| `src/utils/agent_roles.py`, `grant_agent_role.py`, åtkomstregistret | de tre rollproven |
+| `src/utils/demo_data.py` | aktuariens och compliance rollprov (de seedar demobeståndet) |
+| En testfil med Postgres-prov | dess egna Postgres-prov |
+
+Utöver det körs `--all --postgres` före migrering eller seed mot Lakebase och som regelbunden
+kontroll. En fil som skapar scheman i testdatabasen (`isolated_schema`) måste ha markören
+`postgres`; katalogkontrollen stoppar annars. Lokal SQLite verifierar inte Postgres radlås
+eller rättigheter.
 
 Vanlig pytest finns kvar. Grupperna blir markörer med prefixet `suite_`:
 
@@ -109,8 +137,8 @@ python -m pytest -m "suite_reporting and not postgres" -q
 python -m pytest -m "security and not postgres" -q
 ```
 
-Direkt pytest behåller sin tidigare miljöhantering: Postgres-tester kan aktiveras av
-konfigurerade anslutningsvariabler. `integration` beskriver samspel mellan komponenter
+Direkt pytest följer samma aktiva val: Postgres-proven hoppas över om inte
+`RUN_POSTGRES_TESTS=1` är satt i skalet. `integration` beskriver samspel mellan komponenter
 och betyder inte automatiskt extern anslutning. Markörer som anges för en hel fil omfattar
 alla dess testfall, även när filen också innehåller mindre komponenttester.
 
@@ -119,7 +147,7 @@ alla dess testfall, även när filen också innehåller mindre komponenttester.
 1. Under utveckling: kör ändrade funktioners tester eller en uttrycklig grupp.
 2. Före leverans: granska ändringsplanen och kör berörda grupper med beroenden.
 3. Inför integration: synka senaste main och kör hela lokala sviten för kodändringar,
-   samt relevanta Postgres-prov när deras beteenden berörs. Ren förklarande dokumentation
+   samt de Postgres-prov som `--changed` pekar ut (`--postgres`). Ren förklarande dokumentation
    kräver normalt innehålls-/länkkontroll, inte en ny helkörning av Python-sviten.
 4. Verifiera det sammanslagna resultatet enligt AGENTS.md §4.4/4.6. Om samma trädtillstånd
    redan testats behövs ingen identisk helkörning; nytt otrövat kombinerat kodläge testas på nytt.
