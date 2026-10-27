@@ -1,7 +1,7 @@
 # Agentekosystem
 
 > **Typ:** Tvärgående arkitekturramverk (MASTER_CONTEXT §4b, B-024) – inte ett delprojekt utan det sätt alla delprojekt bygger agenter på
-> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Harness byggs i Fas 3b: körpolicyn `src/agents/ecosystem.yaml`, skill-registret, dispatchern med resursmandat och agentloopen finns sedan 2026-10-24 (3b-1–3b-6, inklusive körjournalen i `logs/agent_runs/` och fortsättning efter godkännande); skillkatalogen har pod-kolumn (3b-7); röktestet mot riktig modell (3b-8) gick igenom hos båda leverantörerna 2026-10-24. I Fas 3c finns sedan 2026-10-25 teamen compliance och aktuarie, flödesmotorn (`src/agents/flows/`, 3c-2) och parameterändringsflödet `rule_change_parameter` med återanvändbar UI-kod (3c-3). Den tidigare skriptade demomodellen och automatisk webbkoppling har tagits bort enligt B-037; adaptern kräver uttrycklig AI-klient. Kvar är röktest och Lakebase (3c-V) och delegering (3c-1) – se byggordningen i §12 och `flaggskeppsflöde.md`.
+> **Status:** 🟡 Ramverket beslutat (**B-026**), byggs stegvis. AI-lagret som ekosystemet vilar på är byggt (`src/ai/`, se `ai_abstraktion.md`). Harness byggs i Fas 3b: körpolicyn `src/agents/ecosystem.yaml`, skill-registret, dispatchern med resursmandat och agentloopen finns sedan 2026-10-24 (3b-1–3b-6, inklusive körjournalen i `logs/agent_runs/` och fortsättning efter godkännande); skillkatalogen har pod-kolumn (3b-7); röktestet mot riktig modell (3b-8) gick igenom hos båda leverantörerna 2026-10-24. I Fas 3c finns sedan 2026-10-25 teamen compliance och aktuarie, flödesmotorn (`src/agents/flows/`, 3c-2) och parameterändringsflödet `rule_change_parameter` med återanvändbar UI-kod (3c-3). Den tidigare skriptade demomodellen och automatisk webbkoppling har tagits bort enligt B-037; adaptern kräver uttrycklig AI-klient. Delegering mellan team (3c-1) finns sedan 2026-10-27 med första paret compliance → aktuarie (B-039, §6.1). Kvar är körningen mot Lakebase (3c-V) – se byggordningen i §12 och `flaggskeppsflöde.md`.
 > **Vidareutvecklar:** B-006, B-007, B-008, B-009, B-011, B-016, B-017
 
 ---
@@ -243,6 +243,8 @@ Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen
 | `dokument` | Läsa/skriva Markdown i bolagsmappen, avgränsat per team | Nej | `write` | utveckling | Alla (med mappavgränsning) |
 | `delegering` | `delegate_to_team` (§6.1) | Nej | `read` | utveckling | Ledande agenter |
 
+**Byggt i 3c-1 (B-039):** `delegering` med `delegate_to_team`, monterad på compliance. Barnet får inga egna delegeringsmål i första leveransen.
+
 **Byggt i Fas 3c 3c-T (B-035):** `regelverk`, `dokument` och `bestand` finns i `src/agents/ecosystem.yaml`, monterade på teamen `compliance` och `aktuarie` (`bestand` bara på `aktuarie`). Avvikelser från tabellen: `bestand` har sidoeffekten `read`, eftersom `estimate_parameter_change_impact` är en läsoperation. `dokument` skriver bara utkast i körningens egen arbetsyta. `regelverk` har även `get_product_parameters`.
 
 `bestand` ger aggregerade svar för löpande analys och konsekvensbedömning utan att någon agent behöver personuppgifter, och är samma förmåga som BI-delprojektet (2) behöver. En regeländringsdemonstration kan använda den för beståndsinsikt.
@@ -305,6 +307,8 @@ Ledande agenter får skillen `delegate_to_team(team, uppdrag)`. Uppdraget är **
 | `references` | Id:n och filvägar i stället för rådata (dataminimering, B-006) |
 
 Harness startar en barnkörning hos mottagarteamets ledande agent med `parent_run_id`, ärvt kostnadstak och ett djuptak (förslag: 2 nivåer). Svaret kommer tillbaka som verktygsresultat. Tillåtna mottagare deklareras per agent (`delegates_to`).
+
+**Byggt i 3c-1 (2026-10-27, B-039):** `src/agents/delegation.py` med podden `delegering` i körpolicyn. Första aktiva paret är compliance → aktuarie, utan personuppgifter och utan mandatöverföring. Verktyget visas bara när det betrodda uppdraget anger `delegation_targets`. Barnet kör med egen profil, eget tjänstelager och egen modellroll; förbrukningen bokförs i rotens budgetbok (`delegation.root_limits`). Samma beställning ger samma svar, och ett barn som väntar, behöver människa eller kräver avstämning stoppar föräldern med samma status. Regler och val: [`delegering_beslutsforslag.md`](delegering_beslutsforslag.md) och `harness.md` §10.2.
 
 ### 6.2 Orkestrerade flöden (B-016)
 

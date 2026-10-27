@@ -34,6 +34,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
 from agents.ecosystem import Ecosystem
 from agents.errors import HarnessError, SkillDeniedError, SkillInputError
 from agents.gateways.tools import GATEWAY_TOOLS, GatewayContext, GatewayTool
+from agents.run import DelegationInput
 from ai import ToolSpec
 from ai.schema import strict_json_schema
 from services import (
@@ -156,7 +157,51 @@ class GatewaySkill:
         return {"status": "done", "output": output.model_dump(mode="json")}
 
 
-Skill = ServiceSkill | GatewaySkill
+DELEGATE_DESCRIPTION = (
+    "Ge ett annat team ett avgränsat uppdrag och få tillbaka deras strukturerade svar. Mottagarens "
+    "ledande agent arbetar med sina egna verktyg och sin egen budget, som dras från uppdragets gemensamma "
+    "rotbudget. Sammanfatta det mottagaren behöver veta och ange referenser i stället för att klistra in "
+    "underlag. Inga personuppgifter. Samma beställning två gånger ger samma svar."
+)
+
+
+@dataclass(frozen=True)
+class HarnessSkill:
+    """En skill som harness själv kör: delegering till ett annat team (3c-1, B-039).
+
+    Ingen nivå i tjänstelagret; profilen avgör synligheten ur körpolicyn och uppdragets
+    `delegation_targets`, och `agents.delegation` prövar varje beställning.
+    """
+
+    name: str
+    pod: str
+    tool: str
+    action_model: type[BaseModel]
+
+    source = "harness"
+    pii = False
+
+    @classmethod
+    def wrap(cls, name: str, pod: str, tool: str) -> HarnessSkill:
+        return cls(name=name, pod=pod, tool=tool,
+                   action_model=_action_model(name, DelegationInput, OperationKind.READ))
+
+    @property
+    def target(self) -> str:
+        return self.tool
+
+    @property
+    def kind(self) -> OperationKind:
+        return OperationKind.READ
+
+    def tool_spec(self, *, proposes: bool = False) -> ToolSpec:
+        return ToolSpec.from_model(self.name, DELEGATE_DESCRIPTION, self.action_model)
+
+    def parse(self, arguments: dict[str, Any]) -> BaseModel:
+        return _parse(self.name, self.action_model, arguments)
+
+
+Skill = ServiceSkill | GatewaySkill | HarnessSkill
 
 
 class SkillRegistry:
@@ -175,7 +220,9 @@ class SkillRegistry:
         skills = {}
         for pod_name, pod in ecosystem.pods.items():
             for skill, entry in pod.skills.items():
-                if entry.gateway_tool is not None:
+                if entry.harness_tool is not None:
+                    skills[skill] = HarnessSkill.wrap(skill, pod_name, entry.harness_tool)
+                elif entry.gateway_tool is not None:
                     skills[skill] = GatewaySkill.wrap(skill, pod_name, GATEWAY_TOOLS[entry.gateway_tool])
                 else:
                     skills[skill] = ServiceSkill.wrap(skill, pod_name, registry.get(entry.service_operation))

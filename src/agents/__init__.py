@@ -11,6 +11,7 @@ Byggt hittills:
   - körning i ett ärende: mandat ur ärendet, uppdragsmall och status efteråt (Fas 5 F5-3)
   - teamen compliance och aktuarie: gatewayverktyg som skills, parametermandat,
     resultatscheman med bevis och uppdragsmallar för flaggskeppet (Fas 3c 3c-T)
+  - delegering mellan team med gemensam rotbudget, idempotens och spridd status (Fas 3c 3c-1, B-039)
 
     from agents import Dispatcher, Ecosystem, SkillRegistry, compile_profile
     from services import ServiceLayer, default_registry
@@ -28,7 +29,8 @@ from agents.assignments import (
 )
 from agents.case_runs import CaseRun, record_run_status, request_for_case, run_case
 from agents.continuation import Continuation, ContinuationNotReady, prepare_continuation
-from agents.dispatcher import CallOutcome, CallStatus, Dispatcher, DispatchOutcome
+from agents.delegation import DelegationDenied, DelegationRuntime, Delegator, RootLedger
+from agents.dispatcher import CallOutcome, CallStatus, DelegationOutcome, Dispatcher, DispatchOutcome
 from agents.ecosystem import Ecosystem, Limits
 from agents.errors import (
     EcosystemConfigError,
@@ -55,7 +57,7 @@ from agents.results import (
     ProposedParameterChange,
     ResultError,
 )
-from agents.run import RunRequest, RunResult, RunStatus
+from agents.run import DelegationInput, RunRequest, RunResult, RunStatus
 from agents.scope import (
     ExecutionScope,
     ParameterChangeMandate,
@@ -63,7 +65,7 @@ from agents.scope import (
     scope_for_case,
     scope_for_person,
 )
-from agents.skills import GatewaySkill, ServiceSkill, SkillRegistry
+from agents.skills import GatewaySkill, HarnessSkill, ServiceSkill, SkillRegistry
 
 __all__ = [
     "RESULT_SCHEMAS",
@@ -72,6 +74,11 @@ __all__ = [
     "CaseRun",
     "Continuation",
     "ContinuationNotReady",
+    "DelegationDenied",
+    "DelegationInput",
+    "DelegationOutcome",
+    "DelegationRuntime",
+    "Delegator",
     "DispatchOutcome",
     "Dispatcher",
     "Ecosystem",
@@ -82,6 +89,7 @@ __all__ = [
     "GatewaySkill",
     "Gateways",
     "HarnessError",
+    "HarnessSkill",
     "InterpretationProposal",
     "JournalError",
     "Limits",
@@ -91,6 +99,7 @@ __all__ = [
     "PortfolioImpactResult",
     "ProposedParameterChange",
     "ResultError",
+    "RootLedger",
     "RunOutcome",
     "RunRequest",
     "RunRequestError",

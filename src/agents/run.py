@@ -51,10 +51,35 @@ class RunRequest(_Strict):
     flow_step_id: str | None = None
     depth: int = Field(default=0, ge=0)
     budget_reservation_usd: float | None = Field(default=None, gt=0)
+    # Team som körningen får delegera till (3c-1, B-039 val C). Tomt = verktyget dolt.
+    # Kan bara vara en delmängd av agentens delegates_to i körpolicyn.
+    delegation_targets: tuple[str, ...] = ()
     # Skärpningar – kan aldrig öppna något
     deny_skills: tuple[str, ...] = ()
     allowed_effects: frozenset[OperationKind] | None = None  # None = ingen extra avsmalning
     limits: Limits = Limits()
+
+
+class DelegationInput(_Strict):
+    """Det modellen fyller i när den delegerar (3c-1, harness.md §10.1, B-039).
+
+    Identitet, task-id, rot, förälder, djup, gränser och mandat sätts av harness – aldrig här.
+    Referenser är pekare, inte rättigheter: barnet läser dem bara om dess egna verktyg tillåter det.
+    """
+
+    target_team: str = Field(description="Teamet som ska utföra uppdraget, t.ex. aktuarie")
+    goal: str = Field(min_length=1, max_length=1000, description="Vad mottagaren ska åstadkomma")
+    background: str = Field(
+        max_length=2000, description="Det mottagaren behöver veta, sammanfattat – inte hela historiken"
+    )
+    constraints: list[str] = Field(max_length=8, description="Avgränsningar, en per rad (högst 300 tecken var)")
+    expected_output: str | None = Field(max_length=500, description="Svarsform i ord, eller null")
+    result_schema: str | None = Field(
+        description="Namn på ett känt resultatschema, eller null för ett svar i fri text"
+    )
+    references: list[str] = Field(
+        max_length=10, description="Handtag och id:n, t.ex. K-SIM-ITP-2027 eller PR-ITP1-016 – inga personuppgifter"
+    )
 
 
 class RunStatus(StrEnum):

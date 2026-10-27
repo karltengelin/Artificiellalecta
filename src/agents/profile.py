@@ -17,16 +17,19 @@ En skill är öppen bara om varje villkor håller – ett nej vinner alltid:
   5. parametermandat: en skill med `parameter_mandate` kräver ett godkänt parameterförslag
      i uppdraget (`parameter_change_ref`, 3c-T)
   6. tjänstelagrets effektiva nivå (register + golv) är inte HUMAN_ONLY
+  7. delegering (3c-1, B-039): påslagen i körpolicyn, uppdraget anger mål i
+     `delegation_targets` som har aktiv profil, och körningen har inga synliga
+     verktyg med personuppgifter
 Nivån AGENT ger "utföra", APPROVAL ger "föreslå". Ett gatewayverktyg (regelverk, dokument)
-har ingen nivå i tjänstelagret; gatewayen verkställer sin egen policy och skillen blir
-"utföra" när villkor 1–3 håller. Profilen listar samtliga skäl när en skill är dold,
+och delegeringsverktyget har ingen nivå i tjänstelagret; gatewayen respektive
+`agents.delegation` verkställer sin egen policy och skillen blir "utföra" när villkoren håller. Profilen listar samtliga skäl när en skill är dold,
 inte bara det första.
 """
 
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
@@ -38,6 +41,10 @@ from agents.skills import Skill, SkillRegistry
 from ai import ToolSpec
 from services import AgentAccess, OperationKind, ServiceLayer
 from services.db import AGENT_ROLES
+
+PII_DELEGATION_REASON = (
+    "körningen har verktyg med personuppgifter – delegering kräver en granskad PII-fri fråga (B-039 val D)"
+)
 
 # Resurskontrollen i kod (agents.scope, dispatchern) räcker inte ensam: harness.md §5.1
 # kräver att agentens tjänstelager ansluter med teamets begränsade databasroll
@@ -60,7 +67,7 @@ class SkillDecision:
     service_level: AgentAccess  # tjänstelagrets effektiva nivå vid kompileringen
     outcome: Outcome
     reasons: tuple[str, ...]  # varför dold (tomt när öppen)
-    source: str = "service"  # service = tjänstelagret, gateway = gatewayverktyg (3c-T)
+    source: str = "service"  # service = tjänstelagret, gateway = gatewayverktyg (3c-T), harness = delegering (3c-1)
     parameter_mandate: bool = False  # anropet prövas mot uppdragets godkända parameterförslag
 
     @property
@@ -94,6 +101,8 @@ class EffectiveProfile:
     snapshot: VersionSnapshot
     parameter_change_ref: str | None  # uppdragets godkända parameterförslag – dispatchern kräver samma
     _skills: SkillRegistry
+    delegation_targets: tuple[str, ...] = ()  # team som körningen får delegera till (3c-1) – tomt = inga
+    depth: int = 0  # körningens djup i en delegeringskedja; roten är 0
 
     def visible(self) -> list[SkillDecision]:
         return [d for d in self.decisions if d.visible]
@@ -151,7 +160,7 @@ class EffectiveProfile:
         if not hidden:
             lines.append("  (inga)")
         for d in hidden:
-            level = "gateway" if d.source == "gateway" else f"tjänstelagret: {d.service_level.value}"
+            level = d.source if d.source != "service" else f"tjänstelagret: {d.service_level.value}"
             lines.append(f"  {d.skill:<30} {d.pod:<10} {d.kind.value:<8} {level}")
             lines += [f"      - {reason}" for reason in d.reasons]
         lines += ["", "Operationer utan poddmappning (stängda för alla agenter):"]
@@ -191,7 +200,13 @@ def compile_profile(
             raise RunRequestError(f"Uppdraget nekar okända skills: {', '.join(unknown)}")
         run_denied = set(request.deny_skills)
         run_effects = request.allowed_effects
+        if extra := sorted(set(request.delegation_targets) - set(agent.delegates_to)):
+            raise RunRequestError(
+                f"Uppdraget anger delegeringsmål som agenten '{agent_id}' inte har: {', '.join(extra)}"
+            )
 
+    # Mål utan aktiv ledande profil (t.ex. kommunikation) ger inget verktyg (B-039 §3)
+    targets = tuple(t for t in (request.delegation_targets if request else ()) if t in ecosystem.teams)
     has_scope = request is not None and request.execution_scope_ref is not None
     has_parameter_change = request is not None and request.parameter_change_ref is not None
     decisions = []
@@ -237,7 +252,13 @@ def compile_profile(
         if entry.parameter_mandate and not has_parameter_change:
             reasons.append("kräver ett godkänt parameterförslag i uppdraget (parameter_change_ref)")
 
-        if skill.source == "gateway":
+        if skill.source == "harness":
+            level = AgentAccess.AGENT  # delegeringens egen prövning gäller (agents.delegation)
+            if not ecosystem.delegation.enabled:
+                reasons.append("delegering är avstängd i körpolicyn (delegation.enabled)")
+            if not targets:
+                reasons.append("uppdraget anger inga delegeringsmål med aktiv profil (delegation_targets)")
+        elif skill.source == "gateway":
             level = AgentAccess.AGENT  # gatewayens egen policy gäller; ingen nivå i tjänstelagret
         else:
             decision = service.decision(skill.target)
@@ -267,6 +288,17 @@ def compile_profile(
             )
         )
 
+    # Dataklassen kan skärpas men inte sänkas (B-039 val D): en körning med synliga
+    # personuppgiftsverktyg delegerar inte till team utan PII-mandat
+    if any(d.visible and d.pii for d in decisions):
+        decisions = [
+            replace(d, outcome=Outcome.HIDDEN, reasons=(*d.reasons, PII_DELEGATION_REASON))
+            if d.source == "harness" and d.visible else d
+            for d in decisions
+        ]
+    if not any(d.visible and d.source == "harness" for d in decisions):
+        targets = ()
+
     return EffectiveProfile(
         agent_id=agent_id,
         agent_name=agent.name,
@@ -280,6 +312,8 @@ def compile_profile(
         execution_scope_ref=request.execution_scope_ref if request is not None else None,
         parameter_change_ref=request.parameter_change_ref if request is not None else None,
         _skills=skills,
+        delegation_targets=targets,
+        depth=request.depth if request is not None else 0,
     )
 
 

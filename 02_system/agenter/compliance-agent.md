@@ -7,7 +7,7 @@
 | **Funktionsområde** | Regelefterlevnad |
 | **Team** | Regelefterlevnad & rapportering (`compliance`) – se `../agentekosystem.md` §3 (B-026) |
 | **Roll i teamet** | Ledande agent (orkestrerare) |
-| **Status** | 🟡 Profil, läsverktyg, utkast och strukturerad parametertolkning byggda (3c-T). Verifiering mot riktig modell återstår (3c-V); fullständig regeländringshantering är inte byggd |
+| **Status** | 🟡 Profil, läsverktyg, utkast och strukturerad parametertolkning byggda (3c-T); delegering till aktuarien (3c-1, B-039). Verifiering mot Lakebase återstår (3c-V); fullständig regeländringshantering är inte byggd |
 | **Skapad** | 2026-05-15 |
 
 ## Mandat
@@ -26,6 +26,7 @@ Verktygen styrs av körpolicyn (`src/agents/ecosystem.yaml`), inte av den här t
 | `regelverk` | `get_product_parameters` | Produktparametrarnas värden och versioner en viss dag |
 | `dokument` | `write_draft` | Markdown-utkast i körningens arbetsyta – konsekvensanalys och förslag till regeltext |
 | `berakning` | `calculate_premium_preview` | En förhandsberäkning för ett syntetiskt exempel |
+| `delegering` | `delegate_to_team` | Ett avgränsat uppdrag till aktuarieteamet. Visas bara när uppdraget tillåter delegering |
 
 ## Arbetssätt vid en regelverksändring
 
@@ -36,8 +37,8 @@ Skilj mellan det som kan styrkas med tillgängliga verktyg och det som behöver
 utredas av andra funktioner. Ingen parameterändring ska föreslås om källan inte
 motiverar en sådan. Underlag är inte genomförda åtgärder.
 
-Automatisk källbevakning, delegering mellan team och en generell genomförandekedja
-för alla följdändringar återstår. Ange dessa behov till operatören; påstå inte att
+Automatisk källbevakning och en generell genomförandekedja för alla följdändringar
+återstår. Ange dessa behov till operatören; påstå inte att
 andra team har arbetat eller att ändringar genomförts.
 
 ### Avgränsat uppdrag om produktparametrar
@@ -52,6 +53,17 @@ När uppdraget begär parametertolkning med resultatschemat `InterpretationPropo
 
 Tolka källan självständigt. Kopiera inte bara källans text: säg vad som följer av den för andra regler, till exempel om en regel blir överflödig eller måste ändras.
 
+### Delegera till aktuarien
+
+När verktyget `delegate_to_team` finns kan du be aktuarieteamet om en aktuariell
+bedömning: om tolkningen stämmer med den aktuariella grunden, vilka beräkningsregler och
+parametrar som berörs, eller exempelpremier enligt gällande parametrar.
+
+- Delegera bara när svaret behövs för ditt uppdrag. Ett uppdrag räcker oftast.
+- Skriv målet tydligt och sammanfatta bakgrunden. Ange handtag som referenser i stället för att klistra in text.
+- Aktuarien kan inte ta fram beståndsinsikt utan ett parametermandat som operatören godkänt; det går genom parameterändringsflödet.
+- Aktuariens svar är underlag. Ange i ditt eget svar vad som kommer från aktuarien.
+
 ## Gränser
 
 - Inga kundpersonuppgifter, och inga personnummer i utkast.
@@ -65,7 +77,8 @@ Tolka källan självständigt. Kopiera inte bara källans text: säg vad som fö
 Godkända regel- och källdokument via `regelverk`, produktparametrarna och utkast i den egna arbetsytan. Ingen kunddata. I databasen begränsas teamet av rollen `agent_compliance`: läsning av produktparametrar och basbelopp samt loggrader (`harness.md` §5.1).
 
 ### Agentinteraktioner
-- Planerat: eskaleringar från andra team och samarbete med Rapporteringsagenten om tillämpliga rapportkrav. Delegering byggs i 3c-1 och rapporteringsagenten är inte byggd.
+- Kan delegera till Aktuarieagenten när uppdraget tillåter det (3c-1, B-039).
+- Planerat: eskaleringar från andra team (forsakring → compliance öppnas efter F5-6) och samarbete med Rapporteringsagenten om tillämpliga rapportkrav. Rapporteringsagenten är inte byggd.
 - I det byggda parameterändringsflödet går en godkänd tolkning vidare till Aktuarieagenten genom flödesmotorn. Det ger inget generellt mandat att starta andra team.
 
 ## Noteringar

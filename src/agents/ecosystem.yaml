@@ -90,6 +90,16 @@ pods:
     skills:
       estimate_parameter_change_impact: {service_operation: estimate_parameter_change_impact, parameter_mandate: true}
 
+  # Delegering till ett annat teams ledande agent (3c-1, B-039). Harness kör barnet med egen profil
+  # och gemensam rotbudget; verktyget visas bara när uppdraget anger delegation_targets.
+  delegering:
+    owner_team: utveckling
+    mountable_by: [compliance]
+    pii: false
+    allowed_effects: [read]
+    skills:
+      delegate_to_team: {harness_tool: delegate_to_team}
+
 teams:
   forsakring:
     lead: case_handler
@@ -111,8 +121,9 @@ teams:
   compliance:
     lead: compliance_agent
     mandate: Tolka regelverksändringar till produktregler och parametrar med källor, konsekvenser och osäkerheter.
-    pods: [regelverk, dokument, berakning]
+    pods: [regelverk, dokument, berakning, delegering]
     allowed_effects: [read, compute, write]
+    delegates_to: [aktuarie]
     limits:
       max_steps: 16
       max_tool_calls: 30
@@ -123,7 +134,9 @@ teams:
 
   aktuarie:
     lead: actuary_agent
-    mandate: Ta fram beståndsinsikter i betrodd kod för godkända parameterändringar, med antaganden och begränsningar.
+    mandate: >-
+      Ta fram beståndsinsikter i betrodd kod för godkända parameterändringar, med antaganden och begränsningar,
+      samt aktuariell granskning och beräkningsunderlag på beställning av compliance.
     pods: [bestand, berakning, regelverk, dokument]
     allowed_effects: [read, compute, write]
     limits:
@@ -150,8 +163,9 @@ agents:
     team: compliance
     instruction: 02_system/agenter/compliance-agent.md
     model_role: deep
-    pods: [regelverk, dokument, berakning]
+    pods: [regelverk, dokument, berakning, delegering]
     allowed_effects: [read, compute, write]
+    delegates_to: [aktuarie]
 
   actuary_agent:
     name: Aktuarieagent
@@ -161,9 +175,10 @@ agents:
     pods: [bestand, berakning, regelverk, dokument]
     allowed_effects: [read, compute, write]
 
-# Delegering mellan team byggs i Fas 3c. Gränserna gäller en hel rotkörning (harness.md §6.3, §10.2).
+# Delegering mellan team (3c-1, B-039). Gränserna gäller en hel rotkörning (harness.md §6.3, §10.2).
+# Första aktiva paret är compliance → aktuarie; forsakring → kommunikation är ett namn utan aktiv profil.
 delegation:
-  enabled: false
+  enabled: true
   max_depth: 2
   max_children: 3
   root_limits:

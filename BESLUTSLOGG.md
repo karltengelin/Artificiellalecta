@@ -8,6 +8,58 @@
 
 ## Beslut
 
+### B-039 | 2026-10-27 | 3c-1: delegering mellan team
+
+**Beslut:** Operatören godkände rekommendationerna A0 och A–K i
+`02_system/delegering_beslutsforslag.md` version 0.1 i chatten 2026-10-27:
+”Jag godkänner rekommendationerna A0 och A–K. Logga beslutet och börja bygga.”
+Inga avvikelser angavs.
+
+1. **Bygg nu, avgränsat (A0).** Delegeringen är avstängd som standard. Flödets
+   regressionstester ska gå gröna före merge, eftersom loopen och dispatchern ändras
+   före 3c-V:s körning mot Lakebase.
+2. **Första paret (A, K).** Compliance → aktuarie, utan personuppgifter och utan
+   förslag som väntar på godkännande. Aktuarieteamets mandat omfattar granskning och
+   beräkningsunderlag på beställning av compliance, utan nya poddar eller verktyg.
+   Forsakring → compliance (B-011:s eskalering) öppnas i en senare leverans efter F5-6.
+3. **Mandat och synlighet (B, C).** Barnet får bara mandat som betrodd kod redan
+   utfärdat; modellen skapar inga mandat. Verktyget `delegate_to_team` visas bara när
+   det betrodda uppdraget anger tillåtna mål (`delegation_targets`); standard är stängt.
+4. **Personuppgifter (D).** En körning med synliga PII-verktyg delegerar inte till ett
+   team utan PII-mandat. Par 2 kräver en strukturerad PII-fri fråga som prövas mot
+   ärendets kända identifierare.
+5. **Körning och budget (E, F).** Synkron och sekventiell körning. Betrodd kod sätter
+   barnets tak ur mottagarprofilen och det som återstår av rotbudgeten; förbrukningen
+   bokförs i en gemensam budgetbok per rot.
+6. **Resultat, idempotens och väntan (G–I).** Föräldern får barnets strukturerade
+   resultat, inte dess arbetsyta. `task_id` härleds ur förälderns run-id och call-id och
+   ger samma barn vid upprepning. Barnets väntan, stopp och avstämningskrav sprids till
+   föräldern; fortsättning genom kedjan byggs när ett par kan vänta.
+7. **Spårbarhet (J).** Händelserna `delegation_requested`, `delegation_denied`,
+   `delegation_started` och `delegation_returned` i förälderns körjournal; barnets
+   journal bär `parent_run_id`, `root_run_id`, `depth` och `task_id`.
+
+**Motivering:** Paret utan personuppgifter och utan väntan prövar hela mekaniken –
+identitet, budgetbok, resultat, journal, idempotens och nekanden – med minsta risk.
+Den större verksamhetsnyttan (OC-3 och handläggarens regelfrågor) kan sedan öppnas
+genom granskad konfiguration i stället för ny motor.
+
+**Övervägda alternativ:** Att vänta på konkret behov i OC-3 eller F5-6, att öppna
+båda paren direkt, att låta operatören godkänna nya mandat vid delegering, att visa
+verktyget i alla körningar, asynkron körning via bakgrundsarbetaren och att låta
+modellen föreslå budget. Se underlagets §2.
+
+**Konsekvenser:**
+- Bygget sker i harness (`src/agents/`), utan databasändring, ny databasroll eller extern tjänst.
+- Röktest mot riktig modell görs i demo och `svc_test` med befintliga teamroller.
+- Kända flerteamprocesser med grindar fortsätter i flödesmotorn.
+
+**Preciserar:** B-016 och B-026:s dynamiska delegering och `harness.md` §10.2.
+Avviker från B-035:s byggordning (3c-1 efter 3c-V) genom att bygget börjar före 3c-V:s
+körning mot Lakebase, med villkoret i punkt 1. B-038 val M består tills OC-3 använder delegeringen.
+
+---
+
 ### B-038 | 2026-10-26 | OC-0: operatörscentralens kontrakt och gemensamma modell-/budgetpolicy
 
 **Beslut:** Operatören godkände rekommendationerna A–X i

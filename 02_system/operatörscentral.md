@@ -54,7 +54,8 @@ flowchart TD
 
 Pilarna beskriver målbilden. Frågeingång, sammanställningar och styrväg är ännu
 inte implementerade. Flödesmotorn 3c-2 finns på main `66d1add`; 3c-1-delegering,
-VD-routning, 3b-9-inställningsvy och BI-dashboardens drift återstår vid planstart.
+VD-routning, 3b-9-inställningsvy och BI-dashboardens drift återstod vid planstart.
+Delegeringen finns sedan 2026-10-27 (B-039) men används ännu inte av någon frågeingång.
 Det första flödet, `rule_change_parameter`, och dess UI `/floden` kom i 3c-3.
 UI:t ligger tillfälligt i handläggar-UI:t, och flyttar hit i OC-7 (se nedan).
 
