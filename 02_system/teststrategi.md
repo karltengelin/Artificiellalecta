@@ -1,6 +1,7 @@
 # Teststrategi – grupper, beroenden och ändringsstyrt urval
 
 > **Infört:** 2026-10-25 på operatörens begäran.
+> **Postgres-prov:** aktivt val och ändringsstyrt urval enligt B-040 (2026-10-27).
 > **Omfattning:** teststruktur och körverktyg; produktregler och agentmandat ändras inte.
 
 ## Syfte
