@@ -38,11 +38,21 @@ Dashboarden i Databricks AI/BI, gemensamma mått och Genie för insikter är bes
 Databricks är vald databasplattform (B-018); inget separat BI-lager väljs här.
 Dashboard och Genie-integration är ännu inte driftsatta; dashboardens konkreta mått är förslag.
 
+**2026-10-27: Datakontrakt för första fråge-/rapportkedjan** finns i
+[DATAKONTRAKT_FRAGEKEDJA.md](DATAKONTRAKT_FRAGEKEDJA.md), med versionssatta
+definitioner, operationsgränser, lokalt demofacit, avvikelseprov och rapportfält.
+Första datavägen är **Lakebase via tjänstelagrets `get_company_metrics`**, med
+definitionerna i `src/management/metrics.py`, samma som centralen. Lakebase-värden
+är inte verifierade i denna leverans. Databricks AI/BI och Genie hålls isär från
+denna dataväg och kommer i en senare avgränsning enligt B-029.
+
 ### Nästa steg
 
 **Närmaste planeringsleverans, godkänd 2026-10-27:** förbered projekt 2:s del av
 [första fråge-/rapportkedjan i projekt 10](../10_operatörscentral/PROJEKTPLAN.md).
-Ingen implementation eller ny agentåtkomst är aktiverad genom dokumentuppdraget.
+Dokument- och testunderlaget är framtaget enligt kontraktet ovan. Ingen webb-
+eller agentfunktion aktiveras genom denna leverans; det samlade designstoppet
+för kedjan ska godkännas före webbbygget.
 
 Första frågan gäller registrerade försäkrade vid läsdatum och betalmarkerade
 premier i en vald avslutad kalendermånad. Återanvänd definitionerna
@@ -54,11 +64,15 @@ och rapport och märk dem med version och datum.
 
 Projekt 2 ska leverera följande underlag före byggstart:
 
-- Vald dataväg i den faktiska Databricks-miljön, inklusive käll-/miljöidentitet,
-  population, period, aktualitet och kvalitet. B-029:s BI-inriktning består.
+- Lakebase via tjänstelagret som första dataväg, inklusive käll-/miljöidentitet,
+  population, period, aktualitet och kvalitet. Verifiering i faktisk Lakebase-miljö
+  återstår; BI-dashboard och Genie är separata senare integrationer. B-029 består.
 - Ett avgränsat läs-/analyskontrakt för det avsedda teamet, utan personuppgifter
-  och med småcellsskydd. Dagens `get_company_metrics` är `HUMAN_ONLY`; dess
-  existens ger ingen rätt att öppna den för agenten.
+  och med småcellsskydd. **Operatörens besked 2026-10-27:** `get_company_metrics`
+  är inte känslig (`pii=False`, endast aggregat med småcellsskydd) och ska vara
+  `AGENT`-läsning för aktuarieteamet. Claude genomför tjänstelager-/åtkomständring
+  och granskad verktygsmontering i körpolicyn i sitt designstopp. Denna
+  dokumentleverans ändrar inte runtimebehörigheten.
 - Förväntade värden och avvikelsefall för kända underlag: noll, saknat eller
   underkänt underlag, undertryckt cell, felaktig period och misslyckad läsning.
 - Rapportunderlag med definitioner, läsdatum/period, källreferenser och
