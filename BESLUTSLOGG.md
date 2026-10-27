@@ -8,6 +8,47 @@
 
 ## Beslut
 
+### B-041 | 2026-10-27 | OC-3a: första fråge- och rapportkedjan
+
+**Beslut:** Operatören godkände valen A–L i `02_system/fragekedja_beslutsforslag.md` i chatten
+2026-10-27: ”godkänner alla A-L”. Operatören angav samma dag att `get_company_metrics` inte
+är känslig och inte behöver vara `HUMAN_ONLY`.
+
+1. **Omfång och mottagare (A, B).** En frågetyp, beståndsöversikt, för en avslutad månad med
+   valfri precisering. Aktuarieagenten svarar som teamets ledande agent. Data scientist-agenten
+   byggs när en fråga kräver verktyg aktuarien inte ska ha.
+2. **Data (C, D).** `get_company_metrics` blir `AGENT` och monteras i `bestand`.
+   `agent_aktuarie` får kolumnbegränsad läsrätt för aggregatet, inte lön eller beräkningsunderlag.
+3. **Livscykel (E, J).** Flödesmotorn med flödestypen `company_question`: svar, rapport,
+   granskning, leverans. Synkron körning fram till granskningen. Ingen ny tabell eller
+   bakgrundsarbetare.
+4. **Tal och leverans (F, G).** Talen kommer bara från verktyget, och obelagda tal i svaret
+   stoppar steget. Leveransen versioneras under `logs/deliveries/` med kontrollsummor som binds
+   i flödet. Ett avslag avslutar uppdraget.
+5. **Identitet (H, I).** Lokal namngiven operatör enligt B-038 val P, med Argon2id,
+   serversession och sessionsbunden CSRF. HTTP på loopback i första kedjan, HTTPS före OC-5
+   eller annan bindning. Session krävs för skrivande handlingar på bolagsfrågor. B-036:s
+   flöden är oförändrade.
+6. **Arbetsvy och ansvar (K, L).** En gemensam läsprojektion för centralen och aktuariens
+   teamyta. Claude bygger tjänstelager, roll, harness och flöde. Codex bygger inloggning,
+   rendering och vyer. Gränssnitten låses enligt underlagets §10.
+
+**Motivering:** Kedjan är det första hela arbetsförloppet som riktningsgranskningen
+efterfrågar. Den återanvänder flödesmotorn, ledningsmåtten, resultatlagret och A4-mallen i
+stället för att bygga en ny körmiljö.
+
+**Övervägda alternativ:** Se underlagets §2, bland annat en egen uppdragstabell, full läsrätt
+för rollen, försäkringsteamet som mottagare och HTTPS direkt.
+
+**Konsekvenser:**
+- `get_company_metrics` syns för aktuarien även i uppdrag som compliance delegerar till den.
+- Kolumnrätterna sätts i Lakebase efter backup och operatörens OK (AGENTS.md §4.5).
+- OC-0 §4.4 om omarbetning inom samma uppdrag och §7.1 om HTTPS före inloggning genomförs senare.
+
+**Preciserar:** B-038 (OC-3 och val P–Q), B-036 och B-039.
+
+---
+
 ### B-040 | 2026-10-27 | Postgres-prov körs efter aktivt val och pekas ut per ändring
 
 **Beslut:** Operatören godkände i chatten 2026-10-27 förslagen B–D efter mätningen av
