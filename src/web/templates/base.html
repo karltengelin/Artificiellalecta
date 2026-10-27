@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="referrer" content="no-referrer">
+  <meta name="referrer" content="{{ page_referrer_policy|default('no-referrer') }}">
   <title>{% block title %}Handläggare{% endblock %} · Artificiellalecta</title>
   {# HTMX: felsvar (4xx/5xx) visas också; ingen sidhistorik i webbläsarens lagring (personuppgifter) #}
   <meta name="htmx-config" content='{"historyCacheSize": 0, "refreshOnHistoryMiss": true, "responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true}, {"code": "[45]..", "swap": true, "error": true}]}'>
@@ -37,7 +37,14 @@
     </nav>
     <div class="who">
       <span class="db db--{{ settings.database }}" title="Databas">{{ settings.database_label }}</span>
-      <span class="user" title="Aktör i händelseloggen">Handläggare: <strong>{{ settings.handler_id }}</strong></span>
+      {% if not operator_page %}<span class="user" title="Aktör i händelseloggen">Handläggare: <strong>{{ settings.handler_id }}</strong></span>{% endif %}
+      {% if operator_user %}
+      <span class="user">Operatör: <strong>{{ operator_user }}</strong></span>
+      <form method="post" action="/logga-ut" hx-boost="false">
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+        <button type="submit" class="secondary">Logga ut</button>
+      </form>
+      {% elif operator_auth_enabled %}<a href="/logga-in" hx-boost="false">Logga in</a>{% endif %}
     </div>
     <form class="environment-picker" data-environment-picker data-current-database="{{ settings.database }}"
           method="post" action="/miljo" hx-boost="false">

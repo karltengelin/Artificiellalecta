@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="same-origin">
+  <title>Logga in · Artificiellalecta</title>
+  <link rel="stylesheet" href="/static/tokens.css?v={{ static_version }}">
+  <link rel="stylesheet" href="/static/app.css?v={{ static_version }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/central"><span class="brand__mark" aria-hidden="true"></span>Artificiellalecta <span class="brand__sub">Operatörscentral</span></a>
+  </header>
+  <main class="page">
+    <section class="operator-login" aria-labelledby="login-title">
+      <p class="oc-eyebrow">OPERATÖRSCENTRAL</p>
+      <h1 id="login-title">Logga in</h1>
+      <p>Logga in för att arbeta med bolagsfrågor.</p>
+      <p class="muted">{{ database_label }}</p>
+      {% if message %}<div class="alert alert--error" role="alert">{{ message }}</div>{% endif %}
+      {% if auth_enabled and session_csrf %}
+      <form method="post" action="/logga-in">
+        <input type="hidden" name="csrf_token" value="{{ session_csrf }}">
+        <label for="operator-username">Operatör</label>
+        <input id="operator-username" name="username" value="{{ operator_id }}" autocomplete="username" maxlength="100" required>
+        <label for="operator-password">Lösenfras</label>
+        <input id="operator-password" name="password" type="password" autocomplete="current-password" maxlength="1024" required autofocus>
+        <button type="submit">Logga in</button>
+      </form>
+      {% endif %}
+      {% if auth_enabled and not session_csrf %}<p><a href="/logga-in">Öppna inloggningen igen</a></p>{% endif %}
+      <p class="small"><a href="/central">Tillbaka till centralen</a></p>
+    </section>
+  </main>
+  <footer class="footer">Artificiellalecta · Operatörscentral</footer>
+</body>
+</html>

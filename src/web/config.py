@@ -53,6 +53,8 @@ class WebSettings:
     allowed_hosts: tuple[str, ...] = field(default=("127.0.0.1", "localhost"))
     operator_manifest: Path | None = None
     operator_dataset_id: str | None = None
+    operator_id: str = "karl"
+    operator_password_hash: str | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         if not _HANDLER_ID.match(self.handler_id):
@@ -65,6 +67,14 @@ class WebSettings:
             )
         if self.operator_dataset_id is not None and not re.fullmatch(r"[a-zA-Z0-9_.:-]{1,100}", self.operator_dataset_id):
             raise WebConfigError("OPERATOR_DATASET_ID ska vara en kort datasetreferens utan personuppgifter")
+        if not _HANDLER_ID.fullmatch(self.operator_id):
+            raise WebConfigError("Ogiltigt OPERATOR_ID – små bokstäver, siffror, _ . -, högst 100 tecken")
+        from web.operator_auth import validate_password_hash
+
+        try:
+            validate_password_hash(self.operator_password_hash)
+        except ValueError as exc:
+            raise WebConfigError(str(exc)) from None
 
     @property
     def dataset_ref(self) -> str:
@@ -88,4 +98,6 @@ class WebSettings:
             database=os.environ.get("HANDLAGGARE_DB", "demo").strip() or "demo",
             operator_manifest=Path(os.environ["OPERATOR_TELEMETRY_MANIFEST"]) if os.environ.get("OPERATOR_TELEMETRY_MANIFEST") else None,
             operator_dataset_id=os.environ.get("OPERATOR_DATASET_ID") or None,
+            operator_id=os.environ.get("OPERATOR_ID", "karl").strip() or "karl",
+            operator_password_hash=os.environ.get("OPERATOR_PASSWORD_HASH") or None,
         )
