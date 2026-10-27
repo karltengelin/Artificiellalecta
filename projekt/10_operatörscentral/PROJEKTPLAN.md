@@ -90,7 +90,8 @@ operatörens godkända dokument- och prioriteringsarbete 2026-10-27.
 
 ## Nästa bygguppdrag att förbereda: beståndsfråga till granskad rapport
 
-**Planeringsprioritet godkänd 2026-10-27. Implementation är inte startad.**
+**Planeringsprioritet godkänd 2026-10-27; designstoppet godkänt som B-041. Harness- och
+tjänstedelen är byggd lokalt; inloggning, rendering och vyer återstår.**
 Detta avgränsar OC-3 och den del av OC-8 som behövs för ett första användbart
 arbetsförlopp, tillsammans med projekt 2 och gemensam dokumentgenerering.
 Det inför inget nytt projekt, ingen generell router och inga nya befogenheter.

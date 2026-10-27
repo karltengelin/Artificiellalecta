@@ -232,6 +232,16 @@ Låses före byggstart, eftersom Claude och Codex bygger på var sin sida av dem
 | 3 | Integrationstester för hela flödet med testleverantör | Val K: vyer i centralen och aktuariens teamyta |
 | 4 | Gemensamt: röktest mot riktig modell i demo och `svc_test`, visuell kontroll av rapporten, sedan Lakebase efter backup och OK | |
 
+**Status 2026-10-27:** Claudes steg 1–3 är byggda. Åtkomstnivå, podd och kolumnrätter
+(`src/services/access_register.yaml`, `src/agents/ecosystem.yaml`, `src/utils/agent_roles.py`);
+resultatschemat `CompanyAnswer` med talkontroll (`src/agents/results.py`), uppdragsmallen
+(`src/agents/assignments.py`), flödet (`src/agents/flows/definitions/company_question.py`),
+leveranslagringen (`src/agents/deliveries.py`) och adaptern med `AssignmentView`
+(`src/agents/flows/questions.py`). Integrationstester i `tests/test_agents_questions.py`.
+Översättningen från aggregat till observationer är gemensam (`management.metrics.company_observations`);
+centralens route kan gå över till den. Adaptern tar renderaren som argument; den riktiga
+`render_report` och webbvyerna återstår (Codex). Kolumnrätterna är inte satta i Lakebase.
+
 Steg 1 och 2 kan gå parallellt eftersom filerna är åtskilda. Steg 3 för webben förutsätter
 adaptern. Lakebase-ändringarna (kolumnrätter) samordnas enligt AGENTS.md §4.5 och krockar inte
 med 3c-V och F5-6 den 1 november om de görs vid olika tillfällen.

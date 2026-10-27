@@ -745,6 +745,13 @@ Föreslagna stegresultat är `InterpretationProposal`, `ProductRuleProposal`, `R
 
 I Fas 3c behövs persisterade flöden, steg och **grindbeslut** (`flows`, `flow_steps`, `flow_gate_decisions`, byggda i 3c-2: `src/agents/flows/`, `databasschema.md` §9i). För försäkringsförslag länkas befintliga `approval_requests`; övriga gateways har egna versionsbundna handlingsförslag och kvitton, med godkännandet knutet till deras handling. UI och körjournal använder ett gemensamt referensformat med område, förslags-id och status. Det ger en samlad beslutsvy utan en extra kö för löne-/fribrevförslag och utan att myndighetsrapporter eller releaser registreras i försäkringstjänstelagret. Tabeller dokumenteras och databaskörningar samordnas innan de byggs.
 
+**Bolagsfrågor (OC-3a, B-041, byggt 2026-10-27).** Flödestypen `company_question` i samma motor:
+aktuariens svar (`CompanyAnswer`), rapport, operatörens granskning och leverans
+([designstoppet](fragekedja_beslutsforslag.md) §5). Den drivs av en egen adapter
+(`src/agents/flows/questions.py`) och visas inte i `/floden`. Ett systemsteg kan sedan dess
+avsluta med ett kontrollerat fel (`SystemOutcome.error`), t.ex. en export som inte skrev något:
+steget och flödet blir `failed` i stället för `reconciliation_required`.
+
 ### 10.4 Återstart utan dubbel handling
 
 Fas 3b:s `RunStore`, task-/run-/flow-id, statuses, budgetreservationer och versionsreferenser ska vara stabila kontrakt. Ett godkännande leder till avstämning och fortsättning, inte återspelning av hela loopen. Fas 3c lägger till en beständig tillståndsmaskin med versionsnummer, atomiskt anspråk på steg och idempotens för beställningar/handlingar. Den behöver hantera krasch före/efter proposal, godkännande, verkställighet och nästa steg.

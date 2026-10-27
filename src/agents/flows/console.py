@@ -94,7 +94,8 @@ class FlowConsole:
     # --- läsning ----------------------------------------------------------------------------------
 
     def list(self) -> list[FlowView]:
-        return self.engine.list()
+        """Flödena den här konsolen driver – bolagsfrågor (OC-3a) har sin egen adapter."""
+        return self.engine.list(flow_types=self.engine.definitions)
 
     def get(self, flow_id: str) -> FlowView:
         return self.engine.get(flow_id)

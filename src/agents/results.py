@@ -17,10 +17,11 @@ Strukturerat underlag är fortfarande ingen beslutstoken: grindarna i flödet (3
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable
-from datetime import date
-from decimal import Decimal
-from typing import Any
+from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,6 +32,7 @@ from services.operations.product_parameters import ParameterKey
 READ_DOCUMENT = "read_regulatory_document"
 WRITE_DRAFT = "write_draft"
 ESTIMATE = "estimate_parameter_change_impact"
+COMPANY_METRICS = "get_company_metrics"
 
 
 class _Strict(BaseModel):
@@ -68,9 +70,26 @@ class PortfolioImpactResult(_Strict):
     draft_names: list[str] = Field(description="Filnamn för utkast du har skrivit i den här körningen")
 
 
+class CompanyAnswer(_Strict):
+    """Bolagsfrågan (OC-3a, B-041): aktuarien besvarar en beståndsfråga ur ledningsaggregatet.
+
+    Talen i rapporten kommer ur get_company_metrics, inte ur texten (val F).
+    """
+
+    status: Literal["answered", "partial", "unavailable", "needs_clarification"] = Field(
+        description="answered bara när båda måtten finns; partial när något är dolt eller underkänt; "
+                    "unavailable när frågan inte kan besvaras med underlaget; needs_clarification vid oklar fråga")
+    month: date = Field(description="Månaden du läste med get_company_metrics (månadsförsta)")
+    conclusion: str = Field(description="Slutsatsen i ord. Skriv inga andra tal än dem i get_company_metrics-svaret")
+    limitations: list[str] = Field(description="Begränsningar i underlaget som påverkar slutsatsen")
+    assumptions: list[str] = Field(description="Antaganden du har gjort")
+    next_steps: list[str] = Field(description="Vad som behövs för ett fullständigare svar, om något")
+
+
 RESULT_SCHEMAS: dict[str, type[_Strict]] = {
     "InterpretationProposal": InterpretationProposal,
     "PortfolioImpactResult": PortfolioImpactResult,
+    "CompanyAnswer": CompanyAnswer,
 }
 
 
@@ -92,7 +111,7 @@ def schema_for(name: str | None) -> type[_Strict] | None:
 
 
 def summary_of(result: BaseModel) -> str:
-    return getattr(result, "summary", None) or getattr(result, "insight", "")
+    return getattr(result, "summary", None) or getattr(result, "insight", None) or getattr(result, "conclusion", "")
 
 
 def verify(
@@ -103,9 +122,12 @@ def verify(
     sources: dict[str, dict] = {}
     drafts: dict[str, dict] = {}
     estimate: dict | None = None
+    metrics: dict[str, dict] = {}  # månad -> senaste lyckade get_company_metrics
+    metrics_failed = False  # ett anrop som tjänstelagret avböjde, t.ex. en datakälla som inte kunde läsas
     for outcome in dispatches:
         for call in outcome.calls:
             if call.status != CallStatus.DONE:
+                metrics_failed |= call.status == CallStatus.ERROR and operation_of.get(call.skill) == COMPANY_METRICS
                 continue
             output = json.loads(call.result.content).get("output") or {}
             operation = operation_of.get(call.skill)
@@ -120,12 +142,16 @@ def verify(
                                           "reference": output["reference"], "sha256": output["sha256"]}
             elif operation == ESTIMATE:
                 estimate = output
+            elif operation == COMPANY_METRICS:
+                metrics[output["period_from"]] = output
 
-    problems = [f"källan {h} är inte läst i körningen" for h in result.source_handles if h not in sources]
-    problems += [f"utkastet {n} är inte skrivet i körningen" for n in result.draft_names if n not in drafts]
+    # CompanyAnswer läser inga dokument och skriver inga utkast (B-041 val A)
+    handles, names = getattr(result, "source_handles", ()), getattr(result, "draft_names", ())
+    problems = [f"källan {h} är inte läst i körningen" for h in handles if h not in sources]
+    problems += [f"utkastet {n} är inte skrivet i körningen" for n in names if n not in drafts]
     evidence: dict[str, Any] = {
-        "sources": [sources[h] for h in result.source_handles if h in sources],
-        "drafts": [drafts[n] for n in result.draft_names if n in drafts],
+        "sources": [sources[h] for h in handles if h in sources],
+        "drafts": [drafts[n] for n in names if n in drafts],
     }
     if isinstance(result, InterpretationProposal):
         if not result.source_handles:
@@ -134,6 +160,18 @@ def verify(
         if estimate is None:
             problems.append("ingen beräkning med estimate_parameter_change_impact i körningen")
         evidence["estimate"] = estimate
+    if isinstance(result, CompanyAnswer):
+        read = metrics.get(result.month.isoformat())
+        if read is None and result.status in ("answered", "partial"):
+            problems.append(f"ingen läsning med get_company_metrics för {result.month.isoformat()} i körningen")
+        if read is not None:
+            incomplete = read["insured_suppressed"] or read["paid_state"] != "available"
+            if result.status == "answered" and incomplete:
+                problems.append("svaret anges som fullständigt trots dolt eller underkänt mått")
+            texts = [result.conclusion, *result.limitations, *result.assumptions, *result.next_steps]
+            problems += [f"talet {n} i svaret finns inte i underlaget" for n in unsupported_numbers(texts, read)]
+        evidence["metrics"] = read
+        evidence["metrics_failed"] = read is None and metrics_failed
     if problems:
         raise ResultError(problems)
     return {
@@ -141,3 +179,46 @@ def verify(
         "result": result.model_dump(mode="json"),
         "evidence": evidence,
     }
+
+
+#: Tal som får stå i texten utan att vara mätvärden: småcellsgränsen 1–9/10 och fönstret 11/12 månader
+_STRUCTURAL_NUMBERS = {Decimal(n) for n in (1, 9, 10, 11, 12)}
+_ISO_DATE = re.compile(r"(?<![\w-])(\d{4})-(\d{2})(?:-(\d{2}))?(?![\w-])")
+_SPACES = r"[ \u00a0\u202f]"  # mellanslag, hårt och smalt hårt mellanslag
+_NUMBER = re.compile(rf"(?<![\w§.,-])\d{{1,3}}(?:{_SPACES}\d{{3}})+(?:[.,]\d+)?(?![\w-])"
+                     r"|(?<![\w§.,-])\d+(?:[.,]\d+)?(?![\w-])")
+
+
+def unsupported_numbers(texts: Iterable[str], metrics: dict[str, Any]) -> list[str]:
+    """Tal i modellens text som inte motsvarar ett mätvärde, ett datum i läsningen eller en känd gräns (val F).
+
+    Belopp får skrivas exakt eller avrundat till hela kronor, med mellanslag som tusentalsavgränsare.
+    """
+    allowed = set(_STRUCTURAL_NUMBERS)
+    for key in ("insured_count", "paid_sek"):
+        if metrics.get(key) is not None:
+            value = Decimal(str(metrics[key]))
+            allowed |= {value, value.quantize(Decimal(1))}
+    dates = {date.fromisoformat(metrics[k]) for k in ("as_of_date", "period_from", "period_to") if metrics.get(k)}
+    if metrics.get("read_at"):
+        dates.add(datetime.fromisoformat(metrics["read_at"]).date())
+    allowed |= {Decimal(part) for d in dates for part in (d.year, d.month, d.day)}
+    months = {(d.year, d.month) for d in dates}
+    found: list[str] = []
+    for text in texts:
+        for match in _ISO_DATE.finditer(text):
+            year, month, day = int(match[1]), int(match[2]), match[3]
+            ok = (year, month) in months if day is None else any(
+                (d.year, d.month, d.day) == (year, month, int(day)) for d in dates)
+            if not ok:
+                found.append(match[0])
+        for match in _NUMBER.finditer(_ISO_DATE.sub(" ", text)):
+            raw = match[0]
+            try:
+                value = Decimal(re.sub(_SPACES, "", raw).replace(",", "."))
+            except InvalidOperation:  # pragma: no cover – mönstret ger bara tal
+                found.append(raw)
+                continue
+            if value not in allowed:
+                found.append(raw)
+    return found
