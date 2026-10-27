@@ -45,6 +45,7 @@ from ai.tracing import MemoryTraceSink
 from services import MemoryEventLog, ServiceLayer, default_registry
 from services.db import session_factory_for
 from services.operations import common
+from utils.agent_roles import AKTUARIE
 from utils.demo_data import create_demo_database
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
@@ -125,7 +126,7 @@ class TestKorpolicyn:
         }
         common_tools = {"list_regulatory_documents", "read_regulatory_document", "get_product_parameters",
                         "write_draft", "calculate_premium_preview"}
-        assert visible == {"compliance_agent": common_tools, "actuary_agent": common_tools}
+        assert visible == {"compliance_agent": common_tools, "actuary_agent": common_tools | {"get_company_metrics"}}
         assert eco.teams["compliance"].lead == "compliance_agent" and eco.agents["actuary_agent"].model_role == "deep"
 
     def test_inga_personuppgifter_for_teamen(self, eco, skills, service):
@@ -262,6 +263,35 @@ class TestParametermandatet:
         (c,) = dispatcher(eco, skills, service, "aktuarie").dispatch(
             [call("estimate_parameter_change_impact", ESTIMATE)]).calls
         assert c.status == CallStatus.DENIED
+
+
+class TestLedningsaggregat:
+    """OC-3a val C–D: aktuarien läser ledningsaggregatet utan mandat; databasrollen får bara kolumnerna."""
+
+    def test_aktuarien_laser_aggregatet_utan_mandat(self, eco, skills, service):
+        (c,) = dispatcher(eco, skills, service, "aktuarie").dispatch(
+            [call("get_company_metrics", {"month": "2026-09-01"})]).calls
+        assert c.status == CallStatus.DONE
+        out = json.loads(c.result.content)["output"]
+        assert out["period_from"] == "2026-09-01" and out["paid_state"] in {"available", "suppressed", "failed"}
+        assert out["insured_count"] is None or out["insured_count"] >= 10
+
+    def test_compliance_har_inte_aggregatet(self, eco, skills, service):
+        profile = compile_profile(eco, skills, service, request=request("compliance"))
+        assert not profile.decision("get_company_metrics").visible
+
+    def test_rollen_far_bara_aggregatets_kolumner(self):
+        statements = " ; ".join(AKTUARIE.statements())
+        assert 'GRANT SELECT ON "public"."premium_transactions"' not in statements
+        assert ('GRANT SELECT ("benefit_id", "transaction_type", "status", "paid_date", "amount_sek") '
+                'ON "public"."premium_transactions"') in statements
+        assert "pensionable_salary_sek" not in statements and "calculation_basis" not in statements
+
+    @pytest.mark.parametrize("columns", [(("policies", ("id",)),), (("premium_transactions", ()),),
+                                         (("premium_transactions", ("amount; DROP",)),)])
+    def test_ogiltig_kolumnrattighet_stoppas(self, columns):
+        with pytest.raises(ValueError):
+            replace(AKTUARIE, columns=columns).statements()
 
 
 # --- resultatscheman och uppdragsmallar ---------------------------------------------------------------

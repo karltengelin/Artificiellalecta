@@ -70,6 +70,15 @@ def test_small_cells_missing_paid_date_and_complete_zero_are_distinct(company, i
     assert result.paid_state == "failed" and result.paid_sek is None
 
 
+def test_agents_read_the_same_metrics_but_no_arbitrary_population(company):
+    # OC-3a val C: AGENT-läsning med samma definitioner och småcellsskydd som för människan
+    agent = OperationContext(actor=Actor.agent("actuary_agent", team="aktuarie"))
+    assert company.execute("get_company_metrics", agent, {"month": "2025-11-01"}).output.model_dump(
+        exclude={"read_at"}) == metric(company, "2025-11-01").model_dump(exclude={"read_at"})
+    with pytest.raises(InvalidInputError):
+        company.execute("get_company_metrics", agent, {"month": "2025-11-01", "population": "all"})
+
+
 def test_metrics_reject_arbitrary_population_and_old_period(company):
     with pytest.raises(InvalidInputError):
         metric(company, "2024-01-01")

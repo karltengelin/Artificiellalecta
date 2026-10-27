@@ -245,7 +245,7 @@ Befintliga skillen `calculate_itp1_premium` är ren beräkning (`compute`, ingen
 
 **Byggt i 3c-1 (B-039):** `delegering` med `delegate_to_team`, monterad på compliance. Barnet får inga egna delegeringsmål i första leveransen.
 
-**Byggt i Fas 3c 3c-T (B-035):** `regelverk`, `dokument` och `bestand` finns i `src/agents/ecosystem.yaml`, monterade på teamen `compliance` och `aktuarie` (`bestand` bara på `aktuarie`). Avvikelser från tabellen: `bestand` har sidoeffekten `read`, eftersom `estimate_parameter_change_impact` är en läsoperation. `dokument` skriver bara utkast i körningens egen arbetsyta. `regelverk` har även `get_product_parameters`.
+**Byggt i Fas 3c 3c-T (B-035):** `regelverk`, `dokument` och `bestand` finns i `src/agents/ecosystem.yaml`, monterade på teamen `compliance` och `aktuarie` (`bestand` bara på `aktuarie`). Avvikelser från tabellen: `bestand` har sidoeffekten `read`, eftersom `estimate_parameter_change_impact` är en läsoperation. `dokument` skriver bara utkast i körningens egen arbetsyta. `regelverk` har även `get_product_parameters`. Sedan OC-3a (2026-10-27) har `bestand` även `get_company_metrics` utan mandat ([designstoppet](fragekedja_beslutsforslag.md) val C).
 
 `bestand` ger aggregerade svar för löpande analys och konsekvensbedömning utan att någon agent behöver personuppgifter, och är samma förmåga som BI-delprojektet (2) behöver. En regeländringsdemonstration kan använda den för beståndsinsikt.
 

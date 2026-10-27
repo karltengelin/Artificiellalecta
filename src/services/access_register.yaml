@@ -30,7 +30,7 @@ operations:
   # agenter ser inte kön eller loggen (dataminimering, B-006) – kan öppnas genom en ändring här.
   list_approval_requests: HUMAN_ONLY   # förslag med indata och motivering, personuppgifter (loggas)
   count_approval_requests: HUMAN_ONLY  # antal per status, inga personuppgifter
-  get_company_metrics: HUMAN_ONLY     # OC-1: granskade ledningsaggregat; öppnar inget nytt agentmandat
+  get_company_metrics: AGENT          # ledningsaggregat med småcellsskydd, utan personuppgifter (OC-3a val C)
   get_operation_events: HUMAN_ONLY     # händelseloggen, personuppgifter (loggas)
 
   # Skrivningar (Fas 1f T3). PR-ITP1 v1.0 är infört (B-031) men gäller först från 2026-11-01;

@@ -11,6 +11,7 @@ from testing.selection import (
     ROOT,
     SelectionError,
     changed_plan,
+    env_file,
     full_plan,
     git_changes,
     load_catalog,
@@ -101,7 +102,9 @@ def main(argv: list[str] | None = None) -> int:
             env.update(dict.fromkeys((*POSTGRES_ENV, POSTGRES_OPT_IN), ""))
         else:
             from dotenv import dotenv_values
-            env = {**{k: v for k, v in dotenv_values(ROOT / ".env").items() if v is not None}, **env}
+            found = env_file(ROOT)
+            values = dotenv_values(found) if found else {}
+            env = {**{k: v for k, v in values.items() if v is not None}, **env}
             env[POSTGRES_OPT_IN] = "1"
             # De berörda Postgres-proven körs även om deras fil inte ingår i de valda grupperna.
             tests |= {selector.split("::")[0] for selector in plan.postgres}

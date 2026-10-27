@@ -55,6 +55,11 @@ class Plan:
     postgres: tuple[str, ...] = ()  # Postgres-prov som ändringen berör; körs bara med --postgres
 
 
+def env_file(root: Path = ROOT) -> Path | None:
+    """Närmaste .env i roten eller uppåt – som load_dotenv. En worktree delar huvudkatalogens fil."""
+    return next((d / ".env" for d in (root, *root.parents) if (d / ".env").is_file()), None)
+
+
 def relative_path(value: str) -> str:
     value = value.replace("\\", "/")
     path = PurePosixPath(value)

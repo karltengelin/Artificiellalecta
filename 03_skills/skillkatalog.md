@@ -26,6 +26,7 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 | `delegate_to_team` | `delegering` | harness `delegate_to_team` | read | Nej | – (körpolicyns delegeringsmål och uppdragets `delegation_targets`) | compliance_agent (Compliance-agent) |
 | `estimate_parameter_change_impact` | `bestand` | `estimate_parameter_change_impact` | read | Nej | AGENT, kräver godkänt parameterförslag | actuary_agent (Aktuarieagent) |
 | `get_case` | `kunddata` | `get_case` | read | Ja | AGENT | case_handler (Handläggaragent) |
+| `get_company_metrics` | `bestand` | `get_company_metrics` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
 | `get_insured_overview` | `kunddata` | `get_insured_overview` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_premium_history` | `kunddata` | `get_premium_history` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_product_parameters` | `regelverk` | `get_product_parameters` | read | Nej | AGENT | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
@@ -36,7 +37,7 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 | `set_policy_paid_up` | `kunddata` | `set_policy_paid_up` | write | Ja | APPROVAL | – |
 | `write_draft` | `dokument` | gateway `write_draft` | write | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 
-Operationer utan poddmappning – stängda för alla agenter: `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_company_metrics`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `register_employer`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
+Operationer utan poddmappning – stängda för alla agenter: `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `register_employer`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
 <!-- list_skills.py: slut -->
 
 ## Planerade skills (ur ATT_GORA)

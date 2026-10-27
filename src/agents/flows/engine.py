@@ -175,11 +175,13 @@ class FlowEngine:
         with self._session_factory() as s:
             return self._view(*load(s, flow_id))
 
-    def list(self, status: str | None = None) -> list[FlowView]:
+    def list(self, status: str | None = None, *, flow_types: Iterable[str] | None = None) -> list[FlowView]:
         with self._session_factory() as s:
             query = select(Flow.flow_id).order_by(Flow.flow_id.desc())
             if status is not None:
                 query = query.where(Flow.status == status)
+            if flow_types is not None:
+                query = query.where(Flow.flow_type.in_(tuple(flow_types)))
             return [self._view(*load(s, flow_id)) for flow_id in s.scalars(query)]
 
     # --- start ------------------------------------------------------------------------------------
@@ -302,6 +304,14 @@ class FlowEngine:
     def _record_system(
         self, s, flow: Flow, steps: list[FlowStep], row: FlowStep, outcome: SystemOutcome, version: int, actor: Actor
     ) -> None:
+        if outcome.error is not None:
+            row.status = "failed"
+            row.finished_at = self._now()
+            row.result = outcome.result
+            row.error = outcome.error[:500]
+            bump(s, flow, version, status="failed", finished_at=self._now(),
+                 note=f"Steget '{row.step_key}' misslyckades – starta ett nytt flöde")
+            return
         if outcome.approval_id is not None:
             row.status = "waiting"
             row.approval_id = outcome.approval_id

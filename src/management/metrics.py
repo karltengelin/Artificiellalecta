@@ -127,3 +127,54 @@ def observation(metric_id: str, *, environment_id: str, dataset_ref: str, now: d
     )
     fingerprint = hashlib.sha256(result.model_dump_json().encode()).hexdigest()
     return result.model_copy(update={"observation_id": fingerprint})
+
+
+#: Ledningsaggregatets två mått (get_company_metrics, datakontrakt P2-FRAGA-001)
+COMPANY_METRICS = ("insured_registered_count", "premium_paid_recorded_sek")
+PAID_NOTES = {
+    "failed": "Underlaget innehåller paid utan giltigt betaldatum. Ingen summa visas.",
+    "suppressed": "Färre än tio personer i underlaget. Beloppet döljs.",
+    "available": "Betalmarkeringar, inte bankavstämt kassainflöde. Rättelser ingår, avgifter exkluderas.",
+}
+READ_FAILED_NOTE = "Vald datakälla kunde inte läsas. Ingen annan källa används."
+
+
+def company_observations(data, *, environment_id: str, dataset_ref: str, period: tuple[date, date],
+                         today: date, now: datetime, missing_note: str = READ_FAILED_NOTE) -> list[MetricObservation]:
+    """Observationerna för get_company_metrics-resultatet `data` (dict eller modell) – eller None utan läsning.
+
+    Samma översättning för centralen och fråge-/rapportkedjan (OC-3a), enligt datakontraktet §4:
+    undertryckt och underkänt blir aldrig noll, och ett läsfel ger `missing` utan källbevis.
+    """
+    if data is None:
+        return [observation(
+            key, environment_id=environment_id, dataset_ref=dataset_ref, now=now,
+            as_of_date=today if key == "insured_registered_count" else None,
+            period=period if key != "insured_registered_count" else None,
+            availability="missing", quality="unknown", note=missing_note,
+        ) for key in COMPANY_METRICS]
+    get = data.get if isinstance(data, dict) else (lambda k: getattr(data, k))
+    read_at = get("read_at")
+    read_at = datetime.fromisoformat(read_at) if isinstance(read_at, str) else read_at
+    as_of = get("as_of_date")
+    as_of = date.fromisoformat(as_of) if isinstance(as_of, str) else as_of
+    paid = get("paid_sek")
+    paid = Decimal(str(paid)) if paid is not None else None
+    suppressed, state = get("insured_suppressed"), get("paid_state")
+    reference = f"service:get_company_metrics:{read_at.isoformat()}"
+    return [
+        observation(
+            "insured_registered_count", environment_id=environment_id, dataset_ref=dataset_ref,
+            now=read_at, as_of_date=as_of, value=get("insured_count"),
+            availability="suppressed" if suppressed else "available", quality="verified",
+            note="Små persongrupper döljs." if suppressed else "Alla registrerade statusar vid läsningen. Ingen historisk beståndsserie.",
+            evidence_refs=(reference,),
+        ),
+        observation(
+            "premium_paid_recorded_sek", environment_id=environment_id, dataset_ref=dataset_ref,
+            now=read_at, period=period, value=paid,
+            availability="missing" if state == "failed" else state,
+            quality="failed" if state == "failed" else "provisional",
+            note=PAID_NOTES[state], evidence_refs=(reference,),
+        ),
+    ]

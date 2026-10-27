@@ -77,10 +77,15 @@ class ManualStep:
 
 @dataclass(frozen=True)
 class SystemOutcome:
-    """Resultatet av ett systemsteg. Med `approval_id` väntar steget på godkännandekön."""
+    """Resultatet av ett systemsteg. Med `approval_id` väntar steget på godkännandekön.
+
+    `error` är ett kontrollerat misslyckande med känt utfall (t.ex. en export som inte gick att
+    skapa och inte har skrivit något): steget och flödet blir `failed`, inte `reconciliation_required`.
+    """
 
     result: dict[str, Any]
     approval_id: str | None = None
+    error: str | None = None
 
 
 @dataclass(frozen=True)

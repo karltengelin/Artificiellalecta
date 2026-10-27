@@ -110,7 +110,17 @@ def test_forkontrollen_godkanner_rollen_och_rattigheterna_ar_exakta(db):
         **{t: ["SELECT"] for t in AKTUARIE.select},
         "operation_events": ["INSERT"],
     }
-    assert columns == {f"operation_events.{c}": ["SELECT"] for c in RETURNING_COLUMNS}
+    assert columns == {
+        **{f"operation_events.{c}": ["SELECT"] for c in RETURNING_COLUMNS},
+        **{f"{t}.{c}": ["SELECT"] for t, cols in AKTUARIE.columns for c in cols},
+    }
+
+
+def test_ledningsaggregatet_med_aktuariens_roll(db):
+    """OC-3a val D: kolumnrätterna räcker för get_company_metrics, utan lön eller beräkningsunderlag."""
+    out = actuary_service(db).execute("get_company_metrics", ACTUARY, {"month": "2026-09-01"}).output
+    assert out.paid_state in {"available", "suppressed"}
+    assert out.insured_count is not None and out.insured_count >= 10
 
 
 def test_bestandsinsikten_med_aktuariens_roll(db):
@@ -163,6 +173,9 @@ def test_aktuarien_kan_inte_lagga_forslag_i_kon(db):
     [
         "SELECT * FROM salary_reports",
         "SELECT * FROM premium_transactions",
+        "SELECT pensionable_salary_sek FROM premium_transactions",
+        "SELECT calculation_basis FROM premium_transactions",
+        "SELECT benefit_type FROM policy_benefits",
         "SELECT * FROM employers",
         "SELECT * FROM cases",
         "SELECT * FROM policy_benefits",

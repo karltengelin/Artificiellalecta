@@ -90,7 +90,8 @@ operatörens godkända dokument- och prioriteringsarbete 2026-10-27.
 
 ## Nästa bygguppdrag att förbereda: beståndsfråga till granskad rapport
 
-**Planeringsprioritet godkänd 2026-10-27. Implementation är inte startad.**
+**Planeringsprioritet godkänd 2026-10-27; designstoppet godkänt som B-041. Harness- och
+tjänstedelen är byggd lokalt; inloggning, rendering och vyer återstår.**
 Detta avgränsar OC-3 och den del av OC-8 som behövs för ett första användbart
 arbetsförlopp, tillsammans med projekt 2 och gemensam dokumentgenerering.
 Det inför inget nytt projekt, ingen generell router och inga nya befogenheter.
@@ -125,14 +126,15 @@ den första rapportkedjan ska kunna godtas. Inga dokument skickas eller publicer
 | Del | Ansvar och startvillkor |
 |---|---|
 | Mänsklig arbetsväg | Projekt 10 avgränsar central, nödvändig teamyta, uppdragsstatus och återfinnbar leverans. Nya bolagsfrågor kräver B-038:s verifierade operatörssession, serverrättigheter och formulärskydd |
-| Mått och data | Projekt 2 preciserar dataväg, population, period, kvalitetskontroller och behörigt analysverktyg. `get_company_metrics` är i dag `HUMAN_ONLY`; det får inte exponeras för agenten genom att bara montera det |
+| Mått och data | Projekt 2 preciserar dataväg, population, period, kvalitetskontroller och behörigt analysverktyg. `get_company_metrics` är i dag `HUMAN_ONLY`. Operatören angav 2026-10-27 att den inte är känslig och godkände [designstoppets](../../02_system/fragekedja_beslutsforslag.md) val C–D: nivån `AGENT` för aktuarien med kolumnbegränsad läsrätt för rollen. Kolumnrätterna sätts i Lakebase efter operatörens OK |
 | Analys och mandat | Aktuarieteamets avgränsade uppdrag och eventuella nya läsverktyg prövas mot målmandat och körpolicy. Befintlig parametermandatbunden premieeffektanalys ger inte åtkomst till generell beståndsanalys |
 | Körning och spår | Harness återanvänds för identitet, mandat, budget och körjournal. Befintliga uppdrags-, ärende-, flödes-, körnings- och utkastreferenser behåller sina syften. Generell flerteamrouting och bakgrundskörning krävs inte för första kedjan |
 | Dokumentleverans | Kommunikation äger gemensam mall/användning och utveckling den tekniska genereringen. Avgränsa skyddad lagring, data-/resursgränser, versionsreferenser och granskningsstatus inom befintlig dokumentförmåga. Lokal PDF-export är inte i sig ett monterat agentverktyg |
 | Databricks | Verifiera vald dataväg i den faktiska miljön enligt B-029. Lakebase, BI-dashboard och Genie har skilda integrationsstatusar. Ingen tyst reserv till en annan datakälla eller nytt BI-lager |
 
 Startvillkoren konkretiseras i samma bygguppdrag innan kod påbörjas. De öppnar
-inte ett allmänt SQL-, fil- eller nätverksmandat. Befintlig FlowConsole-väg
+inte ett allmänt SQL-, fil- eller nätverksmandat. Förslaget till val och gränssnitt finns i
+[designstoppet för fråge-/rapportkedjan](../../02_system/fragekedja_beslutsforslag.md) (2026-10-27). Befintlig FlowConsole-väg
 för domänåtgärder behöver fortsatt inte vänta på OC-5:s styrfunktioner.
 
 ### Acceptansvillkor för den kommande implementationen
