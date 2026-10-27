@@ -1,5 +1,9 @@
 # Exempelrapport: agentnyttjande
 
+För presentationsmallens separata exempel med fem bildtyper, se
+[presentationsunderlaget](presentationsunderlag.md) och
+[mallens dokumentation](../presentationsmall.md).
+
 En beställd demonstration av **Digital klarhet v1.0** med utförlig rapporttext,
 tio diagram, tabeller och metodavsnitt. Allt mätunderlag är påhittat. September
 2026 är en illustrativ rapportmånad i ett tänkt moget driftläge, inte verklig drift

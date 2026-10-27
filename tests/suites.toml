@@ -47,7 +47,7 @@ dependents = ["reporting"]
 [suites.reporting]
 description = "Rapportformat och exempel; formell verksamhetsrapportering återstår"
 status = "partial"
-tests = ["tests/test_reporting_template.py", "tests/test_reporting_agent_usage_example.py"]
+tests = ["tests/test_reporting_template.py", "tests/test_reporting_agent_usage_example.py", "tests/test_reporting_presentation.py"]
 dependents = []
 
 [suites.insights]
