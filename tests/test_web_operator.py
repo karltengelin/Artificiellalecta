@@ -37,6 +37,12 @@ def test_source_failure_never_falls_back_or_leaks_connection_details(web, monkey
     assert response.status_code == 200 and "Saknas" in response.text
     assert "private-password" not in response.text
     assert "Ingen annan" in response.text
+    observations = {item.metric_id: item for item in response.context["metrics"]}
+    for key in ("insured_registered_count", "premium_paid_recorded_sek"):
+        item = observations[key]
+        assert item.availability == "missing" and item.quality == "unknown"
+        assert item.value is None and item.data_through is None and not item.evidence_refs
+        assert item.environment_id == "demo" and item.dataset_ref == "demo:current"
 
 
 def test_cost_view_renders_attempts_without_exposing_raw_log_fields(web, tmp_path):
