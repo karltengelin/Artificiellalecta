@@ -1,8 +1,9 @@
 # 3c-1 – beslutsförslag för delegering mellan team
 
-> **Datum:** 2026-10-27. **Version:** 0.1. **Status:** förslag, väntar på operatörens val.
+> **Datum:** 2026-10-27. **Version:** 0.1. **Status:** rekommendationerna A0 och A–K
+> godkända av operatören i chatten 2026-10-27, utan avvikelser, loggat som **B-039**.
 > **Omfattning:** endast Markdown. Ingen kod, databasändring, ny behörighet eller
-> ändrad körpolicy införs genom dokumentet.
+> ändrad körpolicy införs genom dokumentet; bygget följer §11.
 > **Bygger på:** B-016 och B-026 (`agentekosystem.md` §6.1), de valda startgränserna i
 > [`harness.md`](harness.md) §6.3, §10.1–10.2 och §10.4, B-037 (verksamhetsbehov styr) och
 > B-038 val M (ett team åt gången i OC-3 tills 3c-1 finns).
