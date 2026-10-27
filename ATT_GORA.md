@@ -53,7 +53,7 @@ valet och förberedelsen av nästa byggleveranser inom befintliga projekt och fa
 
 | Ordning | Nästa avgränsade resultat | Ansvar och beroenden |
 |---|---|---|
-| Närmast | Förbered första kedjan från beståndsfråga i centralen via valt team till granskad, återfinnbar rapport. Avgränsning och acceptansvillkor finns i projekt 10 | Projekt 10 samordnar OC-3 och nödvändig del av OC-8 med projekt 2, aktuarieteamet och gemensam dokumentgenerering. B-038:s identitetskrav och granskad dataåtkomst ska vara lösta före aktivering |
+| Närmast | Förbered första kedjan från beståndsfråga i centralen via valt team till granskad, återfinnbar rapport. Avgränsning och acceptansvillkor finns i projekt 10; *2026-10-27:* [designstopp](02_system/fragekedja_beslutsforslag.md) med valen A–L för operatörens ställningstagande | Projekt 10 samordnar OC-3 och nödvändig del av OC-8 med projekt 2, aktuarieteamet och gemensam dokumentgenerering. B-038:s identitetskrav och granskad dataåtkomst ska vara lösta före aktivering |
 | Kommande verksamhetsuppdrag | Avgränsa paket A: löneunderlag → premie/faktura → mottagen betalning med avstämning och tydligt underlag till kapital/garanti och ekonomi | Projekt 1/4/6, kassaflödesgräns mot 5; använd V-01–03 och avstäm kontrakt före kod |
 | Tidig aktuariell förberedelse | Ta fram värderings- och förklaringskontrakt för första FTA-leveransen, med kvarstående metodval och datakrav | Projekt 6 med aktuarie, ekonomi, kapital och projekt 2; V-11/12. Produktens garantivärde ersätter inte en separat FTA-grund |
 
