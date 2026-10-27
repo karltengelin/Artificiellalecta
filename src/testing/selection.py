@@ -6,7 +6,7 @@ import ast
 import fnmatch
 import subprocess
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +32,7 @@ class Rule:
     suites: tuple[str, ...]
     full: bool
     documentation: bool
+    postgres: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,7 @@ class Plan:
     tests: tuple[str, ...]
     reasons: tuple[str, ...]
     full: bool = False
+    postgres: tuple[str, ...] = ()  # Postgres-prov som ändringen berör; körs bara med --postgres
 
 
 def relative_path(value: str) -> str:
@@ -75,10 +77,11 @@ def load_catalog(root: Path = ROOT) -> Catalog:
         markers = {name: tuple(paths) for name, paths in raw["markers"].items()}
         rules = []
         for row in raw["rules"]:
-            if set(row) - {"paths", "suites", "full", "documentation"}:
+            if set(row) - {"paths", "suites", "full", "documentation", "postgres"}:
                 raise SelectionError("Okänt fält i ändringsregel")
             rules.append(Rule(tuple(row["paths"]), tuple(row.get("suites", ())),
-                              row.get("full", False), row.get("documentation", False)))
+                              row.get("full", False), row.get("documentation", False),
+                              tuple(row.get("postgres", ()))))
         catalog = Catalog(suites, markers, tuple(rules))
         validate_catalog(catalog, root)
         return catalog
@@ -122,9 +125,15 @@ def validate_catalog(catalog: Catalog, root: Path) -> None:
                 if found is None:
                     raise SelectionError(f"Testegenskap pekar på okänt test: {selector}")
                 scope = found.body
+    postgres = catalog.markers.get("postgres", ())
     for rule in catalog.rules:
-        if not rule.paths or sum((bool(rule.suites), rule.full, rule.documentation)) != 1:
-            raise SelectionError("Varje ändringsregel ska välja grupper, hela sviten eller dokumentation")
+        kinds = sum((bool(rule.suites), rule.full, rule.documentation))
+        if not rule.paths or kinds != (0 if rule.postgres else 1):
+            raise SelectionError("Varje ändringsregel ska välja grupper, hela sviten, dokumentation "
+                                 "eller enbart Postgres-prov")
+        for selector in rule.postgres:
+            if not any(marker_matches(selector, marked) for marked in postgres):
+                raise SelectionError(f"Postgres-regel pekar på prov utan markören postgres: {selector}")
         for pattern in rule.paths:
             relative_path(pattern)
         if any(name not in catalog.suites for name in rule.suites):
@@ -132,6 +141,11 @@ def validate_catalog(catalog: Catalog, root: Path) -> None:
     # Några testmoduler används också som gemensamma hjälpare. De kan inte väljas isolerat.
     for path in catalog.tests:
         tree = ast.parse((root / path).read_text(encoding="utf-8"))
+        # En fil som skapar scheman i testdatabasen ska ha markören, annars körs den utan aktivt val.
+        names = {getattr(node, "id", None) or getattr(node, "name", None) for node in ast.walk(tree)
+                 if isinstance(node, (ast.Name, ast.alias, ast.FunctionDef))}
+        if "isolated_schema" in names and not any(marked.split("::")[0] == path for marked in postgres):
+            raise SelectionError(f"{path} använder isolated_schema men saknar markören postgres")
         imports = [node.module for node in ast.walk(tree) if isinstance(node, ast.ImportFrom) and node.module]
         imports += [alias.name for node in ast.walk(tree) if isinstance(node, ast.Import) for alias in node.names]
         for module in imports:
@@ -176,9 +190,17 @@ def changed_plan(catalog: Catalog, paths: list[str]) -> Plan:
     names: set[str] = set()
     direct: set[str] = set()
     reasons: list[str] = []
+    postgres: set[str] = set()
     broad = False
     for path in sorted({relative_path(p) for p in paths}):
         matched = [r for r in catalog.rules if any(fnmatch.fnmatchcase(path, p) for p in r.paths)]
+        # Postgres-regler väljer inga grupper; de pekar ut vilka Postgres-prov ändringen berör.
+        touched = {s for r in matched for s in r.postgres}
+        touched |= {s for s in catalog.markers.get("postgres", ()) if s.split("::")[0] == path}
+        if touched:
+            postgres |= touched
+            reasons.append(f"{path}: berör Postgres-prov")
+        matched = [r for r in matched if not r.postgres]
         if path in catalog.tests:
             direct.add(path)
             reasons.append(f"{path}: ändrad testfil väljs direkt")
@@ -198,11 +220,12 @@ def changed_plan(catalog: Catalog, paths: list[str]) -> Plan:
         # En okänd fil får inte dölja att en samtidigt berörd målgrupp helt saknar tester.
         if names:
             suite_plan(catalog, sorted(names), dependents=True)
-        return full_plan(catalog, tuple(reasons))
+        return replace(full_plan(catalog, tuple(reasons)), postgres=tuple(sorted(postgres)))
     plan = suite_plan(catalog, sorted(names), dependents=True)
     if plan.suites:
         reasons.append("Efter beroenden: " + ", ".join(plan.suites))
-    return Plan(plan.suites, tuple(sorted(set(plan.tests) | direct)), tuple(reasons))
+    return Plan(plan.suites, tuple(sorted(set(plan.tests) | direct)), tuple(reasons),
+                postgres=tuple(sorted(postgres)))
 
 
 def git_changes(root: Path, base: str) -> list[str]:

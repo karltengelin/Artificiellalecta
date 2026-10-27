@@ -8,6 +8,44 @@
 
 ## Beslut
 
+### B-040 | 2026-10-27 | Postgres-prov körs efter aktivt val och pekas ut per ändring
+
+**Beslut:** Operatören godkände i chatten 2026-10-27 förslagen B–D efter mätningen av
+testsviten: ”Ja, genomför B–D enligt förslaget och formulera beslutsposten för godkännande.”
+
+1. **Aktivt val.** Prov med markören `postgres` körs bara när `RUN_POSTGRES_TESTS=1` är satt
+   i skalet eller med `run_tests.py --postgres`. Anslutningsadresser i `.env` räcker inte,
+   och valet får inte ligga i `.env`. Det gäller också när pytest körs direkt.
+2. **Ändringsstyrt urval.** Postgres-regler i `tests/suites.toml` pekar ut vilka Postgres-prov
+   en ändring berör: migreringar och modeller, tjänstelagrets transaktioner och låsning,
+   databasroller och åtkomstregister, demobeståndet och testfiler med Postgres-prov.
+   Körverktyget varnar när berörda prov inte körts. De ska köras med `--postgres` före leverans.
+3. **Bred kontroll.** `--all --postgres` körs före migrering eller seed mot Lakebase och som
+   regelbunden kontroll.
+4. **Klassificering.** En testfil som skapar scheman i testdatabasen ska ha markören
+   `postgres`, och katalogkontrollen stoppar annars.
+
+**Motivering:** Mätningen 2026-10-27 visade att Postgres-proven mot den isolerade
+testdatabasen tog 496 av sviten 614 sekunder. Det berodde på nätverksrundor för schema,
+DDL och seed, inte på antalet tester. De körde varje gång eftersom adresserna finns i
+`.env`, också för ändringar som inte rör databasen. Proven behövs för radlås, roller och
+migreringar, så de behålls men körs när de är relevanta.
+
+**Övervägda alternativ:** Att ta bort eller slå ihop Postgres-prov, att bygga fixturer en
+gång per session, att köra parallellt med pytest-xdist och att låta verktyget köra berörda
+Postgres-prov automatiskt. Det sista valdes bort eftersom körningar mot Lakebase-projektet
+samordnas enligt AGENTS.md §4.5.
+
+**Konsekvenser:**
+- Den lokala sviten tar cirka 2 minuter i stället för cirka 10.
+- Ett grönt lokalt resultat bevisar inte Postgres-beteende. Redovisningen ska skilja
+  bortvalda Postgres-prov från godkända, som teststrategin redan kräver.
+- Ingen databasändring, ny roll eller extern tjänst.
+
+**Preciserar:** `02_system/teststrategi.md` (infört 2026-10-25) och AGENTS.md §4.4 och §4.5.
+
+---
+
 ### B-039 | 2026-10-27 | 3c-1: delegering mellan team
 
 **Beslut:** Operatören godkände rekommendationerna A0 och A–K i
