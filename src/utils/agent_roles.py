@@ -29,14 +29,24 @@ class RoleGrants:
     role: str
     select: tuple[str, ...]
     insert: tuple[str, ...]  # får även SELECT på RETURNING_COLUMNS
+    # SELECT på enbart dessa kolumner: ((tabell, (kolumn, …)), …). Övriga kolumner förblir stängda.
+    columns: tuple[tuple[str, tuple[str, ...]], ...] = ()
+
+    @property
+    def tables(self) -> list[str]:
+        return sorted(set(self.select) | set(self.insert) | {t for t, _ in self.columns})
 
     def statements(self, schema: str = "public") -> list[str]:
         """SQL som ger rollen exakt dessa rättigheter i schemat (idempotent)."""
         _check_identifier(self.role)
         _check_identifier(schema)
-        tables = sorted(set(self.select) | set(self.insert))
-        for table in tables:
+        for table in self.tables:
             _check_identifier(table)
+        for table, cols in self.columns:
+            if table in self.select or not cols:
+                raise ValueError(f"Kolumnrättighet för {table}: tabellen har redan full SELECT eller saknar kolumner")
+            for column in cols:
+                _check_identifier(column)
         q = f'"{schema}"'
         # REVOKE på tabellnivå tar även bort kolumnrättigheter i Postgres
         out = [
@@ -47,6 +57,9 @@ class RoleGrants:
         out += [f'GRANT INSERT ON {q}."{t}" TO "{self.role}"' for t in self.insert]
         columns = ", ".join(f'"{c}"' for c in RETURNING_COLUMNS)
         out += [f'GRANT SELECT ({columns}) ON {q}."{t}" TO "{self.role}"' for t in self.insert]
+        for table, cols in self.columns:
+            listed = ", ".join(f'"{c}"' for c in cols)
+            out.append(f'GRANT SELECT ({listed}) ON {q}."{table}" TO "{self.role}"')
         return out
 
 
@@ -69,7 +82,10 @@ FORSAKRING = RoleGrants(
 
 #: Aktuarieteamet (B-035 val I): beståndsinsikten läser individrader i betrodd kod och lämnar
 #: bara aggregat. Bara tabellerna estimate_parameter_change_impact och get_product_parameters
-#: läser – inga löner, premier, ärenden eller arbetsgivare. Inga förslag: ingen INSERT på kön.
+#: läser – inga löner, ärenden eller arbetsgivare. Inga förslag: ingen INSERT på kön.
+#: Ledningsaggregatet get_company_metrics (OC-3a val D) får bara de kolumner det summerar:
+#: förmånens koppling och premieradens typ, status, betaldatum och belopp – inte pensionsgrundande
+#: lön eller beräkningsunderlag.
 AKTUARIE = RoleGrants(
     role="agent_aktuarie",
     select=(
@@ -80,6 +96,10 @@ AKTUARIE = RoleGrants(
         "product_parameters",
     ),
     insert=("operation_events",),
+    columns=(
+        ("policy_benefits", ("id", "policy_id")),
+        ("premium_transactions", ("benefit_id", "transaction_type", "status", "paid_date", "amount_sek")),
+    ),
 )
 
 #: Compliance-teamet: produktparametrarna (get_product_parameters) och basbeloppen för
@@ -118,7 +138,7 @@ def inspect_role(conn: Connection, grants: RoleGrants, schema: str = "public") -
         text("SELECT tablename, tableowner FROM pg_tables WHERE schemaname = :s"), {"s": schema}
     ).all())
     me = conn.execute(text("SELECT current_user")).scalar_one()
-    for table in sorted(set(grants.select) | set(grants.insert)):
+    for table in grants.tables:
         if table not in owners:
             problems.append(f"Tabellen {schema}.{table} finns inte")
         elif owners[table] != me:

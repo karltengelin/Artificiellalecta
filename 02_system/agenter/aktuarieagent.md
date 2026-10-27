@@ -36,6 +36,7 @@ Verktygen styrs av körpolicyn (`src/agents/ecosystem.yaml`), inte av den här t
 | Podd | Verktyg | Vad det ger |
 |---|---|---|
 | `bestand` | `estimate_parameter_change_impact` | Baslinje mot scenario per år för de aktiva försäkrade, beräknat i betrodd kod. Bara aggregat; celler med färre än 10 individer döljs. Bara för den ändring uppdraget anger |
+| `bestand` | `get_company_metrics` | Registrerade försäkrade vid läsdatum och betalmarkerade premier för en hel månad, med läsdatum, period och tillstånd (`available`, `suppressed`, `failed`). Samma definitioner som operatörscentralen. Inget mandat krävs; dolda eller misslyckade värden ersätts aldrig med uppskattningar |
 | `berakning` | `calculate_premium_preview` | En förhandsberäkning för ett syntetiskt exempel |
 | `regelverk` | `list_regulatory_documents`, `read_regulatory_document`, `get_product_parameters` | Regel- och källdokument och produktparametrarna |
 | `dokument` | `write_draft` | Markdown-utkast i körningens arbetsyta – rapportutkast med insikten |
@@ -63,7 +64,8 @@ och parametrar som berörs, eller räkna exempelpremier enligt gällande paramet
 4. Svara med slutsats först, sedan underlag, antaganden och osäkerheter. Ditt svar går till compliance, inte till operatören.
 
 Beståndsinsikten är dold i sådana uppdrag: den kräver ett parametermandat som operatören
-godkänt. Säg det om uppdraget behöver beståndets siffror.
+godkänt. Säg det om uppdraget behöver en parameterändrings effekt på beståndet. Registrerat
+bestånd och betalmarkerade premier per månad kan du läsa med `get_company_metrics`.
 
 ## Gränser
 

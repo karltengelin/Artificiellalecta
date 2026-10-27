@@ -1,8 +1,9 @@
 # OC-3a – beslutsförslag för första fråge- och rapportkedjan
 
-> **Datum:** 2026-10-27. **Version:** 0.1. **Status:** förslag för operatörens ställningstagande.
+> **Datum:** 2026-10-27. **Version:** 0.2. **Status:** valen A–L godkända av operatören i chatten
+> 2026-10-27 (”godkänner alla A-L”), utan avvikelser. Beslutsposten är föreslagen men ännu inte loggad.
 > **Omfattning:** endast Markdown. Ingen kod, databasändring, behörighet eller körpolicy
-> ändras genom dokumentet; bygget följer §11 efter godkännande.
+> ändras genom dokumentet; bygget följer §11.
 > **Bygger på:** [projekt 10:s avgränsning](../projekt/10_operatörscentral/PROJEKTPLAN.md)
 > ("Nästa bygguppdrag att förbereda"), [riktningsgranskningen](riktningsgranskning_2026-10-27.md),
 > B-038 med [OC-0-underlaget](operatörscentral_beslutsforslag.md) §4.4, §6 och §7, B-035/B-036

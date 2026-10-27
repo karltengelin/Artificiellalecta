@@ -11,7 +11,7 @@ from sqlalchemy import select
 from management.telemetry import read_telemetry
 from models import InsuredPerson, Policy, PolicyBenefit, PremiumTransaction
 from services import Actor, MemoryEventLog, OperationContext, ServiceLayer
-from services.errors import AccessDeniedError, InvalidInputError
+from services.errors import InvalidInputError
 from services.operations import common
 
 TODAY = date(2026, 10, 26)
@@ -66,9 +66,13 @@ def test_small_cells_missing_paid_date_and_complete_zero_are_distinct(company, i
     assert result.paid_state == "failed" and result.paid_sek is None
 
 
-def test_metrics_do_not_open_an_agent_tool_or_arbitrary_population(company):
-    with pytest.raises(AccessDeniedError):
-        company.execute("get_company_metrics", OperationContext(actor=Actor.agent("test")), {"month": "2025-11-01"})
+def test_agents_read_the_same_metrics_but_no_arbitrary_population(company):
+    # OC-3a val C: AGENT-läsning med samma definitioner och småcellsskydd som för människan
+    agent = OperationContext(actor=Actor.agent("actuary_agent", team="aktuarie"))
+    assert company.execute("get_company_metrics", agent, {"month": "2025-11-01"}).output.model_dump(
+        exclude={"read_at"}) == metric(company, "2025-11-01").model_dump(exclude={"read_at"})
+    with pytest.raises(InvalidInputError):
+        company.execute("get_company_metrics", agent, {"month": "2025-11-01", "population": "all"})
     with pytest.raises(InvalidInputError):
         metric(company, "2024-01-01")
     with pytest.raises(InvalidInputError):
