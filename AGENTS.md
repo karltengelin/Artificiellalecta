@@ -87,3 +87,10 @@ görs också av agenten själv, men bara efter operatörens explicita muntliga O
 mergen (t.ex. "mergea det"). Operatören behöver aldrig skriva eller klistra in `git`-kommandon själv.
 Innan en merge: kontrollera att branchen är uppdaterad mot senaste `main` (§4.4) och att inget annat
 pågående arbete i en annan agents branch berör samma filer på ett sätt som inte redan är känt.
+
+### 4.7 Tester
+Följ `02_system/teststrategi.md`. Kör tester med `scripts/testing/run_tests.py`, inte `pytest` direkt:
+`--changed` under arbetet, berörda grupper med beroenden före leverans och hela den lokala sviten
+inför integration när koden ändrats. När verktyget varnar att ändringen berör Postgres-prov körs de med
+`--postgres` före leverans (B-040). En helkörning upprepas inte på samma redan verifierade kodläge.
+Redovisa urval och resultat, och skilj bortvalda eller överhoppade prov från godkända.
