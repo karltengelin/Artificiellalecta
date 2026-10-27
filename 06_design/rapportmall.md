@@ -14,9 +14,10 @@ Rapportens fakta, beräkningar, diagramserier och redaktionella kolumnbredder
 hur den används för en fullständig rapport. Dess extra seriefärger hör till
 exemplet och utökar inte den gemensamma paletten.
 
-Detta är lokal rapportgenerering. Rapportexport genom dokumentgatewayen, agentverktyg
-för generering, kundbrev, presentationer och en generell Markdown-konverterare
-återstår. Extern inlämning eller publicering följer ordinarie godkännanden.
+Detta är lokal rapportgenerering. En separat [16:9-presentationsmall](presentationsmall.md)
+återanvänder samma typsnitt, tokenfil och diagramstil. Rapportexport genom
+dokumentgatewayen, agentverktyg för generering, kundbrev och en generell
+Markdown-konverterare återstår. Extern inlämning eller publicering följer ordinarie godkännanden.
 
 ## Beroenden och typsnitt
 
