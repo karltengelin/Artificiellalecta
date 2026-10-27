@@ -95,3 +95,10 @@ OC-1 och en smal OC-2 finns nu som lokal läsvy på `/central`, med bolagsmått,
 team, agentkostnader och underlag. Saknade värderingsmotorer och loggkällor
 visas uttryckligt som luckor. [Drift och begränsningar](02_system/operatörscentral_drift.md).
 Ingen modell-/budgetstyrning eller driftsatt Databricks-integration ingår.
+
+[Operatörsinloggning för bolagsfrågor](02_system/operator_inloggning.md) finns
+som lokal grund enligt godkända OC-3a val H–I (2026-10-27): Argon2id,
+serverlagrad session, sessionsbundet formulärskydd och utloggning. Operatören
+sätter själv lösenfrasen med `python scripts/web/set_operator_password.py`.
+Uppdragsvy och rapportkedja är separata byggdelar; den befintliga handläggningen
+och dess flöden kräver fortsatt inte denna session.

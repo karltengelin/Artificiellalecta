@@ -21,6 +21,7 @@ from starlette.concurrency import run_in_threadpool
 from services import Actor, OperationContext, ServiceLayer
 from web import presenters
 from web.config import SWITCHABLE_DATABASES, WebSettings
+from web.operator_auth import current_session
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -91,6 +92,7 @@ def render(
 ):
     """push_url: adressen HTMX lägger i historiken – en sida som går att ladda om, inte formulärets POST-adress."""
     pending = pending_approvals(request)
+    operator = current_session(request)
     base = {
         "settings": settings(request),
         "csrf_token": request.app.state.csrf_token,
@@ -99,8 +101,13 @@ def render(
         "database_available": pending is not None,
         "flows_available": getattr(request.app.state, "flow_console", None) is not None,
         "environment_choices": SWITCHABLE_DATABASES,
+        "operator_auth_enabled": request.app.state.operator_auth.enabled,
+        "operator_user": operator.operator_id if operator else None,
+        "operator_csrf": operator.csrf_token if operator and operator.operator_id else None,
+        "page_referrer_policy": "same-origin" if operator and operator.operator_id else "no-referrer",
     }
     response = templates.TemplateResponse(request, template, {**base, **(context or {})}, status_code=status_code)
+    response.headers["Referrer-Policy"] = base["page_referrer_policy"]
     if push_url:
         response.headers["HX-Push-Url"] = push_url
     return response

@@ -22,6 +22,8 @@ dependencies = [
     "uvicorn>=0.30",
     "jinja2>=3.1",
     "python-multipart>=0.0.9",
+    # Lokal operatörsinloggning (OC-3a val H); lösenfraser lagras endast som Argon2id-hash.
+    "argon2-cffi>=25.1,<26",
     # Rapportmall och vektordiagram i Digital klarhet (src/reporting/).
     "reportlab>=4.4,<5",
 ]
