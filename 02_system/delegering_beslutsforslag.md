@@ -214,8 +214,10 @@ utan ändring, och `RunResult.cost_usd` eller rotsummor adderas inte (B-038 §4.
 
 Par 2 (forsakring → compliance) och fortsättning genom kedjan är egna, senare leveranser.
 
-**Genomfört 2026-10-27:** steg 1–5 och 7 enligt ovan; röktestet i steg 6 är förberett i
-`scripts/diagnostics/smoke_test_delegation.py` men inte kört. Avgränsningarna står i `harness.md` §10.2.
+**Genomfört 2026-10-27:** steg 1–7. Röktestet (`scripts/diagnostics/smoke_test_delegation.py --run`)
+gick igenom i demobeståndet med `claude-haiku-4-5` (0,090 USD) och `gpt-6-luna` (0,006 USD), 8 av 8
+kontroller hos båda; `svc_test` med teamens riktiga roller och deep-modellerna återstår vid behov.
+Avgränsningarna står i `harness.md` §10.2.
 
 ## 12. Förslag till beslutspost
 
