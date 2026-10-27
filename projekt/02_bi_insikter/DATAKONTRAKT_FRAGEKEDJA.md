@@ -257,11 +257,13 @@ Kört med projektets befintliga Pythonmiljö och `scripts/testing/run_tests.py`:
 |---|---|
 | `--changed --base origin/main --run` | 43 godkända, två ändrade testfiler |
 | `--suite insights --suite web --dependents --run` | 904 godkända, 76 bortvalda; 47 testfiler, 117,32 sekunder |
+| `--all --run` inför godkänd main-integration | 1 209 godkända, 78 bortvalda; 65 testfiler, 137,38 sekunder |
 
 Leveransurvalet omfattar `agents`, `insights`, `orchestration`, `services`,
 `tooling` och `web`. Postgres-proven var bortvalda med `not postgres`, inte
 godkända eller körda; ändringsplanen pekade inte ut något berört Postgres-prov.
-Ingen helkörning inför main-integration har gjorts i detta uppdrag.
+Helkörningen inför integration verifierade samma filinnehåll som datakontraktsbranchen;
+mergen mot oförändrad `origin/main` gav inga konflikter eller nya kodändringar.
 Målområden som ännu saknar tester blir inte verifierade genom urvalet.
 
 `PYTHONUTF8=1` användes för läsbar svensk utmatning och `PYTEST_ADDOPTS`
