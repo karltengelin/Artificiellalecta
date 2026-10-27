@@ -85,7 +85,78 @@ ekonomiska motorer finns; saknade mått visas som **ej beräknat**.
 bolagsöversikt med ärligt markerade dataluckor, teamstatus samt agentkostnader ur
 befintliga loggar. Därefter frågor till ett team åt gången. Automatisk
 samordning över flera team och skrivande styrning öppnas först med sina beroenden.
-Inga kalendertider eller generell omprioritering av pågående arbete är beslutade.
+Inga kalendertider är beslutade. Närmaste fortsättning preciseras nedan genom
+operatörens godkända dokument- och prioriteringsarbete 2026-10-27.
+
+## Nästa bygguppdrag att förbereda: beståndsfråga till granskad rapport
+
+**Planeringsprioritet godkänd 2026-10-27. Implementation är inte startad.**
+Detta avgränsar OC-3 och den del av OC-8 som behövs för ett första användbart
+arbetsförlopp, tillsammans med projekt 2 och gemensam dokumentgenerering.
+Det inför inget nytt projekt, ingen generell router och inga nya befogenheter.
+
+### Fråga och leverans
+
+Första avgränsningen är en källbunden beståndsöversikt:
+*Hur många försäkrade är registrerade vid läsningen, hur mycket premier är
+betalmarkerade för en vald avslutad kalendermånad och vilka begränsningar har underlaget?*
+
+Använd definitionerna `insured_registered_count` och `premium_paid_recorded_sek`
+från de gemensamma ledningsmåtten, efter projekt 2:s kontroll av dataväg och
+kvalitet. Registrerat bestånd avser läsdatum och alla statusar; det är ingen
+historisk beståndsserie. Betalmarkeringar är inte bankavstämt kassainflöde.
+Jämförelser över tid, FTA, kapitalvärdering och strategiska effektmodeller
+ingår i senare avgränsningar när motsvarande underlag finns.
+
+Arbetsförloppet ska hålla ihop fråga, ansvarigt team, underlag, körning,
+utkast, mänsklig granskning och återfinnbar leverans. Användaren ska kunna
+följa det både från centralen och i det valda teamets arbetsyta. Börja med
+aktuarieteamet som avsedd mottagare utifrån dess analysansvar; dagens profil
+är smalare och dess framtida verktygsmontering måste granskas före aktivering.
+
+Minsta leverans är en Markdownrapport med slutsats, definitioner, datum/period,
+datakälla och miljö, värden, kontroller, källreferenser och begränsningar samt
+export i den gemensamma A4-mallen. Befintlig presentationsmall ska kunna
+återanvändas när presentationsgenereringen kopplas in; den krävs inte för att
+den första rapportkedjan ska kunna godtas. Inga dokument skickas eller publiceras.
+
+### Ansvar och beroenden före byggstart
+
+| Del | Ansvar och startvillkor |
+|---|---|
+| Mänsklig arbetsväg | Projekt 10 avgränsar central, nödvändig teamyta, uppdragsstatus och återfinnbar leverans. Nya bolagsfrågor kräver B-038:s verifierade operatörssession, serverrättigheter och formulärskydd |
+| Mått och data | Projekt 2 preciserar dataväg, population, period, kvalitetskontroller och behörigt analysverktyg. `get_company_metrics` är i dag `HUMAN_ONLY`; det får inte exponeras för agenten genom att bara montera det |
+| Analys och mandat | Aktuarieteamets avgränsade uppdrag och eventuella nya läsverktyg prövas mot målmandat och körpolicy. Befintlig parametermandatbunden premieeffektanalys ger inte åtkomst till generell beståndsanalys |
+| Körning och spår | Harness återanvänds för identitet, mandat, budget och körjournal. Befintliga uppdrags-, ärende-, flödes-, körnings- och utkastreferenser behåller sina syften. Generell flerteamrouting och bakgrundskörning krävs inte för första kedjan |
+| Dokumentleverans | Kommunikation äger gemensam mall/användning och utveckling den tekniska genereringen. Avgränsa skyddad lagring, data-/resursgränser, versionsreferenser och granskningsstatus inom befintlig dokumentförmåga. Lokal PDF-export är inte i sig ett monterat agentverktyg |
+| Databricks | Verifiera vald dataväg i den faktiska miljön enligt B-029. Lakebase, BI-dashboard och Genie har skilda integrationsstatusar. Ingen tyst reserv till en annan datakälla eller nytt BI-lager |
+
+Startvillkoren konkretiseras i samma bygguppdrag innan kod påbörjas. De öppnar
+inte ett allmänt SQL-, fil- eller nätverksmandat. Befintlig FlowConsole-väg
+för domänåtgärder behöver fortsatt inte vänta på OC-5:s styrfunktioner.
+
+### Acceptansvillkor för den kommande implementationen
+
+1. En verifierad operatör kan ställa den avgränsade frågan, välja miljö och
+   tillgänglig avslutad kalendermånad samt se ansvarigt team och uppdragsreferens.
+2. Samma uppdrag går att följa från central och teamyta: pågående arbete,
+   väntan, fel, utkast och granskad leverans skiljs åt. En avslutad körning
+   klarmarkerar inte automatiskt leveransens kvalitet.
+3. Alla värden kommer från behöriga verktyg med samma definitioner som BI och
+   centralen. Läsdatum, period och källversioner framgår. Modellen räknar
+   inte ersättningsvärden för underlag som saknas eller är dolt.
+4. Rapporten kan granskas, öppnas igen och följas till uppdrag och underlag,
+   med innehålls-, mall- och designversion. Renderingen kontrolleras visuellt.
+5. Tester prövar normalfall, noll kontra saknat, småcellsskydd, nekad åtkomst,
+   fel i datakällan, fråga utanför stödet och misslyckad dokumentexport.
+   Ett korrekt avgränsat eller nekat svar kan vara ett godkänt utfall.
+6. Upprepning eller återhämtning får inte göra en gammal rapport aktuell utan
+   nytt underlag eller skapa oklara leveransversioner. Första versionens
+   begränsningar anges innan den öppnas för användning.
+
+Premie-/betalningskedjan och FTA förbereds som kommande verksamhetsuppdrag i
+projekt 1/4/6 med projekt 5 och 2 vid respektive gränssnitt. Denna plan
+startar inte flera parallella implementationer.
 
 **Flöden har tillfälligt hem i handläggar-UI:t.** Regeländringsflödet byggdes i
 3c-3 som `/floden` i handläggar-UI:t, eftersom det var det enda gränssnittet med

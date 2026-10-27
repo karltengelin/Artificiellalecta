@@ -58,6 +58,18 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 
 ## Nästa steg
 
+**Prioriteringsförtydligande 2026-10-27:** fullfölj befintlig verifiering inom
+gällande datum och mandat. Nästa samordnade verksamhetsuppdrag att avgränsa
+är paket A (V-01–03): löneunderlag → premie/faktura → mottagen betalning och
+avstämt underlag till kapital/garanti och ekonomi. Projekt 1 samordnar
+försäkringsoperationerna med projekt 4:s regler, [projekt 6:s ekonomikontrakt](../06_avdelningsfunktioner/PROJEKTPLAN.md)
+och kassaflödesgränsen mot projekt 5. Avgränsa kontrakt, ansvar och normal-/
+avvikelsefall före kod; ingen sådan implementation är startad genom dokumentuppdraget.
+
+Den närmaste fråge-/rapportkedjan i [projekt 10](../10_operatörscentral/PROJEKTPLAN.md)
+är ett separat avgränsat arbetsförlopp. Den utökar inte handläggaragentens
+ärendemandat och ersätter inte paket A:s verksamhetsmotorer.
+
 - Följdpunkterna i `ATT_GORA.md` under Fas 4:
   - anställningshistorik
   - lönehistorik

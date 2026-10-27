@@ -4,25 +4,76 @@
 
 ## Scope
 
-Bygga ut funktioner för bolagets övriga avdelningar (se "Bolagets funktionsområden",
-MASTER_CONTEXT §4), i första hand en **aktuariell modul** där agenter kan hantera premiesättning
-utifrån krav och koppla till regelverk från Finansinspektionen. Omfattar både att förstå/tolka
-regelverk och svensk lag, och att organisera låtsasbolaget (avdelningar, mandat) så det stämmer
-överens.
+Bygga gemensamma ekonomi-, värderings-, risk- och rapportunderlag för bolagets
+verksamhet. Människor och agentteam ska kunna använda samma verifierade
+beräkningar och underlag genom behöriga tjänster och teamytor.
+
+Aktuariella funktioner omfattar garanti, pension, reserv/FTA och ALM inom
+respektive beslutad grund. Ekonomifunktioner omfattar bokföring, avstämning,
+likviditet och bokslut. Rapportunderlagen samordnas med projekt 2 och den
+planerade rapporteringsfunktionen. Produktregler och tillämplighetsbedömningar
+från projekt 4 återanvänds; nya värderingsgrunder måste fastställas separat.
 
 ## Status
 
-🔲 Ej påbörjat.
+🟡 Behov kartlagda; första kontraktsarbetet preciserat genom operatörens
+godkända dokument- och prioriteringsuppdrag 2026-10-27.
+Ekonomi-/FTA-motorer och körbara ekonomi-/rapporteringsfunktioner är inte byggda.
+Aktuarieagentens befintliga profil och premieanalys hör till den tidigare
+byggda grunden och innebär inte att dessa bredare funktioner är implementerade.
 
 ## Beroenden
 
 - Delar av tolkningsarbetet överlappar projekt 4 (produktregelverk) – avstäm innan parallellt
   arbete påbörjas (jfr AGENTS.md §4.2)
+- Projekt 1 äger berörda försäkringsoperationer och projekt 5 kassaflödes-/
+  värderingsgränsen mot förvaltningen. Projekt 2 äger gemensamma analysmått;
+  projekt 10 använder underlagen i central och teamytor.
 
 ## Befintlig grund i repot
 
-- "Bolagets funktionsområden"-tabellen, `MASTER_CONTEXT.md` §4
-- `02_system/agentkarta.md` (tio agentskelett, kan redan innehålla tankar om avdelningsindelning)
+- "Bolagets funktionsområden"-tabellen, `MASTER_CONTEXT.md` §4.
+- [Aktuariell SIM-grund](../../01_domän/aktuariell_grund.md) och parameterregister.
+- [Agentkarta](../../02_system/agentkarta.md), aktuarieprofil och avgränsad
+  premieeffektanalys; ekonomi- och rapporteringsagenter är fortfarande planerade.
+- [Processöversikt](../../01_domän/processer_översikt.md), V-10–12 och paket A/B.
+
+## Nästa kontraktsarbete att förbereda
+
+### Första aktuariella värderingen och förklaringen av FTA
+
+**Planeringsprioritet godkänd 2026-10-27; metod och motor är inte beslutade
+genom detta dokument.** Ta fram ett värderings- och förklaringskontrakt som
+kan ligga till grund för ett separat avgränsat bygguppdrag.
+
+| Del av kontraktet | Vad som ska fastställas före motorbygget |
+|---|---|
+| Ändamål och ansvar | Vilken värdering rapporten avser, mottagare, aktuariellt ansvar, granskning och relation till ekonomi och rapportering |
+| Omfattning | Värderingsdatum, försäkringspopulation, åtaganden/kassaflöden och vilka fall som ingår eller ännu saknas |
+| Grund och metod | Beslutade antaganden, källor och versioner samt värderingsmetod. Produktens garantivärde `V_g`, kundkapital och FTA hålls isär |
+| Data | Underlag om bestånd, pensionsplaner, historiska garantidelar och kassaflöden samt datakvalitet, källidentitet och beroenden till paket A/B |
+| Kontroll | Oberoende kontrollfall, avstämning av ingående/utgående värden och hantering av saknade eller underkända data |
+| Förklaring | Hur förändring mellan värderingstillfällen delas upp i identifierbara orsaker, vilka känsligheter som kan beräknas och vilka osäkerheter som kvarstår |
+| Leverans | Versionerat beräkningsunderlag och granskad rapport med referenser som projekt 2 och centralen kan använda utan parallell värderingsmotor |
+
+Aktuarie samordnar värderingskontraktet med ekonomi, kapital och rapportering
+där deras underlag behövs. Det är klart som kontraktsleverans när omfattning,
+metodval, datakrav, beroenden och acceptansfall är uttryckliga och kvarstående
+ställningstaganden är utpekade. Först därefter kan motorbygget avgränsas.
+Den dokumenterade SIM-grunden får inte automatiskt behandlas som FTA-grund.
+
+### Ekonomins del av premie-/betalningsflödet
+
+Nästa samordnade verksamhetsuppdrag är paket A tillsammans med projekt 1/4
+och gränssnittet mot projekt 5. Projekt 6 preciserar ekonomiskt underlag och
+avstämningspunkter: premie/faktura, fordran, mottagen betalning, rättelse,
+delbetalning, okänd betalning och underlag till kapital/garanti.
+
+Kontraktet ska ange ägare för varje steg, referenser mellan ekonomiska och
+försäkringsmässiga händelser, vilka belopp/datum som ska stämma och hur
+dubbletter eller okänt utfall hanteras. En betalstatus i premietabellen är
+inte en bokförings- eller bankavstämningsfunktion. Första kodleveransen
+avgränsas gemensamt före start; detta dokument startar ingen implementation.
 
 ## Öppna designfrågor
 
@@ -50,6 +101,7 @@ visar saknade mått som ej beräknade och bygger inga parallella domänmotorer.
 
 ### Organisation
 
-- Ett delprojekt per avdelning, eller en gemensam modul som växer per avdelning? (Karl nämner att
-  det kan behövas ett projekt per viktig avdelning)
-- Hur mappas verkliga tjänstepensionsbolags avdelningsstruktur till det simulerade bolaget?
+- Använd B-026:s befintliga sju team och avgränsa bygguppdrag inom nuvarande
+  projektstruktur. Granskningen innebär inget nytt delprojekt per avdelning.
+- Precisera arbetsdelning, granskning och kontrollansvar i de valda kontrakten,
+  inklusive gränsen mellan aktuariellt arbete, ekonomi, rapportering och internrevision.
