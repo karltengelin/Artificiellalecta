@@ -12,6 +12,7 @@ from testing.selection import (
     ROOT,
     SelectionError,
     changed_plan,
+    env_file,
     expand_suites,
     full_plan,
     git_changes,
@@ -269,6 +270,12 @@ def test_aktivt_val_lases_ur_skalet_och_aldrig_ur_env_filen(tmp_path):
     (tmp_path / ".env").write_text("RUN_POSTGRES_TESTS=1\n", encoding="utf-8")
     with pytest.raises(pytest.UsageError, match="hör inte hemma i .env"):
         pytest_plugin.postgres_enabled({"RUN_POSTGRES_TESTS": "1"}, tmp_path)
+    # En worktree längre ned delar huvudkatalogens .env, som load_dotenv
+    worktree = tmp_path / ".claude" / "worktrees" / "wt"
+    worktree.mkdir(parents=True)
+    assert env_file(worktree) == tmp_path / ".env"
+    with pytest.raises(pytest.UsageError, match="hör inte hemma i .env"):
+        pytest_plugin.postgres_enabled({"RUN_POSTGRES_TESTS": "1"}, worktree)
 
 
 def test_git_tar_med_committat_stageat_ostageat_nytt_och_omnamning(tmp_path):

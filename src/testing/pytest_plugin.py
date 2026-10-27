@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from testing.selection import ROOT, SelectionError, load_catalog, marker_matches
+from testing.selection import ROOT, SelectionError, env_file, load_catalog, marker_matches
 
 POSTGRES_OPT_IN = "RUN_POSTGRES_TESTS"
 POSTGRES_SKIP = f"Postgres-prov körs bara med {POSTGRES_OPT_IN}=1 eller run_tests.py --postgres"
@@ -16,13 +16,13 @@ POSTGRES_SKIP = f"Postgres-prov körs bara med {POSTGRES_OPT_IN}=1 eller run_tes
 
 def postgres_enabled(environ=os.environ, root=ROOT) -> bool:
     """Det aktiva valet läses ur skalet; ett värde i .env vägras så att det inte blir standard."""
-    env_file = root / ".env"
-    if env_file.is_file():
+    found = env_file(root)
+    if found is not None:
         try:
             from dotenv import dotenv_values
         except ImportError:  # pragma: no cover
             dotenv_values = None
-        if dotenv_values is not None and POSTGRES_OPT_IN in dotenv_values(env_file):
+        if dotenv_values is not None and POSTGRES_OPT_IN in dotenv_values(found):
             raise pytest.UsageError(f"{POSTGRES_OPT_IN} hör inte hemma i .env – sätt den i skalet för en körning")
     return environ.get(POSTGRES_OPT_IN) == "1"
 
