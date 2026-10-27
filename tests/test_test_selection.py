@@ -62,6 +62,9 @@ full = true
 [[rules]]
 paths = ["README.md"]
 documentation = true
+[[rules]]
+paths = ["src/a/lock.py"]
+postgres = ["tests/test_c.py::test_pg"]
 ''', encoding="utf-8")
     return tmp_path, load_catalog(tmp_path)
 
@@ -165,6 +168,45 @@ def test_ny_testfil_kraver_klassificering(small):
         validate_catalog(catalog, root)
 
 
+def test_postgres_regel_pekar_ut_prov_utan_att_valja_grupper(small):
+    _, catalog = small
+    plan = changed_plan(catalog, ["src/a/lock.py"])
+    assert plan.suites == ("a", "b") and plan.postgres == ("tests/test_c.py::test_pg",)
+    assert "src/a/lock.py: berör Postgres-prov" in plan.reasons
+    assert changed_plan(catalog, ["src/a/core.py"]).postgres == ()
+    # En ändrad testfil med Postgres-prov berör sina egna prov.
+    assert changed_plan(catalog, ["tests/test_c.py"]).postgres == ("tests/test_c.py::test_pg",)
+
+
+def test_postgres_regel_maste_peka_pa_markerade_prov(small):
+    root, catalog = small
+    unmarked = replace(catalog.rules[-1], postgres=("tests/test_c.py::test_local",))
+    with pytest.raises(SelectionError, match="utan markören postgres"):
+        validate_catalog(replace(catalog, rules=(*catalog.rules[:-1], unmarked)), root)
+    mixed = replace(catalog.rules[-1], suites=("a",))
+    with pytest.raises(SelectionError, match="enbart Postgres-prov"):
+        validate_catalog(replace(catalog, rules=(*catalog.rules[:-1], mixed)), root)
+
+
+def test_fil_med_isolerat_schema_kraver_postgresmarkoren(small):
+    root, catalog = small
+    (root / "tests/test_b.py").write_text(
+        "from tests.test_services_postgres import isolated_schema\n", encoding="utf-8")
+    with pytest.raises(SelectionError, match="saknar markören postgres"):
+        validate_catalog(catalog, root)
+
+
+def test_repo_katalogen_pekar_ut_postgres_prov_efter_andring():
+    catalog = load_catalog()
+    migration = changed_plan(catalog, ["src/utils/migration_flows.py"]).postgres
+    assert "tests/test_services_postgres.py" in migration
+    assert any(s.startswith("tests/test_migration_flows.py::") for s in migration)
+    assert set(changed_plan(catalog, ["src/utils/demo_data.py"]).postgres) == {
+        "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py"}
+    # Harness och rapporter rör varken roller, låsning eller migreringar.
+    assert changed_plan(catalog, ["src/agents/loop.py", "src/reporting/template.py"]).postgres == ()
+
+
 def test_delade_testhjalpare_kraver_brett_urval(small):
     root, catalog = small
     (root / "tests/test_b.py").write_text("from tests.test_a import test_ok\n", encoding="utf-8")
@@ -202,10 +244,31 @@ def test_markorer_foljer_testfall_aven_vid_parametrisering(small, monkeypatch, p
     remote = SimpleNamespace(path=root / "tests/test_c.py", nodeid="tests/test_c.py::test_pg[x]", marks=[])
     for item in (local, remote):
         item.add_marker = lambda marker, item=item: item.marks.append(marker.name)
-    pytest_plugin.pytest_collection_modifyitems(SimpleNamespace(_company_test_catalog=catalog), [local, remote])
+    config = SimpleNamespace(_company_test_catalog=catalog, _company_run_postgres=True)
+    pytest_plugin.pytest_collection_modifyitems(config, [local, remote])
     assert local.marks == ["suite_b"]
     assert remote.marks == ["suite_b", "postgres"]
     assert not marker_matches("tests/test_c.py::test_pg_extra", "tests/test_c.py::test_pg")
+
+
+def test_postgres_prov_hoppas_over_utan_aktivt_val(small, monkeypatch, pytestconfig):
+    root, catalog = small
+    monkeypatch.setattr(pytest_plugin, "ROOT", root)
+    pytestconfig.addinivalue_line("markers", "suite_b: testgrupp i den isolerade katalogen")
+    remote = SimpleNamespace(path=root / "tests/test_c.py", nodeid="tests/test_c.py::test_pg", marks=[])
+    remote.add_marker = lambda marker: remote.marks.append(marker.name)
+    config = SimpleNamespace(_company_test_catalog=catalog, _company_run_postgres=False)
+    pytest_plugin.pytest_collection_modifyitems(config, [remote])
+    assert remote.marks == ["suite_b", "postgres", "skip"]
+
+
+def test_aktivt_val_lases_ur_skalet_och_aldrig_ur_env_filen(tmp_path):
+    # Adresser i miljön räcker inte; bara RUN_POSTGRES_TESTS=1 slår på proven.
+    assert not pytest_plugin.postgres_enabled({"SERVICES_TEST_POSTGRES_URL": "x"}, tmp_path)
+    assert pytest_plugin.postgres_enabled({"RUN_POSTGRES_TESTS": "1"}, tmp_path)
+    (tmp_path / ".env").write_text("RUN_POSTGRES_TESTS=1\n", encoding="utf-8")
+    with pytest.raises(pytest.UsageError, match="hör inte hemma i .env"):
+        pytest_plugin.postgres_enabled({"RUN_POSTGRES_TESTS": "1"}, tmp_path)
 
 
 def test_git_tar_med_committat_stageat_ostageat_nytt_och_omnamning(tmp_path):
@@ -268,3 +331,36 @@ def test_cli_lokal_korning_stanger_postgres_och_bevarar_pytests_felkod(small, mo
     assert not kwargs["env"]["SERVICES_TEST_POSTGRES_URL"]
     assert not kwargs["env"]["SERVICES_TEST_AGENT_POSTGRES_URL"]
     assert kwargs["cwd"] == ROOT
+
+
+def test_cli_varnar_nar_andringen_beror_postgres_och_tommer_alla_anslutningar(small, monkeypatch, capsys):
+    _, catalog = small
+    monkeypatch.setattr(cli, "load_catalog", lambda: catalog)
+    monkeypatch.setattr(cli, "git_changes", lambda root, base: ["src/a/lock.py"])
+    for name in (*cli.POSTGRES_ENV, "RUN_POSTGRES_TESTS"):
+        monkeypatch.setenv(name, "configured-but-not-used")
+    recorded = []
+    monkeypatch.setattr(cli.subprocess, "run", lambda command, **kw: recorded.append(kw) or SimpleNamespace(returncode=0))
+    assert cli.main(["--changed", "--run"]) == 0
+    out = capsys.readouterr().out
+    assert "tests/test_c.py::test_pg" in out and out.count("Kör med --postgres") == 2
+    assert not any(recorded[0]["env"][name] for name in (*cli.POSTGRES_ENV, "RUN_POSTGRES_TESTS"))
+
+
+def test_cli_postgres_slar_pa_aktivt_val_och_kraver_rollanslutning(small, monkeypatch):
+    root, catalog = small
+    monkeypatch.setattr(cli, "ROOT", root)
+    monkeypatch.setattr(cli, "load_catalog", lambda: catalog)
+    monkeypatch.setattr(cli, "git_changes", lambda root, base: ["src/a/lock.py"])
+    for name in cli.POSTGRES_ENV:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("SERVICES_TEST_POSTGRES_URL", "postgresql://isolerad")
+    recorded = []
+    monkeypatch.setattr(cli.subprocess, "run",
+                        lambda command, **kw: recorded.append((command, kw)) or SimpleNamespace(returncode=0))
+    assert cli.main(["--changed", "--run", "--postgres"]) == 0
+    command, kwargs = recorded[0]
+    assert kwargs["env"]["RUN_POSTGRES_TESTS"] == "1" and "not postgres" not in command
+    assert "tests/test_c.py" in command
+    monkeypatch.setattr(cli, "ROLE_ENV", {"tests/test_c.py": ("SERVICES_TEST_AKTUARIE_POSTGRES_URL",)})
+    assert cli.main(["--changed", "--run", "--postgres"]) == 2

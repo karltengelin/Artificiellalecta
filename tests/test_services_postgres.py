@@ -12,10 +12,11 @@ Här prövas också migrationen (scripts/migrations/migrate_t3_schema.py) från 
 schemat, och att resultatet blir identiskt med create_all.
 
 Körs bara när SERVICES_TEST_POSTGRES_URL pekar på en ISOLERAD testdatabas –
-aldrig mot Lakebase-beståndet (DATABASE_URL vägras). Varje test skapar egna
-scheman och tar bort dem efteråt.
+aldrig mot Lakebase-beståndet (DATABASE_URL vägras) – och proven valts aktivt
+(markören postgres, 02_system/teststrategi.md). Varje test skapar egna scheman
+och tar bort dem efteråt.
 
-    SERVICES_TEST_POSTGRES_URL=postgresql://…/testdb pytest tests/test_services_postgres.py
+    python scripts/testing/run_tests.py --suite services --run --postgres
 """
 
 from __future__ import annotations

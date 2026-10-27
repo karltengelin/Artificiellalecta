@@ -7,7 +7,7 @@ inte låsa rader och inte läsa andra områdens tabeller.
 
 Körs bara när både SERVICES_TEST_POSTGRES_URL (app_backend) och
 SERVICES_TEST_AGENT_POSTGRES_URL (agent_forsakring) pekar på den ISOLERADE
-testdatabasen. Ett eget schema skapas och tas bort efteråt; beståndet rörs aldrig.
+testdatabasen och proven valts aktivt (run_tests.py --postgres eller RUN_POSTGRES_TESTS=1). Ett eget schema skapas och tas bort efteråt; beståndet rörs aldrig.
 """
 
 from __future__ import annotations

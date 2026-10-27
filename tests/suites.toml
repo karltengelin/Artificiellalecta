@@ -126,6 +126,7 @@ dependents = []
 [markers]
 postgres = [
   "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py",
+  "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py",
   "tests/test_migration_cases.py::test_migrationen_skapar_bara_cases_och_blir_identisk_med_create_all",
   "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
@@ -237,3 +238,31 @@ suites = ["orchestration"]
 [[rules]]
 paths = ["README.md", "AGENTS.md", "CLAUDE.md", "MASTER_CONTEXT.md", "BESLUTSLOGG.md", "ATT_GORA.md", "DEMO_ANTECKNINGAR.md", "projekt/**", "02_system/**", "05_styrdokument/**", "06_design/**"]
 documentation = true
+
+# Postgres-regler väljer inga grupper. De pekar ut Postgres-prov som ändringen berör;
+# körverktyget varnar då och kör dem med --postgres (teststrategi.md, Miljöer).
+[[rules]]
+paths = ["src/models/**", "src/utils/migration*.py", "scripts/migrations/**"]
+postgres = [
+  "tests/test_services_postgres.py",
+  "tests/test_migration_cases.py::test_migrationen_skapar_bara_cases_och_blir_identisk_med_create_all",
+  "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
+  "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
+  "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
+]
+
+[[rules]]
+paths = ["src/services/transaction.py", "src/services/approvals.py", "src/services/service.py", "src/services/db.py"]
+postgres = ["tests/test_services_postgres.py", "tests/test_agents_postgres_role.py"]
+
+[[rules]]
+paths = ["src/services/events.py", "src/services/operations/common.py", "src/services/operations/corrections.py", "src/services/operations/enrollment.py", "src/services/operations/policies.py", "src/services/operations/salary.py"]
+postgres = ["tests/test_services_postgres.py"]
+
+[[rules]]
+paths = ["src/utils/agent_roles.py", "scripts/setup/grant_agent_role.py", "src/services/access.py", "src/services/access_register.yaml"]
+postgres = ["tests/test_agents_postgres_role.py", "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py"]
+
+[[rules]]
+paths = ["src/utils/demo_data.py"]
+postgres = ["tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py"]

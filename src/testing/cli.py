@@ -16,6 +16,25 @@ from testing.selection import (
     load_catalog,
     suite_plan,
 )
+from testing.pytest_plugin import POSTGRES_OPT_IN
+
+POSTGRES_ENV = (
+    "SERVICES_TEST_POSTGRES_URL",
+    "SERVICES_TEST_AGENT_POSTGRES_URL",
+    "SERVICES_TEST_AKTUARIE_POSTGRES_URL",
+    "SERVICES_TEST_COMPLIANCE_POSTGRES_URL",
+)
+# Rollproven och de anslutningar som räcker för dem (teamroll eller den gemensamma agentrollen).
+ROLE_ENV = {
+    "tests/test_agents_postgres_role.py": ("SERVICES_TEST_AGENT_POSTGRES_URL",),
+    "tests/test_agents_postgres_aktuarie.py": ("SERVICES_TEST_AKTUARIE_POSTGRES_URL", "SERVICES_TEST_AGENT_POSTGRES_URL"),
+    "tests/test_agents_postgres_compliance.py": ("SERVICES_TEST_COMPLIANCE_POSTGRES_URL",
+                                                 "SERVICES_TEST_AGENT_POSTGRES_URL"),
+}
+
+
+POSTGRES_WARNING = ("Obs: ändringen berör Postgres-prov som inte körs lokalt. "
+                    "Kör med --postgres innan ändringen levereras (teststrategi.md, Miljöer).")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -61,6 +80,12 @@ def main(argv: list[str] | None = None) -> int:
             print("  " + path)
         print("Miljö: " + ("Postgres tillåten; befintliga anslutningskontroller gäller" if args.postgres
                             else "lokalt; Postgres-proven är bortvalda"))
+        if plan.postgres:
+            print(f"Postgres-prov som ändringen berör: {len(plan.postgres)}")
+            for selector in plan.postgres:
+                print("  " + selector)
+            if not args.postgres:
+                print(POSTGRES_WARNING)
         planned = [name for name, suite in catalog.suites.items() if suite.status == "planned"]
         print("Målområden ännu utan tester: " + ", ".join(planned))
         if not plan.tests:
@@ -70,22 +95,29 @@ def main(argv: list[str] | None = None) -> int:
             print("Planering klar; inga tester körda. Lägg till --run för att köra.")
             return 0
         env = dict(os.environ)
+        tests = set(plan.tests)
         if not args.postgres:
             # Tomma värden hindrar också load_dotenv(override=False) från att återaktivera testerna.
-            env["SERVICES_TEST_POSTGRES_URL"] = ""
-            env["SERVICES_TEST_AGENT_POSTGRES_URL"] = ""
+            env.update(dict.fromkeys((*POSTGRES_ENV, POSTGRES_OPT_IN), ""))
         else:
             from dotenv import dotenv_values
             env = {**{k: v for k, v in dotenv_values(ROOT / ".env").items() if v is not None}, **env}
+            env[POSTGRES_OPT_IN] = "1"
+            # De berörda Postgres-proven körs även om deras fil inte ingår i de valda grupperna.
+            tests |= {selector.split("::")[0] for selector in plan.postgres}
             if not env.get("SERVICES_TEST_POSTGRES_URL"):
                 raise SelectionError("--postgres kräver SERVICES_TEST_POSTGRES_URL till en isolerad testdatabas")
-            if "tests/test_agents_postgres_role.py" in plan.tests and not env.get("SERVICES_TEST_AGENT_POSTGRES_URL"):
-                raise SelectionError("Rollproven kräver också SERVICES_TEST_AGENT_POSTGRES_URL")
-        command = [sys.executable, "-m", "pytest", "-q", "-ra", *plan.tests]
+            for path, names in ROLE_ENV.items():
+                if path in tests and not any(env.get(name) for name in names):
+                    raise SelectionError(f"Rollproven i {path} kräver också {' eller '.join(names)}")
+        command = [sys.executable, "-m", "pytest", "-q", "-ra", *sorted(tests)]
         if not args.postgres:
             command += ["-m", "not postgres"]
         sys.stdout.flush()
-        return subprocess.run(command, cwd=ROOT, env=env, check=False).returncode
+        code = subprocess.run(command, cwd=ROOT, env=env, check=False).returncode
+        if plan.postgres and not args.postgres:
+            print(POSTGRES_WARNING)
+        return code
     except SelectionError as exc:
         print(f"Testurval stoppat: {exc}", file=sys.stderr)
         return 2
