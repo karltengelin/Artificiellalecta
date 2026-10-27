@@ -38,7 +38,7 @@ Ingen ny databastabell, ingen bakgrundsarbetare, ingen delegering och ingen ny a
 | Val | Rekommendation | Alternativ och avvägning | Avsnitt |
 |---|---|---|---|
 | A | **Frågeomfång:** en frågetyp, *beståndsöversikt*, med en vald avslutad månad (någon av de elva föregående) och valfri precisering i fritext. Svaret har status `answered`, `partial`, `unavailable`, `needs_clarification` eller `failed` (OC-0 §6.3) | Helt fri fråga: bredare men utan granskat stöd för de flesta frågor. Enbart fast mall utan fritext: enklast men prövar inte avgränsning av frågor utanför stödet | §3 |
-| B | **Mottagare: aktuarieteamet**, som projekt 10 anger. Teamet är utan personuppgifter och har analysansvaret | OC-0 §6.1 föreslog `forsakring` för bestånd/premier; handläggaragentens mandat är ärendebundet med personuppgifter och passar inte ett bolagsövergripande aggregat | §3 |
+| B | **Mottagare: aktuarieteamet**, som projekt 10 anger. Teamet är utan personuppgifter och har analysansvaret. **Aktuarieagenten svarar** som teamets ledande agent; den planerade Data scientist-agenten byggs inte i första kedjan (§3) | OC-0 §6.1 föreslog `forsakring` för bestånd/premier; handläggaragentens mandat är ärendebundet med personuppgifter och passar inte ett bolagsövergripande aggregat. Låta Data scientist-agenten svara: närmare dess mandat, men kräver en ny profil och delegering inom teamet utan ett verktyg som skiljer den från aktuarien | §3 |
 | C | **`get_company_metrics` blir `AGENT`** (läsning, `pii=False`, småcellsskydd kvar) och monteras i podden `bestand`, alltså bara för aktuarien. Operationen ändras inte | Behåll `HUMAN_ONLY` och låt betrodd kod läsa åt agenten: agenten blir då bara textförfattare. Operatören har avgjort att operationen inte är känslig | §4 |
 | D | **Kolumnbegränsad läsrätt** för `agent_aktuarie`: `policy_benefits` (id, försäkring) och `premium_transactions` (förmån, typ, status, betaldatum, belopp) – inte lön eller beräkningsunderlag. `RoleGrants` utökas med kolumnlistor | Full läsrätt på båda tabellerna: enklast, men rollen får läsa pensionsgrundande lön per rad, vilket B-035 val I undvek. Betrodd anslutning för aggregatoperationer: kringgår rollen som försvarslinje | §4 |
 | E | **Uppdragets livscykel är flödesmotorn** med en ny flödestyp `company_question`: svar → rapport → granskning → leverans. Flödes-id är uppdragsreferensen | Ny uppdragstabell: egen livscykel men dubblerar versionering, grindar och avstämning och kräver migrering. Bara körjournalen: ingen varaktig status eller granskning | §5 |
@@ -64,6 +64,19 @@ Ingen ny databastabell, ingen bakgrundsarbetare, ingen delegering och ingen ny a
 | Miljö | Webbens aktiva miljö (demo, `svc_test` eller Lakebase) från miljöväljaren |
 | Mått | `insured_registered_count` och `premium_paid_recorded_sek` med definitionsversion (projekt 2:s datakontrakt) |
 | Körbild | Hash av effektiv körpolicy och modellkonfiguration, utan hemligheter (OC-0 §6.2 före OC-5) |
+
+**Vem i teamet som svarar.** Aktuarieagenten tar emot och besvarar frågan. Det följer
+B-026: operatören och andra team når ett team genom dess ledande agent, aldrig direkt
+genom en specialist. Teamets planerade specialist, [Data scientist-agenten](agenter/data-scientist-agent.md),
+har ett mandat för dataanalys som ligger nära frågan, men den är inte byggd och har varken
+profil, skills eller dataåtkomst. Enligt B-008 införs en specialist när mandatet skiljer sig
+väsentligt, och en aggregatläsning med två mått och en kort tolkning kräver det inte.
+
+Data scientist-agenten blir aktuell när en fråga kräver verktyg som aktuarien inte ska ha,
+till exempel statistik över tid, egna datamodeller, kontroll av datakvalitet eller läsning
+via Databricks BI och Genie. Då har den ett konkret uppdrag och egna verktyg. Den byggs då
+som specialist i teamet, med delegering inom teamet från aktuarieagenten; dagens delegering
+(B-039) går bara mellan team. Det är ett eget designbeslut efter första kedjan.
 
 **Uppdraget till aktuarien** är en betrodd mall i `agents/assignments.py`: mål, begränsningar
 och resultatschema kommer från mallen, preciseringen följer med som bakgrund. Körningen
