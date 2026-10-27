@@ -8,6 +8,14 @@ framtida demonstrationer visar den tillsammans med andra ordinarie förmågor. F
 ska inte anpassas till ett bestämt demoscenario eller få en hårdkodad demo-knapp.
 Se [visionen och avgränsningen av demonstrationer](MASTER_CONTEXT.md#1-vision-och-syfte).
 
+Människor och AI ska arbeta genom gemensamma verksamhetstjänster och
+identifierbara underlag och resultat. Operatörscentralen ska knyta ihop teamens
+arbetsytor: initiera och följa uppdrag, hitta dokument, granska leveranser och
+fatta beslut. Närmast prioriteras förberedelsen av en avgränsad kedja från
+beståndsfråga till återfinnbar rapport, enligt [projekt 10](projekt/10_operatörscentral/PROJEKTPLAN.md)
+och [aktuell prioritering](ATT_GORA.md). Dokument- och prioriteringsarbetet är
+godkänt 2026-10-27; fråge-/rapportkedjan är ännu inte implementerad.
+
 **Detta är inte ett riktigt försäkringsbolag.** Inga riktiga kunder, ingen riktig data, inget riktigt kapital.
 
 ## Kom igång
@@ -52,8 +60,10 @@ python scripts/testing/run_tests.py --suite reporting --run
 **Digital klarhet** är bolagets valda grafiska riktning (B-034): indigo, ljusa
 ytor, DM Sans och mjukare former. Se [designspecifikationen](06_design/designsprak.md)
 och [den visuella referensen](06_design/digital_klarhet.html) för rapport, slide
-och handläggarvy. Designgrunden är dokumenterad; mallar och införande i befintliga
-gränssnitt sker stegvis enligt ATT_GORA.
+och handläggarvy. Lokala mallar för [A4-rapport](06_design/rapportmall.md) och
+[16:9-presentation](06_design/presentationsmall.md) finns med gemensamma token,
+typsnitt och diagramstil. Agenternas genereringsskills och införande i fler
+ytor återstår enligt ATT_GORA.
 
 ## Teknisk stack
 

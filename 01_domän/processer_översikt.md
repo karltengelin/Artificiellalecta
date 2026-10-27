@@ -5,6 +5,15 @@
 > Föreslagna arbetspaket och samordningsansvar nedan är planeringsunderlag, inte nya
 > produktbeslut, ändrad fasordning eller mandat att börja implementera. Uppdatera nuläget vid byggstart.
 
+> **Planeringsuppföljning 2026-10-27:** operatören har godkänt dokument- och
+> prioriteringsändringarna efter [riktningsgranskningen](../02_system/riktningsgranskning_2026-10-27.md).
+> V-/S-gap och paket A/B återanvänds. Närmast förbereds en avgränsad
+> fråge-/rapportkedja i [projekt 10/2](../projekt/10_operatörscentral/PROJEKTPLAN.md);
+> paket A får ett samordnat kontraktsuppdrag och [projekt 6](../projekt/06_avdelningsfunktioner/PROJEKTPLAN.md)
+> preciserar första värderings-/förklaringskontraktet för FTA. Den ursprungliga
+> nulägeskartläggningen nedan är daterad; inga motorer eller simulatorsteg har
+> byggts genom denna planeringsuppdatering.
+
 ## 1. Syfte och avgränsning
 
 Målet är att kunna följa en sammanhängande månad i ett agentbaserat tjänstepensionsbolag:

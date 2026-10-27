@@ -44,6 +44,32 @@ Se [MASTER_CONTEXT §1](MASTER_CONTEXT.md#1-vision-och-syfte) och
 
 ## 🔴 Hög prioritet – grunden
 
+### Närmaste prioritering efter riktningsgranskningen
+
+Operatören godkände **dokument och prioriteringar först** i chatten 2026-10-27,
+utifrån [riktningsgranskningen](02_system/riktningsgranskning_2026-10-27.md).
+Kodimplementation ingår inte i det godkända dokumentuppdraget. Följande styr
+valet och förberedelsen av nästa byggleveranser inom befintliga projekt och faser:
+
+| Ordning | Nästa avgränsade resultat | Ansvar och beroenden |
+|---|---|---|
+| Närmast | Förbered första kedjan från beståndsfråga i centralen via valt team till granskad, återfinnbar rapport. Avgränsning och acceptansvillkor finns i projekt 10 | Projekt 10 samordnar OC-3 och nödvändig del av OC-8 med projekt 2, aktuarieteamet och gemensam dokumentgenerering. B-038:s identitetskrav och granskad dataåtkomst ska vara lösta före aktivering |
+| Kommande verksamhetsuppdrag | Avgränsa paket A: löneunderlag → premie/faktura → mottagen betalning med avstämning och tydligt underlag till kapital/garanti och ekonomi | Projekt 1/4/6, kassaflödesgräns mot 5; använd V-01–03 och avstäm kontrakt före kod |
+| Tidig aktuariell förberedelse | Ta fram värderings- och förklaringskontrakt för första FTA-leveransen, med kvarstående metodval och datakrav | Projekt 6 med aktuarie, ekonomi, kapital och projekt 2; V-11/12. Produktens garantivärde ersätter inte en separat FTA-grund |
+
+Välj en första byggleverans; tabellen startar inte tre parallella byggen.
+F5-5/6 och 3c-V fullföljs inom gällande datum och mandat. Bakgrundskörning
+kopplas till ett valt självständigt arbetsfall med varaktig status och återhämtning.
+Fler generella agentprofiler, delegeringspar, malltyper och visuell detaljpolering
+prioriteras när de stöder en vald verksamhetsleverans. Befintliga kontroller
+och säkerhetsberoenden består.
+
+Varje större bygguppdrag ska ange verksamhetsnytta, delade tjänster/underlag,
+ansvar och mandat, människans arbetsväg samt normal- och avvikelsefall som
+visar resultatet. Använd befintliga projektplaner och V-/S-gap.
+
+### Befintlig grund och övriga öppna behov
+
 - [x] **2026-07-12** Fas 1a: `01_domän/ITP1_regelverk.md` och `01_domän/försäkringsvillkor.md` skrivna – premietrappan med 2026-belopp (IBB 83 400 kr, brytpunkter 52 125/208 500 kr/mån) verifierade mot Avtalat/Collectum/Regeringen, åldersfönster 25–66 (månadsbaserat), IBB-historik 2023–2026 för retroaktiv mockdata, implementationsregler för premiemotorn i regelverkets §8
 - [x] **2026-07-12** Fas 1b: `policies` och `premium_transactions` – dokumenterade i `databasschema.md` (§5–6) och implementerade som SQLAlchemy-modeller. Ett avtal per försäkrad (B-021), kapital härleds ur transaktioner, `calculation_basis` (JSONB) ger revisionsspårbarhet, partiellt unikt index säkrar en ordinarie premie per avtal/månad. DDL Postgres-validerad. `scripts/setup/create_tables.py` skapar tabellerna (körs av operatören)
 - [x] **2026-07-12** Fas 1c: Premiemotor som skill – `03_skills/beräkning/beräkna-itp1-premie.md` + `src/skills/calculation/calculate_itp1_premium.py`. Ren beräkningsfunktion (trappa, åldersfönster på månadsnivå, calculation_basis för spårbarhet), 17 tester gröna mot handräknade exempel. Dessutom: `base_amounts`-tabell (schema §7 + modell + seed-skript) och första versionen av `03_skills/skillkatalog.md`
@@ -58,7 +84,7 @@ Se [MASTER_CONTEXT §1](MASTER_CONTEXT.md#1-vision-och-syfte) och
 - [x] **2026-10-11** **Bygga ut produktnära `04_regulatoriskt/`** – källregister, tolkningar och underlag per regelverk för ITP, LTF, FFFS, FAL, skatt, GDPR, DORA, distribution, SFDR, AI och AML (delprojekt 4). Bolagets fullständiga policies och rapportering hör till egna verksamhetsprojekt
 - [x] **2026-10-11** **Delprojekt 4: sammanhängande produktpaket** – PR-ITP1 v1.0 (34 regler), villkor v2.0, tio tolkningar och leveranskontroll; infört genom B-031, gäller från 2026-11-01. Regelkod, migrationer och automatiserade regeltester görs i senare sessioner
 - [ ] **Fullständig styrdokumentsstruktur** i `05_styrdokument/` – minimal grund för kapitalförvaltningen finns sedan 2026-10-24 (Fas 2a), med struktur, ägarskap, revisionscykel och standardmetadata. Antagande, fullständigt styrdokumentsregister, övriga policies och bolagets samlade kontrollsystem återstår
-- [ ] **Gemensamt designspråk för bolaget** – Digital klarhet vald och designgrund v1.0 dokumenterad (B-034, `06_design/`). Återanvändbara komponenter, färdiga mallar och införande i hemsidor, kundportal, handläggargränssnitt, rapporter och presentationer återstår. Se arbetsgång och leveranser under **Grafisk identitet och designsystem** nedan
+- [ ] **Gemensamt designspråk för bolaget** – Digital klarhet vald och designgrund v1.0 dokumenterad (B-034, `06_design/`), med handläggar-UI och lokala A4-/16:9-mallar. Gemensamma genereringsskills, gatewaykoppling, fler dokumenttyper och införande i övriga ytor återstår. Se arbetsgång och leveranser under **Grafisk identitet och designsystem** nedan
 - [x] **2026-05-16** Definiera databasschema – `02_system/databasschema.md` + SQLAlchemy-modeller för `employers` och `insured_persons`. Övriga tabeller (policies, premium_transactions, portfolio_holdings, cases) skjuts upp till de behövs.
 - [x] **2026-05-16** Sätta upp Google-konto för det fiktiva bolaget – Artificiellalecta@gmail.com
 - [x] **2026-05-16** Skapa Supabase-konto och projekt – Artificiellalecta-projektet, region Europe *(databasval ersatt av B-018, se Arkiv)*
@@ -71,7 +97,8 @@ Tillagt **2026-10-24** på operatörens begäran. Tvärgående arbete för hela 
 **Digital klarhet är vald genom B-034.** Designspecifikation v1.0 och visuell
 referens finns i [`06_design/`](06_design/README.md), med första gemensamma
 designvärden i `src/design/digital_clarity.tokens.json`. Handläggar-UI:t är pilotyta sedan
-2026-10-24. Färdiga mallar och införande i företagsöversikten återstår. Målet är ett modernt, stilrent
+2026-10-24. Lokala rapport- och presentationsmallar finns; gemensam agentgenerering,
+övriga dokumentmallar och införande i fler ytor återstår. Målet är ett modernt, stilrent
 och sammanhållet uttryck som känns igen i alla kanaler.
 
 **Arbetsordning:** Använd den valda designgrunden när nästa större
@@ -82,11 +109,12 @@ behövs för att införa formspråket. Valet av riktning är klart; konkreta kom
 och färdiga mallar granskas när de införs.
 
 - [x] **2026-10-24 Visuell riktning och designgrund v1** – fyra riktningar jämförda på rapport, slide och handläggarvy. Operatören valde **Digital klarhet** (B-034). Färger, DM Sans, ordmärke/markör, luft, layout, ikon-/bildstil, diagramstil och läsbarhet dokumenterade i `06_design/designsprak.md`; vald visuell referens bevarad i `06_design/digital_klarhet.html`
-- [ ] **Gemensamma designvärden och återanvändning** – första versionshanterade tokenfilen finns i `src/design/digital_clarity.tokens.json` (v1.0, B-034). Koppla dessa värden till webbens CSS och dokument-/presentationsmallar så att kanalerna inte får separata, manuellt underhållna paletter. Bygg vidare på FastAPI/Jinja2/HTMX för handläggar-UI:t; välj inga nya frontendramverk enbart för formspråkets skull. *2026-10-24, webben klar:* `src/web/static/tokens.css` genereras ur tokenfilen (`scripts/web/build_design_tokens.py`, `src/design/web_css.py`), och `app.css` har inga egna färgvärden (`tests/test_design_web_css.py`). Dokument- och presentationsmallar återstår
+- [ ] **Gemensamma designvärden och återanvändning** – tokenfilen `src/design/digital_clarity.tokens.json` (v1.0, B-034) används av webbens genererade CSS och de lokala A4-/16:9-mallarna, med gemensam typsnittshantering och diagramstil. Webbkopplingen verifieras av `tests/test_design_web_css.py`; mallarna av `tests/test_reporting_*.py`. Koppling till gemensamma genereringsskills och återstående dokumenttyper återstår. Bygg vidare på befintliga verktyg och FastAPI/Jinja2/HTMX
 - [ ] **Fullständigt logotyppaket** – vidareutveckla ordmärket och den enkla indigorutan från Digital klarhet till vektororiginal, frizon och exportvarianter för webb, dokument och presentationer
 - [ ] **Pilot och stegvis införande i gränssnitten** – tillämpa grunden på en representativ handläggarvy med tabell, formulär, status, fel och godkännande. Utvärdera tillsammans med rapport- och slideexemplen innan grunden breddas. Återanvänd layout och komponenter i fortsatt UI-arbete; planera anpassning av företagsöversikten, kommande hemsidor och kundportalen. Dashboarden följer grunden inom Databricks möjligheter enligt B-029; eventuella begränsningar dokumenteras. *2026-10-24, pilot genomförd:* hela handläggar-UI:t har Digital klarhet: sidhuvud med ordmärke och aktiv meny, kort, tabeller, formulär, statusmärken, felrutor, godkännandekön och ärendesidorna. Verifierat i webbläsaren mot demodatabasen, även på smal skärm. Kvar: operatörens granskning tillsammans med rapport- och slideexemplen, och därefter breddning
 - [x] **Rapportmall som teknisk grund** – återanvändbar A4-mall med sidhuvud, sidfot, sidnummer, nyckeltal, tabeller och vektordiagram finns i `src/reporting/template.py`, dokumenterad i `06_design/rapportmall.md` (version 1.0, B-034). Lokal PDF-generering; inget agentverktyg eller utskick
-- [ ] **Återstående dokument- och presentationsmallar** – kundbrev, formella dokumenttyper och presentation med titelbild, innehåll, nyckeltal, tabell och diagram. Återanvänd rapportmallen och designgrunden; koppla dokumentmallarna till den generella md→PDF-pipelinen nedan. Markdown förblir arbetsformat enligt B-012. En rapport, presentation och webbyta ska kännas som samma bolag
+- [x] **2026-10-27 Presentationsmall som teknisk grund** – lokal Markdown → PDF i 16:9 med titelbild, innehåll, nyckeltal, tabell och diagram, syntetiskt exempel och tester. Återanvänder rapportens typsnittshantering, tokenfil och diagramstil; se `06_design/presentationsmall.md`. Ingen agentgenerering eller gatewaykoppling aktiverad
+- [ ] **Återstående dokumentmallar** – kundbrev och formella dokumenttyper. Återanvänd rapportmallen och designgrunden; koppla dokumentmallarna till den generella md→PDF-pipelinen nedan. Markdown förblir arbetsformat enligt B-012
 - [ ] **Gemensamma skills: skapa rapport/dokumentation och skapa presentation** *(tillagt 2026-10-24 på operatörens begäran)* – planera `skapa-dokumentation` (`create_documentation`, även rapporter) och `skapa-presentation` (`create_presentation`) som två centralt underhållna skills i den gemensamma podden `dokument`, tillgängliga för samtliga team och agenter genom granskad montering. Varje skill tillhör en podd; samma implementation, mallar och designversion återanvänds av alla. Ingen kopia per team/podd och ingen ny agent krävs enbart för formatering (B-007/B-008/B-026). Domänagenten ansvarar för fakta och analys; kommunikation äger de gemensamma mallarna och utveckling den tekniska genereringen. Se `02_system/agentekosystem.md` §5.5 och planerade skills i `03_skills/skillkatalog.md`
 - [ ] **Enhetligt svar från valfri agent/team** – när operatören ställer en sakfråga ska agenten använda den gemensamma rapport-/dokumentationsförmågan; presentation används när operatören begär det eller uppdraget anger det formatet. En kort rapport kan visas direkt i chatten; längd och detaljnivå anpassas till frågan. Gemensam grundstruktur: slutsats/svar först, underlag och källor, antaganden/osäkerhet samt eventuella nästa steg. Fullständiga dokument och slides använder de gemensamma mallarna och designvärdena. Koppla användningsregeln till agenternas instruktioner och uppdrag i harness; verifiera med representativa uppdrag till flera team att rätt skill, mallversion och struktur används. Enbart tillgång till skillen garanterar inte användning
 - [ ] **Kontrollerad dokumentgenerering** – bygg på dokumentgatewayen och avgränsade utkast enligt `02_system/harness.md` §5.2. Samma mallar får användas i en separat skyddad väg för behöriga PII-underlag; den allmänna dokumentpodden får inte lagra personuppgifter. Innehåll, källor, period och mallversion följer med leveransen. Bestäm resursgränser för binära exporter separat från Markdown-gränserna. Skapande av utkast ger inte rätt att ändra gällande dokument, skicka eller publicera. Externa leveranser följer befintliga godkännanden och gateways. Rapporteringsagenten används för sitt rapporteringsmandat och samordning, och kan återanvända samma två skills
@@ -306,7 +334,7 @@ Byggpaketen nedan ändrar inte B-028:s fasordning eller prioriteten på pågåen
 - [x] **2026-10-26 OC-0: Design och kontrakt** – [rekommendationerna A–X](02_system/operatörscentral_beslutsforslag.md) godkända genom **B-038**: mått- och händelsekontrakt, ledningseskaleringar, teamrouting, autentisering och en auktoritativ modell-/budgetkälla gemensam med 3b-9. Klar som design- och dokumentleverans; implementation sker i OC-1–8 och 3b-9, inga runtimeändringar
 - [x] **2026-10-26 OC-1: Läsbar VD-översikt** – lokalt byggd/testad på `/central`: bolagsläge, team, kostnadsvy och måttunderlag med period, miljö och källreferenser. Saknade ekonomiska motorer markeras som ej beräknat och leverans-/kvalitetsmått som ej uppmätt. Integration mot Lakebase/BI återstår; [drift och begränsningar](02_system/operatörscentral_drift.md)
 - [ ] **OC-2: Agentekonomi** – **smal lokal leverans byggd/testad 2026-10-26:** manifest, idempotent metadataindex och fördelning per team/modell/hashat uppdrag, okänd kostnad och loggtäckning utan dubblering av ackumulerade rot-/barn-/fortsättningsbelopp. Full försöks-/prisavstämning, loggrotation och leverans-/kvalitetsproducenter återstår; se driftbeskrivningen
-- [ ] **OC-3: Fråga bolaget** – gemensam ingång via teamledare, källbundna svar och mandat/budget; börja med ett team per uppdrag, automatisk samordning kräver 3c-1
+- [ ] **OC-3: Fråga bolaget** – närmast förbereds den avgränsade fråge-/rapportkedjan i projekt 10 tillsammans med projekt 2: valt team, definierat beståndsunderlag, mandat/budget och återfinnbar granskad rapport. Byggstart och aktivering följer planens beroenden. Delegering compliance → aktuarie finns genom 3c-1; det ger ingen generell routing för denna frågeingång
 - [ ] **OC-4: Ledningsunderlag** – sammanfattade inriktningsfrågor med alternativ, konsekvenser och uppföljning; inga rutinärenden eller generell handläggarkö
 - [ ] **OC-5: Modellpolicy och budget** – global OpenAI-/Anthropic-/blandad policy, uttrycklig reservpolicy och teamundantag; förhandsgranskning, autentisering, versionssatt aktivering och ändringslogg. Återanvänd 3b-9 för körgränser; bygg ingen parallell budgetkälla
 - [ ] **OC-6: Ekonomisk fördjupning och VD-scenario** – konsolidering/kapital/FTA/likviditet när projekt 2/5/6 levererar verifierade grunder, samt acceptans enligt projektplanen

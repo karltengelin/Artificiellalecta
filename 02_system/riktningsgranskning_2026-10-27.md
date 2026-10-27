@@ -6,6 +6,11 @@
 > människor och AI arbetar tillsammans eller självständigt genom gemensamma system.
 > Dokumentet beslutar ingen ny prioritering, produktregel, behörighet eller arkitektur.
 
+> **Efterarbete:** Karl godkände dokument- och prioriteringsändringarna i chatten
+> 2026-10-27 och avgränsade uppdraget till **dokument och prioriteringar först**.
+> Genomförandet redovisas i §13. Granskningens kodläge och verifieringsresultat
+> ovan är historiskt underlag; uppföljningen inför ingen kodimplementation.
+
 ## 1. Bedömning och rekommendation
 
 **Grundriktningen är förenlig med målbilden. Den största risken är att fler delar blir
@@ -309,12 +314,13 @@ ingen separat omfattande dokumentprocess för varje liten ändring.
 
 ## 10. Dokumentdrift och föreslagna styrfilsändringar
 
-Följande har identifierats men inte rättats i denna granskning:
+Följande identifierades i den ursprungliga granskningen. Status efter det
+godkända dokumentuppdraget framgår av §13:
 
-- **Agentkartan §2:** säger generellt att delegering mellan team ännu inte är
+- **Agentkartan §2:** sade generellt att delegering mellan team ännu inte är
   byggd. Det stämmer inte efter B-039. Behöver avgränsas till det byggda paret
   compliance → aktuarie respektive återstående par och integrationer.
-- **ATT_GORA:s designstatus:** säger att presentationsmallen och delar av
+- **ATT_GORA:s designstatus:** sade att presentationsmallen och delar av
   tokenåteranvändningen återstår. Den lokala mallen är nu mergad. Detta är
   tidigare flaggad, känd drift; genereringsskills och gatewaykoppling återstår.
 - **Företagsöversikten:** är uttryckligen en daterad ögonblicksbild från
@@ -381,3 +387,32 @@ de har inte upprepats här. Inga kodändringar eller nya tester har gjorts.
 Karls förtydliganden i denna chat är uppdragsunderlag tillsammans med de
 versionshanterade källorna. Rapportens prioriteringar och föreslagna kopplingar
 är bedömningar från granskningen; de ska inte läsas som redan fattade beslut.
+
+## 13. Genomfört dokument- och prioriteringsarbete 2026-10-27
+
+Efter granskningen gav Karl uppdraget att genomföra de föreslagna ändringarna
+och preciserade omfattningen till **dokument och prioriteringar först**.
+Dokumentuppföljningen har synkats mot `main` vid `5ecd624`, inklusive B-040.
+De ursprungliga fynden och de 170 testerna i §11 avser fortsatt kodläget i rapporthuvudet.
+
+| Område | Genomförd dokumentändring | Kvarstående implementation eller beslut |
+|---|---|---|
+| Målbild | MASTER_CONTEXT och README beskriver människors och agenters gemensamma arbetsförlopp. MASTER_CONTEXT skiljer roll, profil och verifierad förmåga åt | Central-/teamkoppling och verksamhetsmotorer är fortsatt ofullständiga |
+| Närmaste prioritet | ATT_GORA pekar ut förberedelsen av första fråge-/rapportkedjan inom projekt 10/2, med ansvar, beroenden och acceptans | Ingen kodstart ingår i uppdraget |
+| Första fråge-/rapportkedjan | Projekt 10 avgränsar en beståndsöversikt med registrerade försäkrade vid läsdatum och betalmarkerade premier för vald avslutad månad, mänsklig granskning och återfinnbar rapport. Projekt 2 preciserar nödvändiga data-/måttkontrakt | Identitetsväg, behörigt analysverktyg, aktuell dataåtkomst, uppdragsvy och dokumentgenerering ska granskas och byggas; `HUMAN_ONLY`-operationen öppnas inte för agenten genom textändringen |
+| Premie-/betalningskedja | Projekt 1 och 6 samt processöversikten anger nästa samordnade kontraktsuppdrag för paket A och ekonomiska avstämningspunkter | Premie/faktura, bankmatchning och kapital-/garantikoppling behöver separat implementation |
+| FTA | Projekt 6:s scope och planeringsstatus är preciserade, med fält och klart-kriterium för första värderings-/förklaringskontraktet | Metod, värderingsgrund, data och motor är inte beslutade eller byggda genom uppdateringen |
+| Statusdrift | Agentkartan beskriver det byggda delegeringsparet och återstående integrationer. ATT_GORA skiljer färdig lokal presentationsmall/tokenåteranvändning från kvarstående agentexport och dokumenttyper | Företagsöversiktens daterade HTML bevaras som historisk ögonblicksbild |
+
+Inga nya poster har skrivits i BESLUTSLOGG och inga agentinstruktioner,
+körpolicyer, produktregler eller kodfiler har ändrats. Underlaget preciserar
+prioritering och kommande uppdrag inom befintliga beslut. Det innebär inte
+automatiskt godkännande av framtida datavägar, värderingsgrunder eller behörigheter.
+
+**Kontroll av dokumentuppföljningen:** 141 lokala länkar i de elva ändrade
+Markdown-filerna kontrollerades utan saknade mål; diff-, Unicode- och
+kodblockskontroller är godkända. Ändringsstyrt lokalt testurval med
+`run_tests.py --changed --base origin/main --run` gav **1 031 godkända och
+78 bortvalda Postgres-prov** enligt B-040. Testerna kördes med temporärmapp
+i worktreen efter att Windows ordinarie pytest-mapp nekade sandboxåtkomst.
+Resultatet är ingen verifiering mot Postgres/Lakebase eller av de framtida förmågorna.

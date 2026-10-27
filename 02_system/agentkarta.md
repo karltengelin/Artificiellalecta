@@ -28,7 +28,11 @@ Varje agent tillhör ett team (B-026). Teamets ledande agent är dess orkestrera
 
 Mandaten nedan är målbilden. Tabellen ovan och respektive agentinstruktion skiljer
 byggt verktygsstöd från planerat arbete. Endast tre profiler finns i körpolicyn:
-handläggare, compliance och aktuarie. Delegering mellan team är ännu inte byggd.
+handläggare, compliance och aktuarie. Sedan 2026-10-27 finns avgränsad delegering
+compliance → aktuarie (3c-1, B-039), synkront och bara för tillåtna uppdrag utan
+personuppgifter eller överfört parametermandat. Övriga par och frågeingångens
+användning återstår. En beskriven roll, aktiv profil och verifierad
+verksamhetsförmåga ska redovisas var för sig.
 
 **Compliance-agent**
 Tolkar lagar, förordningar och föreskrifter och omsätter dem till operativa konsekvenser för bolaget. Ansvarar för styrdokumentsstruktur och tar emot eskaleringar från samtliga agenter i juridiskt tveksamma fall. (B-011)

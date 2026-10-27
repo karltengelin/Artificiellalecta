@@ -13,6 +13,26 @@ Detta är en **sandbox/simuleringsmiljö** – inga riktiga kunder, inget riktig
 
 **Programvision (B-024, B-037):** Målet är ett **artificiellt men hypotetiskt fungerande, AI-native tjänstepensionsföretag**. Agentteam utför det löpande arbete som avdelningarna i ett riktigt bolag skulle göra (handläggning, kapitalförvaltning, aktuariellt arbete, regelefterlevnad, rapportering, kundkommunikation). System och data byggs för att vara tillgängliga för behöriga AI-agenter även utanför dem som byggs i detta projekt. Verksamhetens behov, sammanhängande processer och kontrollkrav styr arkitektur och prioriteringar.
 
+**Gemensam arbetsmiljö för människor och AI:** Operatörscentralen ska ge tillgång
+till alla teamens arbetsytor och göra det möjligt att initiera och följa
+verksamhetsuppdrag. I teamytorna kan människor och agenter arbeta tillsammans
+eller självständigt inom sina mandat, med samma verksamhetsoperationer och
+identifierbara underlag och resultat. Människan ska kunna ställa frågor, hitta
+dokument, förstå vad teamen gjort, granska leveranser och fatta beslut.
+Analysuppdrag ska kunna ge källbundna rapporter eller presentationer i bolagets
+grafiska profil. Exempel är beståndsanalys, förklaring av FTA och effekter av
+strategiska vägval; exemplen begränsar inte teamens övriga verksamhetsansvar.
+
+**Byggstatus och prioritering:** En beskriven roll, en körbar agentprofil och en
+verifierad verksamhetsförmåga är tre olika saker. Prioritering ska ange vilket
+sammanhängande arbets- eller verksamhetsförlopp som förbättras, dess beroenden,
+ansvar och godkänt resultat. [Riktningsgranskningen 2026-10-27](02_system/riktningsgranskning_2026-10-27.md)
+ligger till grund för det dokument- och prioriteringsarbete som operatören
+godkänt i chatten samma dag. Närmast förbereds en avgränsad fråge-/rapportkedja
+inom projekt 10/2; premie-/betalningsflödet och aktuariell värdering får
+samordnade kommande uppdrag. Se ATT_GORA och berörda projektplaner. Detta
+förtydligande aktiverar inga nya verktyg eller befogenheter och startar ingen kodimplementation.
+
 **Regeländringar som verksamhetsförmåga:** Bolaget ska kunna hantera ändrade lagar, föreskrifter och kollektivavtal och deras följder för produktregler, villkor, bestånd, beräkningar, system, processer, styrdokument, rapportering och kommunikation. Arbetet ska vara spårbart från källa och konsekvensanalys till godkända åtgärder och uppföljning, med människa-i-loopen (§3.5) på kritiska steg. Vilka delar som berörs avgörs av den aktuella ändringen; parameterändring är ett av flera möjliga fall.
 
 **Demonstrationer:** När bolagets förmågor finns ska de kunna visas genom utvalda scenarier, bland annat en regeländring från källa till genomförande och beståndsinsikt. Scenarierna är exempel på ordinarie verksamhet och får inte styra företagets arkitektur, datamodeller eller byggordning. Ingen hårdkodad demo-knapp eller förutbestämd demoberättelse ska byggas in i bolagets ordinarie arbetsytor. Särskilda testdata, simuleringskällor, skriptade modeller och visningsmanus hålls avgränsade från verksamhetslogiken. Återanvändbara verktyg och flöden verifieras löpande på flera relevanta fall; en lyckad demonstration är inte ett mått på att hela företaget fungerar.
@@ -85,6 +105,11 @@ All information i projektet sparas i första hand som **Markdown-filer** (.md). 
 ### 3.7 Människa som fullständig operatör
 Systemet ska alltid kunna styras manuellt av en människa, på samma nivå som en agent. Varje åtgärd en agent kan utföra – lägga till en kund, uppdatera en policy, trigga ett flöde – ska också kunna utföras direkt av operatören via Cowork eller annat gränssnitt. Agenter kör på autopilot; operatören kan alltid ta manuell kontroll.
 
+Självständigt arbete är målbilden. Varje aktiverad förmåga behöver verifierade
+utlösare, mandat, väntan, återhämtning och mänsklig uppföljning. Centralen ger
+överblick och vägar till arbetet; enskilda ärenden och domängodkännanden stannar
+i sina specialistytor. Ett avslutat agentanrop är inte i sig en granskad leverans.
+
 ### 3.8 Ett tjänstelager för människor och agenter
 Alla operationer mot försäkringssystemet går via ett gemensamt tjänstelager (`src/services/`) som handläggar-UI, agenter och skript använder. Ett centralt register bestämmer vad agenter får göra med varje operation: utföra direkt, föreslå för godkännande, eller ingenting alls (*endast handläggare*). Skrivande operationer vars produktregel inte är godkänd är alltid endast handläggare. Varje ändring loggas med vem som gjorde den och varför. Se `02_system/tjänstelager.md` och B-028.
 
@@ -96,8 +121,11 @@ och presentationer ska använda samma grund, även när de skapas av olika agent
 Specifikation och visuell referens finns i [`06_design/`](06_design/README.md);
 gemensamma designvärden i `src/design/digital_clarity.tokens.json`.
 Designgrunden är dokumenterad och tillämpad i handläggar-UI:t, som är pilotytan.
-Webbens CSS-variabler genereras där ur tokenfilen. Mallar, genereringsskills och
-införande i övriga ytor byggs stegvis enligt ATT_GORA. Designspråket ändrar inte tjänstelagrets
+Webbens CSS-variabler genereras där ur tokenfilen. Lokala mallar för
+[A4-rapporter](06_design/rapportmall.md) och [16:9-presentationer](06_design/presentationsmall.md)
+återanvänder samma tokenfil, typsnittshantering och diagramstil. Gemensamma
+genereringsskills, gatewaykoppling och införande i övriga ytor byggs stegvis
+enligt ATT_GORA. Designspråket ändrar inte tjänstelagrets
 behörigheter eller den beslutade webbarkitekturen.
 
 ---
@@ -133,7 +161,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 3 | Kundportal | `projekt/03_kundportal/` | Låtsas-hemsida: se pension, förmåner, pausa/skjuta upp utbetalning | 🔲 Ej påbörjat | Nämnd som senare fas i B-020 |
 | 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟢 Dokumentunderlag klart och infört (B-031, gäller från 2026-11-01); kodbygge separat | `01_domän/`, `04_regulatoriskt/` |
 | 5 | Kapitalförvaltning | `projekt/05_kapitalförvaltning/` | Paper trading-portfölj + gränssnitt för att analysera innehav och styra allokering | 🟡 Fas 2a/2b: dokumentutkast; 2c: datamodell byggd/testad lokalt, ej i Lakebase. Antagande och handelsfunktion återstår | Fas 2, B-019, `05_styrdokument/` |
-| 6 | Avdelningsfunktioner | `projekt/06_avdelningsfunktioner/` | Funktioner per avdelning, bl.a. en aktuariell modul för premiesättning kopplad till FI-krav | 🔲 Ej påbörjat | — |
+| 6 | Avdelningsfunktioner | `projekt/06_avdelningsfunktioner/` | Ekonomi, aktuariell värdering, risk och rapportunderlag; samordning med administration och kapital | 🟡 Behov och första kontraktsarbete preciserade 2026-10-27. Ekonomi-/FTA-motorer och körbara funktioner återstår | SIM-underlag, processöversiktens V-10–12, paket A/B och planerat värderingskontrakt |
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🟡 Statisk ögonblicksbild uppdaterad 2026-10-25 mot main @ 5fd10ab: tio projekt, tre agentprofiler, 25 operationer och kvarstående verksamhetsbygge; inga livevärden | `projekt/08_företagsöversikt/foretagsoversikt.html` |
 | 9 | Processkartor | `projekt/09_processkartor/` | Processkartor över agenternas arbete: utlösare, mandat, verktyg, resultat och godkännanden; levererar till delprojekt 8 | 🟡 Plan upplagd | Första målflödet i `projekt/02_bi_insikter/DASHBOARD_DESIGN.md` |

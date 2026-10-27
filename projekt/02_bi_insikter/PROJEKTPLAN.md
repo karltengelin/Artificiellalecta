@@ -40,6 +40,37 @@ Dashboard och Genie-integration är ännu inte driftsatta; dashboardens konkreta
 
 ### Nästa steg
 
+**Närmaste planeringsleverans, godkänd 2026-10-27:** förbered projekt 2:s del av
+[första fråge-/rapportkedjan i projekt 10](../10_operatörscentral/PROJEKTPLAN.md).
+Ingen implementation eller ny agentåtkomst är aktiverad genom dokumentuppdraget.
+
+Första frågan gäller registrerade försäkrade vid läsdatum och betalmarkerade
+premier i en vald avslutad kalendermånad. Återanvänd definitionerna
+`insured_registered_count` och `premium_paid_recorded_sek`. Det senare måttet
+avser signerade premie-/rättelseposter med giltigt betaldatum i perioden,
+exklusive avgifter; det är ingen bankavstämning. Beståndsmåttet är ingen
+historisk månadsslutspopulation. Använd samma definitioner i central, teamyta
+och rapport och märk dem med version och datum.
+
+Projekt 2 ska leverera följande underlag före byggstart:
+
+- Vald dataväg i den faktiska Databricks-miljön, inklusive käll-/miljöidentitet,
+  population, period, aktualitet och kvalitet. B-029:s BI-inriktning består.
+- Ett avgränsat läs-/analyskontrakt för det avsedda teamet, utan personuppgifter
+  och med småcellsskydd. Dagens `get_company_metrics` är `HUMAN_ONLY`; dess
+  existens ger ingen rätt att öppna den för agenten.
+- Förväntade värden och avvikelsefall för kända underlag: noll, saknat eller
+  underkänt underlag, undertryckt cell, felaktig period och misslyckad läsning.
+- Rapportunderlag med definitioner, läsdatum/period, källreferenser och
+  begränsningar som kan användas av gemensam dokumentgenerering.
+
+Projekt 10 samordnar den mänskliga arbetsvägen, aktuarieteamet analysuppdraget,
+och utveckling/kommunikation den tekniska exporten respektive mallen.
+Framtida FTA-rapporter bygger på ett separat värderingskontrakt i projekt 6;
+premieeffektanalysen ersätter inte värderingsunderlaget.
+
+**Fortsatt BI-arbete och beroenden:**
+
 - Fastställ dashboardens måttdefinitioner, värderingsgrunder och första rapportmottagare.
 - Verifiera Unity Catalog, SQL Warehouse och Genie-stöd i den faktiska Databricks-miljön.
 - Integrera återstående BI-läsning genom det byggda tjänstelagret (T1–T4 klara). Återanvänd befintliga analysfunktioner och `bestand`-verktyget där definitioner och mandat passar.

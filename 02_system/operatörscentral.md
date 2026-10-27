@@ -15,6 +15,13 @@
 > skiljer byggda läsadaptrar från kvarstående fullständig logg-/BI-integration
 > och styrning. Ingen ändring av dagens runtimepolicy eller behörigheter ingår.
 
+> **Planeringsprioritet 2026-10-27:** operatören har godkänt dokument- och
+> prioriteringsändringarna efter riktningsgranskningen. Nästa bygguppdrag att
+> förbereda är den avgränsade beståndsfrågan till granskad rapport i
+> [projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md), med projekt 2,
+> aktuarieteamet och gemensam dokumentgenerering. Startvillkor och acceptans
+> finns där. Frågeingången och rapportkedjan är inte implementerade genom detta uppdrag.
+
 ## 1. VD-nivå och specialiserade arbetsytor
 
 Centralen samlar bolagets läge, teamens leveranser och kostnader, analysfrågor
