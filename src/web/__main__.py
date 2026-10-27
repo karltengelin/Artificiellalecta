@@ -1,7 +1,8 @@
 """Startar handläggar-UI:t lokalt: python -m web [--db demo|svc_test|lakebase] [--port PORT] [--reset-demo].
 
-Servern binds alltid till 127.0.0.1 – UI:t saknar inloggning (v1) och ska inte
-nås från andra datorer. Databasen väljs med HANDLAGGARE_DB (standard: demo).
+Servern binds alltid till 127.0.0.1 – v1-handläggningen saknar inloggning och ska
+inte nås från andra datorer. Operatörssessionen är separat för bolagsfrågor.
+Databasen väljs med HANDLAGGARE_DB (standard: demo).
 Accessloggen är avstängd: adresserna innehåller personnummer.
 """
 
@@ -38,7 +39,7 @@ def main() -> None:
         settings.demo_path.unlink(missing_ok=True)
     app = create_app(settings=settings)
     print(f"Handläggar-UI: http://{HOST}:{port}  ·  {settings.database_label}  ·  handläggare {settings.handler_id}", flush=True)
-    uvicorn.run(app, host=HOST, port=port, access_log=False)
+    uvicorn.run(app, host=HOST, port=port, access_log=False, proxy_headers=False)
 
 
 if __name__ == "__main__":

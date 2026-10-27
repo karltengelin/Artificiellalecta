@@ -89,6 +89,12 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 
 .panel { background: var(--color-surface); border-radius: var(--radius-card); padding: var(--space-5); margin-bottom: var(--space-5); }
 
+.operator-login { max-width: 460px; margin: var(--space-6) auto; padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-large-surface); }
+.operator-login form { display: grid; gap: var(--space-2); margin: var(--space-5) 0; }
+.operator-login label { font-weight: var(--font-weight-label); }
+.operator-login input { width: 100%; min-width: 0; }
+.operator-login button { margin-top: var(--space-3); }
+
 /* Operatörscentral: samma designvärden, inga egna färg- eller modellinställningar. */
 .oc-heading { display: flex; justify-content: space-between; gap: var(--space-5); align-items: start; }
 .oc-heading h1 { font-size: 2rem; margin-bottom: var(--space-2); }

@@ -37,16 +37,19 @@ agenter hör hemma i centralen respektive i teamens egna områden.
   Behövs en lista eller en sökning byggs den som läsoperation med en rad i `access_register.yaml`.
   Flödena (`/floden`) hör till harness och inte till tjänstelagret. De nås genom adaptern
   `agents.flows.console.FlowConsole`, som följer samma gräns.
-- **Bara lokalt, ingen inloggning (v1).**
+- **Bara lokalt; v1-handläggningen kräver ingen inloggning.**
   - Servern binds till `127.0.0.1`, och Host-huvudet måste vara `127.0.0.1` eller `localhost`
     (skydd mot DNS-rebinding).
   - Skrivformulär bär en token per process (skydd mot att en annan webbplats postar hit).
   - Aktören är `Actor.human(HANDLAGGARE_ID)`, med standardvärdet `karl`.
+  - Bolagsfrågornas separata [operatörsinloggning](operator_inloggning.md)
+    finns som lokal grund från OC-3a val H–I. Den ändrar inte v1-handläggningens
+    mandat eller B-036:s befintliga vägar via `/floden` och `/parametrar`.
 - **Motivering i varje skrivformulär**, eftersom tjänstelagret kräver den för `write`.
 - **Personuppgifter i webbläsaren.**
   - Adresserna innehåller personnummer, så serverns accesslogg är avstängd.
   - HTMX sparar ingen sidhistorik i webbläsarens lagring (`historyCacheSize: 0`).
-  - När verklig autentisering eller kundportalen byggs bör adresserna byta personnummer mot interna id:n.
+  - När handläggningen autentiseras eller kundportalen byggs bör adresserna byta personnummer mot interna id:n.
 
 ## 3. Starta
 

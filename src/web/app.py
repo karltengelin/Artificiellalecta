@@ -6,7 +6,7 @@
 Bara lokalt: servern binds till 127.0.0.1 (`python -m web`), Host-huvudet
 måste vara en lokal adress (skydd mot DNS-rebinding) och varje skrivformulär
 bär en token per process (skydd mot att en annan webbplats postar hit).
-Ingen inloggning i v1 – aktören är handläggaren ur konfigurationen.
+Bolagsfrågornas operatörssession är separat från v1-handläggarens konfigurerade aktör.
 """
 
 from __future__ import annotations
@@ -24,8 +24,10 @@ from services import ServiceLayer
 from web.agent import CaseAgent
 from web.config import WebSettings
 from web.handler import STATIC_DIR, new_csrf_token, render
+from web.operator_auth import OperatorAuth
 from web.presenters import ErrorView
 from web.routes import (
+    auth,
     cases,
     changes,
     enrollment,
@@ -71,9 +73,11 @@ def create_app(
     app.state.flow_console = flow_console
     app.state.settings = settings
     app.state.csrf_token = new_csrf_token()
+    app.state.operator_auth = OperatorAuth(settings.operator_id, settings.operator_password_hash)
 
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.allowed_hosts))
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    app.include_router(auth.router)
     app.include_router(enrollment.router)  # före insured: /forsakrade/ny är inget personnummer
     app.include_router(insured.router)
     app.include_router(changes.router)
@@ -95,6 +99,10 @@ def create_app(
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):
+        if request.url.path in {"/logga-in", "/logga-ut"}:
+            # Ingen databasläsning eller återgivning av formulärvärden på autentiseringsfel.
+            return auth.login_page(request, message="Förfrågan kunde inte genomföras. Ladda om inloggningssidan.",
+                                   status_code=exc.status_code)
         title = {403: "Ej tillåtet", 404: "Sidan finns inte"}.get(exc.status_code, "Fel")
         detail = exc.detail if isinstance(exc.detail, str) else "Förfrågan kunde inte hanteras."
         if exc.status_code == 404 and detail == "Not Found":
@@ -104,6 +112,9 @@ def create_app(
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception):
+        if request.url.path in {"/logga-in", "/logga-ut"}:
+            log.error("operator_auth_unavailable")
+            return auth.login_page(request, message="Inloggningen är tillfälligt otillgänglig.", status_code=503)
         log.exception("Oväntat fel i handläggar-UI:t")
         error = ErrorView("error", "Oväntat fel", f"{type(exc).__name__}: {exc}", 500, nothing_changed=False)
         return render(request, "error.html", {"error": error}, status_code=500)
