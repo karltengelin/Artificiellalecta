@@ -5,7 +5,7 @@
 > **Omfattning:** endast Markdown. Ingen kod, databasändring, behörighet eller körpolicy
 > ändras genom dokumentet; bygget följer §11.
 > **Bygger på:** [projekt 10:s avgränsning](../projekt/10_operatörscentral/PROJEKTPLAN.md)
-> ("Nästa bygguppdrag att förbereda"), [riktningsgranskningen](riktningsgranskning_2026-10-27.md),
+> ("Pågående bygguppdrag", tidigare "Nästa bygguppdrag att förbereda"), [riktningsgranskningen](riktningsgranskning_2026-10-27.md),
 > B-038 med [OC-0-underlaget](operatörscentral_beslutsforslag.md) §4.4, §6 och §7, B-035/B-036
 > (flödesmotorn), B-039 (delegering) och B-040 (Postgres-prov).
 > **Operatörens besked 2026-10-27:** `get_company_metrics` är inte känslig och behöver inte
@@ -239,8 +239,8 @@ resultatschemat `CompanyAnswer` med talkontroll (`src/agents/results.py`), uppdr
 leveranslagringen (`src/agents/deliveries.py`) och adaptern med `AssignmentView`
 (`src/agents/flows/questions.py`). Integrationstester i `tests/test_agents_questions.py`.
 Översättningen från aggregat till observationer är gemensam (`management.metrics.company_observations`);
-centralens route kan gå över till den. Adaptern tar renderaren som argument; den riktiga
-`render_report` och webbvyerna återstår (Codex). Kolumnrätterna är inte satta i Lakebase.
+centralens route kan gå över till den. Adaptern tar renderaren som argument. Codex operatörsinloggning (val H) är klar;
+den riktiga `render_report` och webbvyerna återstår (Codex). Kolumnrätterna är inte satta i Lakebase.
 
 Steg 1 och 2 kan gå parallellt eftersom filerna är åtskilda. Steg 3 för webben förutsätter
 adaptern. Lakebase-ändringarna (kolumnrätter) samordnas enligt AGENTS.md §4.5 och krockar inte
