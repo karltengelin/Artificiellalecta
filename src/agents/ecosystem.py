@@ -36,6 +36,8 @@ INSTRUCTION_DIR = Path("02_system/agenter")
 ID_PATTERN = OPERATION_NAME_PATTERN
 #: Indatafälten som ett parametermandat prövar (scope.ParameterChangeMandate)
 PARAMETER_FIELDS = frozenset({"key", "value", "valid_from"})
+#: Verktyg som harness själv kör (3c-1): varken tjänsteoperation eller gateway
+HARNESS_TOOLS = frozenset({"delegate_to_team"})
 
 # Raden "| **Team** | Försäkring & kund (`forsakring`) – …" i agentens instruktion.
 _TEAM_ROW = re.compile(r"^\|\s*\*\*Team\*\*\s*\|[^|\n]*\(`([a-z0-9_]+)`\)", re.MULTILINE)
@@ -92,19 +94,21 @@ class SkillEntry(_Strict):
 
     service_operation: str | None = None
     gateway_tool: str | None = None
+    harness_tool: str | None = None  # delegering (3c-1)
     parameter_mandate: bool = False
 
     @model_validator(mode="after")
     def _one_target(self) -> SkillEntry:
-        if (self.service_operation is None) == (self.gateway_tool is None):
-            raise ValueError("ange exakt en av service_operation och gateway_tool")
-        if self.parameter_mandate and self.gateway_tool is not None:
+        targets = (self.service_operation, self.gateway_tool, self.harness_tool)
+        if sum(t is not None for t in targets) != 1:
+            raise ValueError("ange exakt en av service_operation, gateway_tool och harness_tool")
+        if self.parameter_mandate and self.service_operation is None:
             raise ValueError("parameter_mandate gäller bara tjänsteoperationer")
         return self
 
     @property
     def target(self) -> str:
-        return self.service_operation or self.gateway_tool
+        return self.service_operation or self.gateway_tool or self.harness_tool
 
 
 class Pod(_Strict):
@@ -291,8 +295,15 @@ class Ecosystem(_Strict):
         operations: dict[str, str] = {}
         for pod_name, pod in self.pods.items():
             for skill, entry in pod.skills.items():
+                if entry.harness_tool is not None:
+                    if entry.harness_tool not in HARNESS_TOOLS:
+                        errors.append(f"'{pod_name}.{skill}': harnessverktyget '{entry.harness_tool}' finns inte")
+                    if pod.pii:
+                        errors.append(f"'{pod_name}.{skill}': delegering monteras bara i en podd utan PII")
+                    if OperationKind.READ not in pod.allowed_effects:
+                        errors.append(f"'{pod_name}.{skill}': delegering kräver sidoeffekten read i podden")
                 if entry.target in operations:
-                    what = "Operationen '{}' är mappad" if entry.service_operation else "Gatewayverktyget '{}' är mappat"
+                    what = "Operationen '{}' är mappad" if entry.service_operation else "Verktyget '{}' är mappat"
                     errors.append(
                         f"{what.format(entry.target)} två gånger ('{operations[entry.target]}' och '{skill}')"
                     )
@@ -411,7 +422,10 @@ class Ecosystem(_Strict):
 
     def unmapped_operations(self, registry: OperationRegistry) -> list[str]:
         """Operationer som ingen podd mappar – de är stängda för alla agenter."""
-        mapped = {entry.service_operation for pod in self.pods.values() for entry in pod.skills.values()}
+        mapped = {
+            entry.service_operation for pod in self.pods.values() for entry in pod.skills.values()
+            if entry.service_operation is not None
+        }
         return [name for name in registry.names() if name not in mapped]
 
     def validate_model_roles(self, roles: Iterable[str]) -> None:

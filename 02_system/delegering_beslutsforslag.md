@@ -214,6 +214,9 @@ utan ändring, och `RunResult.cost_usd` eller rotsummor adderas inte (B-038 §4.
 
 Par 2 (forsakring → compliance) och fortsättning genom kedjan är egna, senare leveranser.
 
+**Genomfört 2026-10-27:** steg 1–5 och 7 enligt ovan; röktestet i steg 6 är förberett i
+`scripts/diagnostics/smoke_test_delegation.py` men inte kört. Avgränsningarna står i `harness.md` §10.2.
+
 ## 12. Förslag till beslutspost
 
 Om valen godkänns föreslås en post i `BESLUTSLOGG.md` (numret sätts vid loggning):

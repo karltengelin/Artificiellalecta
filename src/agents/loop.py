@@ -18,7 +18,12 @@ En körning:
      `needs_human`; vanliga fel får modellen rätta högst två gånger per felklass (§6.4).
   6. Ett slutsvar utan verktyg avslutar som `completed`. `refusal` ger `needs_human`,
      avklippt eller okänt slut ger `failed` – aldrig ett "färdigt" resultat.
-  7. Med ett resultatschema i uppdraget (3c-T) tvingar AI-lagret slutsvaret till schemat,
+  7. Delegering (3c-1, B-039): med delegeringsmål i uppdraget och en `DelegationRuntime`
+     kan agenten ge ett annat team ett uppdrag. Barnet körs synkront med egen profil och
+     förbrukningen bokförs i rotens budgetbok; förälderns egen aktiva tid pausas under tiden.
+     Är rotbudgeten slut görs inga fler modellanrop. Ett barn som väntar, behöver människa
+     eller kräver avstämning avslutar föräldern med samma status.
+  8. Med ett resultatschema i uppdraget (3c-T) tvingar AI-lagret slutsvaret till schemat,
      och harness prövar det mot körningen (agents.results): lästa källor, skrivna utkast och
      beräkningen. Håller det inte blir körningen `needs_human` med skälen.
 
@@ -37,6 +42,7 @@ from pathlib import Path
 from typing import Any
 
 from agents.continuation import Continuation
+from agents.delegation import CUMULATIVE, DelegationRuntime, Delegator, RootLedger
 from agents.dispatcher import CallStatus, Dispatcher, DispatchOutcome
 from agents.ecosystem import REPO_ROOT, Limits
 from agents.errors import HarnessError
@@ -78,13 +84,21 @@ class _Budget:
     steps: int = 0
     tool_calls: int = 0
     cost_usd: float = 0.0
+    paused: float = 0.0  # tid i delegerade barn – räknas i roten, inte i förälderns tak (3c-1)
 
     def __post_init__(self) -> None:
         self.started = self.clock()
 
     @property
     def elapsed(self) -> float:
-        return self.clock() - self.started
+        return self.clock() - self.started - self.paused
+
+    def pause(self, seconds: float) -> None:
+        self.paused += max(seconds, 0.0)
+
+    def usage(self) -> dict[str, float]:
+        return {"steps": self.steps, "tool_calls": self.tool_calls, "cost_usd": self.cost_usd,
+                "elapsed_seconds": self.elapsed}
 
     def exhausted(self) -> str | None:
         """Skäl att inte göra fler modellanrop – eller None."""
@@ -152,6 +166,7 @@ def run_agent(
     journal: Journal | None = None,
     journal_dir: Path | None = None,
     continuation: Continuation | None = None,
+    delegation: DelegationRuntime | None = None,
     clock: Callable[[], float] = time.monotonic,
 ) -> RunOutcome:
     """Kör agenten tills den är klar, väntar, stoppas eller når ett tak.
@@ -159,6 +174,7 @@ def run_agent(
     Körjournalen skrivs till `journal_dir` (standard logs/agent_runs/) om ingen
     `journal` anges. En fortsättning (3b-5) tar sitt uppdrag från `continuation`.
     `gateways` är regel- och utkastgatewayerna (standard: repot och logs/agent_artifacts/).
+    `delegation` krävs när uppdraget har delegeringsmål (3c-1); barnen körs med den.
     """
     if profile.team != request.target_team:
         raise HarnessError(f"Profilen gäller teamet '{profile.team}', uppdraget '{request.target_team}'")
@@ -172,6 +188,8 @@ def run_agent(
         raise HarnessError(str(exc)) from None
     if continuation is not None and request != continuation.request:
         raise HarnessError("En fortsättning körs med fortsättningens uppdrag (Continuation.request)")
+    if profile.delegation_targets and delegation is None:
+        raise HarnessError("Uppdraget anger delegeringsmål men körningen saknar DelegationRuntime")
     if ai.log_content and any(d.visible and d.pii for d in profile.decisions):
         # Rå innehållsloggning får inte vara på när agenten hanterar personuppgifter (harness.md §8.1)
         raise HarnessError("AI_LOG_CONTENT är på – stäng av den innan agenten får verktyg med personuppgifter")
@@ -189,9 +207,20 @@ def run_agent(
     def observe(type: str, **fields: Any) -> None:
         journal.append(type, step=budget.steps, **fields)
 
+    delegator = None
+    if profile.delegation_targets:
+        ledger = RootLedger(
+            limits=delegation.ecosystem.delegation.root_limits,
+            base={CUMULATIVE[k]: v for k, v in consumed.items() if k in CUMULATIVE},
+        )
+        delegator = Delegator(
+            delegation, ledger, parent_request=request, parent_run_id=run_id, parent_team=profile.team,
+            targets=profile.delegation_targets, parent_usage=budget.usage, pause=budget.pause,
+            observe=observe, clock=clock,
+        )
     dispatcher = Dispatcher(
         profile, service, run_id=run_id, case_id=request.case_id, scope=scope,
-        parameter_change=parameter_change, gateways=gateways, observer=observe,
+        parameter_change=parameter_change, gateways=gateways, observer=observe, delegator=delegator,
     )
     bound = ai.bind(team=profile.team, agent=profile.agent_id, run_id=run_id)
     tools = profile.tool_specs()
@@ -206,6 +235,8 @@ def run_agent(
         case_id=request.case_id, model_role=profile.model_role, versions=_versions(profile),
         limits=profile.limits.model_dump(), root_limits=root_limits.model_dump(),
         flow_id=request.flow_id, flow_step_id=request.flow_step_id, parameter_change_ref=request.parameter_change_ref,
+        depth=request.depth, delegation_targets=list(profile.delegation_targets),
+        delegation_root_limits=delegator.ledger.limits.model_dump(exclude_none=True) if delegator else None,
     )
     observe(
         "policy_resolved",
@@ -228,10 +259,14 @@ def run_agent(
         usage = {"steps": budget.steps, "tool_calls": budget.tool_calls,
                  "cost_usd": round(budget.cost_usd, 6), "elapsed_seconds": round(budget.elapsed, 3)}
         root_usage = {k: round(v + consumed.get(_LIMIT_OF[k], 0), 6) for k, v in usage.items()}
+        delegated = (
+            {"children": delegator.ledger.started, "root_usage": delegator.root_usage()}
+            if delegator and delegator.ledger.started else None
+        )
         try:
             observe("run_ended", status=status.value, summary=text_ref(summary), pending_approvals=list(pending),
                     evidence_refs=list(evidence), uncertainties=[mask(u) for u in uncertainties],
-                    usage=usage, root_usage=root_usage)
+                    usage=usage, root_usage=root_usage, delegation=delegated)
         except JournalError as exc:
             uncertainties = (*uncertainties, f"Körjournalen kunde inte avslutas: {exc}")
         result = RunResult(
@@ -245,7 +280,7 @@ def run_agent(
         )
 
     while True:
-        if reason := budget.exhausted():
+        if reason := budget.exhausted() or (delegator.exhausted() if delegator else None):
             return finish(RunStatus.LIMIT_REACHED, f"Körningen stoppades: {reason}.")
         if (size := _context_bytes(system, history, tools)) > profile.limits.max_context_bytes:
             return finish(
@@ -330,6 +365,13 @@ def _versions(profile: EffectiveProfile) -> dict[str, Any]:
 
 _Stop = tuple[RunStatus, str, tuple[str, ...]]
 
+#: Sammanfattning när ett delegerat uppdrag stoppar föräldern (3c-1, B-039 val I)
+_STOP_SUMMARY = {
+    RunStatus.WAITING_APPROVAL: "Ett delegerat uppdrag väntar på godkännande ({ids}). Ingen ändring är gjord ännu.",
+    RunStatus.NEEDS_HUMAN: "Ett delegerat uppdrag behöver handläggaren – körningen stannar här.",
+    RunStatus.RECONCILIATION_REQUIRED: "Ett delegerat uppdrag avbröts med okänt utfall – stäm av innan fortsatt arbete.",
+}
+
 
 def _handle_tools(
     response: ModelResponse,
@@ -363,6 +405,9 @@ def _handle_tools(
     if outcome.denied or outcome.withheld:
         return (RunStatus.BLOCKED, "Ett verktygsanrop nekades av harness – körningen lämnas till handläggaren.",
                 _messages(outcome))
+    if (stopped := outcome.stop) is not None:
+        return (stopped.stop, _STOP_SUMMARY[stopped.stop].format(ids=", ".join(outcome.pending_approvals)),
+                stopped.reasons)
     if outcome.waiting_approval:
         ids = ", ".join(outcome.pending_approvals)
         return (RunStatus.WAITING_APPROVAL,

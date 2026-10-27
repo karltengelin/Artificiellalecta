@@ -19,10 +19,11 @@
 Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varje skill är ett tunt omslag runt en operation i tjänstelagret eller, sedan 3c-T, ett gatewayverktyg (`regelverk`, `dokument`, `harness.md` §5.2), och hör till exakt en podd. Gatewayverktyg har ingen nivå i åtkomstregistret; gatewayen verkställer sin egen policy. **Åtkomstregistret** visar registrets nivå; effektiv nivå per dag står i `02_system/tjänstelager_operationer.md`. Verktyg med personuppgifter visas först med resursmandat och teamets databasroll (`02_system/harness.md` §5.1). Effektiv profil för en agent: `python scripts/documentation/show_agent_profile.py`.
 
 <!-- list_skills.py: start – genererad, ändra inte för hand -->
-| Skill | Podd | Operation eller gatewayverktyg | Typ | PII | Åtkomstregistret | Behöriga agenter |
+| Skill | Podd | Operation eller verktyg | Typ | PII | Åtkomstregistret | Behöriga agenter |
 |---|---|---|---|---|---|---|
 | `calculate_premium_preview` | `berakning` | `calculate_premium_preview` | compute | Nej | AGENT | actuary_agent (Aktuarieagent), case_handler (Handläggaragent), compliance_agent (Compliance-agent) |
 | `correct_premium_transaction` | `kunddata` | `correct_premium_transaction` | write | Ja | HUMAN_ONLY | – |
+| `delegate_to_team` | `delegering` | harness `delegate_to_team` | read | Nej | – (körpolicyns delegeringsmål och uppdragets `delegation_targets`) | compliance_agent (Compliance-agent) |
 | `estimate_parameter_change_impact` | `bestand` | `estimate_parameter_change_impact` | read | Nej | AGENT, kräver godkänt parameterförslag | actuary_agent (Aktuarieagent) |
 | `get_case` | `kunddata` | `get_case` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_insured_overview` | `kunddata` | `get_insured_overview` | read | Ja | AGENT | case_handler (Handläggaragent) |

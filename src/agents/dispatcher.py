@@ -22,6 +22,11 @@ En grupp är ingen affärstransaktion: ett tidigare utfört anrop står kvar om 
 senare fallerar. Identiteten (Actor.agent med team) kommer från profilen, aldrig
 från modellen.
 
+Delegeringsverktyget (3c-1, B-039) körs av `agents.delegation.Delegator`, som loopen
+skapar när uppdraget har delegeringsmål. Ett barn som slutar `waiting_approval`,
+`needs_human` eller `reconciliation_required` ger anropet läget DELEGATION_STOPPED:
+resten av gruppen körs inte och loopen avslutar föräldern med barnets status.
+
 Gatewayverktyg (regelverk, dokument, 3c-T) körs med team och run-id från betrodd kod.
 Gatewayens säkerhetsnej blir DENIED, övriga nej ERROR. En skill med parametermandat
 prövas mot uppdragets godkända parameterförslag före anropet; utan mandat nekas den.
@@ -47,12 +52,15 @@ from agents.gateways import GatewayError, Gateways
 from agents.journal import digest, mask, text_ref
 from agents.profile import EffectiveProfile, SkillDecision
 from agents.scope import ExecutionScope, ParameterChangeMandate
-from agents.skills import GatewaySkill, ServiceSkill, Skill
+from agents.run import RunStatus
+from agents.skills import GatewaySkill, HarnessSkill, ServiceSkill, Skill
 from ai import ToolCall, ToolResult
 from services import Actor, OperationContext, ServiceError, ServiceLayer
 
 GROUP_STOPPED = "Inte utfört: ett annat anrop i samma svar avvisades, så inget i gruppen kördes."
 WAITING = "Inte utfört: ett tidigare anrop i samma svar väntar på handläggarens godkännande."
+STOPPED = "Inte utfört: ett tidigare delegerat uppdrag i samma svar stoppade körningen."
+NO_DELEGATION = "Delegering är inte tillgänglig i den här körningen"
 
 
 class CallStatus(StrEnum):
@@ -63,6 +71,27 @@ class CallStatus(StrEnum):
     ERROR = "error"  # tjänstelagret avböjde (stopp, krock, saknas) – ingenting ändrat
     WITHHELD = "withheld"  # utfört, men resultatet låg utanför scopet och lämnades inte ut
     NOT_EXECUTED = "not_executed"
+    DELEGATION_STOPPED = "delegation_stopped"  # barnet väntar, behöver människa eller avstämning (3c-1)
+
+
+@dataclass(frozen=True)
+class DelegationOutcome:
+    """Utfallet av en delegering (3c-1) – det dispatchern gör ett verktygssvar av.
+
+    `call_status`: done, error (modellen kan ta hänsyn), denied (säkerhetsgräns) eller
+    stopped (barnets status stoppar föräldern, se `stop`).
+    """
+
+    task_id: str
+    call_status: str
+    payload: dict[str, Any]
+    child_run_id: str | None = None
+    child_status: str | None = None
+    stop: RunStatus | None = None
+    pending_approvals: tuple[str, ...] = ()
+    reasons: tuple[str, ...] = ()
+    error_type: str | None = None
+    reused: bool = False
 
 
 @dataclass(frozen=True)
@@ -74,6 +103,8 @@ class CallOutcome:
     approval_id: str | None = None
     reasons: tuple[str, ...] = ()
     error_type: str | None = None  # vid INVALID/ERROR: felklassen, t.ex. "BlockedError"
+    stop: RunStatus | None = None  # vid DELEGATION_STOPPED: barnets status som föräldern tar över
+    delegated_approvals: tuple[str, ...] = ()  # förslag som ett delegerat uppdrag lämnade i kön
 
 
 @dataclass(frozen=True)
@@ -87,7 +118,13 @@ class DispatchOutcome:
 
     @property
     def pending_approvals(self) -> tuple[str, ...]:
-        return tuple(c.approval_id for c in self.calls if c.approval_id)
+        own = tuple(c.approval_id for c in self.calls if c.approval_id)
+        return own + tuple(a for c in self.calls for a in c.delegated_approvals)
+
+    @property
+    def stop(self) -> CallOutcome | None:
+        """Första anropet vars delegerade uppdrag stoppade körningen (3c-1)."""
+        return next((c for c in self.calls if c.status == CallStatus.DELEGATION_STOPPED), None)
 
     @property
     def waiting_approval(self) -> bool:
@@ -126,8 +163,12 @@ class Dispatcher:
         parameter_change: ParameterChangeMandate | None = None,
         gateways: Gateways | None = None,
         observer: Callable[..., Any] | None = None,
+        delegator: Any | None = None,
     ) -> None:
-        """`scope` och `parameter_change` byggs av betrodd kod och måste vara det uppdraget pekar ut."""
+        """`scope` och `parameter_change` byggs av betrodd kod och måste vara det uppdraget pekar ut.
+
+        `delegator` (agents.delegation.Delegator) kör delegeringsverktyget; utan den nekas det.
+        """
         if (scope.ref if scope else None) != profile.execution_scope_ref:
             raise HarnessError(
                 "Resursmandatet stämmer inte med uppdraget "
@@ -146,6 +187,7 @@ class Dispatcher:
         self.scope = scope
         self.parameter_change = parameter_change
         self._gateways = gateways
+        self._delegator = delegator
         self.actor = Actor.agent(profile.agent_id, team=profile.team)
         self.run_id = run_id
         self.case_id = case_id
@@ -177,14 +219,17 @@ class Dispatcher:
             ))
 
         outcomes: list[CallOutcome] = []
-        waiting = False
+        halted: str | None = None
         for c in checked:
-            if waiting:
-                outcomes.append(_outcome(c.call, CallStatus.NOT_EXECUTED, {"status": "not_executed", "message": WAITING}))
+            if halted:
+                outcomes.append(_outcome(c.call, CallStatus.NOT_EXECUTED, {"status": "not_executed", "message": halted}))
                 continue
             outcome = self._execute(c)
             self._observe_result(outcome)
-            waiting = outcome.status == CallStatus.PENDING_APPROVAL
+            if outcome.status == CallStatus.PENDING_APPROVAL:
+                halted = WAITING
+            elif outcome.status == CallStatus.DELEGATION_STOPPED:
+                halted = STOPPED
             outcomes.append(outcome)
         return DispatchOutcome(tuple(outcomes))
 
@@ -208,9 +253,10 @@ class Dispatcher:
     def _check_policy(self, decision: SkillDecision) -> None:
         """Ingen ny förmåga mitt i en körning, och en indragning gäller direkt (harness.md §3.5).
 
-        Gatewayverktyg har ingen nivå i tjänstelagret – deras policy står i körpolicyn och gatewayen.
+        Gateway- och delegeringsverktyg har ingen nivå i tjänstelagret – deras policy står i
+        körpolicyn, gatewayen och `agents.delegation`.
         """
-        if decision.source == "gateway":
+        if decision.source != "service":
             return
         now = self.service.decision(decision.operation)
         if now.effective != decision.service_level:
@@ -236,6 +282,8 @@ class Dispatcher:
         )
         if isinstance(c.skill, GatewaySkill):
             return self._execute_gateway(c)
+        if isinstance(c.skill, HarnessSkill):
+            return self._execute_delegation(c)
         ctx = OperationContext(actor=self.actor, run_id=self.run_id, case_id=self.case_id)
         try:
             result = c.skill.execute(self.service, ctx, c.action)
@@ -273,6 +321,19 @@ class Dispatcher:
             )
         return _outcome(c.call, CallStatus.DONE, GatewaySkill.result_payload(output))
 
+    def _execute_delegation(self, c: _Checked) -> CallOutcome:
+        if self._delegator is None:
+            return _denied(c.call, SkillDeniedError(NO_DELEGATION, skill=c.call.name, reasons=(NO_DELEGATION,)))
+        d = self._delegator.delegate(c.call.id, c.action.data)
+        if d.call_status == "done":
+            return _outcome(c.call, CallStatus.DONE, d.payload)
+        if d.call_status == "stopped":
+            return _outcome(c.call, CallStatus.DELEGATION_STOPPED, d.payload, reasons=d.reasons,
+                            stop=d.stop, delegated_approvals=d.pending_approvals)
+        if d.call_status == "denied":
+            return _outcome(c.call, CallStatus.DENIED, d.payload, error=True, reasons=d.reasons)
+        return _outcome(c.call, CallStatus.ERROR, d.payload, error=True, reasons=d.reasons, error_type=d.error_type)
+
     def _observe_result(self, outcome: CallOutcome) -> None:
         if outcome.status == CallStatus.PENDING_APPROVAL:
             self._observe("approval_wait", tool_call_id=outcome.call_id, skill=outcome.skill,
@@ -307,6 +368,8 @@ def _outcome(
     approval_id: str | None = None,
     reasons: tuple[str, ...] = (),
     error_type: str | None = None,
+    stop: RunStatus | None = None,
+    delegated_approvals: tuple[str, ...] = (),
 ) -> CallOutcome:
     content = json.dumps(payload, ensure_ascii=False, default=str)
     return CallOutcome(
@@ -317,4 +380,6 @@ def _outcome(
         approval_id=approval_id,
         reasons=reasons,
         error_type=error_type,
+        stop=stop,
+        delegated_approvals=delegated_approvals,
     )

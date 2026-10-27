@@ -24,6 +24,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from agents.delegation import DelegationRuntime
 from agents.ecosystem import Ecosystem, Limits
 from agents.errors import HarnessError
 from agents.gateways import Gateways
@@ -129,10 +130,14 @@ def run_assignment(
     run_id: str | None = None,
     journal: Journal | None = None,
     journal_dir: Path | None = None,
+    delegation: DelegationRuntime | None = None,
 ) -> RunOutcome:
-    """Kör ett uppdrag från mallarna ovan genom samma profil, loop, dispatcher och journal som alla körningar."""
+    """Kör ett uppdrag från mallarna ovan genom samma profil, loop, dispatcher och journal som alla körningar.
+
+    `delegation` behövs när uppdraget har delegeringsmål (`delegation_targets`, 3c-1).
+    """
     profile = compile_profile(ecosystem, skills, service, request=request)
     return run_agent(
         ai, profile, service, request, parameter_change=parameter_change, gateways=gateways,
-        run_id=run_id, journal=journal, journal_dir=journal_dir,
+        run_id=run_id, journal=journal, journal_dir=journal_dir, delegation=delegation,
     )

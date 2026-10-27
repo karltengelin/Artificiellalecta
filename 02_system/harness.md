@@ -701,6 +701,14 @@ Valda startgränser: djup högst 2, högst 3 barn totalt per rot, ingen återgå
 
 Ett väntande barn returnerar run-/approval-referenser och propagagerar väntan till föräldern/flödet. Inga öppna modellkonversationer står och pollar medan människan granskar. Dubbel beställning med samma task-id ska hitta samma barn eller stoppas för avstämning, inte skapa ett nytt.
 
+**Byggt 2026-10-27 (3c-1, B-039):** `src/agents/delegation.py` (`Delegator`, `RootLedger`, `DelegationRuntime`), verktyget `delegate_to_team` i podden `delegering` och fältet `RunRequest.delegation_targets`. Avvikelser och avgränsningar i första leveransen:
+
+- Bara paret compliance → aktuarie är aktivt. Barnet får inget resurs- eller parametermandat och inga egna delegeringsmål, så djupet är i praktiken 1. En körning med synliga PII-verktyg kan inte delegera.
+- `task_id` härleds ur förälderns run-id och call-id (`del-<run>-<call>`). Idempotensen gäller beställningens innehåll inom roten och hålls i minnet under den synkrona körningen; en krasch i processen ger ingen automatisk återupptagning.
+- Barnets tak är mottagarprofilens, avsmalnat av vad som återstår av `delegation.root_limits`. Barnets tid pausar förälderns aktiva tid. Ett oväntat fel i barnet ger `reconciliation_required` och hela reservationen bokförs som förbrukad.
+- Säkerhetsnej (otillåtet mål, cykel, djup, personnummer i texten, ogiltig referens) ger `blocked` hos föräldern. Antal barn, budget och okänt resultatschema är vanliga fel som modellen får hantera.
+- Länkad fortsättning genom kedjan efter ett godkännande byggs när ett aktivt par kan vänta (tidigast forsakring → compliance).
+
 ### 10.3 Flödesmotor och regeländringshantering
 
 **Operatörens förtydligande 2026-10-25:** flödesmotorn byggs för återanvändbara

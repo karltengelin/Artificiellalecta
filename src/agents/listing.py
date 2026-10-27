@@ -1,7 +1,7 @@
 """Körpolicyns skills i skillkatalogen (Fas 3b-7, agentekosystem.md §5.1).
 
 Varje skill i `src/agents/ecosystem.yaml` hör till exakt en podd. Tabellen visar podd,
-operation eller gatewayverktyg (3c-T), typ, PII, nivån i tjänstelagrets åtkomstregister och vilka agenter som har
+operation, gatewayverktyg (3c-T) eller harnessverktyg (delegering, 3c-1), typ, PII, nivån i tjänstelagrets åtkomstregister och vilka agenter som har
 podden monterad utan att skillen är nekad – så att behörigheten går att granska i
 katalogen, inte bara i YAML-filen.
 
@@ -42,13 +42,16 @@ def authorized_agents(ecosystem: Ecosystem, skill: str) -> list[str]:
 
 def render_skill_table(ecosystem: Ecosystem, registry: OperationRegistry, register: AccessRegister) -> str:
     lines = [
-        "| Skill | Podd | Operation eller gatewayverktyg | Typ | PII | Åtkomstregistret | Behöriga agenter |",
+        "| Skill | Podd | Operation eller verktyg | Typ | PII | Åtkomstregistret | Behöriga agenter |",
         "|---|---|---|---|---|---|---|",
     ]
     for skill in ecosystem.skill_names():
         pod = ecosystem.pod_of(skill)
         entry = ecosystem.pods[pod].skills[skill]
-        if entry.gateway_tool is not None:
+        if entry.harness_tool is not None:
+            target, kind, pii = f"harness `{entry.harness_tool}`", "read", False
+            level = "– (körpolicyns delegeringsmål och uppdragets `delegation_targets`)"
+        elif entry.gateway_tool is not None:
             tool = GATEWAY_TOOLS[entry.gateway_tool]
             target, kind, pii, level = f"gateway `{tool.name}`", tool.side_effect, tool.pii, "– (gatewayens policy)"
         else:
