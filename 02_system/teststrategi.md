@@ -150,7 +150,7 @@ alla dess testfall, även när filen också innehåller mindre komponenttester.
 3. Inför integration: synka senaste main och kör hela lokala sviten för kodändringar,
    samt de Postgres-prov som `--changed` pekar ut (`--postgres`). Ren förklarande dokumentation
    kräver normalt innehålls-/länkkontroll, inte en ny helkörning av Python-sviten.
-4. Verifiera det sammanslagna resultatet enligt AGENTS.md §4.4/4.6. Om samma trädtillstånd
+4. Verifiera det sammanslagna resultatet enligt AGENTS.md §4.4/4.6/4.7. Om samma trädtillstånd
    redan testats behövs ingen identisk helkörning; nytt otrövat kombinerat kodläge testas på nytt.
 5. Redovisa kodläge, testurval, skäl och resultat. Skilj överhoppade/bortvalda prov från godkända.
 
