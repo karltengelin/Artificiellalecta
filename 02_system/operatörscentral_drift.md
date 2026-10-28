@@ -11,6 +11,10 @@ kalendermånad: överblick, team, agentkostnader och underlag. Vanliga
 handläggarsidor ligger kvar på sina adresser. Plattformens startsida och
 fullständiga teamområden flyttas i OC-8; flöden/parametrar flyttas i OC-7.
 
+OC-3a har nu avgränsade [fråge- och uppdragsvyer](fragekedja_webb.md) på
+`/central/fragor` och `/team/aktuarie`, med gemensam detalj och PDF-granskning.
+De ansluts uttryckligen; riktig modell och Lakebase verifieras separat.
+
 Läsvyn anropar inga modeller och innehåller inga styrskrivningar.
 Läsning av försäkringsaggregat går genom `get_company_metrics` i tjänstelagret, utan PII
 i resultatet. Sedan B-041 (2026-10-27) är operationen `AGENT` och monterad för aktuarieteamet
@@ -40,7 +44,8 @@ Detta är dataminimering och småcellsskydd, inte ett allmänt anonymitetsbevis.
 Definitionerna finns i `management.metrics`. Underlagsvyn visar definition,
 version, ägare, kontroll, datum, miljö/dataset och observationens hashreferens.
 Observationerna skapas vid läsning och arkiveras inte som en historisk serie.
-Frysta rapporter och varaktig observationshistorik återstår i BI-projektet.
+OC-3a bevarar det enskilda uppdragets rapport och underlag via harness.
+Generell varaktig observationshistorik återstår i BI-projektet.
 Ingen Databricks-dashboard eller Genie-integration driftsätts här.
 
 ## Deklarera loggkällor

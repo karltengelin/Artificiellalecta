@@ -45,6 +45,9 @@ agenter hör hemma i centralen respektive i teamens egna områden.
   - Bolagsfrågornas separata [operatörsinloggning](operator_inloggning.md)
     finns som lokal grund från OC-3a val H–I. Den ändrar inte v1-handläggningens
     mandat eller B-036:s befintliga vägar via `/floden` och `/parametrar`.
+    [OC-3a:s uppdragsvyer](fragekedja_webb.md) finns på `/central/fragor` och
+    `/team/aktuarie`, med uttryckligt ansluten `QuestionConsole` och verifierad
+    operatör för alla skrivande handlingar.
 - **Motivering i varje skrivformulär**, eftersom tjänstelagret kräver den för `write`.
 - **Personuppgifter i webbläsaren.**
   - Adresserna innehåller personnummer, så serverns accesslogg är avstängd.

@@ -20,6 +20,7 @@ from starlette.exceptions import HTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from agents.flows.console import FlowConsole
+from agents.flows.questions import QuestionConsole
 from services import ServiceLayer
 from web.agent import CaseAgent
 from web.config import WebSettings
@@ -37,6 +38,7 @@ from web.routes import (
     journal,
     operator,
     parameters,
+    questions,
 )
 
 log = logging.getLogger("web")
@@ -45,10 +47,12 @@ log = logging.getLogger("web")
 def create_app(
     service: ServiceLayer | None = None, settings: WebSettings | None = None, case_agent: CaseAgent | None = None,
     flow_console: FlowConsole | None = None,
+    question_console: QuestionConsole | None = None,
 ) -> FastAPI:
     """case_agent: handläggaragenten för ärenden. Byggs med tjänstelagret om inget anges;
     med ett givet tjänstelager utan agent visas ärendena utan knappen *Starta agent*.
 
+    question_console: explicit ansluten OC-3a-adapter, gemensam för centralen och aktuariens teamyta.
     flow_console: flödena (`/floden`, Fas 3c 3c-3) på samma sätt. Steg som stod som pågående
     när UI:t senast stoppades blir `reconciliation_required` här och avgörs av handläggaren."""
     settings = settings or WebSettings.from_env()
@@ -71,6 +75,8 @@ def create_app(
     app.state.service = service
     app.state.case_agent = case_agent
     app.state.flow_console = flow_console
+    app.state.question_console = question_console
+    app.state.question_submissions = questions.Submissions()
     app.state.settings = settings
     app.state.csrf_token = new_csrf_token()
     app.state.operator_auth = OperatorAuth(settings.operator_id, settings.operator_password_hash)
@@ -87,6 +93,7 @@ def create_app(
     app.include_router(flows.router)
     app.include_router(environments.router)
     app.include_router(operator.router)
+    app.include_router(questions.router)
 
     @app.get("/_instance")
     def instance(request: Request):
@@ -108,10 +115,19 @@ def create_app(
         if exc.status_code == 404 and detail == "Not Found":
             detail = "Adressen finns inte i handläggar-UI:t."
         error = ErrorView("error", title, detail, exc.status_code, nothing_changed=False)
-        return render(request, "error.html", {"error": error}, status_code=exc.status_code)
+        response = render(request, "error.html", {"error": error}, status_code=exc.status_code)
+        if request.url.path.startswith(("/central/fragor", "/team/aktuarie")):
+            response.headers.update(questions.HEADERS)
+        return response
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception):
+        if request.url.path.startswith(("/central/fragor", "/team/aktuarie")):
+            error = ErrorView("error", "Uppdraget kunde inte läsas", "Kontrollera uppdragslistan innan du försöker igen.",
+                              503, nothing_changed=False)
+            response = render(request, "error.html", {"error": error}, status_code=503)
+            response.headers.update(questions.HEADERS)
+            return response
         if request.url.path in {"/logga-in", "/logga-ut"}:
             log.error("operator_auth_unavailable")
             return auth.login_page(request, message="Inloggningen är tillfälligt otillgänglig.", status_code=503)

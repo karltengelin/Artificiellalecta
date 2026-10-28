@@ -264,3 +264,19 @@ pre.draft { white-space: pre-wrap; background: var(--color-background); border-r
   .search { margin: var(--space-5) auto; padding: var(--space-5); }
   .search__row { flex-direction: column; }
 }
+
+/* OC-3a: samma uppdrag och granskningsyta i centralen och hos aktuarien. */
+.oc-team-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.5rem; }
+.oc-team-choices article { padding: 1rem; border: 1px solid var(--color-border); border-radius: 12px; }
+.question-review { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 1.5rem; align-items: start; }
+.question-review > * { min-width: 0; }
+.question-review p, .question-review details { overflow-wrap: anywhere; }
+.question-pdf { width: 100%; height: 78vh; min-height: 480px; border: 1px solid var(--color-border); }
+.question-observation { border-top: 1px solid var(--color-border); padding-top: 1rem; margin-top: 1rem; }
+.oc-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.5rem; padding-left: 1.5rem; }
+[data-question-start] select, [data-question-start] textarea { display: block; margin: .4rem 0 1rem; width: min(100%, 38rem); }
+@media (max-width: 1000px) { .question-review { grid-template-columns: 1fr; } }
+
+.question-action label { display: block; margin-bottom: .5rem; }
+.question-action textarea { display: block; width: min(100%, 42rem); margin-bottom: 1rem; }
+.table-scroll { overflow-x: auto; }

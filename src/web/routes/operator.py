@@ -8,7 +8,7 @@ from fastapi import APIRouter, Request
 
 from agents.ecosystem import Ecosystem
 from ai import load_config
-from management.metrics import DEFINITIONS, observation
+from management.metrics import DEFINITIONS, company_observations, observation
 from management.telemetry import TEAM_NAMES, read_telemetry
 from web.handler import read, render, settings
 
@@ -40,35 +40,13 @@ def operator_overview(request: Request, month: str = ""):
     source_failed = False
     try:
         data = read(request, "get_company_metrics", {"month": selected})
-        reference = f"service:get_company_metrics:{data.read_at.isoformat()}"
-        metrics.extend([
-            observation(
-                "insured_registered_count", environment_id=config.database, dataset_ref=config.dataset_ref,
-                now=data.read_at, as_of_date=data.as_of_date, value=data.insured_count,
-                availability="suppressed" if data.insured_suppressed else "available", quality="verified",
-                note="Små persongrupper döljs." if data.insured_suppressed else "Alla registrerade statusar vid läsningen. Ingen historisk beståndsserie.",
-                evidence_refs=(reference,),
-            ),
-            observation(
-                "premium_paid_recorded_sek", environment_id=config.database, dataset_ref=config.dataset_ref,
-                now=data.read_at, period=period, value=data.paid_sek,
-                availability="missing" if data.paid_state == "failed" else data.paid_state,
-                quality="failed" if data.paid_state == "failed" else "provisional",
-                note={"failed": "Underlaget innehåller paid utan giltigt betaldatum. Ingen summa visas.",
-                      "suppressed": "Färre än tio personer i underlaget. Beloppet döljs.",
-                      "available": "Betalmarkeringar, inte bankavstämt kassainflöde. Rättelser ingår, avgifter exkluderas."}[data.paid_state],
-                evidence_refs=(reference,),
-            ),
-        ])
-    except Exception:  # noqa: BLE001 – sanera databasfel, ingen demo-reserv eller exponerad anslutning
+    except Exception:  # no fallback source or database error details
         source_failed = True
-        for key in ("insured_registered_count", "premium_paid_recorded_sek"):
-            metrics.append(observation(
-                key, environment_id=config.database, dataset_ref=config.dataset_ref, now=now,
-                as_of_date=today if key == "insured_registered_count" else None,
-                period=period if key != "insured_registered_count" else None,
-                availability="missing", quality="unknown", note="Vald datakälla kunde inte läsas. Ingen annan källa används.",
-            ))
+        data = None
+    metrics.extend(company_observations(
+        data, environment_id=config.database, dataset_ref=config.dataset_ref,
+        period=period, today=today, now=now,
+    ))
     for key in ("capital_market_value_sek", "fta_sek", "consolidation_ratio", "liquidity_coverage"):
         metrics.append(observation(key, environment_id=config.database, dataset_ref=config.dataset_ref,
                                    now=now, as_of_date=today, note=DEFINITIONS[key].source + "."))

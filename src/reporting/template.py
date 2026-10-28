@@ -140,7 +140,8 @@ def markup(s):
 
 class Report:
     def __init__(self, path, metadata: ReportMetadata, *, fonts: Fonts = DEFAULT_FONTS):
-        self.c = canvas.Canvas(str(path), pagesize=A4, invariant=1, pageCompression=1)
+        target = path if hasattr(path, "write") else str(path)
+        self.c = canvas.Canvas(target, pagesize=A4, invariant=1, pageCompression=1)
         self.metadata = metadata
         self.fonts = fonts
         self.c.setTitle(metadata.title)

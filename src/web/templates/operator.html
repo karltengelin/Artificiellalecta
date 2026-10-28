@@ -9,10 +9,10 @@
 <div class="oc-heading">
   <div><p class="oc-eyebrow">BOLAGETS GEMENSAMMA ÖVERBLICK</p><h1>Operatörscentral</h1>
     <p class="muted">Bolagsläge, team och agentekonomi. Underlaget avgör vad vi kan säga.</p></div>
-  <div class="oc-readonly"><span class="pill">Läsvy</span><p>Inga agentuppdrag eller styrändringar startas här.</p></div>
+  <div class="oc-readonly"><span class="pill">Läsvy</span><p><a href="/central/fragor">Ställ en fråga till bolaget</a></p></div>
 </div>
 <nav class="tabs oc-tabs" aria-label="Centralens vyer">
-  {% for href, label, view in [('/central', 'Överblick', 'central'), ('/central/team', 'Team', 'team'), ('/central/kostnader', 'Agentkostnader', 'kostnader'), ('/central/underlag', 'Underlag', 'underlag')] %}
+  {% for href, label, view in [('/central', 'Överblick', 'central'), ('/central/team', 'Team', 'team'), ('/central/kostnader', 'Agentkostnader', 'kostnader'), ('/central/underlag', 'Underlag', 'underlag'), ('/central/fragor', 'Fråga bolaget', 'fragor')] %}
   <a href="{{ href }}?month={{ selected_month }}"{% if active_view == view %} aria-current="page"{% endif %}>{{ label }}</a>
   {% endfor %}
 </nav>
