@@ -240,7 +240,10 @@ leveranslagringen (`src/agents/deliveries.py`) och adaptern med `AssignmentView`
 (`src/agents/flows/questions.py`). Integrationstester i `tests/test_agents_questions.py`.
 Översättningen från aggregat till observationer är gemensam (`management.metrics.company_observations`);
 centralens route kan gå över till den. Adaptern tar renderaren som argument. Codex operatörsinloggning (val H) är klar;
-den riktiga `render_report` och webbvyerna återstår (Codex). Kolumnrätterna är inte satta i Lakebase.
+Codex rendering och webbvyer är lokalt byggda 2026-10-28; se
+[rapportens struktur](../06_design/rapportmall.md#oc-3a-deterministisk-markdown-till-pdf) och
+[webbvyer och anslutning](fragekedja_webb.md). Samordnat röktest med riktig modell och
+DM Sans återstår. Kolumnrätterna är inte satta i Lakebase.
 
 Steg 1 och 2 kan gå parallellt eftersom filerna är åtskilda. Steg 3 för webben förutsätter
 adaptern. Lakebase-ändringarna (kolumnrätter) samordnas enligt AGENTS.md §4.5 och krockar inte

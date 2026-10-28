@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Aktuarieteamets uppdrag' if base == '/team/aktuarie' else 'Fråga bolaget' }}{% endblock %}
+{% block content %}
+<p class="oc-eyebrow">{{ 'AKTUARIETEAMETS ARBETSYTA' if base == '/team/aktuarie' else 'OPERATÖRSCENTRALEN' }}</p>
+<h1>{{ 'Aktuarieteamets uppdrag' if base == '/team/aktuarie' else 'Fråga bolaget' }}</h1>
+<nav class="tabs" aria-label="Frågor och team"><a href="/central">Överblick</a><a href="/central/fragor">Fråga bolaget</a><a href="/team/aktuarie">Aktuarieteamets arbetsyta</a></nav>
+<p>Beställ en beståndsöversikt för en avslutad månad. Aktuarieagenten tar fram ett svar och en rapport för mänsklig granskning.</p>
+{% if settings.database != 'lakebase' %}<p class="muted">Aktuariens databasroll simuleras i denna lokala arbetsyta. Rollrättigheter verifieras separat mot Postgres.</p>{% endif %}
+{% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+{% if teams %}
+<section class="panel"><h2>Välj team</h2><div class="oc-team-choices">
+{% for team in teams %}<article><h3>{{ team.name }}</h3><p>{{ 'Tillgängligt · beståndsöversikt' if team.available else team.reason }}</p>{% if team.available %}<a href="/team/aktuarie">Till teamets uppdrag</a>{% else %}<span class="muted">Ej tillgängligt</span>{% endif %}</article>{% endfor %}
+</div></section>
+{% endif %}
+{% if months %}
+<section class="panel"><h2>Ny fråga till aktuarieteamet</h2>
+{% if operator_user %}
+<form method="post" action="{{ base }}" hx-boost="false" data-question-start>
+  <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+  <input type="hidden" name="request_token" value="{{ request_token }}">
+  <input type="hidden" name="supersedes" value="{{ supersedes }}">
+  <input type="hidden" name="team" value="aktuarie">
+  <label for="question-type">Frågetyp</label><select id="question-type" name="question_type"><option value="portfolio_overview">Beståndsöversikt</option></select>
+  <label for="question-month">Avslutad månad</label><select id="question-month" name="month">{% for month in months %}<option value="{{ month.strftime('%Y-%m') }}">{{ month.strftime('%Y-%m') }}</option>{% endfor %}</select>
+  <label for="question-note">Precisering (valfri, högst 500 tecken)</label><textarea id="question-note" name="note" maxlength="500" rows="3"></textarea>
+  {% if supersedes %}<p>Ny beställning som ersätter det avslagna uppdraget {{ supersedes }}.</p>{% endif %}
+  <p>Beställare: {{ operator_user }} · {{ settings.database_label }} · {{ settings.dataset_ref }}</p>
+  <p class="muted">Beståndet gäller läsdagen. Premierna följer betaldatum och är inte bankavstämda.</p>
+  <button type="submit"{% if busy %} disabled{% endif %}>Ställ frågan</button>
+  <p data-question-progress role="status" aria-live="polite" hidden>Aktuarien arbetar med svaret och rapporten. Det kan ta en till tre minuter. Uppdraget sparas i listan.</p>
+</form>
+{% else %}<p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att ställa en fråga.</p>{% endif %}
+</section>
+{% endif %}
+<section class="panel"><h2>Uppdrag</h2>
+{% if items %}<div class="table-scroll"><table><thead><tr><th>Uppdrag och fråga</th><th>Team och beställare</th><th>Skapad</th><th>Status och steg</th><th>Kostnad</th><th>Leverans och granskning</th></tr></thead><tbody>
+{% for item in items %}<tr>
+  <td><a href="{{ base }}/{{ item.flow_id }}">{{ item.flow_id }} · Beståndsöversikt {{ item.month | month }}</a>{% if item.note %}<p>{{ item.note }}</p>{% endif %}</td>
+  <td>Aktuarieteamet<br>{{ item.requested_by }}</td><td>{{ item.created_at | iso_date }}</td>
+  <td><span class="pill">{{ item.status_text }}</span><p>{{ item.current_step or 'Avslutat' }}</p></td>
+  <td>{% if item.cost_usd is not none %}{{ '%.4f'|format(item.cost_usd) }} USD{% else %}Okänd{% endif %}</td>
+  <td>{% if item.delivery_version %}Rapport v{{ item.delivery_version }} · {% else %}Ingen rapport · {% endif %}{{ {'not_reviewed':'Ej granskad', 'approved':'Godkänd', 'rejected':'Avslagen'}[item.review] }}</td>
+</tr>{% endfor %}</tbody></table></div>
+{% else %}<p>{{ 'Uppdragslistan kunde inte läsas.' if error else 'Inga bolagsfrågor i denna miljö ännu.' }}</p>{% endif %}
+</section>
+{% endblock %}

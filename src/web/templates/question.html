@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ assignment.flow_id }} · Beståndsöversikt{% endblock %}
+{% block content %}
+<nav class="tabs" aria-label="Uppdragets arbetsytor"><a href="{{ base }}">Alla uppdrag</a><a href="/central/fragor/{{ assignment.flow_id }}">I centralen</a><a href="/team/aktuarie/{{ assignment.flow_id }}">I aktuariens teamyta</a></nav>
+<p class="oc-eyebrow">AKTUARIETEAMET · {{ assignment.flow_id }}</p><h1>Beståndsöversikt {{ assignment.month | month }}</h1>
+<p><span class="pill">{{ assignment.status_text }}</span> · Beställare {{ assignment.requested_by }} · Skapad {{ assignment.created_at | iso_date }}</p>
+<p>Uppdragets underlag: {{ flow.input.environment_id }} · {{ flow.input.dataset_ref }} · {% if assignment.cost_usd is not none %}{{ '%.4f'|format(assignment.cost_usd) }} USD{% else %}Kostnad okänd{% endif %}</p>
+{% if assignment.note %}<p><strong>Precisering:</strong> {{ assignment.note }}</p>{% endif %}
+{% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+{% if assignment.error %}<div class="alert alert--error" role="alert">Uppdraget har stannat. {% if assignment.current_step == 'render' %}Rapportexporten kunde inte slutföras.{% else %}Kontrollera stegens status och det tillgängliga underlaget.{% endif %}</div>{% endif %}
+{% if integrity_error %}<div class="alert alert--error" role="alert">Rapportfilerna saknas eller stämmer inte med uppdragets kontrollsummor. Granskning är spärrad.</div>{% endif %}
+{% if assignment.accepted %}<div class="alert alert--info">Leverans v{{ assignment.delivery_version }} godkänd av {{ assignment.reviewed_by }} {{ assignment.reviewed_at | iso_date }}. Rapporten bevarar det då lästa underlaget; en ny fråga får ett nytt uppdrag.</div>
+{% elif assignment.review == 'rejected' %}<div class="alert alert--error">Leveransen är avslagen. <a href="{{ base }}?supersedes={{ assignment.flow_id }}">Gör en ny beställning som ersätter denna</a>.</div>
+{% elif assignment.delivery_version %}<p class="alert alert--info">Rapport v{{ assignment.delivery_version }} är ett utkast för granskning. Ett avslutat agentsvar är inte en godkänd leverans.</p>{% endif %}
+{% if assignment.supersedes %}<p>Ersätter <a href="{{ base }}/{{ assignment.supersedes }}">{{ assignment.supersedes }}</a>.</p>{% endif %}
+<section class="panel"><h2>Uppdragets steg</h2><ol class="oc-steps">{% for key, title, status in assignment.steps %}<li><strong>{{ title }}</strong> · {{ step_status.get(status, status) }}</li>{% endfor %}</ol><p class="muted">Uppdragsreferens {{ assignment.task_id }}{% if assignment.run_id %} · Körning {{ assignment.run_id }}{% endif %}</p></section>
+<div class="question-review">
+  <section class="panel"><h2>Svar och underlag</h2>
+  {% if answer %}<p class="pill">{{ answer_status.get(answer.status, answer.status) }}</p><p>{{ answer.conclusion }}</p>
+  {% for title, key in [('Antaganden', 'assumptions'), ('Begränsningar', 'limitations'), ('Nästa steg', 'next_steps')] %}{% if answer[key] %}<h3>{{ title }}</h3><ul>{% for text in answer[key] %}<li>{{ text }}</li>{% endfor %}</ul>{% endif %}{% endfor %}
+  {% else %}<p>Inget godtaget svar ännu.</p>{% endif %}
+  {% for obs in observations %}<article class="question-observation"><h3>{{ {'insured_registered_count':'Registrerade försäkrade', 'premium_paid_recorded_sek':'Registrerat betalda premier'}.get(obs.metric_id, obs.metric_id) }}</h3>
+    <p>{% if obs.value is not none %}{% if obs.metric_id == 'premium_paid_recorded_sek' %}{{ obs.value | sek }}{% else %}{{ obs.value | number }} personer{% endif %}{% else %}{{ 'Dolt – småcellsskydd' if obs.availability == 'suppressed' else 'Saknas – inget värde visas' }}{% endif %}</p>
+    <p>{{ obs.note }}</p><p class="muted">{{ {'verified':'Kontrollerat', 'provisional':'Preliminärt', 'failed':'Underkänt', 'unknown':'Okänt'}.get(obs.quality, obs.quality) }} · {% if obs.as_of_date %}Läsdag {{ obs.as_of_date }}{% else %}{{ obs.period_from }} till {{ obs.period_to }} (slutet ingår inte){% endif %}<br>Läst {{ obs.computed_at }}</p>
+    <details><summary>Källreferenser</summary><p>{{ obs.observation_id }}</p>{% for ref in obs.evidence_refs %}<p>{{ ref }}</p>{% endfor %}</details>
+  </article>{% endfor %}
+  </section>
+  <section class="panel"><h2>Rapport{% if assignment.delivery_version %} v{{ assignment.delivery_version }}{% endif %}</h2>
+  {% if assignment.delivery_version and not integrity_error %}{% set delivery = base ~ '/' ~ assignment.flow_id ~ '/leverans/' ~ assignment.delivery_version %}
+    <p><a href="{{ delivery }}/rapport.pdf" target="_blank" rel="noopener" hx-boost="false">Öppna PDF</a> · <a href="{{ delivery }}/rapport.md" hx-boost="false">Hämta Markdown-underlag</a></p>
+    <iframe class="question-pdf" src="{{ delivery }}/rapport.pdf" title="Rapport {{ assignment.flow_id }}, version {{ assignment.delivery_version }}"></iframe>
+  {% else %}<p>Ingen kontrollerad rapport att visa.</p>{% endif %}
+  </section>
+</div>
+{% if operator_user %}
+{% if assignment.status == 'waiting_gate' and not integrity_error %}
+<section class="panel"><h2>Granska leveransen</h2><p>Beslutet gäller svaret och rapportversionen som visas ovan. Ett avslag avslutar uppdraget.</p>
+<form class="question-action" method="post" action="{{ base }}/{{ assignment.flow_id }}/granska" hx-boost="false">
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="version" value="{{ flow.version }}"><input type="hidden" name="seen_hash" value="{{ flow.gate_hashes['review'] }}">
+<label for="review-note">Granskningsanteckning (krävs vid avslag)</label><textarea id="review-note" name="note" maxlength="2000" rows="3"></textarea>
+<button name="decision" value="approved"{% if busy %} disabled{% endif %}>Godkänn leveransen</button> <button class="secondary" name="decision" value="rejected"{% if busy %} disabled{% endif %}>Avslå</button>
+</form></section>
+{% endif %}
+{% if assignment.status == 'reconciliation_required' %}
+<section class="panel"><h2>Stäm av avbruten körning</h2><p>Kontrollera utfallet före ett nytt försök.</p><form class="question-action" method="post" action="{{ base }}/{{ assignment.flow_id }}/avstam" hx-boost="false">
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="version" value="{{ flow.version }}">
+<label for="reconcile-note">Avstämningsskäl</label><textarea id="reconcile-note" name="note" required maxlength="2000"></textarea>
+<button name="retry" value="yes">Kör det avstämda steget igen</button> <button class="secondary" name="retry" value="no">Avsluta som misslyckat</button></form></section>
+{% endif %}
+{% if assignment.status in ['running', 'waiting_gate', 'reconciliation_required'] %}<section class="panel"><h2>Avbryt uppdrag</h2><form class="question-action" method="post" action="{{ base }}/{{ assignment.flow_id }}/avbryt" hx-boost="false"><input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="version" value="{{ flow.version }}"><label for="cancel-note">Skäl</label><textarea id="cancel-note" name="note" required maxlength="2000"></textarea><button type="submit" class="secondary">Avbryt</button></form></section>{% endif %}
+{% else %}<p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att granska eller avbryta uppdraget.</p>{% endif %}
+{% endblock %}

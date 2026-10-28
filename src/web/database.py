@@ -40,6 +40,10 @@ def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent, Flow
     """
     engine = build_engine(settings)
     session_factory = session_factory_for(engine)
+    return _services_for(settings, session_factory)
+
+
+def _services_for(settings: WebSettings, session_factory):
     service = ServiceLayer(session_factory=session_factory)
     if settings.database == "lakebase":
         from services.db import agent_service_layer
@@ -55,6 +59,25 @@ def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent, Flow
             simulated_role=True,
         )
     return service, agent, None
+
+
+def build_question_services(settings: WebSettings, *, ai, renderer):
+    """Explicit OC-3a connection; no model calls, migrations or role grants on startup.
+
+    Demo/svc_test follow the existing UI's simulated-role convention. Lakebase uses
+    agent_aktuarie's real restricted connection, never the trusted connection as fallback.
+    """
+    from agents.flows.questions import QuestionConsole
+    from services.db import agent_service_layer
+
+    session_factory = session_factory_for(build_engine(settings))
+    service, agent, _ = _services_for(settings, session_factory)
+    actuary = agent_service_layer("aktuarie") if settings.database == "lakebase" else ServiceLayer(
+        session_factory=session_factory, validation_session_factory=session_factory, agent_role="agent_aktuarie",
+    )
+    questions = QuestionConsole.build(session_factory, trusted=service, actuary_service=actuary,
+        ai=ai, renderer=renderer, environment_id=settings.database, dataset_ref=settings.dataset_ref)
+    return service, agent, questions
 
 
 def build_engine(settings: WebSettings) -> Engine:

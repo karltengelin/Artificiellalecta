@@ -91,8 +91,10 @@ operatörens godkända dokument- och prioriteringsarbete 2026-10-27.
 ## Pågående bygguppdrag: beståndsfråga till granskad rapport
 
 **Planeringsprioritet godkänd 2026-10-27; designstoppet godkänt som B-041. Klart samma dag:
-datakontraktet, operatörsinloggningen och harness-/tjänstedelen. Kvar, i ordning: rendering och
-vyer (Codex), röktest mot riktig modell och kolumnrätterna i Lakebase efter backup och OK.
+datakontraktet, operatörsinloggningen och harness-/tjänstedelen. Codex rendering och
+vyer är lokalt byggda 2026-10-28; se [webbdriften](../../02_system/fragekedja_webb.md).
+Kvar, i ordning: samordnat röktest med riktig modell och DM Sans, sedan kolumnrätterna
+och verifiering i Lakebase efter backup och OK.
 Se raden *Närmast* i ATT_GORA och [designstoppet](../../02_system/fragekedja_beslutsforslag.md) §11.**
 Detta avgränsar OC-3 och den del av OC-8 som behövs för ett första användbart
 arbetsförlopp, tillsammans med projekt 2 och gemensam dokumentgenerering.
