@@ -241,6 +241,7 @@ leveranslagringen (`src/agents/deliveries.py`) och adaptern med `AssignmentView`
 Översättningen från aggregat till observationer är gemensam (`management.metrics.company_observations`);
 centralens route kan gå över till den. Adaptern tar renderaren som argument. Codex operatörsinloggning (val H) är klar;
 den riktiga `render_report` och webbvyerna återstår (Codex). Kolumnrätterna är inte satta i Lakebase.
+*2026-10-28:* röktestskriptet för steg 4 (`scripts/diagnostics/smoke_test_question.py`) är klart. Kolumnrätternas torrkörning mot Lakebase passerar förkontrollen; `--apply` väntar på backup och operatörens OK.
 
 Steg 1 och 2 kan gå parallellt eftersom filerna är åtskilda. Steg 3 för webben förutsätter
 adaptern. Lakebase-ändringarna (kolumnrätter) samordnas enligt AGENTS.md §4.5 och krockar inte
