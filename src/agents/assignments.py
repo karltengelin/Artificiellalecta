@@ -54,6 +54,8 @@ IMPACT_CONSTRAINTS = (
 COMPANY_QUESTION_CONSTRAINTS = (
     "Läs måtten med get_company_metrics för exakt den beställda månaden",
     "Skriv inga andra tal än dem i get_company_metrics-svaret – rapportens tabell visar värdena",
+    "Nämn inga andra datum eller månader än den lästa perioden och läsdagen; säg att tidsjämförelser inte ingår "
+    "utan att ange någon jämförelsemånad",
     "Dolt, underkänt eller saknat underlag är aldrig noll och ersätts aldrig med en uppskattning",
     "Registrerat bestånd gäller läsdagen, inte månadens slut; betalmarkerat är inte bankavstämt",
     "Ingen individdata och inga försök att härleda dolda celler",
