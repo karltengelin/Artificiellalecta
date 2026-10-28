@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Iterable
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, Literal
 
@@ -77,8 +77,10 @@ class CompanyAnswer(_Strict):
     """
 
     status: Literal["answered", "partial", "unavailable", "needs_clarification"] = Field(
-        description="answered bara när båda måtten finns; partial när något är dolt eller underkänt; "
-                    "unavailable när frågan inte kan besvaras med underlaget; needs_clarification vid oklar fråga")
+        description="answered bara när båda måtten finns och operatörens precisering kan besvaras med dem; "
+                    "partial när något mått är dolt eller underkänt; unavailable när preciseringen frågar efter "
+                    "något underlaget inte innehåller (t.ex. andra mått eller tidsjämförelser), även om måtten "
+                    "kunde läsas; needs_clarification vid oklar fråga")
     month: date = Field(description="Månaden du läste med get_company_metrics (månadsförsta)")
     conclusion: str = Field(description="Slutsatsen i ord. Skriv inga andra tal än dem i get_company_metrics-svaret")
     limitations: list[str] = Field(description="Begränsningar i underlaget som påverkar slutsatsen")
@@ -200,6 +202,8 @@ def unsupported_numbers(texts: Iterable[str], metrics: dict[str, Any]) -> list[s
             value = Decimal(str(metrics[key]))
             allowed |= {value, value.quantize(Decimal(1))}
     dates = {date.fromisoformat(metrics[k]) for k in ("as_of_date", "period_from", "period_to") if metrics.get(k)}
+    if metrics.get("period_to"):  # periodens sista dag; period_to är exklusivt
+        dates.add(date.fromisoformat(metrics["period_to"]) - timedelta(days=1))
     if metrics.get("read_at"):
         dates.add(datetime.fromisoformat(metrics["read_at"]).date())
     allowed |= {Decimal(part) for d in dates for part in (d.year, d.month, d.day)}
