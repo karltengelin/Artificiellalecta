@@ -234,10 +234,12 @@ class TestByggstenar:
         read = {"insured_count": 35, "paid_sek": "145971.41", "as_of_date": "2026-10-27", "period_from": "2025-11-01",
                 "period_to": "2025-12-01", "read_at": "2026-10-27T10:00:00+00:00"}
         ok = ["35 försäkrade, 145 971,41 SEK (avrundat 145 971 kr) i november 2025, läst 2026-10-27.",
+              "Perioden 2025-11-01–2025-11-30, alltså 1–30 november.",
               "Celler med 1–9 personer döljs; gränsen är 10. Kontrakt P2-FRAGA-001 v1.0, §3 och PR-ITP1-013."]
         assert unsupported_numbers(ok, read) == []
         assert unsupported_numbers(["Cirka 146 000 kr, 36 personer, 3 % och 2026-09-01."], read) == [
             "2026-09-01", "146 000", "36", "3"]
+        assert unsupported_numbers(["Jämfört med 2024-11 och 2025-11-29."], read) == ["2024-11", "2025-11-29"]
 
     def test_observationerna_skiljer_noll_dolt_underkant_och_oläst(self):
         now = datetime(2026, 10, 27, 10, tzinfo=UTC)
