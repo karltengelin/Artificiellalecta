@@ -1,15 +1,16 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Aktuarieteamets uppdrag' if base == '/team/aktuarie' else 'Fråga bolaget' }}{% endblock %}
+{% block title %}{{ 'Aktuarieteamets uppdrag' if base.startswith('/team/aktuarie/') else 'Fråga bolaget' }}{% endblock %}
 {% block content %}
-<p class="oc-eyebrow">{{ 'AKTUARIETEAMETS ARBETSYTA' if base == '/team/aktuarie' else 'OPERATÖRSCENTRALEN' }}</p>
-<h1>{{ 'Aktuarieteamets uppdrag' if base == '/team/aktuarie' else 'Fråga bolaget' }}</h1>
+{% if base.startswith("/team/aktuarie/") %}<div class="actuary-shell">{% include "partials/actuary_nav.html" %}<div class="actuary-body">{% endif %}
+<p class="oc-eyebrow">{{ 'AKTUARIETEAMETS ARBETSYTA' if base.startswith('/team/aktuarie/') else 'OPERATÖRSCENTRALEN' }}</p>
+<h1>{{ 'Aktuarieteamets uppdrag' if base.startswith('/team/aktuarie/') else 'Fråga bolaget' }}</h1>
 <nav class="tabs" aria-label="Frågor och team"><a href="/central">Överblick</a><a href="/central/fragor">Fråga bolaget</a><a href="/team/aktuarie">Aktuarieteamets arbetsyta</a></nav>
 <p>Beställ en beståndsöversikt för en avslutad månad. Aktuarieagenten tar fram ett svar och en rapport för mänsklig granskning.</p>
 {% if settings.database != 'lakebase' %}<p class="muted">Aktuariens databasroll simuleras i denna lokala arbetsyta. Rollrättigheter verifieras separat mot Postgres.</p>{% endif %}
 {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
-{% if teams %}
+{% if teams and not base.startswith('/team/aktuarie/') %}
 <section class="panel"><h2>Välj team</h2><div class="oc-team-choices">
-{% for team in teams %}<article><h3>{{ team.name }}</h3><p>{{ 'Tillgängligt · beståndsöversikt' if team.available else team.reason }}</p>{% if team.available %}<a href="/team/aktuarie">Till teamets uppdrag</a>{% else %}<span class="muted">Ej tillgängligt</span>{% endif %}</article>{% endfor %}
+{% for team in teams %}<article><h3>{{ team.name }}</h3><p>{{ 'Tillgängligt · beståndsöversikt' if team.available else team.reason }}</p>{% if team.available %}<a href="/team/aktuarie/uppdrag">Till teamets uppdrag</a>{% else %}<span class="muted">Ej tillgängligt</span>{% endif %}</article>{% endfor %}
 </div></section>
 {% endif %}
 {% if months %}
@@ -43,4 +44,5 @@
 </tr>{% endfor %}</tbody></table></div>
 {% else %}<p>{{ 'Uppdragslistan kunde inte läsas.' if error else 'Inga bolagsfrågor i denna miljö ännu.' }}</p>{% endif %}
 </section>
+{% if base.startswith("/team/aktuarie/") %}</div></div>{% endif %}
 {% endblock %}

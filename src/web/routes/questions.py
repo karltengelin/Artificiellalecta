@@ -1,3 +1,4 @@
+# ruff: noqa: BLE001 -- Webbgränsen sanerar oväntade fel utan databasdetaljer.
 """OC-3a: shared assignment pages; all work and delivery reads use QuestionConsole."""
 
 from __future__ import annotations
@@ -26,7 +27,8 @@ router = APIRouter()
 HEADERS = {"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY",
            "Content-Security-Policy": "frame-ancestors 'none'; form-action 'self'; base-uri 'none'"}
 CENTRAL = "/central/fragor"
-TEAM = "/team/aktuarie"
+TEAM = "/team/aktuarie/uppdrag"
+LEGACY_TEAM = "/team/aktuarie"
 STEP_STATUS = {"pending": "Väntar", "running": "Körs", "completed": "Klart", "failed": "Misslyckades",
                "rejected": "Avslaget", "skipped": "Hoppades över", "reconciliation_required": "Behöver avstämning"}
 ANSWER_STATUS = {"answered": "Besvarad", "partial": "Delvis besvarad", "unavailable": "Underlag saknas",
@@ -80,7 +82,7 @@ def console(request: Request) -> QuestionConsole:
 
 
 def base(request):
-    return TEAM if request.url.path.startswith(TEAM) else CENTRAL
+    return TEAM if request.url.path.startswith(LEGACY_TEAM) else CENTRAL
 
 
 def respond(request, template, context, *, status_code=200):
@@ -123,6 +125,7 @@ def assignment_list(request: Request, supersedes: str = ""):
 
 @router.post(CENTRAL)
 @router.post(TEAM)
+@router.post(LEGACY_TEAM)
 async def start_assignment(request: Request):
     form = await auth_form(request, {"csrf_token", "request_token", "month", "team", "question_type", "note", "supersedes"})
     actor = operator_action(request, form)
@@ -177,12 +180,14 @@ def detail_page(request, flow_id, *, error=None, status_code=200):
 
 @router.get(CENTRAL + "/{flow_id}")
 @router.get(TEAM + "/{flow_id}")
+@router.get(LEGACY_TEAM + "/{flow_id}")
 def assignment_detail(request: Request, flow_id: str):
     return detail_page(request, flow_id)
 
 
 @router.post(CENTRAL + "/{flow_id}/{action}")
 @router.post(TEAM + "/{flow_id}/{action}")
+@router.post(LEGACY_TEAM + "/{flow_id}/{action}")
 async def assignment_action(request: Request, flow_id: str, action: str):
     form = await auth_form(request, {"csrf_token", "version", "decision", "seen_hash", "note", "retry"})
     actor = operator_action(request, form)
@@ -210,6 +215,7 @@ async def assignment_action(request: Request, flow_id: str, action: str):
 
 @router.get(CENTRAL + "/{flow_id}/leverans/{version}/{name}")
 @router.get(TEAM + "/{flow_id}/leverans/{version}/{name}")
+@router.get(LEGACY_TEAM + "/{flow_id}/leverans/{version}/{name}")
 def delivery(request: Request, flow_id: str, version: int, name: str):
     if name not in {"rapport.pdf", "rapport.md"}:
         raise HTTPException(404, "Leveransfilen finns inte")

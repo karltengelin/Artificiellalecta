@@ -1,0 +1,13 @@
+{% extends "actuary_base.html" %}
+{% block title %}Produktrapporter{% endblock %}
+{% block actuary_content %}<h1>Rapporter</h1><p>Produktrapporten sammanställer bestånd och premieflöden för valt år. Aktuarieagentens utkast väntar på din granskning.</p>
+<section class="panel"><h2>Beställ produktrapport</h2>
+{% if operator_user %}<form method="post" action="/team/aktuarie/rapporter" hx-boost="false" data-question-start class="actuary-form">
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="request_token" value="{{ request_token }}">
+<label for="report-year">Rapportår</label><select id="report-year" name="year">{% for year in years %}<option value="{{ year }}">{{ year }}</option>{% endfor %}</select>
+<label for="report-note">Precisering (valfri)</label><textarea id="report-note" name="note" maxlength="500" rows="3"></textarea>
+<p class="small muted">En modellkörning kostar pengar och använder teamets ordinarie budget. Värdering och FTA visas som ej beräknade i denna rapportversion.</p>
+<button type="submit">Beställ produktrapport</button><p data-question-progress role="status" hidden>Aktuarien arbetar med rapporten. Beställningen kan ta några minuter.</p>
+</form>{% else %}<p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att beställa en rapport.</p>{% endif %}</section>
+<section class="panel"><h2>Produktrapporter</h2>{% if items %}<div class="table-scroll"><table class="actuary-register"><thead><tr><th>Rapport</th><th>Beställd</th><th>Status</th><th>Granskning</th></tr></thead><tbody>{% for item in items %}<tr><td data-label="Rapport"><a href="/team/aktuarie/rapporter/{{ item.flow_id }}">Produktrapport {{ item.year }}</a><p>{{ item.flow_id }}</p></td><td data-label="Beställd">{{ item.created_at | iso_date }}<br>{{ item.requested_by }}</td><td data-label="Status"><span class="pill">{{ item.status_text }}</span></td><td data-label="Granskning">{{ {'not_reviewed':'Ej granskad','approved':'Godkänd','rejected':'Avslagen'}[item.review] }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p>Inga produktrapporter i denna miljö ännu.</p>{% endif %}</section>
+{% endblock %}

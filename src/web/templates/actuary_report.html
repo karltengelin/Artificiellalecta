@@ -1,0 +1,31 @@
+{% extends "actuary_base.html" %}
+{% block title %}Produktrapport {{ assignment.year }}{% endblock %}
+{% block actuary_content %}<p><a href="/team/aktuarie/rapporter">← Alla produktrapporter</a></p>
+<h1>Produktrapport {{ assignment.year }}</h1><p>{{ assignment.flow_id }} · <span class="pill">{{ assignment.status_text }}</span></p>
+<p class="small muted">Beställd av {{ assignment.requested_by }} · {{ assignment.created_at | iso_date }} · {{ settings.database_label }}</p>
+{% if assignment.note %}<p>{{ assignment.note }}</p>{% endif %}
+{% if error %}<p class="alert alert--error" role="alert">{{ error }}</p>{% endif %}
+{% if integrity_error %}<p class="alert alert--error">Rapportfilen har ändrats eller saknas. Granskning och hämtning är spärrade.</p>{% endif %}
+{% if assignment.status in ['failed','reconciliation_required'] %}<p class="alert alert--error">Körningen behöver kontrolleras innan fortsatt arbete. Inga nya försök görs automatiskt.</p>{% endif %}
+<section class="panel"><h2>Uppdragets steg</h2><ol>{% for key,title,state in assignment.steps %}<li>{{ title }} · {{ step_status.get(state,state) }}</li>{% endfor %}</ol></section>
+{% if answer %}<section class="panel"><h2>Aktuariens sammanfattning</h2><p>{{ answer.conclusion }}</p>{% for label,key in [('Iakttagelser','key_findings'),('Rekommendationer','recommendations'),('Begränsningar','limitations')] %}{% if answer[key] %}<h3>{{ label }}</h3><ul>{% for text in answer[key] %}<li>{{ text }}</li>{% endfor %}</ul>{% endif %}{% endfor %}</section>{% endif %}
+<section class="panel"><h2>Rapport{% if assignment.delivery_version %} · version {{ assignment.delivery_version }}{% endif %}</h2>
+{% if assignment.delivery_version and not integrity_error %}{% set delivery='/team/aktuarie/rapporter/' ~ assignment.flow_id ~ '/leverans/' ~ assignment.delivery_version %}
+<p><a href="{{ delivery }}/rapport.pdf" hx-boost="false">Hämta PDF</a> · <a href="{{ delivery }}/rapport.md" hx-boost="false">Hämta Markdown</a></p>
+<div class="question-pdf" data-pdf-preview data-pdf-url="{{ delivery }}/rapport.pdf" aria-label="Produktrapport {{ assignment.year }}">
+<div class="question-pdf__toolbar"><button type="button" class="secondary" data-pdf-previous disabled>Föregående</button><span data-pdf-page aria-live="polite"></span><button type="button" class="secondary" data-pdf-next disabled>Nästa</button><label>Zoom <select data-pdf-zoom disabled><option value="fit">Anpassa bredd</option><option value="1">100 %</option><option value="1.5">150 %</option></select></label></div>
+<p data-pdf-status role="status">Läser rapporten…</p><div class="question-pdf__page" data-pdf-scroll tabindex="0"><canvas data-pdf-canvas role="img" aria-label="Rapporten laddas" hidden></canvas></div><noscript>Öppna PDF-länken ovan för att läsa rapporten.</noscript></div>
+{% else %}<p>Ingen kontrollerad rapport att visa.</p>{% endif %}</section>
+<section class="panel"><h2>Så togs rapporten fram</h2>{% if trace %}
+<p>Aktuarieagenten · {{ trace.models | join(', ') or 'Modelluppgift saknas' }}</p><p>{{ trace.steps if trace.steps is not none else 'Okänt antal' }} modellsteg · {% if trace.cost_usd is not none %}{{ '%.4f' | format(trace.cost_usd) }} USD{% else %}Kostnad okänd{% endif %}</p>
+{% if not trace.complete %}<p class="alert alert--info">Körjournalen är ofullständig.</p>{% endif %}
+<details><summary>Verktyg och körspår</summary><p>Körning {{ trace.run_id }} · Policy {{ trace.policy_id or 'okänd' }}</p><div class="table-scroll"><table><thead><tr><th>Verktyg</th><th>Operation</th><th>Nivå</th><th>Utfall</th></tr></thead><tbody>{% for tool in trace.tools %}<tr><td>{{ tool.skill }}</td><td>{{ tool.operation or '–' }}</td><td>{{ tool.level or '–' }}</td><td>{{ tool.status }}</td></tr>{% endfor %}</tbody></table></div></details>
+{% else %}<p>Körspåret är inte tillgängligt. Inga modell- eller verktygsuppgifter antas.</p>{% endif %}</section>
+{% if assignment.status in ['waiting_gate','running'] and operator_user %}<section class="panel"><h2>Granska eller avsluta uppdraget</h2>
+<form method="post" action="/team/aktuarie/rapporter/{{ assignment.flow_id }}/granska" hx-boost="false" class="actuary-form">
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="request_token" value="{{ request_token }}"><input type="hidden" name="version" value="{{ flow.version }}"><input type="hidden" name="seen_hash" value="{{ flow.gate_hashes.get('review','') }}">
+<label for="report-review">Anteckning (obligatorisk vid avslag eller avbrott)</label><textarea id="report-review" name="note" maxlength="2000" rows="3"></textarea>
+{% if assignment.status == 'waiting_gate' and not integrity_error %}<p>Granskningen gäller sammanfattningen och rapportversionen ovan.</p><button name="decision" value="approved">Godkänn leveransen</button><button name="decision" value="rejected" class="secondary">Avslå leveransen</button>{% endif %}
+<button class="secondary" formaction="/team/aktuarie/rapporter/{{ assignment.flow_id }}/avbryt">Avbryt uppdraget</button></form></section>
+{% elif not operator_user %}<p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att granska eller avsluta uppdraget.</p>{% endif %}
+{% endblock %}

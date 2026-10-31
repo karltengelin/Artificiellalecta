@@ -39,10 +39,14 @@ Lakebase-rättigheterna återstår enligt designstoppet §11.
 | Yta | Adress |
 |---|---|
 | Fråga bolaget, team och uppdragslista | `/central/fragor` |
-| Aktuariens uppdrag | `/team/aktuarie` |
+| Aktuariens uppdrag | `/team/aktuarie/uppdrag` |
 | Samma detaljsida i centralen | `/central/fragor/<flow_id>` |
-| Samma detaljsida i teamytan | `/team/aktuarie/<flow_id>` |
+| Samma detaljsida i teamytan | `/team/aktuarie/uppdrag/<flow_id>` |
 | Kontrollerad leverans | `<detaljadress>/leverans/1/rapport.pdf` eller `rapport.md` |
+
+Sedan A3 är `/team/aktuarie` teamets översikt med rapporter och antaganden.
+Äldre detalj-/leveransadresser under teamroten fungerar också. Se
+[aktuariens teamyta](aktuarie_teamyta.md) för anslutning och arbetsvägar.
 
 Båda arbetsytorna visar harnessens `AssignmentView`: beställare, skapad,
 status, aktuellt steg, kostnad (okänd när den saknas), rapportversion och

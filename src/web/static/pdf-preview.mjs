@@ -73,7 +73,7 @@ async function mount(root) {
   try {
     const url = new URL(root.dataset.pdfUrl, window.location.href);
     if (url.origin !== window.location.origin ||
-        !/^\/(central\/fragor|team\/aktuarie)\/FLOW-\d{6}\/leverans\/\d+\/rapport\.pdf$/.test(url.pathname) ||
+        !/^\/(central\/fragor|team\/aktuarie(?:\/(?:uppdrag|rapporter))?)\/FLOW-\d{6}\/leverans\/\d+\/rapport\.pdf$/.test(url.pathname) ||
         url.search || url.hash) throw new Error("Invalid delivery URL");
     // The delivery endpoint checks both files against the flow's checksums.
     const response = await fetch(url, { cache: "no-store", credentials: "same-origin", signal: controller.signal });

@@ -290,6 +290,28 @@ pre.draft { white-space: pre-wrap; background: var(--color-background); border-r
 .table-scroll { overflow-x: auto; }
 
 /* Ärendebundet agentstöd återanvänder Digital klarhets paneler och formulär. */
+/* A3: teamets specialistyta, samma gemensamma designvärden. */
+.actuary-shell { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+.actuary-body, .actuary-grid > * { min-width: 0; }
+.actuary-body { overflow-wrap: anywhere; }
+.actuary-register td, .actuary-register th { overflow-wrap: normal; }
+.actuary-body .pill { white-space: nowrap; }
+.actuary-nav { padding: var(--space-4); background: var(--color-surface); border-radius: var(--radius-card); }
+.actuary-nav__mobile { display: none; }
+.actuary-nav nav { display: grid; gap: var(--space-2); }
+.actuary-nav a, .actuary-nav__unavailable { display: block; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); }
+.actuary-nav a[aria-current=page] { background: var(--color-accent-soft); font-weight: 700; color: var(--color-brand); }
+.actuary-nav__unavailable { color: var(--color-text-muted); font-size: .875rem; }
+.actuary-intro { max-width: 45rem; margin-bottom: var(--space-5); }
+.actuary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.actuary-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); padding: var(--space-3) 0; border-top: 1px solid var(--color-border); }
+.actuary-facts { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(0, 2fr); gap: var(--space-3); }
+.actuary-facts dt { color: var(--color-text-muted); }
+.actuary-facts dd { margin: 0; overflow-wrap: anywhere; }
+.actuary-form input:not([type=hidden]), .actuary-form select, .actuary-form textarea { width: min(100%, 40rem); display: block; margin: var(--space-2) 0 var(--space-4); }
+.actuary-form button { margin-bottom: var(--space-2); white-space: normal; }
+@media (max-width: 900px) { .actuary-shell, .actuary-grid { grid-template-columns: minmax(0, 1fr); } .actuary-nav__desktop { display: none; } .actuary-nav__mobile { display: block; } .actuary-nav nav { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--space-3); } .actuary-nav nav p { grid-column: 1 / -1; } }
+@media (max-width: 500px) { .actuary-facts { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); } .actuary-facts dd { margin-bottom: var(--space-3); } .actuary-form button { width: 100%; } .actuary-nav { padding: var(--space-3); } }
 .case-desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(20rem, 27rem); gap: 1.25rem; align-items: start; }
 .case-desk__case, .case-desk__assistant { min-width: 0; }
 .case-desk__case .case-info { grid-template-columns: 1fr; }
@@ -307,3 +329,12 @@ pre.draft { white-space: pre-wrap; background: var(--color-background); border-r
 .case-dialog__body { white-space: pre-wrap; margin-top: .4rem; }
 .case-work { border-top: 1px solid var(--color-border); padding-top: .75rem; margin-top: .75rem; overflow-wrap: anywhere; }
 @media (max-width: 1100px) { .case-desk { grid-template-columns: 1fr; } .case-desk__assistant > details { position: static; } }
+
+@media (max-width: 600px) {
+  .actuary-register, .actuary-register tbody, .actuary-register tr { display: block; width: 100%; }
+  .actuary-register thead { display: none; }
+  .actuary-register tr { border-top: 1px solid var(--color-border); padding: var(--space-3) 0; }
+  .actuary-register td { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: var(--space-2); border: 0; padding: var(--space-2) 0; overflow-wrap: anywhere; }
+  .actuary-register td::before { content: attr(data-label); color: var(--color-text-muted); font-size: .875rem; }
+  .actuary-register td p { margin-top: var(--space-2); grid-column: 2; }
+}
