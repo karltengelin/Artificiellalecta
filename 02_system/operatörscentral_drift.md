@@ -19,7 +19,7 @@ Läsvyn anropar inga modeller och innehåller inga styrskrivningar.
 Läsning av försäkringsaggregat går genom `get_company_metrics` i tjänstelagret, utan PII
 i resultatet. Sedan B-041 (2026-10-27) är operationen `AGENT` och monterad för aktuarieteamet
 i fråge-/rapportkedjan, med kolumnbegränsad läsrätt för rollen `agent_aktuarie`; centralens
-egen läsning är oförändrad. Kolumnrätterna är inte satta i Lakebase ännu.
+egen läsning är oförändrad. Kolumnrätterna är satta i Lakebase sedan 2026-10-31.
 
 ## Mått och underlag
 

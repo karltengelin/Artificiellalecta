@@ -23,7 +23,7 @@
 | `product_parameters` | Versionerade premieåldrar, premiesatser och brytpunkter (§9h) | 🟢 Skapad och seedad i Lakebase 2026-10-25; agentrollens läsrätt satt. Förändringsoperationer finns; komplett flödesverifiering återstår i 3c-V |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
 | `flows` / `flow_steps` / `flow_gate_decisions` | Flödesmotorn i harness: flöden, steg och grindbeslut (§9i) | 🟡 Fas 3c 3c-2: modeller, motor och tester; migrationen verifierad mot isolerad Postgres; 🟢 skapade i Lakebase 2026-10-26 efter backup `backups/20261026T200423Z` och operatörens OK (tomma, inga agenträttigheter) |
-| `valuation_bases` | Antagandebiblioteket: aktuariella grunder och diskonteringskurvor med oföränderligt innehåll (§9j) | 🟡 A4 (B-042): modell, operationer, startgrunder och tester; migrationen skriven, **ej skapad i Lakebase** |
+| `valuation_bases` | Antagandebiblioteket: aktuariella grunder och diskonteringskurvor med oföränderligt innehåll (§9j) | 🟡 A4 (B-042): modell, operationer, startgrunder och tester; 🟢 skapad och seedad i Lakebase 2026-10-31 efter backup `backups/20261031T124616Z` och operatörens OK; läsrätt för `agent_aktuarie` satt |
 
 **Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för försäkringens läge. Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
@@ -611,7 +611,7 @@ Append-only: ett beslut är en ny rad, ingen rad ändras.
 
 ## 9j. Tabell: `valuation_bases` – Antagandebiblioteket
 
-> **Status:** Beslutad i **B-042** (val C och I), byggd lokalt i A4 2026-10-31. Migrationen `scripts/migrations/migrate_valuation_bases.py` är verifierad mot isolerad Postgres 2026-10-31 (`svc_test`): skapar tabellen och startgrunderna, kontrollsummorna håller efter JSONB, idempotent och övriga radantal oförändrade. **Ej skapad i Lakebase.**
+> **Status:** Beslutad i **B-042** (val C och I), byggd lokalt i A4 2026-10-31. Migrationen `scripts/migrations/migrate_valuation_bases.py` är verifierad mot isolerad Postgres 2026-10-31 (`svc_test`): skapar tabellen och startgrunderna, kontrollsummorna håller efter JSONB, idempotent och övriga radantal oförändrade. **Skapad i Lakebase 2026-10-31** efter backup `backups/20261031T124616Z` och operatörens OK (AGENTS.md §4.5).
 
 **Domän:** Aktuariella grunder och diskonteringskurvor som versionerad data (`VARDERINGSKONTRAKT.md` §4). Innehållet (`assumptions`) prövas mot schemat för ändamålet i `services/valuation_bases.py` och ändras aldrig efter att raden skapats. Ett förslag blir en ny rad. När en grund antas avslutas den gällande grunden i samma familj dagen före. Historiska garantigrunder bevaras (B-027).
 
@@ -686,7 +686,7 @@ Partiellt unikt index: högst en antagen, inte avslutad grund per familj (`uq_va
   - torrkörning som standard, och `--apply` kräver `--backup`;
   - radantalen kontrolleras före och efter.
 
-  Migrationen lägger in startgrunderna och prövar varje kontrollsumma. Minsta avvikelse rullar tillbaka allt. Verifierat mot isolerad Postgres 2026-10-31 (`tests/test_valuation_bases.py`). **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --team aktuarie --apply`. **Ej körd mot Lakebase**
+  Migrationen lägger in startgrunderna och prövar varje kontrollsumma. Minsta avvikelse rullar tillbaka allt. Verifierat mot isolerad Postgres 2026-10-31 (`tests/test_valuation_bases.py`). **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --team aktuarie --apply`. **Körd mot Lakebase 2026-10-31** efter backup `backups/20261031T124616Z` och torrkörning, med operatörens OK: tabellen och de sex startgrunderna skapade, radantalen i övriga tabeller oförändrade och en andra körning gjorde ingenting. Därefter sattes `agent_aktuarie`s rättigheter, också OC-3a:s kolumnrätter (B-041). Verifierat med rollens egen anslutning: läser grunderna och kontrollsummorna stämmer; nekas UPDATE, DELETE och INSERT på tabellen
 
 ---
 
