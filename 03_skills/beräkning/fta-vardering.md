@@ -5,7 +5,7 @@
 > **Tester:** `tests/test_fta_valuation.py`, `tests/test_valuation_runs.py` | **Diagnos:**
 > `scripts/diagnostics/valuation_summary.py`
 > **Status:** 🟢 Byggd och testad lokalt (A6, B-042). Kontrollfallen K1–K10 körs automatiskt. Tabellerna
-> är inte införda i Lakebase.
+> är inte införda i Lakebase; en skrivskyddad provvärdering mot Lakebase per 2026-09-30 är gjord (scenario).
 
 ## Syfte
 
