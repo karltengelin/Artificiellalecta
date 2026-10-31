@@ -3,6 +3,10 @@
 För presentationsmallens separata exempel med fem bildtyper, se
 [presentationsunderlaget](presentationsunderlag.md) och
 [mallens dokumentation](../presentationsmall.md).
+[Introduktionen för nya medarbetare](introduktion_nya_medarbetare.md) är ett
+exempel på samma mall med verkligt projektinnehåll per 2026-10-31: principer,
+avgränsningar, organisation och byggstatus. Den har ingen incheckad PDF; bygg
+den med `scripts/documentation/build_presentation.py` enligt mallens dokumentation.
 
 En beställd demonstration av **Digital klarhet v1.0** med utförlig rapporttext,
 tio diagram, tabeller och metodavsnitt. Allt mätunderlag är påhittat. September
