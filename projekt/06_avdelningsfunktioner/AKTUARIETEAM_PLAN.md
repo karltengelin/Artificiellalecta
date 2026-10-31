@@ -478,9 +478,9 @@ Förslaget startar inget bygge och ändrar inte prioriteringen i ATT_GORA (OC-3a
 | **A0** | Designstopp: [beslutsförslag](AKTUARIETEAM_BESLUTSFORSLAG.md) | Detta dokument | ✅ Godkänt 2026-10-31 (B-042) |
 | **A1** | [Värderings- och förklaringskontrakt](VARDERINGSKONTRAKT.md) (projektplanens första kontraktsarbete) | A0 | ✅ Fastställt 2026-10-31 |
 | **A2** | Produktrapport v0 (avsnitt 1–3, 8, 9) och `get_portfolio_snapshot`, `get_premium_flows` | Befintliga data | ✅ Byggt och testat lokalt 2026-10-31: flödet `product_report` och adaptern `ProductReportConsole`. Postgres-proven godkända 2026-10-31 mot `svc_test` (79 av 79, inklusive operationerna med rollen `agent_aktuarie`). Röktest mot riktig modell godkänt samma dag: `claude-opus-5` i demo med `--avvikelser`, 23 av 23 kontroller, 0,34 USD (`scripts/diagnostics/smoke_test_product_report.py`). Vyerna kommer i A3 |
-| **A3** | Teamyta v1: översikt, rapporter och uppdrag på befintliga data | OC-8, A2 | Efter A2 |
+| **A3** | Teamyta v1: översikt, rapporter och uppdrag på befintliga data | OC-8, A2 | Uppdrag till Codex 2026-10-31: [UPPDRAG_A3_CODEX.md](UPPDRAG_A3_CODEX.md) |
 | **A4** | Antagandebibliotek som data (`valuation_bases`) med förslag och införande | A1 | ✅ Byggt och testat lokalt 2026-10-31: tabell, fem operationer, podden `antaganden` (läsning) och startgrunderna. Postgres-proven godkända mot `svc_test` (migrationen och rollen `agent_aktuarie`). Skapat i Lakebase 2026-10-31 efter backup och OK, och läsrätten verifierad med rollens anslutning. Agentens förslagsväg öppnas i A9 |
-| **A5** | Rekonstruerat startbestånd S-04 med `G_j` och `C` (svar Q4) | A1 | Efter A1 |
+| **A5** | Rekonstruerat startbestånd S-04 med `G_j` och `C` (svar Q4) | A1 | 🟡 Del 1 byggd 2026-10-31: beräkningsmotorn för dödlighet, annuitet och garantidelar (`actuarial_annuity.py`), med leveranskontrollens facit. Del 2 (datautdrag och rekonstruktion av `C`) väntar på avkastningsserien `AVK-SIM-2026` |
 | **A6** | Värderingsmotor med kontrollfall, `valuation_runs`, `lock_valuation` | A4, A5 | |
 | **A7** | Förändringsanalys och scenariomotor; sidorna FTA-analys och Scenarier | A6 | |
 | **A8** | Flödet `valuation_close`, avsättningsunderlag och rapportunderlag till compliance | A7, compliancekontrakt | |

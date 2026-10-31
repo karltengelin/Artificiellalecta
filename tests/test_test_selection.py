@@ -72,9 +72,12 @@ postgres = ["tests/test_c.py::test_pg"]
 
 def test_repo_katalogen_klassificerar_alla_testfiler_och_markerar_malbilden():
     catalog = load_catalog()
-    for name in ("pensions", "payments", "economy", "risk", "simulation", "compliance", "communication"):
+    for name in ("pensions", "payments", "economy", "simulation", "compliance", "communication"):
         assert catalog.suites[name].status == "planned"
         assert not catalog.suites[name].tests
+    # Beräkningsmotorn för dödlighet och annuitet finns sedan A5 (B-042); FTA-motorn återstår
+    assert catalog.suites["risk"].status == "partial"
+    assert "tests/test_actuarial_annuity.py" in catalog.suites["risk"].tests
     assert catalog.suites["reporting"].status == "partial"
     # Flödesmotorn finns sedan 3c-2; delegering mellan team återstår
     assert catalog.suites["orchestration"].status == "partial"

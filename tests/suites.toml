@@ -39,9 +39,9 @@ tests = []
 dependents = ["reporting"]
 
 [suites.risk]
-description = "Reserv, FTA, ALM och finansieringskontroller"
-status = "planned"
-tests = []
+description = "Reserv, FTA, ALM och finansieringskontroller; beräkningsmotorn för dödlighet och annuitet finns"
+status = "partial"
+tests = ["tests/test_actuarial_annuity.py"]
 dependents = ["reporting"]
 
 [suites.reporting]
@@ -149,6 +149,10 @@ full = true
 [[rules]]
 paths = ["src/skills/calculation/**", "src/services/parameters.py", "src/services/operations/premiums.py", "src/services/operations/salary.py", "src/services/operations/corrections.py", "src/services/operations/product_parameters.py"]
 suites = ["premiums"]
+
+[[rules]]
+paths = ["src/skills/calculation/actuarial_annuity.py", "src/services/valuation_bases.py", "01_domän/parametrar/DODLIGHET_SCB_2025.md"]
+suites = ["risk"]
 
 [[rules]]
 paths = ["src/services/**"]

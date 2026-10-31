@@ -11,6 +11,7 @@
 | Skill | Kategori | Podd | Syfte | PII | Behöriga agenter | Status |
 |---|---|---|---|---|---|---|
 | [beräkna-itp1-premie](beräkning/beräkna-itp1-premie.md) | beräkning | `berakning` (som `calculate_premium_preview`) | Premiemotor: ITP1-premie ur lön + IBB enligt premietrappan | Nej | Alla | 🟢 Implementerad |
+| [aktuariell-annuitet](beräkning/aktuariell-annuitet.md) | beräkning | – (monteras i `aktuariell` med A6) | Dödsrisk, annuitetsfaktor och garantidelar enligt aktuariell grund, mot leveranskontrollens facit | Nej | Betrodd kod | 🟢 Implementerad som ren beräkning (A5) |
 
 **Kategori och podd är olika saker** (`02_system/agentekosystem.md` §5.1): kategorin styr var dokumentationen ligger, podden styr behörigheten i körning. Agenter når premiemotorn genom tjänstelagrets operation `calculate_premium_preview`, inte genom funktionen direkt.
 
