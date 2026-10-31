@@ -9,6 +9,7 @@ Fallerar den rullas allt tillbaka och ärendet är kvar som väntande.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from fastapi import APIRouter, Request
@@ -16,13 +17,33 @@ from fastapi.responses import RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
 from services import ServiceError
-from web.handler import check_csrf, handler_ctx, read, read_async, render, render_error, service
+from web.handler import (
+    check_csrf,
+    handler_ctx,
+    read,
+    read_async,
+    render,
+    render_error,
+    service,
+)
+from web.operator_auth import current_session, operator_action
 from web.presenters import ErrorView, clean_text, describe_error
 
 router = APIRouter()
 
 #: Filtren i kön: adressens värde → status i tjänstelagret
 QUEUE_FILTERS = {"vantar": "pending", "godkanda": "approved", "avslagna": "rejected", "alla": None}
+
+
+def decision_context(request, form, approval_id):
+    console = getattr(request.app.state, "case_workspace", None)
+    work_id = console.work_for_approval(approval_id) if console else None
+    session = current_session(request)
+    if work_id or (session and form.get("csrf_token") == session.csrf_token):
+        actor = operator_action(request, dict(form))
+        return replace(handler_ctx(request), actor=actor), work_id
+    check_csrf(request, form)
+    return handler_ctx(request), None
 
 
 # --- godkännandekön -------------------------------------------------------------------------------
@@ -36,13 +57,15 @@ def approvals(request: Request, status: str = "vantar"):
 @router.post("/godkannanden/{approval_id}/godkann")
 async def approve(request: Request, approval_id: str):
     form = await request.form()
-    check_csrf(request, form)
+    ctx, work_id = await run_in_threadpool(decision_context, request, form, approval_id)
     note = clean_text(form.get("note"))
     try:
         proposal = (await read_async(
             request, "list_approval_requests", {"status": None, "approval_id": approval_id}
         )).requests[0]
-        result = await run_in_threadpool(service(request).approve, approval_id, handler_ctx(request), note)
+        result = await run_in_threadpool(service(request).approve, approval_id, ctx, note)
+        if work_id:
+            await run_in_threadpool(request.app.state.case_workspace.settle, work_id)
     except ServiceError as exc:
         error = describe_error(exc, service(request).rules, write=True)
         return await run_in_threadpool(_queue_page, request, "vantar", error=error, focus=approval_id)
@@ -72,14 +95,16 @@ def decision_page(approval_id: str, decision: str):
 @router.post("/godkannanden/{approval_id}/avsla")
 async def reject(request: Request, approval_id: str):
     form = await request.form()
-    check_csrf(request, form)
+    ctx, work_id = await run_in_threadpool(decision_context, request, form, approval_id)
     note = clean_text(form.get("note"))
     if not note:
         error = ErrorView("invalid", "Skäl saknas", "Ange varför förslaget avslås – skälet sparas i händelseloggen.",
                           422, field_errors={"note": "Obligatoriskt vid avslag"}, nothing_changed=True)
         return await run_in_threadpool(_queue_page, request, "vantar", error=error, focus=approval_id)
     try:
-        await run_in_threadpool(service(request).reject, approval_id, handler_ctx(request), note)
+        await run_in_threadpool(service(request).reject, approval_id, ctx, note)
+        if work_id:
+            await run_in_threadpool(request.app.state.case_workspace.settle, work_id)
     except ServiceError as exc:
         error = describe_error(exc, service(request).rules, write=True)
         return await run_in_threadpool(_queue_page, request, "vantar", error=error, focus=approval_id)

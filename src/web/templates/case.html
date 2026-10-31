@@ -4,6 +4,8 @@
 {% set d = case.details %}
 {% block title %}{{ case.case_number }}{% endblock %}
 {% block content %}
+<div class="case-desk">
+<div class="case-desk__case">
 <section class="panel panel--standalone">
   <div class="panel__head">
     <h1>{{ case.case_number }} <span class="muted">· {{ case.case_type | label('case_type') }}</span></h1>
@@ -13,7 +15,7 @@
   {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
   {% include "partials/error_box.html" %}
 
-  <div class="formgrid">
+  <div class="formgrid{% if assistant_available %} case-info{% endif %}">
     <div>
       <h2>Inrapporterat</h2>
       <dl class="kv">
@@ -34,13 +36,13 @@
       {% endif %}
     </div>
 
-    <aside class="opinfo">
+    {% if not assistant_available %}<aside class="opinfo">
       <h3>Handläggaragenten</h3>
       {% if agent %}
       <p class="small">Läser ärendet, den försäkrades översikt, löneunderlag och premiehistorik, förhandsberäknar premien och föreslår registrering.
         Förslag hamnar i <a href="/godkannanden">godkännandekön</a>. Agenten ändrar aldrig ärendets status själv.</p>
       <p class="small">Databas: {{ agent.role_label }}{% if agent.simulated_role %} <span class="pill pill--pending">simulerad</span>{% endif %}</p>
-      {% if case.status != "closed" %}
+      {% if case.status != "closed" and not assistant_available %}
       <form method="post" action="/arenden/{{ case.case_number }}/agent" hx-confirm="Starta handläggaragenten i {{ case.case_number }}? Körningen gör modellanrop som kostar.">
         {{ csrf() }}
         <button type="submit">Starta agent</button>
@@ -50,7 +52,7 @@
       {% else %}
       <p class="small muted">Agenten är inte konfigurerad i den här instansen.</p>
       {% endif %}
-    </aside>
+    </aside>{% endif %}
   </div>
 </section>
 
@@ -141,4 +143,7 @@
   {% set log = history %}
   {% include "partials/event_table.html" %}
 </section>
+</div>
+{% include "partials/case_assistant.html" %}
+</div>
 {% endblock %}

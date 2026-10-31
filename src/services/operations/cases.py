@@ -220,6 +220,35 @@ def get_case(ctx: OperationContext, data: CaseLookup) -> CaseView:
     return _view(session, _case(session, data.case_number))
 
 
+class AmendCaseInput(BaseModel):
+    case_number: str = Field(pattern=_CASE_NUMBER)
+    expected_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
+    details: SalaryReportDetails
+
+
+@operation(name="amend_salary_case", description="Kompletterar löneunderlaget i ett öppet ärende med versionskontroll. "
+           "Skapar ingen lönerapport eller premie. Väntande förslag måste avgöras först.",
+           kind=OperationKind.WRITE, pii=True)
+def amend_salary_case(ctx: OperationContext, data: AmendCaseInput) -> CaseResult:
+    from sqlalchemy import inspect
+
+    from models import CaseWork
+    from services.case_review import case_digest
+
+    session = ctx.require_session()
+    case = _case(session, data.case_number, lock=True)
+    if case.status == "closed" or case_digest(_view(session, case)) != data.expected_digest:
+        raise ConflictError("Ärendet är stängt eller underlaget har ändrats; läs det igen")
+    if session.scalar(select(ApprovalRequestRecord.id).where(
+        ApprovalRequestRecord.case_id == case.case_number, ApprovalRequestRecord.status == "pending").limit(1)):
+        raise ConflictError("Avgör eller avslå tidigare förslag före komplettering")
+    if inspect(session.connection()).has_table("case_work") and session.scalar(select(CaseWork.id).where(
+        CaseWork.case_number == case.case_number, CaseWork.status.in_(("running", "queued"))).limit(1)):
+        raise ConflictError("Pausa agenten före ändring av ärendeunderlaget")
+    case.details = data.details.model_dump(mode="json")
+    return CaseResult(case_number=case.case_number, case_type=case.case_type, status=case.status)
+
+
 class CaseQuery(BaseModel):
     status: Literal["active", "open", "in_progress", "waiting_approval", "waiting_info", "closed"] | None = Field(
         default="active", description="active = alla som inte är stängda; None = alla"

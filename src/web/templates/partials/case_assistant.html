@@ -1,0 +1,91 @@
+<aside class="case-desk__assistant" aria-label="Agentstöd i ärendet">
+<details class="panel" id="agentstod" {% if assistant %}open{% endif %}>
+  <summary><strong>Agentstöd i detta ärende</strong></summary>
+  <p class="small muted">{{ case.case_number }} · Handläggaragenten. Samtalet hör till detta ärende.</p>
+  {% if assistant_error %}<p class="alert alert--error">{{ assistant_error }}</p>
+  {% elif not assistant_available %}<p>Agentstödet är inte anslutet.</p>
+  {% elif not assistant %}<p><a href="/logga-in" hx-boost="false">Logga in</a> för att öppna ärendedialogen och beställa arbete.</p>
+  {% else %}
+  <p class="small">Du kan ställa frågor och ge deluppdrag eller lämna över handläggningen. Inga kundkontakter sker här.</p>
+  <div class="case-dialog" aria-label="Sparad ärendedialog">
+  {% for m in assistant.messages %}
+    <article class="case-dialog__message case-dialog__message--{{ m.role }}">
+      <strong>{{ 'Handläggare' if m.role == 'human' else 'Agenten' if m.role == 'agent' else 'Arbetsstatus' }}</strong>
+      <div class="case-dialog__body">{{ m.body }}</div>
+    </article>
+  {% else %}<p class="muted">Inga meddelanden ännu.</p>{% endfor %}
+  </div>
+  <p><a class="button secondary" href="/arenden/{{ case.case_number }}">Uppdatera arbetsytan</a></p>
+  {% for w in assistant.works %}
+  <section class="case-work">
+    <strong>{{ 'Hela ärendet' if w.mode == 'handle' else 'Deluppdrag' }}</strong>
+    <p>{{ assistant.status_labels[w.status] }}{% if w.cancel_requested %} · Återtaget{% endif %}</p>
+    {% if w.result.get('usage') %}<p class="small">{{ 'Kostnad okänd; reservation' if w.result.get('usage_unknown') else 'Kostnad hittills' }}: {{ '%.4f' | format(w.result.usage.cost_usd) }} USD</p>{% endif %}
+    {% if w.status == 'waiting_approval' %}<p><a href="/godkannanden">Granska åtgärdsförslaget</a>. Ärendet avslutas efter verifierat beslut när hela handläggningen lämnats över.</p>{% endif %}
+    {% if w.status in ['waiting_info', 'needs_human'] and not w.cancel_requested %}
+    <form method="post" action="/arenden/{{ case.case_number }}/uppdrag/{{ w.id }}/continue" hx-boost="false">
+      <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+      <input type="hidden" name="revision" value="{{ w.revision }}">
+      <label for="reply-{{ w.id }}">Komplettering eller förtydligande</label>
+      <textarea id="reply-{{ w.id }}" name="message" required maxlength="4000" rows="3"></textarea>
+      <p class="small muted">Detta är samtalsunderlag. Uppgifterna i försäkringssystemet ändras genom ordinarie formulär.</p>
+      <button type="submit">Komplettera och fortsätt</button>
+    </form>
+    {% endif %}
+    {% if w.status in ['queued','running','waiting_info','waiting_approval','needs_human','reconciliation_required'] and not w.cancel_requested %}
+    <form method="post" action="/arenden/{{ case.case_number }}/uppdrag/{{ w.id }}/takeover" hx-boost="false">
+      <input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="revision" value="{{ w.revision }}">
+      <button type="submit" class="secondary">Pausa agenten och ta över</button>
+    </form>
+    {% endif %}
+    {% if w.status == 'running' %}
+    <details><summary>Körningen verkar avbruten</summary>
+      <form method="post" action="/arenden/{{ case.case_number }}/uppdrag/{{ w.id }}/interrupted" hx-boost="false">
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="revision" value="{{ w.revision }}">
+        <label><input type="checkbox" name="worker_stopped" value="yes" required> Jag har kontrollerat att tidigare arbetare har stoppats.</label>
+        <button type="submit" class="secondary">Markera för avstämning</button>
+      </form>
+    </details>
+    {% endif %}
+    {% if w.status == 'reconciliation_required' %}
+    <form method="post" action="/arenden/{{ case.case_number }}/uppdrag/{{ w.id }}/reconcile" hx-boost="false">
+      <input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="revision" value="{{ w.revision }}">
+      <label for="reconcile-{{ w.id }}">Kontroll av förslag och historik</label>
+      <textarea id="reconcile-{{ w.id }}" name="message" required maxlength="4000"></textarea>
+      <button type="submit">Spara avstämning</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endfor %}
+  {% if case.status != 'closed' %}
+  <details><summary>Komplettera ärendets löneunderlag</summary>
+    <form method="post" action="/arenden/{{ case.case_number }}/komplettera" hx-boost="false">
+      <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+      <input type="hidden" name="expected_digest" value="{{ assistant.case_digest }}">
+      <input type="hidden" name="kind" value="{{ case.details.kind }}">
+      <input type="hidden" name="corrects_version" value="{{ case.details.corrects_version or '' }}">
+      <input type="hidden" name="source" value="{{ case.details.source }}">
+      <label for="amended-salary">Pensionsmedförande lön (kronor, punkt som decimaltecken)</label>
+      <input id="amended-salary" name="salary" value="{{ case.details.pensionable_salary_sek }}" required>
+      <label for="amended-reason">Källa och motivering till kompletteringen</label>
+      <input id="amended-reason" name="reason" required maxlength="1000">
+      <p class="small muted">Ändrar ärendeunderlaget. Registrering i försäkringssystemet görs som ett eget steg.</p>
+      <button type="submit" class="secondary">Spara komplettering</button>
+    </form>
+  </details>
+  <form method="post" action="/arenden/{{ case.case_number }}/uppdrag" hx-boost="false">
+    <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+    <input type="hidden" name="submission_key" value="{{ submission_key }}">
+    <label for="case-instruction">Vad vill du ha hjälp med?</label>
+    <textarea id="case-instruction" name="instruction" rows="4" required maxlength="4000" placeholder="Undersök vad som saknas i underlaget och hur det påverkar handläggningen."></textarea>
+    <label><input type="checkbox" name="allow_proposals" value="yes"> Tillåt förslag på registrering av ärendets löneunderlag</label>
+    <button type="submit" name="mode" value="assist">Skicka deluppdrag</button>
+    <button type="submit" name="mode" value="handle" class="secondary">Låt agenten handlägga ärendet</button>
+  </form>
+  {% endif %}
+  <p class="small muted">Granskning: {{ 'handläggare krävs' if assistant.policy.review_required else 'automatisk slutbehandling tillåten för verifierade standardfall' }}.
+    Daglig handläggning: {{ 'aktiverad' if assistant.policy.schedule.enabled else 'avstängd' }}.
+    Andra team och extern komplettering kräver ännu handläggarens hjälp.</p>
+  {% endif %}
+</details>
+</aside>

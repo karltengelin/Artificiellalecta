@@ -288,3 +288,22 @@ pre.draft { white-space: pre-wrap; background: var(--color-background); border-r
 .question-action label { display: block; margin-bottom: .5rem; }
 .question-action textarea { display: block; width: min(100%, 42rem); margin-bottom: 1rem; }
 .table-scroll { overflow-x: auto; }
+
+/* Ärendebundet agentstöd återanvänder Digital klarhets paneler och formulär. */
+.case-desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(20rem, 27rem); gap: 1.25rem; align-items: start; }
+.case-desk__case, .case-desk__assistant { min-width: 0; }
+.case-desk__case .case-info { grid-template-columns: 1fr; }
+.case-desk__case .decide { grid-template-columns: 1fr; }
+.case-desk__case .decide__form { grid-template-columns: minmax(0, 1fr); }
+.case-desk__case .decide__form input, .case-desk__case .decide__form select { width: 100%; min-width: 0; }
+.case-desk__case .panel { overflow-x: auto; }
+.case-desk__assistant > details { position: sticky; top: 1rem; }
+.case-desk__assistant summary { cursor: pointer; padding: .5rem 0; }
+.case-desk__assistant label { display: block; margin: .75rem 0 .4rem; }
+.case-desk__assistant textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.case-desk__assistant button { margin: .5rem .25rem .25rem 0; }
+.case-dialog { max-height: 28rem; overflow-y: auto; overflow-wrap: anywhere; }
+.case-dialog__message { padding: .75rem; margin-bottom: .75rem; border: 1px solid var(--color-border); border-radius: .5rem; }
+.case-dialog__body { white-space: pre-wrap; margin-top: .4rem; }
+.case-work { border-top: 1px solid var(--color-border); padding-top: .75rem; margin-top: .75rem; overflow-wrap: anywhere; }
+@media (max-width: 1100px) { .case-desk { grid-template-columns: 1fr; } .case-desk__assistant > details { position: static; } }

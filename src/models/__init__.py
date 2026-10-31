@@ -8,6 +8,7 @@ from .approval_request import ApprovalRequestRecord
 from .base import Base
 from .base_amount import BaseAmount
 from .case import Case
+from .case_work import CaseMessage, CaseWork, CaseWorkDay
 from .employer import Employer
 from .flow import Flow, FlowGateDecision, FlowStep
 from .insured_person import InsuredPerson
@@ -27,6 +28,9 @@ __all__ = [
     "Base",
     "BaseAmount",
     "Case",
+    "CaseMessage",
+    "CaseWork",
+    "CaseWorkDay",
     "Employer",
     "Flow",
     "FlowGateDecision",

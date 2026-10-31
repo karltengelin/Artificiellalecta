@@ -109,6 +109,19 @@ Gamla schemalagda kommandon och instruktioner utanför repot behöver uppdateras
 
 ## När ett nytt verktyg läggs till
 
+**Ärendeuppdrag (2026-10-31):**
+
+- `scripts/agents/run_case_worker.py --db demo --once|--serve`: hämtar den
+  varaktiga kön, följer upp beslut och tillämpar aktiverade dagliga regler.
+  Använder AI-lager/harness/tjänstelager och kan göra modellanrop och
+  policytillåtna affärsändringar. Standardpolicyn har dagligt urval avstängt.
+- `scripts/migrations/migrate_case_work.py`: torrkörning mot DATABASE_URL;
+  införande kräver `--apply --backup`, backup och databassamordning.
+- `scripts/diagnostics/smoke_test_case_work.py --run`: riktig modell, bara
+  läsning/beräkning i tillfällig lokal demodatabas; utan flaggan inga anrop.
+
+Fulla driftgränser finns i [ärendedialogen](arendedialog_och_automation.md).
+
 Placera det efter användning, inte efter vilken agent som skrev det. Återanvändbar logik
 hör hemma i `src/`; håll kommandoradsingången liten. Uppdatera katalogen med syfte,
 beroenden och vad kommandot läser/skriver. Vanliga affärsoperationer använder tjänstelagret.

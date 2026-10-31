@@ -13,7 +13,9 @@ faktiskt påverkar systemen och databaserna bakom: policys, förmåner, tillstå
 Ärenden och handläggaragent för `salary_report` är byggda (F5-1–4, B-033).
 `cases` och agentrollens rättigheter infördes i Lakebase 2026-10-24. Kvar i
 F5-5–6: slutverifiering av agentförslag och hela ärendeflödet från 2026-11-01.
-Självständiga körningar och fler ärendetyper återstår. Den breda modelloberoende
+Ärendedialog och självständig köhandläggning har lokalt stöd sedan 2026-10-31;
+införande i Lakebase och val av dagliga/automatiska fall återstår. Fler ärendetyper
+är fortsatt obygda. Den breda modelloberoende
 bolagsdialogen planeras i projekt 10; den är ingen separat Claude-chatt i detta projekt.
 
 Handläggaren kan i v1:
@@ -58,6 +60,13 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 
 ## Nästa steg
 
+**Byggt lokalt 2026-10-31 på operatörens uppdrag:** ärendebunden dialog med
+fria deluppdrag, överlämning, komplettering och övertagande samt varaktig kö,
+daglig arbetare och versionsbunden granskningspolicy. Mänsklig granskning
+är standard; schema och automatisk slutbehandling är avstängda. Lakebase
+behöver en separat migration. Individbunden teamdelegering och extern
+komplettering är fortsatt stängda. Se [plan, drift och gränser](../../02_system/arendedialog_och_automation.md).
+
 **Prioriteringsförtydligande 2026-10-27:** fullfölj befintlig verifiering inom
 gällande datum och mandat. Nästa samordnade verksamhetsuppdrag att avgränsa
 är paket A (V-01–03): löneunderlag → premie/faktura → mottagen betalning och
@@ -78,7 +87,7 @@ Den närmaste fråge-/rapportkedjan i [projekt 10](../10_operatörscentral/PROJE
   - försäkringsbesked
   - interna id:n i adresserna
 - Slutverifiera agentförslag och hela ärendeflödet i F5-5–6 från 2026-11-01; nuvarande regelstatus får inte kringgås.
-- Bygg självständiga ärendekörningar först med bakgrundsarbetaren och enligt F5-7:s mandat/budget.
+- Inför och verifiera den lokalt byggda ärendearbetaren enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy.
 - Samordna modelloberoende bolagsdialog med [projekt 10](../10_operatörscentral/PROJEKTPLAN.md), OC-3, och försäkringsteamets område med OC-8 (B-036).
 
 ## Öppna designfrågor

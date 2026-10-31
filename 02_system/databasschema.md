@@ -648,6 +648,18 @@ Append-only: ett beslut är en ny rad, ingen rad ändras.
 
 ---
 
+## 12b. Ärendeuppdragens schemaändring
+
+**Tillägg 2026-10-31 – ärendeuppdrag:** modellerna i `src/models/case_work.py`
+definierar `case_work`, `case_messages` och `case_work_days`. De hör till
+betrodd harness och ärendeuppföljning; agentrollerna får ingen direkt åtkomst.
+Ärende-/uppdragsreferenser har främmande nycklar, beställningsnyckeln är unik,
+arbetsform/status har CHECK-villkor och köanspråk använder villkorlig UPDATE.
+Dialog/resultat är personuppgiftsbärande. Fält, indexens användning,
+reservationsbok, skydd och migration beskrivs i
+[ärendedialog och automation](arendedialog_och_automation.md#data-migration-och-skydd).
+Migration: `scripts/migrations/migrate_case_work.py`; ej införd i Lakebase.
+
 ## 13. Hänvisningar
 
 - **B-018** – Databricks Lakebase som databas (ersätter B-014/Supabase); SQLAlchemy som ORM kvarstår
