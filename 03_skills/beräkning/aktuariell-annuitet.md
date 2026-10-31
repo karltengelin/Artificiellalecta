@@ -1,8 +1,8 @@
 # Skill: aktuariell annuitet och garantidelar
 
 > **Implementation:** `src/skills/calculation/actuarial_annuity.py` | **Tester:** `tests/test_actuarial_annuity.py`
-> **Status:** 🟢 Implementerad som ren beräkning (A5, B-042). Ingen podd ännu: värderingsmotorn (A6) och
-> datautdraget S-04 (A5 del 2, [kapitalavräkning](kapitalavrakning.md)) använder den i betrodd kod, och podden `aktuariell` monteras med A6.
+> **Status:** 🟢 Implementerad som ren beräkning (A5, B-042; kurvdiskonteringen A6). Ingen egen podd:
+> datautdraget S-04 ([kapitalavräkning](kapitalavrakning.md)) och [FTA-värderingen](fta-vardering.md) använder den i betrodd kod.
 
 ## Syfte
 
@@ -16,7 +16,8 @@ SIM-HIST), utbetalningsgrunden (SIM-B), riskgrunden (SIM-R) och värderingsgrund
 | Funktion | Vad den ger |
 |---|---|
 | `annual_q`, `monthly_q` | Årlig och månatlig dödsrisk för ålder (fyllda år vid månadens första dag) och kalenderår, med förbättring, marginal och svans över 100 år |
-| `annuity_factor` | A(t, D) för en plan: start, antal betalningsmånader eller livsvarigt, pausmånader och nettoränta. Livsvarig plan med exakt geometrisk svans |
+| `annuity_factor` | A(t, D) för en plan: start, antal betalningsmånader eller livsvarigt, pausmånader och nettoränta eller kurva (`curve`), med valfri uppräkning per månad (`growth`). Livsvarig plan med exakt geometrisk svans där diskonteringen är konstant |
+| `DiscountCurve` | Spotkurva med årliga löptider, linjär interpolation, platt extrapolation och avdrag för avkastningsskatt: `v(t, n) = (1 + r_⌈n/12⌉ − s_y)^(−n/12)` (A6) |
 | `guarantee_part` | G_j = P_j / A_g(t_j, livsvarigt från 66-årsmånaden), med referensstart enligt §4 |
 | `MortalityBasis.scaled` | Samma grund med dödsrisken multiplicerad, t.ex. PR-028:s stress |
 
@@ -35,5 +36,6 @@ SIM-HIST), utbetalningsgrunden (SIM-B), riskgrunden (SIM-R) och värderingsgrund
 
 ## Gränser
 
-Ingen data hämtas och inget skrivs. Diskontering med räntekurva (SIM-V) kommer med
-värderingsmotorn (A6); i dag tar motorn en konstant nettoränta.
+Ingen data hämtas och inget skrivs. Med kurva summeras en livsvarig plan explicit tills kurvan är
+platt (för FI-SIM-2026-10 från löptiden 100 år) och därefter som geometrisk serie. Med konstant
+nettoränta är beräkningen densamma som före A6, så facit består.

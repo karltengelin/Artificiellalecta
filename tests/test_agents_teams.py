@@ -128,7 +128,7 @@ class TestKorpolicyn:
                         "write_draft", "calculate_premium_preview"}
         assert visible == {"compliance_agent": common_tools, "actuary_agent": common_tools | {
             "get_company_metrics", "get_portfolio_snapshot", "get_premium_flows", "list_valuation_bases",
-            "get_valuation_basis"}}
+            "get_valuation_basis", "list_valuation_runs", "get_valuation_run"}}
         assert eco.teams["compliance"].lead == "compliance_agent" and eco.agents["actuary_agent"].model_role == "deep"
 
     def test_inga_personuppgifter_for_teamen(self, eco, skills, service):

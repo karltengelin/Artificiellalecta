@@ -42,6 +42,14 @@ operations:
   propose_valuation_basis: APPROVAL    # ny grund som förslag, gäller inte förrän den antas
   adopt_valuation_basis: HUMAN_ONLY    # antagande med giltighetsdag och beslutsreferens
   reject_valuation_basis: HUMAN_ONLY   # avslag av ett förslag med anteckning
+
+  # Värderingsmotorn (A6, B-042). Körningen är ett systemsteg i betrodd kod (valuation_close, A8) och
+  # monteras inte för agenter; aktuarien läser bara aggregaten i podden aktuariell. Låset görs av
+  # ansvarig aktuarie (B-042 punkt 3).
+  run_valuation: APPROVAL              # datautdrag S-04 och FTA/VÅ/U som utkast med kontrollsummor
+  list_valuation_runs: AGENT           # körningar med status, grund och totaler, inga personuppgifter
+  get_valuation_run: AGENT             # en körning som aggregat: segment med småcellsskydd och kontroller
+  lock_valuation: HUMAN_ONLY           # fastställer en basvärdering; rättelse blir ny version
   get_operation_events: HUMAN_ONLY     # händelseloggen, personuppgifter (loggas)
 
   # Skrivningar (Fas 1f T3). PR-ITP1 v1.0 är infört (B-031) men gäller först från 2026-11-01;

@@ -25,6 +25,7 @@
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
 | `flows` / `flow_steps` / `flow_gate_decisions` | Flödesmotorn i harness: flöden, steg och grindbeslut (§9i) | 🟡 Fas 3c 3c-2: modeller, motor och tester; migrationen verifierad mot isolerad Postgres; 🟢 skapade i Lakebase 2026-10-26 efter backup `backups/20261026T200423Z` och operatörens OK (tomma, inga agenträttigheter) |
 | `valuation_bases` | Antagandebiblioteket: aktuariella grunder och diskonteringskurvor med oföränderligt innehåll (§9j) | 🟡 A4 (B-042): modell, operationer, startgrunder och tester; 🟢 skapad och seedad i Lakebase 2026-10-31 efter backup `backups/20261031T124616Z` och operatörens OK; läsrätt för `agent_aktuarie` satt |
+| `valuation_extracts` / `valuation_runs` / `valuation_results` | Värderingsmotorn: sparade datautdrag S-04, värderingskörningar med FTA, villkorad återbäring och underskott, och resultat per segment (§9k) | 🟡 A6 (B-042): modeller, operationer, migration och tester; verifierade mot isolerad Postgres. Ej skapade i Lakebase |
 
 **Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för försäkringens läge. Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
@@ -646,6 +647,58 @@ Partiellt unikt index: högst en antagen, inte avslutad grund per familj (`uq_va
 
 **Läses av** `list_valuation_bases` och `get_valuation_basis` (`AGENT`, podden `antaganden`). **Skrivs av** migrationen (startgrunderna), `propose_valuation_basis` (`APPROVAL`, PR-ITP1-031), `adopt_valuation_basis` och `reject_valuation_basis` (`HUMAN_ONLY`), med radlås på familjens antagna grunder (`tjänstelager.md` §9.7). `agent_aktuarie` får `SELECT`. Inga personuppgifter.
 
+## 9k. Tabeller: `valuation_extracts`, `valuation_runs` och `valuation_results` – Värderingsmotorn
+
+> **Status:** Beslutad i **B-042** (val I och L), byggd lokalt i A6 2026-10-31. Migrationen `scripts/migrations/migrate_valuation_runs.py` är verifierad mot isolerad Postgres (`svc_test`): skapar de tre tabellerna tomma, identiska kolumner med modellerna, idempotent och övriga radantal oförändrade. **Ej skapade i Lakebase.**
+
+**Domän:** FTA-värderingen enligt `VARDERINGSKONTRAKT.md` §5–6. En körning räknar på ett oföränderligt datautdrag och en antagen grund och kurva, och sparar totalerna och resultatet per segment. Belopp lagras med sex decimaler (`NUMERIC(20,6)`) och avrundas till öre först i rapporteringen. Skillen beskrivs i `03_skills/beräkning/fta-vardering.md`.
+
+### `valuation_extracts`
+
+Datautdraget S-04 som körningen räknar på. Samma innehåll sparas en gång.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | |
+| `valuation_date` | `DATE` | NOT NULL | Månadsslut |
+| `source` | `VARCHAR(30)` | NOT NULL, CHECK | `reconstructed_s04` eller `ledger` (paket B) |
+| `checksum` | `VARCHAR(64)` | NOT NULL, UNIQUE, CHECK längd 64 | Utdragets SHA-256; prövas igen före lås |
+| `approved` | `BOOLEAN` | NOT NULL | Kontrollerna i kontraktet §5.3 |
+| `policies` / `guarantee_parts` / `capital_sek` | | NOT NULL | Antal och ΣC för översikt |
+| `content` | `JSONB` | NOT NULL | Hela utdraget: per försäkring internt id, födelsemånad, läge, plan, garantidelar och kapital, samt månadssummor och kontroller. Inga personnummer eller namn |
+| `created_by` / `created_at` | | NOT NULL | |
+
+### `valuation_runs`
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | |
+| `valuation_date` | `DATE` | NOT NULL | |
+| `purpose` | `VARCHAR(20)` | NOT NULL, CHECK | `base` (kvartalsslut, gällande grund) eller `scenario` (märkt, aldrig bas) |
+| `version` | `INTEGER` | NOT NULL, UNIQUE med datum och ändamål | 1, 2, … per datum och ändamål |
+| `status` | `VARCHAR(20)` | NOT NULL, CHECK | `draft`, `locked` eller `superseded`. Ett scenario är alltid `draft` |
+| `source` | `VARCHAR(30)` | NOT NULL, CHECK | Utdragets märkning, följer med till rapporter |
+| `basis_code` / `basis_checksum`, `curve_code` / `curve_checksum` | | NOT NULL | Värderingsgrund (SIM-V) och kurva (FI-SIM) med kontrollsummor |
+| `tax_reduction` / `tax_parameter` | `NUMERIC(10,6)` / `VARCHAR(100)` | NOT NULL | s_y och versionen av `customer_tax_rate` |
+| `extract_id` / `extract_checksum` | | NOT NULL, FK | Utdraget |
+| `code_version` | `VARCHAR(60)` | NOT NULL | Motorns version och hash av källkoden, t.ex. `fta-1.0+…` |
+| `result_checksum` | `VARCHAR(64)` | NOT NULL | SHA-256 av resultatet per försäkring och totalerna (kontrollfall K6) |
+| `policies`, `capital_sek`, `guarantee_sek_per_month`, `fta_sek`, `expenses_sek`, `surplus_sek`, `deficit_sek` | | NOT NULL | Totaler: antal, ΣC, ΣG, FTA, därav K, VÅ och U |
+| `not_calculated` | `JSONB` | NOT NULL | Ej beräknade fall per orsak, med småcellsskydd |
+| `checks` / `checks_passed` | `JSONB` / `BOOLEAN` | NOT NULL | Utdraget godkänt, K1, K10 och antal |
+| `note` | `TEXT` | NOT NULL | Motiveringen vid körningen |
+| `created_by` / `created_at` | | NOT NULL | |
+| `locked_by` / `locked_at` / `lock_note` | | NOT NULL om inte `draft` | Vem som låste, när och varför |
+| `supersedes_id` | `UUID` | FK till `valuation_runs` | Den låsta körning som en rättelse ersatte |
+
+Partiellt unikt index: högst en låst körning per datum (`uq_valuation_runs_one_locked`). Villkoret `ck_valuation_runs_scenario_never_locked` hindrar att ett scenario låses.
+
+### `valuation_results`
+
+Ett segment per läge och födelsedecennium (`UNIQUE (run_id, state, cohort)`). Celler med 1–9 försäkringar döljs, med kompletterande döljning mot totalen, och sparas utan antal och belopp, bara med `hidden_reason` (CHECK `ck_valuation_results_hidden`). Beloppen är `capital_sek`, `fta_sek`, `expenses_sek`, `surplus_sek` och `deficit_sek`.
+
+**Skrivs av** `run_valuation` (`APPROVAL`, PR-ITP1-028 och PR-ITP1-031; systemsteg eller människa) och `lock_valuation` (`HUMAN_ONLY`, radlås på körningen och datumets låsta körning). **Läses av** `list_valuation_runs` och `get_valuation_run` (`AGENT`, podden `aktuariell`), som aldrig läser `valuation_extracts`. `agent_aktuarie` får `SELECT` på `valuation_runs` och `valuation_results`, men ingen rättighet på `valuation_extracts` (`tjänstelager.md` §9.8).
+
 ## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**
@@ -692,6 +745,7 @@ Partiellt unikt index: högst en antagen, inte avslutad grund per familj (`uq_va
 
   Migrationen lägger in startgrunderna och prövar varje kontrollsumma. Minsta avvikelse rullar tillbaka allt. Verifierat mot isolerad Postgres 2026-10-31 (`tests/test_valuation_bases.py`). **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --team aktuarie --apply`. **Körd mot Lakebase 2026-10-31** efter backup `backups/20261031T124616Z` och torrkörning, med operatörens OK: tabellen och de sex startgrunderna skapade, radantalen i övriga tabeller oförändrade och en andra körning gjorde ingenting. Därefter sattes `agent_aktuarie`s rättigheter, också OC-3a:s kolumnrätter (B-041). Verifierat med rollens egen anslutning: läser grunderna och kontrollsummorna stämmer; nekas UPDATE, DELETE och INSERT på tabellen
 - **A5 (2026-10-31) – uppgradering av `valuation_bases`:** samma skript, `migrate_valuation_bases.py`, uppgraderar en befintlig tabell. Villkoren för familj och ändamål byts till modellens (familjen `AVK-SIM`, ändamålet `return_series`) och startgrunder som saknas läggs in. Befintliga grunder ändras inte. Allt sker i en transaktion med torrkörning som standard, kontroll av kontrollsummor och radantal, och skriptet är idempotent. Verifierat mot isolerad Postgres 2026-10-31 från A4-läget, där båda villkoren saknar de nya värdena. **Körd mot Lakebase 2026-10-31** efter backup `backups/20261031T151410Z` och torrkörning, med operatörens OK: villkoren för familj och ändamål bytta, `AVK-SIM-2026-01` inlagd, radantalen i övriga tabeller oförändrade och en andra körning gjorde ingenting. Rättigheterna behövde inte ändras (SELECT på hela tabellen). Verifierat med `agent_aktuarie`s anslutning: läser alla sju grunderna och kontrollsummorna stämmer; nekas UPDATE
+- **A6 (2026-10-31) – värderingsmotorns tabeller (§9k, B-042):** skapas med `scripts/migrations/migrate_valuation_runs.py` (`utils/migration_valuation_runs.py`) enligt samma mönster: bara `valuation_extracts`, `valuation_runs` och `valuation_results` med index, tomma, i en transaktion; torrkörning som standard, `--apply` kräver `--backup`, radantalen i övriga tabeller kontrolleras. `valuation_bases` ska finnas. Finns bara en del av tabellerna stoppar migrationen. Verifierat mot isolerad Postgres 2026-10-31 (`tests/test_valuation_runs.py`). **Ordning i Lakebase:** uppgraderingen av `product_parameters` (A5, kapitalets nycklar) först, eftersom värderingen läser skatteavdraget där; sedan backup → torrkörning → `--apply` → `grant_agent_role.py --team aktuarie --apply`. **Ej körd mot Lakebase**
 
 ---
 

@@ -18,7 +18,9 @@ från projekt 4 återanvänds; nya värderingsgrunder måste fastställas separa
 
 🟡 Behov kartlagda; första kontraktsarbetet preciserat genom operatörens
 godkända dokument- och prioriteringsuppdrag 2026-10-27.
-Ekonomi-/FTA-motorer och körbara ekonomi-/rapporteringsfunktioner är inte byggda.
+Ekonomimotorer och körbara ekonomi-/rapporteringsfunktioner är inte byggda. FTA-värderingsmotorn
+(aktuarieteamets steg A6, [planen](AKTUARIETEAM_PLAN.md) §8) är byggd och testad lokalt 2026-10-31,
+men inte införd i Lakebase; förändringsanalys och rapportunderlag återstår (A7–A8).
 Aktuarieagentens befintliga profil och premieanalys hör till den tidigare
 byggda grunden och innebär inte att dessa bredare funktioner är implementerade.
 

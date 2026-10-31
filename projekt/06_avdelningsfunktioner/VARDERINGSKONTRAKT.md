@@ -146,6 +146,13 @@ Resultaten sparas i tjänstelagret (B-042, val I) och kan inte ändras efter lå
 Varje schema anger storhet och grund (B-042, guardrail 6). Ett `ValuationResult` med
 `source = reconstructed_s04` kan inte släppas som FI-underlag utan att märkningen följer med.
 
+**Genomförande (A6):** `ValuationRun` och `ValuationResult` finns som tabellerna `valuation_runs` och
+`valuation_results`, och utdraget sparas i `valuation_extracts` (`databasschema.md` §9k). Beräkningen
+finns i `skills/calculation/fta_valuation.py` ([skill](../../03_skills/beräkning/fta-vardering.md)).
+En körning per kvartalsslut på gällande grund är bas; ett scenario får annat månadsslut eller en
+uttryckligen angiven grund och kurva och kan aldrig låsas (§2). Skatteavdraget s_y är årets
+`customer_tax_rate` i `product_parameters`. Driftkostnaden räknas upp månadsvis med `1,02^(n/12)`.
+
 ## 7. Kontroll
 
 Motorn ska klara följande kontrollfall innan en värdering får låsas. Fallen körs automatiskt

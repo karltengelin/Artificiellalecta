@@ -23,6 +23,7 @@ from .product_parameter import ProductParameter
 from .salary_report import SalaryReport
 from .trade import Trade
 from .valuation_basis import ValuationBasis
+from .valuation_run import ValuationExtractRecord, ValuationResult, ValuationRun
 
 __all__ = [
     "ApprovalRequestRecord",
@@ -48,4 +49,7 @@ __all__ = [
     "SalaryReport",
     "Trade",
     "ValuationBasis",
+    "ValuationExtractRecord",
+    "ValuationResult",
+    "ValuationRun",
 ]

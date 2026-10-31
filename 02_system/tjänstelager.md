@@ -454,7 +454,25 @@ Beslutat i **B-042** (val C och I) och värderingskontraktet A1 §4. Kod: `src/s
 - *Konflikt:* en befintlig kod, eller en antagen grund i familjen som redan gäller från samma dag eller senare.
 - *Ogiltig indata:* okänd familj eller kod, ett innehåll som inte följer schemat, och ett förslag som ska ersätta en grund i en annan familj.
 
-## 10. Öppna frågor
+### 9.8 Värderingsmotorn (A6, B-042) – vad som stöds och vad som spärras
+
+Beslutat i **B-042** (val I och L) och värderingskontraktet A1 §2–7. Kod: `src/services/operations/valuations.py` (operationerna), `src/services/valuation.py` (körningen i betrodd kod) och `src/skills/calculation/fta_valuation.py` (beräkningen, [skill](../03_skills/beräkning/fta-vardering.md)). Tabeller: `valuation_extracts`, `valuation_runs` och `valuation_results` (`databasschema.md` §9k).
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `run_valuation` | `write` | Nej | `APPROVAL` | Bygger datautdraget S-04, värderar varje försäkring och sparar körningen som utkast med kontrollsummor för utdrag, grund, kurva och resultat, kodversion, totaler, segment och kontroller |
+| `list_valuation_runs` | `read` | Nej | `AGENT` | Körningarna med datum, ändamål, version, status, grund och kurva samt FTA, VÅ och U i kronor |
+| `get_valuation_run` | `read` | Nej | `AGENT` | En körning som aggregat: indata med kontrollsummor, totaler, segment per läge och födelsedecennium med småcellsskydd, ej beräknade fall per orsak, kontrollerna och vad varje belopp är |
+| `lock_valuation` | `write` | Nej | `HUMAN_ONLY` | Fastställer en basvärdering. Prövar kontrollerna och kontrollsummorna igen; en tidigare låst körning för datumet blir `superseded` |
+
+**Systemsteg, inte agentverktyg:** `run_valuation` körs i betrodd kod av flödet `valuation_close` (A8) eller av människa, och monteras inte i någon podd. Nivån `APPROVAL` betyder att en agent bara kan föreslå en körning. Operationen bär PR-ITP1-028 (underskottet bärs av bolagets kapital) och PR-ITP1-031 (deterministisk beräkning på låst grund); utan regel skulle golvet göra den `HUMAN_ONLY` (§4). Aktuarieagenten har bara läsverktygen i podden `aktuariell`, och rollen `agent_aktuarie` har `SELECT` på körningar och resultat men inte på utdragen.
+
+**Bas och scenario:** en basvärdering görs per kvartalsslut med den SIM-V och den kurva som gäller datumet. Ett scenario får ha vilket månadsslut som helst och en uttryckligen angiven grund och kurva (kontraktet §2). Det märks och kan aldrig låsas, varken i operationen eller i databasen.
+
+**Spärras:**
+- *Blockeras:* ett datum som inte är ett månadsslut, en basvärdering som inte är per kvartalsslut eller saknar gällande grund eller kurva, ett underkänt datautdrag (§5.3), saknad skattesats eller ett s_y under grundens golv, och ändrade grunder. Låset blockeras för scenarier, för körningar som inte är utkast, för underkända kontroller och när utdragets eller grundernas kontrollsummor inte stämmer.
+- *Ogiltig indata:* en basvärdering med uttryckligt angiven grund eller kurva.
+
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.

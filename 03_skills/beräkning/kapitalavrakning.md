@@ -61,6 +61,6 @@ pensionsdebitering ingår inte: beståndet har inga dödsfall eller påbörjade 
 
 ## Gränser
 
-Utdraget sparas inte; samma bestånd, grunder och kod ger samma kontrollsumma, och A6 sparar
-körningen med utdragets kontrollsumma. Utdraget innehåller individrader och lämnar aldrig betrodd
+Utdraget sparas med värderingskörningen (`run_valuation`, A6) i `valuation_extracts`, en gång per
+kontrollsumma; samma bestånd, grunder och kod ger samma summa. Utdraget innehåller individrader och lämnar aldrig betrodd
 kod. Diagnosskriptet skriver bara aggregat.
