@@ -112,13 +112,27 @@ den ordinarie startvägen registrerar DM Sans ur den angivna typsnittsmappen.
 - [PDF-visare vid 375 pixlar](bilder/aktuarie_a3_rapport_mobil.jpg)
 - [Antagandebibliotekets mobilkort](bilder/aktuarie_a3_bibliotek_mobil.jpg)
 
+## Integrationskontroll efter A5/A6
+
+Inför operatörens godkända merge 2026-10-31 synkades A3 med `main` vid
+`283662a`, inklusive S-04, kapitalparametrar och värderingsmotorn med nya
+aktuariella läsverktyg. Inga konflikter uppstod och A3:s webbimplementation
+är oförändrad genom synkningen. Den sammanslagna lokala sviten gav
+**1 519 godkända prov**, med 96 Postgres-prov bortvalda. A3:s ändringsstyrda
+urval är fortsatt `web` och `tooling`; inga nya databaskontrakt eller roller
+införs av webbändringen.
+
+Värderingsmotorn finns nu i backend. De planerade värderingsvyerna är fortfarande
+inaktiva i A3: deras arbetsflöden behöver anslutas till teamytan i ett kommande
+webbuppdrag. Menyns A6-hänvisning anger deras beroende, inte en ansluten vy.
+
 ## Föreslagna statusuppdateringar i delade dokument
 
 Enligt uppdraget redigeras inte MASTER_CONTEXT, ATT_GORA, BESLUTSLOGG eller
 AKTUARIETEAM_PLAN medan A5 pågår. Förslag till operatören:
 
-- Markera A3:s webbimplementation/verifiering som byggd på arbetsbranchen och
-  länka hit. Håll integration/aktivering skild från byggstatus.
+- Markera A3:s webbimplementation som byggd, verifierad och mergad till main
+  efter operatörens OK, och länka hit. Håll aktivering skild från byggstatus.
 - Uppdatera hänvisningarna till aktuariens uppdrag: teamroten är översikt,
   medan `/team/aktuarie/uppdrag` är uppdragslistan.
 - Uppdragsfilens sex startgrunder är nu sju efter A5:s tillägg AVK-SIM.
