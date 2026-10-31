@@ -92,6 +92,7 @@ refererar till det.
 |---|---|
 | `policy_id` | Intern nyckel; inget personnummer i utdraget |
 | `birth_month` | Födelseår och månad |
+| `born_on_first` | Om personen är född den första i månaden. Det är allt av födelsedagen som påverkar åldern vid månadens första dag (`aktuariell_grund.md` §2), så `G_j` och `a_V` blir exakta utan födelsedatumet (tillagt i A5) |
 | `state` | Läge vid datumet: premiebetalande, fribrev, ej påbörjad, paus, utbetalning |
 | `plan` | Uttagsplan: start, slut eller livsvarig, pausmånader |
 | `guarantee_parts[]` | Per del: premie `P_j`, mottagningsmånad, grund (SIM-HIST-2023-01 eller SIM-G-2026-01), `G_j` |
@@ -111,6 +112,12 @@ refererar till det.
   PR-009; annars markeras fallet *ej beräknat*.
 - **Märkning:** utdraget får `source = reconstructed_s04`. Rapporter och centralen visar
   märkningen. Inga individuppgifter lämnar betrodd kod.
+- **Genomförande (A5 del 2):** `services/valuation_extract.py` med avräkningen i
+  `skills/calculation/capital_rollforward.py` ([skill](../../03_skills/beräkning/kapitalavrakning.md)).
+  Varje premierad är en egen garantidel med premiens id som spår. Kapitalet rullas fram från 2023-01;
+  kapital före 2023 finns inte i beståndet. Arvsvinsten är noll eftersom beståndet saknar dödsfall,
+  så poolen i PR-011 är tom. En negativ premierad (återtag enligt PR-019) och påbörjat uttag
+  markeras *ej beräknat*.
 
 ### 5.3 Datakvalitet (kontroller före värdering)
 

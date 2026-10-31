@@ -2,7 +2,7 @@
 
 > **Implementation:** `src/skills/calculation/actuarial_annuity.py` | **Tester:** `tests/test_actuarial_annuity.py`
 > **Status:** 🟢 Implementerad som ren beräkning (A5, B-042). Ingen podd ännu: värderingsmotorn (A6) och
-> startbeståndet (A5 del 2) använder den i betrodd kod, och podden `aktuariell` monteras med A6.
+> datautdraget S-04 (A5 del 2, [kapitalavräkning](kapitalavrakning.md)) använder den i betrodd kod, och podden `aktuariell` monteras med A6.
 
 ## Syfte
 
