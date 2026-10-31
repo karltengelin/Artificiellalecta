@@ -303,6 +303,10 @@ Enligt B-017/§3.7 ska människan kunna göra allt agenten kan, genom samma tjä
 Teamytan blir aktuariens arbetsplats inom OC-8:s plattform, i Digital klarhet. I teamytan nås bara
 teamets egen agent (B-036). Dagens uppdragssidor behålls under *Uppdrag*.
 
+**Klickbar skiss:** [aktuarie-arbetsyta.html](aktuarie-arbetsyta.html) visar alla nio sidor
+i ett påhittat exempelläge (20 januari 2027) med syntetiska tal. Den är en designreferens
+som inte skriver något, inte kör någon agent och inte är kopplad till systemet.
+
 ### 5.1 Sidor
 
 | Sida | Innehåll | Handlingar |
@@ -327,9 +331,9 @@ teamets egen agent (B-036). Dagens uppdragssidor behålls under *Uppdrag*.
 │  + Premier          ███ +3,1                                     F2                 │
 │  − Utbetalningar    █ −0,4                                       F3                 │
 │  − Avgifter/skatt   ▏ −0,1                                       F4                 │
-│  + Avkastning       ██ +1,2                                      F5                 │
+│  + Avkastning       ██ +0,7                                      F5                 │
 │  ± Dödlighet        ▏ ±0,0                                       E1–E2              │
-│  ± Ränteantagande   █ −0,6                                       E17/F6             │
+│  ± Ränteantagande   ▏ −0,1                                       E17/F6             │
 │  ± Oanalyserat      ▏ 0,02  (0,05 % ✓ under tröskel 0,5 %)       E23                │
 │  UB ███████████████████████████████████████ 44,4                                    │
 │                                                                                     │

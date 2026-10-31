@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aktuariens arbetsyta – skiss</title>
+<!-- Skiss v0.1 2026-10-31 till AKTUARIETEAM_PLAN.md §5. Syntetiska tal, inga livekopplingar, inga modellanrop. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" referrerpolicy="no-referrer">
+<style>
+  :root {
+    color-scheme: light;
+    --brand:#6951CF; --on-brand:#FFFFFF; --link:#5E42C6; --ink:#252440; --muted:#65627D;
+    --bg:#EEEDF6; --surface:#FFFFFF; --soft:#EEEBFF; --border:#DEDCED;
+    --ok:#236342; --ok-bg:#E8F3EC; --warn:#8A5A00; --warn-bg:#FFF4DC; --err:#A3262A; --err-bg:#FCE9E9;
+    --r-control:8px; --r-card:12px; --r-large:14px;
+  }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  html, body { margin:0; }
+  body { background:var(--bg); color:var(--ink); font:400 15px/1.5 "DM Sans", system-ui, "Segoe UI", sans-serif; }
+  h1,h2,h3,p { margin:0; }
+  h1 { font-size:27px; line-height:1.2; letter-spacing:-.7px; font-weight:700; }
+  h2 { font-size:17px; font-weight:700; letter-spacing:-.2px; }
+  h3 { font-size:14px; font-weight:600; }
+  button, select, input, textarea { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  :focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+  .num { font-variant-numeric:tabular-nums; }
+
+  .shell { display:grid; grid-template-columns:210px minmax(0,1fr); min-height:100vh; }
+  .side { background:var(--surface); border-right:1px solid var(--border); padding:24px 14px; display:flex; flex-direction:column; gap:24px; position:sticky; top:0; height:100vh; }
+  .wordmark { display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:-.5px; }
+  .mark { width:20px; height:20px; border-radius:6px; background:var(--brand); flex:none; }
+  .crumb { font-size:12px; color:var(--muted); margin-top:6px; }
+  .crumb a { color:var(--link); }
+  .nav { display:flex; flex-direction:column; gap:3px; }
+  .nav button { border:0; background:transparent; text-align:left; padding:9px 10px; border-radius:var(--r-control); color:var(--muted); min-height:40px; }
+  .nav button[aria-selected="true"] { background:var(--soft); color:var(--link); font-weight:600; }
+  .nav .count { float:right; font-size:11px; background:var(--warn-bg); color:var(--warn); border-radius:10px; padding:1px 7px; margin-top:2px; }
+  .sidefoot { margin-top:auto; border-top:1px solid var(--border); padding-top:16px; font-size:12px; color:var(--muted); }
+  .sidefoot strong { display:block; color:var(--ink); }
+
+  .main { padding:24px 32px 48px; min-width:0; max-width:1180px; }
+  .topbar { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  .eyebrow { font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted); font-weight:600; }
+  .sketch { font-size:12px; color:var(--warn); background:var(--warn-bg); padding:4px 10px; border-radius:20px; }
+  .head { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:flex-start; margin-bottom:22px; }
+  .sub { color:var(--muted); margin-top:6px; }
+  .pill { display:inline-block; padding:3px 9px; border-radius:20px; font-size:12px; background:var(--soft); color:var(--link); white-space:nowrap; }
+  .st { display:inline-block; padding:2px 8px; border-radius:20px; font-size:12px; font-weight:500; white-space:nowrap; }
+  .st-ok { background:var(--ok-bg); color:var(--ok); } .st-warn { background:var(--warn-bg); color:var(--warn); }
+  .st-err { background:var(--err-bg); color:var(--err); } .st-plan { background:var(--bg); color:var(--muted); }
+  .st-brand { background:var(--soft); color:var(--link); }
+
+  .grid { display:grid; gap:14px; }
+  .g4 { grid-template-columns:repeat(4,minmax(0,1fr)); } .g3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .g2 { grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); }
+  .card { background:var(--surface); border-radius:var(--r-card); padding:18px 20px; min-width:0; }
+  .card + .card, .stack > * + * { margin-top:14px; }
+  .cardhead { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .kpi .label { font-size:12px; color:var(--muted); }
+  .kpi .value { display:block; font-size:25px; font-weight:700; letter-spacing:-.6px; margin:6px 0 2px; font-variant-numeric:tabular-nums; }
+  .kpi .value small { font-size:13px; font-weight:400; color:var(--muted); }
+  .note { font-size:12px; color:var(--muted); }
+  .muted { color:var(--muted); }
+  .section { margin-top:18px; }
+
+  .btn { border:1px solid var(--border); background:var(--surface); border-radius:var(--r-control); padding:8px 13px; min-height:38px; font-weight:500; }
+  .btn:hover { border-color:var(--brand); }
+  .btn-primary { background:var(--brand); color:var(--on-brand); border-color:var(--brand); }
+  .btn-text { border:0; background:none; padding:0; color:var(--link); text-decoration:underline; text-underline-offset:3px; min-height:30px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+
+  .tablewrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:left; font-size:12px; color:var(--muted); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  td { padding:10px; border-bottom:1px solid var(--border); vertical-align:top; }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  tr.click { cursor:pointer; } tr.click:hover td { background:var(--bg); }
+  tr.sel td { background:var(--soft); }
+  tr.total td { font-weight:600; border-bottom:0; }
+
+  .list { list-style:none; margin:0; padding:0; }
+  .list li { display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--border); align-items:flex-start; }
+  .list li:first-child { border-top:0; }
+  .list .meta { font-size:12px; color:var(--muted); margin-top:2px; }
+  .date { font-variant-numeric:tabular-nums; font-weight:600; min-width:78px; }
+
+  .wf { display:grid; grid-template-columns:minmax(150px,210px) minmax(0,1fr) 78px 74px; align-items:center; gap:6px 12px; font-size:14px; }
+  .wf .lab { padding:6px 0; }
+  .wf .lab button { border:0; background:none; padding:0; text-align:left; color:var(--ink); }
+  .wf .lab button:hover { color:var(--link); text-decoration:underline; }
+  .wf .track { position:relative; height:22px; background:linear-gradient(90deg, var(--bg) 1px, transparent 1px) 0 0/10% 100%; border-radius:4px; }
+  .wf .bar { position:absolute; top:3px; height:16px; border-radius:3px; min-width:2px; }
+  .bar.base { background:var(--brand); } .bar.up { background:#9C8BE5; } .bar.down { background:#C9BFF3; outline:1px solid #9C8BE5; outline-offset:-1px; }
+  .bar.resid { background:var(--warn); }
+  .wf .amt { text-align:right; font-variant-numeric:tabular-nums; }
+  .wf .fi { font-size:12px; color:var(--muted); }
+  .wf .row-sel .lab button { color:var(--link); font-weight:600; }
+  .axis { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+
+  .callout { background:var(--soft); border-radius:10px; padding:14px 16px; }
+  .callout.warn { background:var(--warn-bg); }
+  .gate { border:1px dashed var(--brand); border-radius:10px; padding:14px 16px; margin-top:14px; background:var(--surface); }
+  .checks li { justify-content:flex-start; }
+  .checks .mark-ok { color:var(--ok); font-weight:700; width:18px; } .checks .mark-warn { color:var(--warn); font-weight:700; width:18px; }
+
+  .ctl { margin-bottom:16px; }
+  .ctl label { display:flex; justify-content:space-between; font-size:13px; font-weight:500; margin-bottom:6px; }
+  .ctl output { font-variant-numeric:tabular-nums; color:var(--link); font-weight:600; }
+  input[type=range] { width:100%; accent-color:var(--brand); }
+  .radio { display:flex; gap:8px; flex-wrap:wrap; }
+  .radio label { border:1px solid var(--border); border-radius:var(--r-control); padding:6px 10px; font-size:13px; cursor:pointer; }
+  .radio input { accent-color:var(--brand); margin:0 6px 0 0; }
+  .scenario-tag { font-size:12px; font-weight:600; color:var(--warn); background:var(--warn-bg); border-radius:6px; padding:3px 8px; }
+  textarea, select, .input { width:100%; border:1px solid var(--border); border-radius:var(--r-control); padding:10px 12px; background:var(--surface); font-size:15px; }
+  .presets { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 14px; }
+  .answer { margin-top:16px; }
+  .answer p + p { margin-top:8px; }
+  .diff-old { color:var(--muted); text-decoration:line-through; }
+  .diff-new { color:var(--link); font-weight:600; }
+  .footer { margin-top:28px; padding-top:14px; border-top:1px solid var(--border); font-size:12px; color:var(--muted); }
+
+  @media (max-width:980px) { .g4 { grid-template-columns:repeat(2,minmax(0,1fr)); } .g2, .g3 { grid-template-columns:1fr; } }
+  @media (max-width:760px) {
+    .shell { grid-template-columns:1fr; }
+    .side { position:static; height:auto; min-width:0; border-right:0; border-bottom:1px solid var(--border); padding:14px 16px; gap:12px; }
+    .nav { flex-direction:row; overflow-x:auto; gap:4px; padding-bottom:4px; }
+    .nav button { white-space:nowrap; flex:none; }
+    .nav .count { float:none; margin-left:6px; }
+    .sidefoot { display:none; }
+    .main { padding:18px 16px 40px; }
+    h1 { font-size:23px; }
+    .wf { grid-template-columns:minmax(0,1fr) 70px; grid-auto-flow:row dense; row-gap:2px; }
+    .wf .track { grid-column:1 / -1; margin-bottom:8px; }
+    .wf .fi { display:none; }
+  }
+  @media (max-width:480px) { .g4 { grid-template-columns:1fr; } .card { padding:16px; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side" aria-label="Teamytans navigation">
+    <div>
+      <div class="wordmark"><span class="mark" aria-hidden="true"></span>Artificiellalecta</div>
+      <p class="crumb"><a href="#" aria-disabled="true" onclick="return false">Central</a> / Aktuarie &amp; analys</p>
+    </div>
+    <nav class="nav" role="tablist" aria-label="Aktuariens vyer" aria-orientation="vertical">
+      <button role="tab" data-view="oversikt" aria-selected="true">Översikt</button>
+      <button role="tab" data-view="varderingar" aria-selected="false">Värderingar <span class="count">1</span></button>
+      <button role="tab" data-view="analys" aria-selected="false">FTA-analys</button>
+      <button role="tab" data-view="bokforing" aria-selected="false">Bokföringsunderlag <span class="count">1</span></button>
+      <button role="tab" data-view="antaganden" aria-selected="false">Antaganden <span class="count">1</span></button>
+      <button role="tab" data-view="scenarier" aria-selected="false">Scenarier</button>
+      <button role="tab" data-view="rapporter" aria-selected="false">Rapporter</button>
+      <button role="tab" data-view="data" aria-selected="false">Data och kvalitet</button>
+      <button role="tab" data-view="uppdrag" aria-selected="false">Uppdrag</button>
+    </nav>
+    <div class="sidefoot"><strong>Karl</strong>Ansvarig aktuarie (öppen fråga Q5)<br><br>I teamytan nås bara aktuarieteamets agent (B-036).</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <span class="eyebrow">Aktuarie &amp; analys · teamyta · skiss v0.1</span>
+      <span class="sketch">Exempelläge 20 januari 2027 · syntetiska tal · inga livekopplingar</span>
+    </div>
+
+    <!-- ÖVERSIKT -->
+    <section id="oversikt" role="tabpanel">
+      <header class="head">
+        <div><h1>Periodens aktuariella läge.</h1><p class="sub">Värdering, avvikelser och kommande leveranser för bokslut 2026.</p></div>
+        <span class="pill">Värderingsdatum 2026-12-31</span>
+      </header>
+      <div class="grid g4">
+        <div class="card kpi"><span class="label">FTA (utkast)</span><span class="value">44,4 <small>Mkr</small></span><span class="note">+3,2 Mkr mot 30 sep · metod B (Q1)</span></div>
+        <div class="card kpi"><span class="label">Kundkapital C</span><span class="value">44,1 <small>Mkr</small></span><span class="note">Rekonstruerat startbestånd (S-04)</span></div>
+        <div class="card kpi"><span class="label">Garantigap</span><span class="value">0,3 <small>Mkr</small></span><span class="note">Där garantins värde överstiger C</span></div>
+        <div class="card kpi"><span class="label">Oanalyserat</span><span class="value">0,05 <small>%</small></span><span class="note"><span class="st st-ok">✓ Under tröskel 0,5 %</span></span></div>
+      </div>
+      <div class="grid g2 section">
+        <div class="card">
+          <div class="cardhead"><h2>Väntar på dig</h2><span class="note">3 handlingar</span></div>
+          <ul class="list">
+            <li><div><h3>Granska och lås värderingen 2026-12-31</h3><p class="meta">Grind G1 i flödet <em>valuation_close</em> · kontroller 7 av 7</p></div><button class="btn btn-primary" data-go="varderingar">Granska</button></li>
+            <li><div><h3>Godkänn avsättningsunderlag Q4</h3><p class="meta">Verifikationsförslag +3,22 Mkr · följer på G1</p></div><button class="btn" data-go="bokforing">Öppna</button></li>
+            <li><div><h3>Förslag till värderingsgrund SIM-V-2027-01</h3><p class="meta">Från årets antagandeöversyn · aktuarieagenten</p></div><button class="btn" data-go="antaganden">Öppna</button></li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="cardhead"><h2>Årshjul</h2><span class="note">Närmaste</span></div>
+          <ul class="list">
+            <li><span class="date">31 jan</span><div style="flex:1"><h3>FI kvartal Q4: avsnitt C och E</h3><p class="meta">FFFS 2019:22 4 kap. · underlag till compliance</p></div><span class="st st-warn">11 dagar</span></li>
+            <li><span class="date">feb</span><div style="flex:1"><h3>Antagandeöversyn och styrelsebeslut</h3><p class="meta">assumption_review</p></div><span class="st st-brand">Pågår</span></li>
+            <li><span class="date">mar</span><div style="flex:1"><h3>Produktrapport PR-ITP1 2026</h3><p class="meta">product_report · VD och styrelse</p></div><span class="st st-plan">Planerad</span></li>
+            <li><span class="date">8 apr</span><div style="flex:1"><h3>FI årsrapport: avsnitt A–K</h3><p class="meta">14 veckor efter 31 dec · bl.a. E, F, I</p></div><span class="st st-plan">Planerad</span></li>
+            <li><span class="date">6 maj</span><div style="flex:1"><h3>Kvalitativ sammanfattning</h3><p class="meta">Värdering av FTA, aktuariefunktionen</p></div><span class="st st-plan">Planerad</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="card section">
+        <div class="cardhead"><h2>Senaste från aktuarieagenten</h2><button class="btn-text" data-go="uppdrag">Alla uppdrag</button></div>
+        <ul class="list">
+          <li><div><h3>Kommentar till FTA-analysen Q4</h3><p class="meta">Utkast · ökningen förklaras av premier (+3,1) och avkastning (+0,7), delvis motverkat av utbetalningar (−0,4)</p></div><span class="st st-warn">Utkast</span></li>
+          <li><div><h3>Second opinion på värderingen</h3><p class="meta">Granskning hos andra leverantören · 0 avvikelser, 1 kommentar om rekonstruerade garantidelar</p></div><span class="st st-ok">Klar</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- VÄRDERINGAR -->
+    <section id="varderingar" role="tabpanel" hidden>
+      <header class="head">
+        <div><h1>Värderingar.</h1><p class="sub">Varje körning är oföränderlig. En rättelse blir en ny version.</p></div>
+        <button class="btn btn-primary" data-explain="run_valuation">Kör ny värdering</button>
+      </header>
+      <div class="card">
+        <div class="tablewrap"><table>
+          <thead><tr><th>Värdering</th><th>Datum</th><th>Grund</th><th class="r">FTA, Mkr</th><th>Kontroller</th><th>Status</th></tr></thead>
+          <tbody id="valrows"></tbody>
+        </table></div>
+      </div>
+      <div class="grid g2 section">
+        <div class="card" id="valdetail"></div>
+        <div class="card">
+          <h2>Kontroller</h2>
+          <ul class="list checks section" id="valchecks"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- FTA-ANALYS -->
+    <section id="analys" role="tabpanel" hidden>
+      <header class="head">
+        <div><h1>FTA-analys.</h1><p class="sub">Från ingående till utgående FTA, steg för steg. Varje steg är omräknat i motorn.</p></div>
+        <span class="pill">2026-10-01 – 2026-12-31 · SIM-V-2026-01 v1</span>
+      </header>
+      <div class="card">
+        <div class="wf" id="wf" role="list" aria-label="Förändring i FTA per steg"></div>
+        <div class="wf" style="margin-top:4px" aria-hidden="true"><span></span><div class="axis"><span>38</span><span>40</span><span>42</span><span>44</span><span>46 Mkr</span></div><span></span><span></span></div>
+        <p class="note" style="margin-top:12px">Axeln börjar vid 38 Mkr. Klicka på ett steg för förklaring. Kolumnen till höger visar kopplingen till FI:s årsrapport (avsnitt E och F).</p>
+      </div>
+      <div class="grid g2 section">
+        <div class="card" id="wfdetail"></div>
+        <div class="card">
+          <h2>Avstämning</h2>
+          <ul class="list checks section">
+            <li><span class="mark-ok">✓</span><div>IB 41,20 = UB i låst värdering 2026-09-30 v2</div></li>
+            <li><span class="mark-ok">✓</span><div>Summa steg 1–11 = UB − IB = 3,22</div></li>
+            <li><span class="mark-ok">✓</span><div>Oanalyserat 0,02 Mkr (0,05 %) under tröskel 0,5 %</div></li>
+            <li><span class="mark-ok">✓</span><div>Stegordning v1 oförändrad mot föregående period</div></li>
+          </ul>
+          <div class="actions"><button class="btn" data-explain="comment">Kommentera</button><button class="btn btn-primary" data-explain="approve_analysis">Godkänn analysen</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOKFÖRINGSUNDERLAG -->
+    <section id="bokforing" role="tabpanel" hidden>
+      <header class="head">
+        <div><h1>Bokföringsunderlag.</h1><p class="sub">Avsättningsunderlag till ekonomi. Aktuarien levererar belopp per analyssteg, ekonomi fastställer kontona.</p></div>
+        <span class="st st-warn">Förslag väntar på godkännande</span>
+      </header>
+      <div class="grid g2">
+        <div class="card">
+          <div class="cardhead"><h2>Verifikationsförslag Q4 2026</h2><span class="note">AU-2026-Q4 v1 · underlag 4be1…</span></div>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Post</th><th class="r">Debet, Mkr</th><th class="r">Kredit, Mkr</th></tr></thead>
+            <tbody>
+              <tr><td>Förändring i livförsäkringsavsättning <span class="note">(resultaträkning)</span></td><td class="r">3,22</td><td class="r"></td></tr>
+              <tr><td>Livförsäkringsavsättning <span class="note">(balansräkning)</span></td><td class="r"></td><td class="r">3,22</td></tr>
+              <tr class="total"><td>Summa</td><td class="r">3,22</td><td class="r">3,22</td></tr>
+            </tbody>
+          </table></div>
+          <p class="note" style="margin-top:10px">Postnamn är arbetsnamn. Kontoplan och huvudbok saknas (V-10); fram till dess sparas godkänt underlag och tas emot av ekonomins bokföringstjänst när den byggs.</p>
+          <div class="gate"><h3>Godkännande</h3><p class="note" style="margin:4px 0 10px">Operationen <code>propose_provision_entry</code> är APPROVAL. Godkännandet binder underlagets kontrollsumma och kräver att värderingen är låst.</p>
+            <div class="actions" style="margin-top:0"><button class="btn" data-explain="reject">Avslå</button><button class="btn btn-primary" data-explain="approve_entry">Godkänn förslaget</button></div></div>
+        </div>
+        <div class="card">
+          <h2>Fördelning per analyssteg</h2>
+          <div class="tablewrap section"><table>
+            <thead><tr><th>Steg</th><th class="r">Mkr</th></tr></thead>
+            <tbody id="bookrows"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANTAGANDEN -->
+    <section id="antaganden" role="tabpanel" hidden>
+      <header class="head">
+        <div><h1>Antaganden.</h1><p class="sub">Grunder är versionerade data. Agenten föreslår, styrelsen beslutar, historiska garantigrunder ändras aldrig.</p></div>
+      </header>
+      <div class="card">
+        <div class="tablewrap"><table>
+          <thead><tr><th>Grund</th><th>Används för</th><th>Version</th><th>Giltig från</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><strong>SIM-G-2026-01</strong></td><td>Garantitariff för nya garantidelar</td><td>1</td><td>2026-11-01</td><td><span class="st st-ok">Gäller · låst</span></td></tr>
+            <tr><td><strong>SIM-B-2026-01</strong></td><td>Utbetalningsgrund</td><td>1</td><td>2026-11-01</td><td><span class="st st-ok">Gäller</span></td></tr>
+            <tr><td><strong>SIM-R-2026-01</strong></td><td>Riskgrund för arvsvinst</td><td>1</td><td>2026-11-01</td><td><span class="st st-ok">Gäller</span></td></tr>
+            <tr><td><strong>SIM-V-2026-01</strong></td><td>Värderingsgrund för FTA</td><td>1</td><td>2026-12-31</td><td><span class="st st-ok">Gäller</span></td></tr>
+            <tr class="sel"><td><strong>SIM-V-2027-01</strong></td><td>Värderingsgrund för FTA</td><td>förslag</td><td>2027-03-31</td><td><span class="st st-warn">Förslag · väntar</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="grid g2 section">
+        <div class="card">
+          <div class="cardhead"><h2>Förslag SIM-V-2027-01 mot gällande</h2><span class="note">Föreslaget av aktuarieagenten</span></div>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Antagande</th><th>Gällande → förslag</th><th class="r">ΔFTA, Mkr</th></tr></thead>
+            <tbody>
+              <tr><td>Diskonteringskurva</td><td><span class="diff-old">FI-SIM-2026-12</span> <span class="diff-new">FI-SIM-2027-03</span></td><td class="r">−0,05</td></tr>
+              <tr><td>Dödlighetsförbättring per år</td><td><span class="diff-old">1,5 %</span> <span class="diff-new">1,7 %</span></td><td class="r">+0,12</td></tr>
+              <tr><td>Driftkostnad per försäkring och år</td><td><span class="diff-old">180 kr</span> <span class="diff-new">195 kr</span></td><td class="r">+0,09</td></tr>
+              <tr class="total"><td>Summa (stegvis)</td><td></td><td class="r">+0,16</td></tr>
+            </tbody>
+          </table></div>
+          <div class="actions"><button class="btn" data-go="scenarier">Se känslighet</button><button class="btn" data-explain="adopt">För in styrelsebeslut</button></div>
+        </div>
+        <div class="card">
+          <h2>Erfarenhetsanalys 2026</h2>
+          <ul class="list section">
+            <li><div><h3>Dödlighet, utfall mot förväntat</h3><p class="meta">För få dödsfall för en slutsats (färre än 10). Förslaget bygger på befolkningsstatistik, inte eget utfall.</p></div><span class="st st-plan">Dold &lt; 10</span></li>
+            <li><div><h3>Driftkostnader, utfall mot antagande</h3><p class="meta">1,08 · underlag från ekonomi saknas, uppskattat ur agentkostnad och schablon</p></div><span class="st st-warn">Osäkert</span></li>
+            <li><div><h3>Uttagsbeteende</h3><p class="meta">Inga uttag i beståndet ännu</p></div><span class="st st-plan">Ej beräknat</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCENARIER -->
+    <section id="scenarier" role="tabpanel" hidden>
+      <header class="head">
+        <div><h1>Scenarier.</h1><p class="sub">Ändra antaganden mot en låst bas. Ett scenario blir aldrig bas.</p></div>
+        <span class="pill">Bas: värdering 2026-09-30 v2 (låst)</span>
+      </header>
+      <div class="grid g2">
+        <div class="card">
+          <h2>Antaganden</h2>
+          <div class="section">
+            <div class="ctl"><label for="s-rate">Diskonteringsränta, parallellskift <output id="o-rate">0 bp</output></label><input type="range" id="s-rate" min="-100" max="100" step="25" value="0"></div>
+            <div class="ctl"><label for="s-mort">Dödsrisk <output id="o-mort">0 %</output></label><input type="range" id="s-mort" min="-20" max="20" step="5" value="0"></div>
+            <div class="ctl"><label for="s-cost">Driftkostnad <output id="o-cost">0 %</output></label><input type="range" id="s-cost" min="0" max="50" step="10" value="0"></div>
+            <div class="ctl"><span style="display:block;font-size:13px;font-weight:500;margin-bottom:6px">Avkastningsbana</span>
+              <div class="radio" role="radiogroup" aria-label="Avkastningsbana">
+                <label><input type="radio" name="ret" value="base" checked>3 % per år</label>
+                <label><input type="radio" name="ret" value="zero">0 % per år</label>
+                <label><input type="radio" name="ret" value="shock">Aktiechock −20 %</label>
+              </div></div>
+          </div>
+          <div class="actions"><button class="btn" id="s-reset">Återställ</button><button class="btn" data-explain="save_scenario">Spara scenario</button><button class="btn" data-go="uppdrag">Be agenten förklara</button></div>
+        </div>
+        <div class="card">
+          <div class="cardhead"><h2>Bas mot scenario</h2><span class="scenario-tag" id="s-tag">BAS</span></div>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Storhet</th><th class="r">Bas</th><th class="r">Scenario</th><th class="r">Δ</th></tr></thead>
+            <tbody id="s-rows"></tbody>
+          </table></div>
+          <p class="note" style="margin-top:10px" id="s-hash">Scenario-id skapas när något antagande ändras.</p>
+          <div class="callout warn section"><strong>Bara i skissen:</strong> talen räknas med en enkel illustrativ regel i sidan, inte med värderingsmotorn. I systemet körs <code>run_assumption_scenario</code> i betrodd kod med versionerad specifikation och hash.</div>
+          <h3 class="section">Garantigap per födelsekohort</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Kohort</th><th class="r">Bas</th><th class="r">Scenario</th></tr></thead>
+            <tbody id="s-cohorts"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RAPPORTER -->
+    <section id="rapporter" role="tabpanel" hidden>
+      <header class="head">
+        <div><h1>Rapporter.</h1><p class="sub">Aktuarien äger siffrorna. Compliance och rapporteringsagenten äger rapporten och inlämningen.</p></div>
+      </header>
+      <div class="card">
+        <div class="tablewrap"><table>
+          <thead><tr><th>Rapport</th><th>Period</th><th>Mottagare</th><th>Frist</th><th>Status</th></tr></thead>
+          <tbody id="reprows"></tbody>
+        </table></div>
+      </div>
+      <div class="card section" id="repdetail"></div>
+    </section>
+
+    <!-- DATA -->
+    <section id="data" role="tabpanel" hidden>
+      <header class="head">
+        <div><h1>Data och kvalitet.</h1><p class="sub">Varje värdering bygger på ett låst datautdrag med kontrollsumma.</p></div>
+        <span class="pill">DU-2026-12-31 · 7c2a…e91</span>
+      </header>
+      <div class="grid g3">
+        <div class="card kpi"><span class="label">Försäkringar i utdraget</span><span class="value">530</span><span class="note">Stämmer mot beståndet</span></div>
+        <div class="card kpi"><span class="label">Garantidelar</span><span class="value">16 412</span><span class="note">Rekonstruerade ur premiehistorik</span></div>
+        <div class="card kpi"><span class="label">Avvikelser</span><span class="value">1</span><span class="note">Märkning, inget fel</span></div>
+      </div>
+      <div class="card section">
+        <h2>Kontroller</h2>
+        <ul class="list checks section">
+          <li><span class="mark-ok">✓</span><div><h3>Antal försäkringar mot beståndet</h3><p class="meta">530 = 530</p></div></li>
+          <li><span class="mark-ok">✓</span><div><h3>Premier mot premietabellen</h3><p class="meta">Summa betalmarkerade premier stämmer på öret</p></div></li>
+          <li><span class="mark-ok">✓</span><div><h3>Födelsedata och tillstånd</h3><p class="meta">Inga saknade värden, inga motstridiga tillstånd</p></div></li>
+          <li><span class="mark-ok">✓</span><div><h3>Kundkapital</h3><p class="meta">Inget negativt C</p></div></li>
+          <li><span class="mark-warn">!</span><div><h3>Rekonstruerat startbestånd (S-04)</h3><p class="meta">Garantidelar räknade med SIM-HIST-2023-01 och deklarerad avkastningsserie AVK-SIM-2026 v1. Ersätts när paket B finns.</p></div></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- UPPDRAG -->
+    <section id="uppdrag" role="tabpanel" hidden>
+      <header class="head">
+        <div><h1>Uppdrag till aktuarieagenten.</h1><p class="sub">Agenten arbetar med samma verktyg som du och lämnar utkast för granskning.</p></div>
+      </header>
+      <div class="grid g2">
+        <div class="card">
+          <label for="q" style="font-size:13px;font-weight:600">Uppdrag</label>
+          <textarea id="q" rows="3" style="margin-top:6px">Förklara förändringen i FTA under fjärde kvartalet för styrelsen.</textarea>
+          <div class="presets">
+            <button class="btn" data-preset="fta">Förklara FTA Q4</button>
+            <button class="btn" data-preset="product">Produktrapport 2026</button>
+            <button class="btn" data-preset="rate">Ränta −100 bp</button>
+          </div>
+          <button class="btn btn-primary" id="ask">Visa exempel på svar</button>
+          <div class="answer callout" id="answer" hidden aria-live="polite"></div>
+        </div>
+        <div class="card">
+          <h2>Tidigare uppdrag</h2>
+          <ul class="list section">
+            <li><div><h3>Kommentar till FTA-analysen Q4</h3><p class="meta">20 jan · 6 modellsteg · 0,42 USD</p></div><span class="st st-warn">Granska</span></li>
+            <li><div><h3>Förslag SIM-V-2027-01</h3><p class="meta">18 jan · 11 modellsteg · 0,86 USD</p></div><span class="st st-warn">Väntar</span></li>
+            <li><div><h3>Beståndsöversikt december</h3><p class="meta">Bolagsfrågan från centralen · 4 steg · 0,31 USD</p></div><span class="st st-ok">Levererad</span></li>
+            <li><div><h3>Aktuariell granskning åt compliance</h3><p class="meta">Delegerat uppdrag (B-039)</p></div><span class="st st-ok">Svar lämnat</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="callout section" id="explain" hidden aria-live="polite"></div>
+
+    <p class="footer">Skiss till <a href="AKTUARIETEAM_PLAN.md">AKTUARIETEAM_PLAN.md</a> §5. Alla tal, datum och körningar är påhittade. Inget skrivs, ingen agent körs och inget skickas. Metodval och benämningar (t.ex. FTA-metod B, SIM-V) är förslag som väntar på designstoppet A0.</p>
+  </main>
+</div>
+
+<script>
+(() => {
+  const fmt = (n, d = 2) => n.toLocaleString("sv-SE", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const sign = (n, d = 2) => (n > 0 ? "+" : n < 0 ? "−" : "±") + fmt(Math.abs(n), d);
+  const $ = (s) => document.querySelector(s);
+
+  // Navigering
+  const tabs = document.querySelectorAll('.nav [role="tab"]');
+  function show(view) {
+    tabs.forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === view)));
+    document.querySelectorAll('[role="tabpanel"]').forEach(p => p.hidden = p.id !== view);
+    $("#explain").hidden = true;
+    window.scrollTo({ top: 0 });
+  }
+  tabs.forEach(t => t.addEventListener("click", () => show(t.dataset.view)));
+  document.addEventListener("click", e => {
+    const go = e.target.closest("[data-go]"); if (go) show(go.dataset.go);
+    const ex = e.target.closest("[data-explain]"); if (ex) explain(ex.dataset.explain, ex);
+  });
+
+  // Förklaringar av vad en handling gör i systemet
+  const EXPLAIN = {
+    run_valuation: "<strong>Kör ny värdering</strong> startar <code>run_valuation</code> (compute, AGENT) som systemsteg: datautdrag, grund och kodversion låses i körningen, som får status <em>utkast</em>.",
+    lock: "<strong>Lås värderingen (G1)</strong> anropar <code>lock_valuation</code> (HUMAN_ONLY). Grinden binder hashen av det underlag du ser. Därefter kan värderingen inte ändras; en rättelse blir ny version.",
+    approve_analysis: "<strong>Godkänn analysen</strong> är en del av grind G1 i <em>valuation_close</em>. Oanalyserat över tröskel hade stoppat flödet med <em>needs_human</em>.",
+    comment: "<strong>Kommentar</strong> sparas i flödets granskningsanteckningar och följer med rapportunderlaget.",
+    approve_entry: "<strong>Godkänn förslaget</strong> verkställer <code>propose_provision_entry</code> via godkännandekön. Underlaget sparas för ekonomi; ingen huvudbok finns ännu (V-10).",
+    reject: "<strong>Avslå</strong> stänger förslaget med din motivering. Agenten får inte lägga ett likadant förslag i samma körning.",
+    adopt: "<strong>För in styrelsebeslut</strong> är ett manuellt steg i <em>assumption_review</em> och anropar <code>adopt_valuation_basis</code> (HUMAN_ONLY) med beslutsreferens och giltighetsdag. Agenten kan aldrig göra detta.",
+    save_scenario: "<strong>Spara scenario</strong> sparar specifikationen med hash. Den kan bifogas en rapport men skriver aldrig över basen.",
+    release: "<strong>Släpp till compliance</strong> anropar <code>release_report_basis</code> (HUMAN_ONLY). Inlämning till FI är en extern handling som bara compliance kan förbereda och som du godkänner i rapporteringsgatewayen.",
+    draft: "<strong>Låt agenten skriva utkast</strong> startar flödet <em>product_report</em>. Avsnitt utan underlag markeras som ej beräknade."
+  };
+  function explain(key, el) {
+    const box = $("#explain");
+    box.innerHTML = (EXPLAIN[key] || "") + '<p class="note" style="margin-top:6px">Skiss: ingenting har ändrats.</p>';
+    box.hidden = false;
+    el.closest("section").appendChild(box);
+    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // Värderingar
+  const VALS = [
+    { id: "V-2026-12-31 v1", date: "2026-12-31", basis: "SIM-V-2026-01 v1", fta: 44.42, checks: "7/7", st: ["st-warn", "Utkast · väntar G1"], c: 44.12, gap: 0.30, hash: "7c2a…e91", code: "b41f2c9", locked: false },
+    { id: "V-2026-09-30 v2", date: "2026-09-30", basis: "SIM-V-2026-01 v1", fta: 41.20, checks: "7/7", st: ["st-ok", "Låst"], c: 40.95, gap: 0.25, hash: "51d0…a07", code: "9e03aa1", locked: true, note: "Rättelse av v1: tre försäkringar saknade fribrevsdatum i utdraget." },
+    { id: "V-2026-09-30 v1", date: "2026-09-30", basis: "SIM-V-2026-01 v1", fta: 41.31, checks: "6/7", st: ["st-plan", "Ersatt"], c: 41.06, gap: 0.25, hash: "18be…3c2", code: "9e03aa1", locked: true },
+    { id: "V-2026-06-30 v1", date: "2026-06-30", basis: "SIM-V-2026-01 v1", fta: 37.86, checks: "7/7", st: ["st-ok", "Låst"], c: 37.66, gap: 0.20, hash: "c903…77f", code: "8d1e6b0", locked: true }
+  ];
+  let selVal = 0;
+  function renderVals() {
+    $("#valrows").innerHTML = VALS.map((v, i) => `<tr class="click${i === selVal ? " sel" : ""}" data-i="${i}" tabindex="0"><td><strong>${v.id}</strong></td><td>${v.date}</td><td>${v.basis}</td><td class="r">${fmt(v.fta)}</td><td>${v.checks}</td><td><span class="st ${v.st[0]}">${v.st[1]}</span></td></tr>`).join("");
+    const v = VALS[selVal];
+    $("#valdetail").innerHTML = `
+      <div class="cardhead"><h2>${v.id}</h2><span class="st ${v.st[0]}">${v.st[1]}</span></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Tillstånd</th><th class="r">Antal</th><th class="r">C, Mkr</th><th class="r">Garantigap</th><th class="r">FTA, Mkr</th></tr></thead>
+        <tbody>
+          <tr><td>Premiebetalande</td><td class="r">483</td><td class="r">${fmt(v.c * 0.91)}</td><td class="r">${fmt(v.gap * 0.3)}</td><td class="r">${fmt(v.c * 0.91 + v.gap * 0.3)}</td></tr>
+          <tr><td>Fribrev och utbetalning <span class="note">(sammanslagna, en cell &lt; 10)</span></td><td class="r">47</td><td class="r">${fmt(v.c * 0.09)}</td><td class="r">${fmt(v.gap * 0.7)}</td><td class="r">${fmt(v.c * 0.09 + v.gap * 0.7)}</td></tr>
+          <tr class="total"><td>Totalt</td><td class="r">530</td><td class="r">${fmt(v.c)}</td><td class="r">${fmt(v.gap)}</td><td class="r">${fmt(v.fta)}</td></tr>
+        </tbody></table></div>
+      <p class="note" style="margin-top:10px">Datautdrag ${v.hash} · grund ${v.basis} · kod ${v.code} · metod B: FTA = max(C, garantins värde) per försäkring + kostnadsavsättning.</p>
+      ${v.note ? `<p class="note" style="margin-top:6px">${v.note}</p>` : ""}
+      ${v.locked ? "" : `<div class="gate"><h3>Grind G1 – granska och lås</h3><p class="note" style="margin:4px 0 10px">Second opinion: 0 avvikelser. Agentens kommentar finns som utkast under FTA-analys.</p><div class="actions" style="margin-top:0"><button class="btn" data-go="analys">Öppna FTA-analysen</button><button class="btn btn-primary" data-explain="lock">Godkänn och lås</button></div></div>`}`;
+    const failed = v.checks !== "7/7";
+    const checks = ["IB = föregående låsta UB", "Antal och C mot datautdraget", "Oanalyserat under tröskel", "Oberoende kontrollfall (leveranskontrollen)", "Samma indata ger samma resultat", "Inga negativa värden", "Fribrevsdatum och tillstånd kompletta"];
+    $("#valchecks").innerHTML = checks.map((c, i) => {
+      const bad = failed && i === 6;
+      return `<li><span class="${bad ? "mark-warn" : "mark-ok"}">${bad ? "!" : "✓"}</span><div>${c}${bad ? '<p class="meta">3 försäkringar saknade datum – rättat i v2</p>' : ""}</div></li>`;
+    }).join("");
+  }
+  $("#valrows").addEventListener("click", e => { const tr = e.target.closest("tr[data-i]"); if (tr) { selVal = +tr.dataset.i; renderVals(); } });
+  $("#valrows").addEventListener("keydown", e => { if (e.key === "Enter") { const tr = e.target.closest("tr[data-i]"); if (tr) { selVal = +tr.dataset.i; renderVals(); } } });
+  renderVals();
+
+  // FTA-analys (vattenfall)
+  const STEPS = [
+    { k: "IB 2026-09-30", v: 41.20, base: true, fi: "F1", d: "Utgående FTA i den låsta värderingen 2026-09-30 v2. Hård kontroll: får inte skilja sig från föregående UB." },
+    { k: "1 Premier", v: 3.10, fi: "F2", d: "Matchade nettopremier oktober–december och deras nya garantidelar på SIM-G-2026-01. Premierna ökar C krona för krona." },
+    { k: "2 Utbetalningar", v: -0.40, fi: "F3", d: "Utbetald pension. I det rekonstruerade beståndet finns få pensionärer, så beloppet är litet." },
+    { k: "3 Avgifter och skatt", v: -0.10, fi: "F4", d: "Kapitalavgift 0,20 % per år och avkastningsskattebelastning, i ordning enligt PR-ITP1-020." },
+    { k: "4 Avkastning", v: 0.66, fi: "F5", d: "Faktisk avkastning tillförd C enligt PR-021, här ur den deklarerade serien AVK-SIM-2026 eftersom kapitalförvaltningen är pausad." },
+    { k: "5 Ränteuppräkning", v: 0.01, fi: "F5", d: "Avveckling av diskontering på garantins värde. Nästan noll eftersom FTA följer C för de flesta försäkringar (metod B)." },
+    { k: "6 Dödlighet och arvsvinst", v: -0.01, fi: "E1–E2", d: "Avgångar och fördelad arvsvinst. Antalet dödsfall är under 10, så fördelningen per kohort visas inte." },
+    { k: "7 Planändringar", v: 0.00, fi: "E11", d: "Uttagsstart, paus, deluttag och fribrev under perioden." },
+    { k: "8 Ränteantagande", v: -0.06, fi: "E17 · F6", d: "Ny diskonteringskurva FI-SIM-2026-12 med något högre räntor sänker garantins värde för de försäkringar där det överstiger C. Effekten är liten eftersom FTA följer C för de flesta försäkringar (metod B)." },
+    { k: "9 Övriga antaganden", v: 0.00, fi: "F6", d: "Inga ändrade antaganden i perioden. Förslaget SIM-V-2027-01 påverkar först nästa värdering." },
+    { k: "10 Modell och data", v: 0.00, fi: "–", d: "Modell-, metod- och dataändringar redovisas alltid här, aldrig i oanalyserat." },
+    { k: "11 Oanalyserat", v: 0.02, resid: true, fi: "E23", d: "Det som inte förklaras av stegen. 0,05 % av FTA, under tröskeln 0,5 %. Över tröskeln stoppar flödet för mänsklig granskning." },
+    { k: "UB 2026-12-31", v: 44.42, base: true, fi: "–", d: "Utgående FTA i värderingen 2026-12-31 v1 (utkast)." }
+  ];
+  const MIN = 38, MAX = 46, pct = x => ((x - MIN) / (MAX - MIN)) * 100;
+  let selStep = 8;
+  function renderWf() {
+    let run = 0, html = "";
+    STEPS.forEach((s, i) => {
+      let from, to, cls;
+      if (s.base) { from = MIN; to = s.v; run = s.v; cls = "base"; }
+      else { from = Math.min(run, run + s.v); to = Math.max(run, run + s.v); run += s.v; cls = s.resid ? "resid" : s.v >= 0 ? "up" : "down"; }
+      const amt = s.base ? fmt(s.v) : sign(s.v);
+      html += `<div class="lab${i === selStep ? " row-sel" : ""}" role="listitem"><button data-step="${i}">${s.k}</button></div>
+        <div class="track"><span class="bar ${cls}" style="left:${pct(from)}%;width:${Math.max(pct(to) - pct(from), 0.3)}%"></span></div>
+        <div class="amt">${amt}</div><div class="fi">${s.fi}</div>`;
+    });
+    $("#wf").innerHTML = html;
+    const s = STEPS[selStep];
+    $("#wfdetail").innerHTML = `<div class="cardhead"><h2>${s.k}</h2><span class="pill">${s.base ? fmt(s.v) : sign(s.v)} Mkr</span></div><p>${s.d}</p><p class="note" style="margin-top:10px">FI-koppling: ${s.fi}. Steget räknas om i motorn i fast ordning (stegordning v1).</p><div class="actions"><button class="btn" data-explain="comment">Kommentera steget</button></div>`;
+  }
+  $("#wf").addEventListener("click", e => { const b = e.target.closest("[data-step]"); if (b) { selStep = +b.dataset.step; renderWf(); } });
+  renderWf();
+  $("#bookrows").innerHTML = STEPS.filter(s => !s.base).map(s => `<tr><td>${s.k}</td><td class="r">${sign(s.v)}</td></tr>`).join("") + `<tr class="total"><td>Förändring FTA</td><td class="r">+3,22</td></tr>`;
+
+  // Scenarier – illustrativ räkneregel, inte värderingsmotorn
+  const BASE = { c: 40.95, gap: 0.25, cost: 0.00, buf: 2.10 };
+  const COHORTS = [["1959–1962", null], ["1963–1969", 0.11], ["1970–1979", 0.08], ["1980–1989", 0.04], ["1990–", 0.02]];
+  function scen() {
+    const r = +$("#s-rate").value, m = +$("#s-mort").value, k = +$("#s-cost").value;
+    const ret = document.querySelector('input[name="ret"]:checked').value;
+    $("#o-rate").textContent = (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r) + " bp";
+    $("#o-mort").textContent = (m > 0 ? "+" : m < 0 ? "−" : "") + Math.abs(m) + " %";
+    $("#o-cost").textContent = "+" + k + " %";
+    const cDelta = ret === "shock" ? -2.87 : ret === "zero" ? -0.31 : 0;
+    const gapF = (1 - 0.010 * r) * (1 - 0.022 * m) + (ret === "shock" ? 2.6 : ret === "zero" ? 0.5 : 0);
+    const c = BASE.c + cDelta, gap = BASE.gap * gapF, cost = 0.004 * k;
+    const fta = c + gap + cost, ftaB = BASE.c + BASE.gap + BASE.cost;
+    const buf = BASE.buf + 1.4 * (gap - BASE.gap) + cost;
+    const rows = [["Kundkapital C", BASE.c, c], ["Garantigap", BASE.gap, gap], ["Kostnadsavsättning", BASE.cost, cost], ["FTA", ftaB, fta], ["PR-028-buffert (behov)", BASE.buf, buf]];
+    $("#s-rows").innerHTML = rows.map(([n, b, s]) => `<tr${n === "FTA" ? ' class="total"' : ""}><td>${n}</td><td class="r">${fmt(b)}</td><td class="r">${fmt(s)}</td><td class="r">${Math.abs(s - b) < 0.005 ? "–" : sign(s - b)}</td></tr>`).join("");
+    const changed = r || m || k || ret !== "base";
+    $("#s-tag").textContent = changed ? "SCENARIO – ej bas" : "BAS";
+    let h = 0; const spec = `${r}|${m}|${k}|${ret}`; for (const ch of spec) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    $("#s-hash").textContent = changed ? `Scenario S-2027-${String(h % 900 + 100)} · spec-hash ${h.toString(16).slice(0, 4)}… · bas V-2026-09-30 v2` : "Scenario-id skapas när något antagande ändras.";
+    $("#s-cohorts").innerHTML = COHORTS.map(([n, g]) => `<tr><td>${n}</td><td class="r">${g === null ? "dold" : fmt(g)}</td><td class="r">${g === null ? "dold" : fmt(g * gapF)}</td></tr>`).join("") + `<tr><td colspan="3" class="note">Kohort 1959–1962 har färre än 10 försäkrade med garantigap och döljs; summan visas bara för hela beståndet.</td></tr>`;
+  }
+  ["#s-rate", "#s-mort", "#s-cost"].forEach(s => $(s).addEventListener("input", scen));
+  document.querySelectorAll('input[name="ret"]').forEach(x => x.addEventListener("change", scen));
+  $("#s-reset").addEventListener("click", () => { $("#s-rate").value = 0; $("#s-mort").value = 0; $("#s-cost").value = 0; document.querySelector('input[name="ret"][value="base"]').checked = true; scen(); });
+  scen();
+
+  // Rapporter
+  const REPS = [
+    { id: "fi-q", n: "FI kvartal Q4: avsnitt C och E", p: "2026-Q4", to: "FI via compliance", due: "31 jan", st: ["st-warn", "Underlag klart"],
+      body: `<div class="cardhead"><h2>FI kvartal Q4 – aktuariens underlag</h2><span class="note">RU-2026-Q4-FI v1 · källa V-2026-12-31 v1</span></div>
+        <div class="tablewrap"><table><thead><tr><th>Rad</th><th>Innehåll</th><th class="r">Belopp</th><th>Källa</th></tr></thead><tbody>
+        <tr><td>C4–C7</td><td>Avgiftsbestämd traditionell försäkring: premier och nyteckning</td><td class="r">3,10 Mkr</td><td>get_premium_flows</td></tr>
+        <tr><td>C29</td><td>Inbetalda premier för totala beståndet</td><td class="r">3,10 Mkr</td><td>get_premium_flows</td></tr>
+        <tr><td>C31–C32</td><td>Inflyttat och avflyttat försäkringskapital</td><td class="r">0</td><td>Ingen flytt i produkten</td></tr>
+        <tr><td>E</td><td>Solvensuppgifter: FTA och kapitalkrav</td><td class="r">44,42 Mkr</td><td>V-2026-12-31 v1 · RKK ej beräknat</td></tr>
+        <tr><td>F</td><td>Tilläggsförsäkringar</td><td class="r">–</td><td>Ej tillämpligt (compliance prövar)</td></tr>
+        </tbody></table></div>
+        <p class="note" style="margin-top:10px">Radkoder ur FFFS 2019:22 bilaga 1, ska kontrolleras mot gällande konsoliderad version. Bolaget lämnar C, E och F kvartalsvis eftersom balansomslutningen är under 1 mdkr.</p>
+        <div class="gate"><h3>Släpp till compliance</h3><p class="note" style="margin:4px 0 10px">Kräver låst värdering. Ingen inlämning sker härifrån.</p><div class="actions" style="margin-top:0"><button class="btn btn-primary" data-explain="release">Släpp underlaget</button></div></div>` },
+    { id: "prod", n: "Produktrapport PR-ITP1", p: "2026", to: "VD och styrelse", due: "mar", st: ["st-plan", "Planerad"],
+      body: `<div class="cardhead"><h2>Produktrapport PR-ITP1 2026</h2><button class="btn" data-explain="draft">Låt agenten skriva utkast</button></div>
+        <div class="tablewrap"><table><thead><tr><th>Avsnitt</th><th>Underlag</th><th>Status</th></tr></thead><tbody>
+        <tr><td>1 Sammanfattning</td><td>Agentens utkast, slutsats först</td><td><span class="st st-ok">Kan tas fram</span></td></tr>
+        <tr><td>2 Bestånd och rörelser</td><td>get_company_metrics, get_portfolio_snapshot</td><td><span class="st st-warn">Delvis</span></td></tr>
+        <tr><td>3 Premier</td><td>get_premium_flows</td><td><span class="st st-warn">Delvis</span></td></tr>
+        <tr><td>4 Kapital och avkastning</td><td>C per försäkring</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
+        <tr><td>5 Avgifter och kostnader</td><td>Ekonomi</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
+        <tr><td>6 Garanti</td><td>Garantidelar och värderingsmotor</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
+        <tr><td>7 Risk- och dödlighetsutfall</td><td>Utbetalningar och dödsfall</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
+        <tr><td>8 Känslighet</td><td>Scenarier</td><td><span class="st st-warn">Produktparametrar</span></td></tr>
+        <tr><td>9 Kundutfall och värde</td><td>Typfall ur premiemotorn</td><td><span class="st st-warn">Delvis</span></td></tr>
+        <tr><td>10 Avvikelser och åtgärder</td><td>Källbevakning, regeländringar</td><td><span class="st st-warn">Delvis</span></td></tr>
+        </tbody></table></div>
+        <p class="note" style="margin-top:10px">Statusen visar dagens förutsättningar, inte exempelläget. Ej beräknade avsnitt visas med orsak, aldrig som noll (AKTUARIETEAM_PLAN.md §7).</p>` },
+    { id: "fta-q", n: "FTA-rapport Q4", p: "2026-Q4", to: "VD", due: "feb", st: ["st-warn", "Utkast"],
+      body: `<h2>FTA-rapport Q4</h2><p class="sub">Vattenfall, avstämning, agentens kommentar och second opinion i rapportmallen (A4). Följer värderingens grind G1.</p><div class="actions"><button class="btn" data-go="analys">Öppna FTA-analysen</button></div>` },
+    { id: "fi-y", n: "FI årsrapport: avsnitt A–K", p: "2026", to: "FI via compliance", due: "8 apr", st: ["st-plan", "Planerad"],
+      body: `<h2>FI årsrapport – aktuariens delar</h2><p class="sub">D försäkringsbestånd, E aktuariell resultatanalys, F FTA-rörelse (F1–F7 ur FTA-analysen), G resultatanalys för återbäring om tillämpligt, H solvens (FTA och försäkringsrisk), I kassaflödesprognoser. EU-mallarna L–O årligen eftersom bolaget är under 25 MEUR.</p>` },
+    { id: "af", n: "Aktuariefunktionens rapport", p: "2026", to: "Styrelse", due: "apr", st: ["st-plan", "Planerad"],
+      body: `<h2>Aktuariefunktionens rapport</h2><p class="sub">Bedömning av FTA-beräkningen, antagandenas lämplighet och datakvaliteten, med iakttagelser. Skrivs och signeras av människan; agenten kan sammanställa underlag men innehar aldrig funktionen.</p>` },
+    { id: "ers", n: "Underlag till egen risk- och solvensbedömning", p: "2027", to: "Styrelse, FI", due: "2 v efter beslut", st: ["st-plan", "Senare"],
+      body: `<h2>ERS-underlag</h2><p class="sub">Stresser, kapitalbehov och FTA-känslighet. Kräver beslutad metod för simulerat riskkänsligt kapitalkrav (A10).</p>` }
+  ];
+  let selRep = 0;
+  function renderReps() {
+    $("#reprows").innerHTML = REPS.map((r, i) => `<tr class="click${i === selRep ? " sel" : ""}" data-i="${i}" tabindex="0"><td><strong>${r.n}</strong></td><td>${r.p}</td><td>${r.to}</td><td>${r.due}</td><td><span class="st ${r.st[0]}">${r.st[1]}</span></td></tr>`).join("");
+    $("#repdetail").innerHTML = REPS[selRep].body;
+  }
+  $("#reprows").addEventListener("click", e => { const tr = e.target.closest("tr[data-i]"); if (tr) { selRep = +tr.dataset.i; renderReps(); } });
+  $("#reprows").addEventListener("keydown", e => { if (e.key === "Enter") { const tr = e.target.closest("tr[data-i]"); if (tr) { selRep = +tr.dataset.i; renderReps(); } } });
+  renderReps();
+
+  // Uppdrag – lokal svarsmall
+  const PRE = {
+    fta: ["Förklara förändringen i FTA under fjärde kvartalet för styrelsen.",
+      `<p><strong>Svar (exempel):</strong> FTA ökade med 3,2 Mkr till 44,4 Mkr. Huvudorsakerna är inbetalda premier (+3,1 Mkr) och avkastning (+0,7 Mkr), delvis motverkat av utbetald pension (−0,4 Mkr). Den nya räntekurvan sänkte FTA marginellt (−0,06 Mkr). Oanalyserat är 0,05 %.</p>
+       <p class="note">Underlag: V-2026-12-31 v1, förändringsanalys v1. Begränsning: garantidelarna är rekonstruerade (S-04). Verktyg: get_valuation_result, run_change_analysis, write_draft.</p>`],
+    product: ["Ta fram ett utkast till produktrapport för PR-ITP1 2026.",
+      `<p><strong>Svar (exempel):</strong> Utkastet har avsnitt 1–3, 8 och 9 med underlag. Avsnitt 4–7 är markerade som ej beräknade med orsak. Utkastet väntar på din granskning i flödet product_report.</p>
+       <p class="note">Verktyg: get_company_metrics, get_portfolio_snapshot, get_premium_flows, calculate_premium_preview, write_draft.</p>`],
+    rate: ["Vad händer med FTA och garantigapet om räntan faller 100 punkter?",
+      `<p><strong>Svar (exempel):</strong> Scenario S-2027-… mot låst bas: garantigapet ökar och FTA stiger med samma belopp, eftersom C inte påverkas direkt. Kohort 1959–1962 är dold (färre än 10).</p>
+       <p class="note">Talen kommer från run_assumption_scenario, inte från agenten. Scenariot är sparat men ändrar inte basen.</p>`]
+  };
+  let cur = "fta";
+  document.querySelectorAll("[data-preset]").forEach(b => b.addEventListener("click", () => { cur = b.dataset.preset; $("#q").value = PRE[cur][0]; $("#answer").hidden = true; }));
+  $("#ask").addEventListener("click", () => { const a = $("#answer"); a.innerHTML = PRE[cur][1] + '<p class="note">Skiss: ingen agent har körts och inget modellanrop har gjorts.</p>'; a.hidden = false; });
+})();
+</script>
+</body>
+</html>
