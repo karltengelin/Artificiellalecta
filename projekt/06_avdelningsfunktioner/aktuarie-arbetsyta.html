@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aktuariens arbetsyta – skiss</title>
-<!-- Skiss v0.1 2026-10-31 till AKTUARIETEAM_PLAN.md §5. Syntetiska tal, inga livekopplingar, inga modellanrop. -->
+<!-- Skiss v0.2 2026-10-31 (Alecta-modellen) till AKTUARIETEAM_PLAN.md §5. Syntetiska tal, inga livekopplingar, inga modellanrop. -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" referrerpolicy="no-referrer">
 <style>
   :root {
@@ -121,7 +121,13 @@
   .diff-new { color:var(--link); font-weight:600; }
   .footer { margin-top:28px; padding-top:14px; border-top:1px solid var(--border); font-size:12px; color:var(--muted); }
 
-  @media (max-width:980px) { .g4 { grid-template-columns:repeat(2,minmax(0,1fr)); } .g2, .g3 { grid-template-columns:1fr; } }
+  @media (max-width:980px) {
+    .g4 { grid-template-columns:repeat(2,minmax(0,1fr)); } .g2, .g3 { grid-template-columns:1fr; }
+    .wf { grid-template-columns:minmax(0,1fr) 70px 64px; grid-auto-flow:row dense; row-gap:2px; }
+    .wf .track, .wf .axis { grid-column:1 / -1; }
+    .wf .track { margin-bottom:8px; }
+    .wf > span:empty { display:none; }
+  }
   @media (max-width:760px) {
     .shell { grid-template-columns:1fr; }
     .side { position:static; height:auto; min-width:0; border-right:0; border-bottom:1px solid var(--border); padding:14px 16px; gap:12px; }
@@ -131,8 +137,8 @@
     .sidefoot { display:none; }
     .main { padding:18px 16px 40px; }
     h1 { font-size:23px; }
-    .wf { grid-template-columns:minmax(0,1fr) 70px; grid-auto-flow:row dense; row-gap:2px; }
-    .wf .track { grid-column:1 / -1; margin-bottom:8px; }
+    .pill { white-space:normal; }
+    .wf { grid-template-columns:minmax(0,1fr) 70px; }
     .wf .fi { display:none; }
   }
   @media (max-width:480px) { .g4 { grid-template-columns:1fr; } .card { padding:16px; } }
@@ -156,12 +162,12 @@
       <button role="tab" data-view="data" aria-selected="false">Data och kvalitet</button>
       <button role="tab" data-view="uppdrag" aria-selected="false">Uppdrag</button>
     </nav>
-    <div class="sidefoot"><strong>Karl</strong>Ansvarig aktuarie (öppen fråga Q5)<br><br>I teamytan nås bara aktuarieteamets agent (B-036).</div>
+    <div class="sidefoot"><strong>Karl</strong>Ansvarig aktuarie och aktuariefunktion<br><br>I teamytan nås bara aktuarieteamets agent (B-036).</div>
   </aside>
 
   <main class="main">
     <div class="topbar">
-      <span class="eyebrow">Aktuarie &amp; analys · teamyta · skiss v0.1</span>
+      <span class="eyebrow">Aktuarie &amp; analys · teamyta · skiss v0.2</span>
       <span class="sketch">Exempelläge 20 januari 2027 · syntetiska tal · inga livekopplingar</span>
     </div>
 
@@ -172,17 +178,17 @@
         <span class="pill">Värderingsdatum 2026-12-31</span>
       </header>
       <div class="grid g4">
-        <div class="card kpi"><span class="label">FTA (utkast)</span><span class="value">44,4 <small>Mkr</small></span><span class="note">+3,2 Mkr mot 30 sep · metod B (Q1)</span></div>
-        <div class="card kpi"><span class="label">Kundkapital C</span><span class="value">44,1 <small>Mkr</small></span><span class="note">Rekonstruerat startbestånd (S-04)</span></div>
-        <div class="card kpi"><span class="label">Garantigap</span><span class="value">0,3 <small>Mkr</small></span><span class="note">Där garantins värde överstiger C</span></div>
-        <div class="card kpi"><span class="label">Oanalyserat</span><span class="value">0,05 <small>%</small></span><span class="note"><span class="st st-ok">✓ Under tröskel 0,5 %</span></span></div>
+        <div class="card kpi"><span class="label">FTA, garanterat åtagande (utkast)</span><span class="value">32,2 <small>Mkr</small></span><span class="note">+2,4 Mkr mot 30 sep · Alecta-modellen</span></div>
+        <div class="card kpi"><span class="label">Villkorad återbäring</span><span class="value">12,2 <small>Mkr</small></span><span class="note">Pensionskapital 44,1 Mkr, varav ej garanterat</span></div>
+        <div class="card kpi"><span class="label">Underskott till följd av garanti</span><span class="value">0,3 <small>Mkr</small></span><span class="note">Bärs av bolagets kapital (PR-028)</span></div>
+        <div class="card kpi"><span class="label">Oanalyserat</span><span class="value">0,16 <small>%</small></span><span class="note"><span class="st st-ok">✓ Under tröskel 0,5 %</span></span></div>
       </div>
       <div class="grid g2 section">
         <div class="card">
           <div class="cardhead"><h2>Väntar på dig</h2><span class="note">3 handlingar</span></div>
           <ul class="list">
             <li><div><h3>Granska och lås värderingen 2026-12-31</h3><p class="meta">Grind G1 i flödet <em>valuation_close</em> · kontroller 7 av 7</p></div><button class="btn btn-primary" data-go="varderingar">Granska</button></li>
-            <li><div><h3>Godkänn avsättningsunderlag Q4</h3><p class="meta">Verifikationsförslag +3,22 Mkr · följer på G1</p></div><button class="btn" data-go="bokforing">Öppna</button></li>
+            <li><div><h3>Godkänn avsättningsunderlag Q4</h3><p class="meta">FTA +2,40 Mkr och villkorad återbäring +0,77 Mkr · följer på G1</p></div><button class="btn" data-go="bokforing">Öppna</button></li>
             <li><div><h3>Förslag till värderingsgrund SIM-V-2027-01</h3><p class="meta">Från årets antagandeöversyn · aktuarieagenten</p></div><button class="btn" data-go="antaganden">Öppna</button></li>
           </ul>
         </div>
@@ -200,8 +206,8 @@
       <div class="card section">
         <div class="cardhead"><h2>Senaste från aktuarieagenten</h2><button class="btn-text" data-go="uppdrag">Alla uppdrag</button></div>
         <ul class="list">
-          <li><div><h3>Kommentar till FTA-analysen Q4</h3><p class="meta">Utkast · ökningen förklaras av premier (+3,1) och avkastning (+0,7), delvis motverkat av utbetalningar (−0,4)</p></div><span class="st st-warn">Utkast</span></li>
-          <li><div><h3>Second opinion på värderingen</h3><p class="meta">Granskning hos andra leverantören · 0 avvikelser, 1 kommentar om rekonstruerade garantidelar</p></div><span class="st st-ok">Klar</span></li>
+          <li><div><h3>Kommentar till FTA-analysen Q4</h3><p class="meta">Utkast · FTA ökade främst genom nya garantidelar (+3,1, varav −1,05 vid omvärdering till FTA-grund) och lägre ränta (+0,4)</p></div><span class="st st-warn">Utkast</span></li>
+          <li><div><h3>Second opinion på värderingen</h3><p class="meta">Granskning hos andra leverantören · 0 avvikelser, 1 kommentar om rekonstruerade garantidelar (S-04)</p></div><span class="st st-ok">Klar</span></li>
         </ul>
       </div>
     </section>
@@ -214,7 +220,7 @@
       </header>
       <div class="card">
         <div class="tablewrap"><table>
-          <thead><tr><th>Värdering</th><th>Datum</th><th>Grund</th><th class="r">FTA, Mkr</th><th>Kontroller</th><th>Status</th></tr></thead>
+          <thead><tr><th>Värdering</th><th>Datum</th><th>Grund</th><th class="r">FTA, Mkr</th><th class="r">Villkorad återbäring</th><th>Kontroller</th><th>Status</th></tr></thead>
           <tbody id="valrows"></tbody>
         </table></div>
       </div>
@@ -231,25 +237,43 @@
     <section id="analys" role="tabpanel" hidden>
       <header class="head">
         <div><h1>FTA-analys.</h1><p class="sub">Från ingående till utgående FTA, steg för steg. Varje steg är omräknat i motorn.</p></div>
-        <span class="pill">2026-10-01 – 2026-12-31 · SIM-V-2026-01 v1</span>
+        <span class="pill">2026-10-01 – 2026-12-31 · SIM-V-2026-01 v1 · garanterat åtagande</span>
       </header>
       <div class="card">
         <div class="wf" id="wf" role="list" aria-label="Förändring i FTA per steg"></div>
-        <div class="wf" style="margin-top:4px" aria-hidden="true"><span></span><div class="axis"><span>38</span><span>40</span><span>42</span><span>44</span><span>46 Mkr</span></div><span></span><span></span></div>
-        <p class="note" style="margin-top:12px">Axeln börjar vid 38 Mkr. Klicka på ett steg för förklaring. Kolumnen till höger visar kopplingen till FI:s årsrapport (avsnitt E och F).</p>
+        <div class="wf" style="margin-top:4px" aria-hidden="true"><span></span><div class="axis"><span>28</span><span>29,5</span><span>31</span><span>32,5</span><span>34 Mkr</span></div><span></span><span></span></div>
+        <p class="note" style="margin-top:12px">Axeln börjar vid 28 Mkr. Faktisk avkastning påverkar pensionskapitalet och villkorad återbäring, inte FTA. Klicka på ett steg för förklaring. Kolumnen till höger visar kopplingen till FI:s årsrapport (avsnitt E och F).</p>
       </div>
       <div class="grid g2 section">
         <div class="card" id="wfdetail"></div>
         <div class="card">
           <h2>Avstämning</h2>
           <ul class="list checks section">
-            <li><span class="mark-ok">✓</span><div>IB 41,20 = UB i låst värdering 2026-09-30 v2</div></li>
-            <li><span class="mark-ok">✓</span><div>Summa steg 1–11 = UB − IB = 3,22</div></li>
-            <li><span class="mark-ok">✓</span><div>Oanalyserat 0,02 Mkr (0,05 %) under tröskel 0,5 %</div></li>
+            <li><span class="mark-ok">✓</span><div>IB 29,80 = UB i låst värdering 2026-09-30 v2</div></li>
+            <li><span class="mark-ok">✓</span><div>Summa steg 1–10 = UB − IB = 2,40</div></li>
+            <li><span class="mark-ok">✓</span><div>Oanalyserat 0,05 Mkr (0,16 %) under tröskel 0,5 %</div></li>
+            <li><span class="mark-ok">✓</span><div>ΣVÅ − ΣU = ΣC − FTA vid IB och UB</div></li>
             <li><span class="mark-ok">✓</span><div>Stegordning v1 oförändrad mot föregående period</div></li>
           </ul>
           <div class="actions"><button class="btn" data-explain="comment">Kommentera</button><button class="btn btn-primary" data-explain="approve_analysis">Godkänn analysen</button></div>
         </div>
+      </div>
+      <div class="card section">
+        <div class="cardhead"><h2>Pensionskapital och villkorad återbäring</h2><span class="note">Retrospektiv sida · Mkr</span></div>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Post</th><th class="r">Pensionskapital C</th><th class="r">FTA</th><th class="r">Villkorad återbäring</th><th class="r">Underskott</th></tr></thead>
+          <tbody>
+            <tr><td>IB 2026-09-30</td><td class="r">40,95</td><td class="r">29,80</td><td class="r">11,40</td><td class="r">0,25</td></tr>
+            <tr><td>Premier</td><td class="r">+3,10</td><td></td><td></td><td></td></tr>
+            <tr><td>Återbäringsränta (faktisk avkastning)</td><td class="r">+0,58</td><td></td><td></td><td></td></tr>
+            <tr><td>Avgifter och avkastningsskatt</td><td class="r">−0,10</td><td></td><td></td><td></td></tr>
+            <tr><td>Utbetalningar</td><td class="r">−0,40</td><td></td><td></td><td></td></tr>
+            <tr><td>Arvsvinst, netto</td><td class="r">−0,01</td><td></td><td></td><td></td></tr>
+            <tr><td>FTA-förändring enligt analysen</td><td></td><td class="r">+2,40</td><td></td><td></td></tr>
+            <tr class="total"><td>UB 2026-12-31</td><td class="r">44,12</td><td class="r">32,20</td><td class="r">12,22</td><td class="r">0,30</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note" style="margin-top:10px">Villkorad återbäring och underskott räknas per försäkring och summeras; 12,22 − 0,30 = 44,12 − 32,20. Konsolideringsnivån (tillgångar / (C + underskott), mål 100 %) är ej beräknad eftersom tillgångssidan saknas.</p>
       </div>
     </section>
 
@@ -265,9 +289,11 @@
           <div class="tablewrap"><table>
             <thead><tr><th>Post</th><th class="r">Debet, Mkr</th><th class="r">Kredit, Mkr</th></tr></thead>
             <tbody>
-              <tr><td>Förändring i livförsäkringsavsättning <span class="note">(resultaträkning)</span></td><td class="r">3,22</td><td class="r"></td></tr>
-              <tr><td>Livförsäkringsavsättning <span class="note">(balansräkning)</span></td><td class="r"></td><td class="r">3,22</td></tr>
-              <tr class="total"><td>Summa</td><td class="r">3,22</td><td class="r">3,22</td></tr>
+              <tr><td>Förändring i livförsäkringsavsättning <span class="note">(resultaträkning)</span></td><td class="r">2,40</td><td class="r"></td></tr>
+              <tr><td>Livförsäkringsavsättning <span class="note">(balansräkning)</span></td><td class="r"></td><td class="r">2,40</td></tr>
+              <tr><td>Förändring i villkorad återbäring <span class="note">(resultaträkning)</span></td><td class="r">0,77</td><td class="r"></td></tr>
+              <tr><td>Villkorad återbäring <span class="note">(balansräkning, skuld)</span></td><td class="r"></td><td class="r">0,77</td></tr>
+              <tr class="total"><td>Summa</td><td class="r">3,17</td><td class="r">3,17</td></tr>
             </tbody>
           </table></div>
           <p class="note" style="margin-top:10px">Postnamn är arbetsnamn. Kontoplan och huvudbok saknas (V-10); fram till dess sparas godkänt underlag och tas emot av ekonomins bokföringstjänst när den byggs.</p>
@@ -275,7 +301,7 @@
             <div class="actions" style="margin-top:0"><button class="btn" data-explain="reject">Avslå</button><button class="btn btn-primary" data-explain="approve_entry">Godkänn förslaget</button></div></div>
         </div>
         <div class="card">
-          <h2>Fördelning per analyssteg</h2>
+          <h2>Fördelning per analyssteg (FTA)</h2>
           <div class="tablewrap section"><table>
             <thead><tr><th>Steg</th><th class="r">Mkr</th></tr></thead>
             <tbody id="bookrows"></tbody>
@@ -296,7 +322,7 @@
             <tr><td><strong>SIM-G-2026-01</strong></td><td>Garantitariff för nya garantidelar</td><td>1</td><td>2026-11-01</td><td><span class="st st-ok">Gäller · låst</span></td></tr>
             <tr><td><strong>SIM-B-2026-01</strong></td><td>Utbetalningsgrund</td><td>1</td><td>2026-11-01</td><td><span class="st st-ok">Gäller</span></td></tr>
             <tr><td><strong>SIM-R-2026-01</strong></td><td>Riskgrund för arvsvinst</td><td>1</td><td>2026-11-01</td><td><span class="st st-ok">Gäller</span></td></tr>
-            <tr><td><strong>SIM-V-2026-01</strong></td><td>Värderingsgrund för FTA</td><td>1</td><td>2026-12-31</td><td><span class="st st-ok">Gäller</span></td></tr>
+            <tr><td><strong>SIM-V-2026-01</strong></td><td>Värderingsgrund för FTA (garanterat åtagande)</td><td>1</td><td>2026-12-31</td><td><span class="st st-ok">Gäller</span></td></tr>
             <tr class="sel"><td><strong>SIM-V-2027-01</strong></td><td>Värderingsgrund för FTA</td><td>förslag</td><td>2027-03-31</td><td><span class="st st-warn">Förslag · väntar</span></td></tr>
           </tbody>
         </table></div>
@@ -307,10 +333,10 @@
           <div class="tablewrap"><table>
             <thead><tr><th>Antagande</th><th>Gällande → förslag</th><th class="r">ΔFTA, Mkr</th></tr></thead>
             <tbody>
-              <tr><td>Diskonteringskurva</td><td><span class="diff-old">FI-SIM-2026-12</span> <span class="diff-new">FI-SIM-2027-03</span></td><td class="r">−0,05</td></tr>
-              <tr><td>Dödlighetsförbättring per år</td><td><span class="diff-old">1,5 %</span> <span class="diff-new">1,7 %</span></td><td class="r">+0,12</td></tr>
-              <tr><td>Driftkostnad per försäkring och år</td><td><span class="diff-old">180 kr</span> <span class="diff-new">195 kr</span></td><td class="r">+0,09</td></tr>
-              <tr class="total"><td>Summa (stegvis)</td><td></td><td class="r">+0,16</td></tr>
+              <tr><td>Diskonteringskurva</td><td><span class="diff-old">FI-SIM-2026-12</span> <span class="diff-new">FI-SIM-2027-03</span></td><td class="r">−0,30</td></tr>
+              <tr><td>Dödlighetsförbättring per år</td><td><span class="diff-old">1,5 %</span> <span class="diff-new">1,7 %</span></td><td class="r">+0,25</td></tr>
+              <tr><td>Driftkostnad per försäkring och år</td><td><span class="diff-old">180 kr</span> <span class="diff-new">195 kr</span></td><td class="r">+0,12</td></tr>
+              <tr class="total"><td>Summa (stegvis)</td><td></td><td class="r">+0,07</td></tr>
             </tbody>
           </table></div>
           <div class="actions"><button class="btn" data-go="scenarier">Se känslighet</button><button class="btn" data-explain="adopt">För in styrelsebeslut</button></div>
@@ -356,7 +382,7 @@
           </table></div>
           <p class="note" style="margin-top:10px" id="s-hash">Scenario-id skapas när något antagande ändras.</p>
           <div class="callout warn section"><strong>Bara i skissen:</strong> talen räknas med en enkel illustrativ regel i sidan, inte med värderingsmotorn. I systemet körs <code>run_assumption_scenario</code> i betrodd kod med versionerad specifikation och hash.</div>
-          <h3 class="section">Garantigap per födelsekohort</h3>
+          <h3 class="section">Underskott per födelsekohort</h3>
           <div class="tablewrap"><table>
             <thead><tr><th>Kohort</th><th class="r">Bas</th><th class="r">Scenario</th></tr></thead>
             <tbody id="s-cohorts"></tbody>
@@ -433,7 +459,7 @@
 
     <div class="callout section" id="explain" hidden aria-live="polite"></div>
 
-    <p class="footer">Skiss till <a href="AKTUARIETEAM_PLAN.md">AKTUARIETEAM_PLAN.md</a> §5. Alla tal, datum och körningar är påhittade. Inget skrivs, ingen agent körs och inget skickas. Metodval och benämningar (t.ex. FTA-metod B, SIM-V) är förslag som väntar på designstoppet A0.</p>
+    <p class="footer">Skiss till <a href="AKTUARIETEAM_PLAN.md">AKTUARIETEAM_PLAN.md</a> §5. Alla tal, datum och körningar är påhittade. Inget skrivs, ingen agent körs och inget skickas. Metoden (Alecta-modellen med villkorad återbäring som skuld) och benämningar som SIM-V är förslag i <a href="AKTUARIETEAM_BESLUTSFORSLAG.md">beslutsförslaget A0</a>.</p>
   </main>
 </div>
 
@@ -463,7 +489,7 @@
     lock: "<strong>Lås värderingen (G1)</strong> anropar <code>lock_valuation</code> (HUMAN_ONLY). Grinden binder hashen av det underlag du ser. Därefter kan värderingen inte ändras; en rättelse blir ny version.",
     approve_analysis: "<strong>Godkänn analysen</strong> är en del av grind G1 i <em>valuation_close</em>. Oanalyserat över tröskel hade stoppat flödet med <em>needs_human</em>.",
     comment: "<strong>Kommentar</strong> sparas i flödets granskningsanteckningar och följer med rapportunderlaget.",
-    approve_entry: "<strong>Godkänn förslaget</strong> verkställer <code>propose_provision_entry</code> via godkännandekön. Underlaget sparas för ekonomi; ingen huvudbok finns ännu (V-10).",
+    approve_entry: "<strong>Godkänn förslaget</strong> verkställer <code>propose_provision_entry</code> via godkännandekön, med förändring i livförsäkringsavsättning och i villkorad återbäring. Underlaget sparas för ekonomi; ingen huvudbok finns ännu (V-10).",
     reject: "<strong>Avslå</strong> stänger förslaget med din motivering. Agenten får inte lägga ett likadant förslag i samma körning.",
     adopt: "<strong>För in styrelsebeslut</strong> är ett manuellt steg i <em>assumption_review</em> och anropar <code>adopt_valuation_basis</code> (HUMAN_ONLY) med beslutsreferens och giltighetsdag. Agenten kan aldrig göra detta.",
     save_scenario: "<strong>Spara scenario</strong> sparar specifikationen med hash. Den kan bifogas en rapport men skriver aldrig över basen.",
@@ -480,31 +506,33 @@
 
   // Värderingar
   const VALS = [
-    { id: "V-2026-12-31 v1", date: "2026-12-31", basis: "SIM-V-2026-01 v1", fta: 44.42, checks: "7/7", st: ["st-warn", "Utkast · väntar G1"], c: 44.12, gap: 0.30, hash: "7c2a…e91", code: "b41f2c9", locked: false },
-    { id: "V-2026-09-30 v2", date: "2026-09-30", basis: "SIM-V-2026-01 v1", fta: 41.20, checks: "7/7", st: ["st-ok", "Låst"], c: 40.95, gap: 0.25, hash: "51d0…a07", code: "9e03aa1", locked: true, note: "Rättelse av v1: tre försäkringar saknade fribrevsdatum i utdraget." },
-    { id: "V-2026-09-30 v1", date: "2026-09-30", basis: "SIM-V-2026-01 v1", fta: 41.31, checks: "6/7", st: ["st-plan", "Ersatt"], c: 41.06, gap: 0.25, hash: "18be…3c2", code: "9e03aa1", locked: true },
-    { id: "V-2026-06-30 v1", date: "2026-06-30", basis: "SIM-V-2026-01 v1", fta: 37.86, checks: "7/7", st: ["st-ok", "Låst"], c: 37.66, gap: 0.20, hash: "c903…77f", code: "8d1e6b0", locked: true }
+    { id: "V-2026-12-31 v1", date: "2026-12-31", basis: "SIM-V-2026-01 v1", fta: 32.20, checks: "8/8", st: ["st-warn", "Utkast · väntar G1"], c: 44.12, u: 0.30, hash: "7c2a…e91", code: "b41f2c9", locked: false },
+    { id: "V-2026-09-30 v2", date: "2026-09-30", basis: "SIM-V-2026-01 v1", fta: 29.80, checks: "8/8", st: ["st-ok", "Låst"], c: 40.95, u: 0.25, hash: "51d0…a07", code: "9e03aa1", locked: true, note: "Rättelse av v1: tre försäkringar saknade fribrevsdatum i utdraget." },
+    { id: "V-2026-09-30 v1", date: "2026-09-30", basis: "SIM-V-2026-01 v1", fta: 29.87, checks: "7/8", st: ["st-plan", "Ersatt"], c: 41.06, u: 0.25, hash: "18be…3c2", code: "9e03aa1", locked: true },
+    { id: "V-2026-06-30 v1", date: "2026-06-30", basis: "SIM-V-2026-01 v1", fta: 27.40, checks: "8/8", st: ["st-ok", "Låst"], c: 37.66, u: 0.20, hash: "c903…77f", code: "8d1e6b0", locked: true }
   ];
+  const va = v => v.c - v.fta + v.u;
   let selVal = 0;
+  const rowVal = (n, k, c, f, u, tot) => `<tr${tot ? ' class="total"' : ""}><td>${n}</td><td class="r">${k}</td><td class="r">${fmt(c)}</td><td class="r">${fmt(f)}</td><td class="r">${fmt(c - f + u)}</td><td class="r">${fmt(u)}</td></tr>`;
   function renderVals() {
-    $("#valrows").innerHTML = VALS.map((v, i) => `<tr class="click${i === selVal ? " sel" : ""}" data-i="${i}" tabindex="0"><td><strong>${v.id}</strong></td><td>${v.date}</td><td>${v.basis}</td><td class="r">${fmt(v.fta)}</td><td>${v.checks}</td><td><span class="st ${v.st[0]}">${v.st[1]}</span></td></tr>`).join("");
+    $("#valrows").innerHTML = VALS.map((v, i) => `<tr class="click${i === selVal ? " sel" : ""}" data-i="${i}" tabindex="0"><td><strong>${v.id}</strong></td><td>${v.date}</td><td>${v.basis}</td><td class="r">${fmt(v.fta)}</td><td class="r">${fmt(va(v))}</td><td>${v.checks}</td><td><span class="st ${v.st[0]}">${v.st[1]}</span></td></tr>`).join("");
     const v = VALS[selVal];
     $("#valdetail").innerHTML = `
       <div class="cardhead"><h2>${v.id}</h2><span class="st ${v.st[0]}">${v.st[1]}</span></div>
       <div class="tablewrap"><table>
-        <thead><tr><th>Tillstånd</th><th class="r">Antal</th><th class="r">C, Mkr</th><th class="r">Garantigap</th><th class="r">FTA, Mkr</th></tr></thead>
+        <thead><tr><th>Tillstånd</th><th class="r">Antal</th><th class="r">C</th><th class="r">FTA</th><th class="r">Villkorad återbäring</th><th class="r">Underskott</th></tr></thead>
         <tbody>
-          <tr><td>Premiebetalande</td><td class="r">483</td><td class="r">${fmt(v.c * 0.91)}</td><td class="r">${fmt(v.gap * 0.3)}</td><td class="r">${fmt(v.c * 0.91 + v.gap * 0.3)}</td></tr>
-          <tr><td>Fribrev och utbetalning <span class="note">(sammanslagna, en cell &lt; 10)</span></td><td class="r">47</td><td class="r">${fmt(v.c * 0.09)}</td><td class="r">${fmt(v.gap * 0.7)}</td><td class="r">${fmt(v.c * 0.09 + v.gap * 0.7)}</td></tr>
-          <tr class="total"><td>Totalt</td><td class="r">530</td><td class="r">${fmt(v.c)}</td><td class="r">${fmt(v.gap)}</td><td class="r">${fmt(v.fta)}</td></tr>
+          ${rowVal("Premiebetalande", 483, v.c * 0.91, v.fta * 0.89, v.u * 0.3)}
+          ${rowVal('Fribrev och utbetalning <span class="note">(sammanslagna, en cell &lt; 10)</span>', 47, v.c * 0.09, v.fta * 0.11, v.u * 0.7)}
+          ${rowVal("Totalt", 530, v.c, v.fta, v.u, true)}
         </tbody></table></div>
-      <p class="note" style="margin-top:10px">Datautdrag ${v.hash} · grund ${v.basis} · kod ${v.code} · metod B: FTA = max(C, garantins värde) per försäkring + kostnadsavsättning.</p>
+      <p class="note" style="margin-top:10px">Mkr · datautdrag ${v.hash} · grund ${v.basis} · kod ${v.code}. Alecta-modellen: FTA = kapitalvärdet av garanterad pension på SIM-V; villkorad återbäring = max(0, C − FTA) och underskott = max(0, FTA − C) per försäkring.</p>
       ${v.note ? `<p class="note" style="margin-top:6px">${v.note}</p>` : ""}
       ${v.locked ? "" : `<div class="gate"><h3>Grind G1 – granska och lås</h3><p class="note" style="margin:4px 0 10px">Second opinion: 0 avvikelser. Agentens kommentar finns som utkast under FTA-analys.</p><div class="actions" style="margin-top:0"><button class="btn" data-go="analys">Öppna FTA-analysen</button><button class="btn btn-primary" data-explain="lock">Godkänn och lås</button></div></div>`}`;
-    const failed = v.checks !== "7/7";
-    const checks = ["IB = föregående låsta UB", "Antal och C mot datautdraget", "Oanalyserat under tröskel", "Oberoende kontrollfall (leveranskontrollen)", "Samma indata ger samma resultat", "Inga negativa värden", "Fribrevsdatum och tillstånd kompletta"];
+    const failed = v.checks !== "8/8";
+    const checks = ["IB = föregående låsta UB", "Antal och C mot datautdraget", "Oanalyserat under tröskel", "Oberoende kontrollfall (leveranskontrollen)", "Samma indata ger samma resultat", "Inga negativa värden", "ΣVÅ − ΣU = ΣC − FTA", "Fribrevsdatum och tillstånd kompletta"];
     $("#valchecks").innerHTML = checks.map((c, i) => {
-      const bad = failed && i === 6;
+      const bad = failed && i === 7;
       return `<li><span class="${bad ? "mark-warn" : "mark-ok"}">${bad ? "!" : "✓"}</span><div>${c}${bad ? '<p class="meta">3 försäkringar saknade datum – rättat i v2</p>' : ""}</div></li>`;
     }).join("");
   }
@@ -514,22 +542,21 @@
 
   // FTA-analys (vattenfall)
   const STEPS = [
-    { k: "IB 2026-09-30", v: 41.20, base: true, fi: "F1", d: "Utgående FTA i den låsta värderingen 2026-09-30 v2. Hård kontroll: får inte skilja sig från föregående UB." },
-    { k: "1 Premier", v: 3.10, fi: "F2", d: "Matchade nettopremier oktober–december och deras nya garantidelar på SIM-G-2026-01. Premierna ökar C krona för krona." },
-    { k: "2 Utbetalningar", v: -0.40, fi: "F3", d: "Utbetald pension. I det rekonstruerade beståndet finns få pensionärer, så beloppet är litet." },
-    { k: "3 Avgifter och skatt", v: -0.10, fi: "F4", d: "Kapitalavgift 0,20 % per år och avkastningsskattebelastning, i ordning enligt PR-ITP1-020." },
-    { k: "4 Avkastning", v: 0.66, fi: "F5", d: "Faktisk avkastning tillförd C enligt PR-021, här ur den deklarerade serien AVK-SIM-2026 eftersom kapitalförvaltningen är pausad." },
-    { k: "5 Ränteuppräkning", v: 0.01, fi: "F5", d: "Avveckling av diskontering på garantins värde. Nästan noll eftersom FTA följer C för de flesta försäkringar (metod B)." },
-    { k: "6 Dödlighet och arvsvinst", v: -0.01, fi: "E1–E2", d: "Avgångar och fördelad arvsvinst. Antalet dödsfall är under 10, så fördelningen per kohort visas inte." },
-    { k: "7 Planändringar", v: 0.00, fi: "E11", d: "Uttagsstart, paus, deluttag och fribrev under perioden." },
-    { k: "8 Ränteantagande", v: -0.06, fi: "E17 · F6", d: "Ny diskonteringskurva FI-SIM-2026-12 med något högre räntor sänker garantins värde för de försäkringar där det överstiger C. Effekten är liten eftersom FTA följer C för de flesta försäkringar (metod B)." },
-    { k: "9 Övriga antaganden", v: 0.00, fi: "F6", d: "Inga ändrade antaganden i perioden. Förslaget SIM-V-2027-01 påverkar först nästa värdering." },
-    { k: "10 Modell och data", v: 0.00, fi: "–", d: "Modell-, metod- och dataändringar redovisas alltid här, aldrig i oanalyserat." },
-    { k: "11 Oanalyserat", v: 0.02, resid: true, fi: "E23", d: "Det som inte förklaras av stegen. 0,05 % av FTA, under tröskeln 0,5 %. Över tröskeln stoppar flödet för mänsklig granskning." },
-    { k: "UB 2026-12-31", v: 44.42, base: true, fi: "–", d: "Utgående FTA i värderingen 2026-12-31 v1 (utkast)." }
+    { k: "IB 2026-09-30", v: 29.80, base: true, fi: "F1", d: "Utgående FTA i den låsta värderingen 2026-09-30 v2. Hård kontroll: får inte skilja sig från föregående UB." },
+    { k: "1 Premier", v: 3.10, fi: "F2", d: "Nya garantidelar från periodens nettopremier. Garantin intjänas på SIM-G-2026-01 med 0 % ränta, så varje premie ger en garanti värd hela premien på garantigrunden." },
+    { k: "2 Garantigrund → FTA-grund", v: -1.05, fi: "E8", d: "Samma nya garantidelar omvärderade från garantigrunden (0 % ränta) till FTA-grunden med FI-kurvan. Motsvarar Alectas rad om skillnaden mellan premiegrunder och avsättningsantaganden." },
+    { k: "3 Utbetald pension", v: -0.30, fi: "F3", d: "Utbetald garanterad pension och slutavräkningar. I det rekonstruerade beståndet finns få pensionärer." },
+    { k: "4 Förräntning", v: 0.22, fi: "F4 · F5", d: "Löpande förräntning med kurvans ränta, efter frigjord avkastningsskatt och driftskostnader." },
+    { k: "5 Dödlighetsresultat", v: -0.02, fi: "E1–E2", d: "Avgångar frigör avsättning. Antalet dödsfall är under 10, så fördelningen per kohort visas inte." },
+    { k: "6 Planändringar", v: 0.00, fi: "E11", d: "Uttagsstart, paus och deluttag under perioden." },
+    { k: "7 Ändrad diskonteringsränta", v: 0.40, fi: "E17 · F6", d: "Ny kurva FI-SIM-2026-12 med något lägre räntor höjer kapitalvärdet av garantin. Räntan är den största känsligheten i FTA." },
+    { k: "8 Övriga antaganden", v: 0.00, fi: "F6", d: "Inga ändrade antaganden i perioden. Förslaget SIM-V-2027-01 påverkar först nästa värdering." },
+    { k: "9 Modell och data", v: 0.00, fi: "–", d: "Modell-, metod- och dataändringar redovisas alltid här, aldrig i oanalyserat." },
+    { k: "10 Oanalyserat", v: 0.05, resid: true, fi: "E23", d: "Det som inte förklaras av stegen. 0,16 % av FTA, under tröskeln 0,5 %. Över tröskeln stoppar flödet för mänsklig granskning." },
+    { k: "UB 2026-12-31", v: 32.20, base: true, fi: "–", d: "Utgående FTA i värderingen 2026-12-31 v1 (utkast)." }
   ];
-  const MIN = 38, MAX = 46, pct = x => ((x - MIN) / (MAX - MIN)) * 100;
-  let selStep = 8;
+  const MIN = 28, MAX = 34, pct = x => ((x - MIN) / (MAX - MIN)) * 100;
+  let selStep = 7;
   function renderWf() {
     let run = 0, html = "";
     STEPS.forEach((s, i) => {
@@ -547,10 +574,10 @@
   }
   $("#wf").addEventListener("click", e => { const b = e.target.closest("[data-step]"); if (b) { selStep = +b.dataset.step; renderWf(); } });
   renderWf();
-  $("#bookrows").innerHTML = STEPS.filter(s => !s.base).map(s => `<tr><td>${s.k}</td><td class="r">${sign(s.v)}</td></tr>`).join("") + `<tr class="total"><td>Förändring FTA</td><td class="r">+3,22</td></tr>`;
+  $("#bookrows").innerHTML = STEPS.filter(s => !s.base).map(s => `<tr><td>${s.k}</td><td class="r">${sign(s.v)}</td></tr>`).join("") + `<tr class="total"><td>Förändring FTA</td><td class="r">+2,40</td></tr><tr><td>Förändring villkorad återbäring</td><td class="r">+0,77</td></tr>`;
 
   // Scenarier – illustrativ räkneregel, inte värderingsmotorn
-  const BASE = { c: 40.95, gap: 0.25, cost: 0.00, buf: 2.10 };
+  const BASE = { c: 40.95, fta: 29.80, u: 0.25, buf: 2.10 };
   const COHORTS = [["1959–1962", null], ["1963–1969", 0.11], ["1970–1979", 0.08], ["1980–1989", 0.04], ["1990–", 0.02]];
   function scen() {
     const r = +$("#s-rate").value, m = +$("#s-mort").value, k = +$("#s-cost").value;
@@ -559,17 +586,19 @@
     $("#o-mort").textContent = (m > 0 ? "+" : m < 0 ? "−" : "") + Math.abs(m) + " %";
     $("#o-cost").textContent = "+" + k + " %";
     const cDelta = ret === "shock" ? -2.87 : ret === "zero" ? -0.31 : 0;
-    const gapF = (1 - 0.010 * r) * (1 - 0.022 * m) + (ret === "shock" ? 2.6 : ret === "zero" ? 0.5 : 0);
-    const c = BASE.c + cDelta, gap = BASE.gap * gapF, cost = 0.004 * k;
-    const fta = c + gap + cost, ftaB = BASE.c + BASE.gap + BASE.cost;
-    const buf = BASE.buf + 1.4 * (gap - BASE.gap) + cost;
-    const rows = [["Kundkapital C", BASE.c, c], ["Garantigap", BASE.gap, gap], ["Kostnadsavsättning", BASE.cost, cost], ["FTA", ftaB, fta], ["PR-028-buffert (behov)", BASE.buf, buf]];
-    $("#s-rows").innerHTML = rows.map(([n, b, s]) => `<tr${n === "FTA" ? ' class="total"' : ""}><td>${n}</td><td class="r">${fmt(b)}</td><td class="r">${fmt(s)}</td><td class="r">${Math.abs(s - b) < 0.005 ? "–" : sign(s - b)}</td></tr>`).join("");
+    const fta = BASE.fta * (1 - 0.18 * r / 100) * (1 - 0.002 * m) * (1 + 0.0003 * k);
+    const c = BASE.c + cDelta;
+    const u = BASE.u + 0.05 * Math.max(0, fta - BASE.fta) + 0.15 * Math.max(0, -cDelta);
+    const vaS = c - fta + u, vaB = BASE.c - BASE.fta + BASE.u;
+    const uF = u / BASE.u;
+    const buf = BASE.buf + (u - BASE.u);
+    const rows = [["Pensionskapital C", BASE.c, c], ["FTA", BASE.fta, fta], ["Villkorad återbäring", vaB, vaS], ["Underskott till följd av garanti", BASE.u, u], ["PR-028-buffert (behov)", BASE.buf, buf]];
+    $("#s-rows").innerHTML = rows.map(([n, b, s]) => `<tr${n === "FTA" ? ' class="total"' : ""}><td>${n}</td><td class="r">${fmt(b)}</td><td class="r">${fmt(s)}</td><td class="r">${Math.abs(s - b) < 0.005 ? "–" : sign(s - b)}</td></tr>`).join("") + `<tr><td>Konsolideringsnivå</td><td class="r" colspan="3">ej beräknad – tillgångssidan saknas</td></tr>`;
     const changed = r || m || k || ret !== "base";
     $("#s-tag").textContent = changed ? "SCENARIO – ej bas" : "BAS";
     let h = 0; const spec = `${r}|${m}|${k}|${ret}`; for (const ch of spec) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     $("#s-hash").textContent = changed ? `Scenario S-2027-${String(h % 900 + 100)} · spec-hash ${h.toString(16).slice(0, 4)}… · bas V-2026-09-30 v2` : "Scenario-id skapas när något antagande ändras.";
-    $("#s-cohorts").innerHTML = COHORTS.map(([n, g]) => `<tr><td>${n}</td><td class="r">${g === null ? "dold" : fmt(g)}</td><td class="r">${g === null ? "dold" : fmt(g * gapF)}</td></tr>`).join("") + `<tr><td colspan="3" class="note">Kohort 1959–1962 har färre än 10 försäkrade med garantigap och döljs; summan visas bara för hela beståndet.</td></tr>`;
+    $("#s-cohorts").innerHTML = COHORTS.map(([n, g]) => `<tr><td>${n}</td><td class="r">${g === null ? "dold" : fmt(g)}</td><td class="r">${g === null ? "dold" : fmt(g * uF)}</td></tr>`).join("") + `<tr><td colspan="3" class="note">Kohort 1959–1962 har färre än 10 försäkrade med underskott och döljs; summan visas bara för hela beståndet.</td></tr>`;
   }
   ["#s-rate", "#s-mort", "#s-cost"].forEach(s => $(s).addEventListener("input", scen));
   document.querySelectorAll('input[name="ret"]').forEach(x => x.addEventListener("change", scen));
@@ -584,7 +613,7 @@
         <tr><td>C4–C7</td><td>Avgiftsbestämd traditionell försäkring: premier och nyteckning</td><td class="r">3,10 Mkr</td><td>get_premium_flows</td></tr>
         <tr><td>C29</td><td>Inbetalda premier för totala beståndet</td><td class="r">3,10 Mkr</td><td>get_premium_flows</td></tr>
         <tr><td>C31–C32</td><td>Inflyttat och avflyttat försäkringskapital</td><td class="r">0</td><td>Ingen flytt i produkten</td></tr>
-        <tr><td>E</td><td>Solvensuppgifter: FTA och kapitalkrav</td><td class="r">44,42 Mkr</td><td>V-2026-12-31 v1 · RKK ej beräknat</td></tr>
+        <tr><td>E</td><td>Solvensuppgifter: FTA, villkorad återbäring och kapitalkrav</td><td class="r">32,20 / 12,22 Mkr</td><td>V-2026-12-31 v1 · RKK ej beräknat</td></tr>
         <tr><td>F</td><td>Tilläggsförsäkringar</td><td class="r">–</td><td>Ej tillämpligt (compliance prövar)</td></tr>
         </tbody></table></div>
         <p class="note" style="margin-top:10px">Radkoder ur FFFS 2019:22 bilaga 1, ska kontrolleras mot gällande konsoliderad version. Bolaget lämnar C, E och F kvartalsvis eftersom balansomslutningen är under 1 mdkr.</p>
@@ -595,9 +624,9 @@
         <tr><td>1 Sammanfattning</td><td>Agentens utkast, slutsats först</td><td><span class="st st-ok">Kan tas fram</span></td></tr>
         <tr><td>2 Bestånd och rörelser</td><td>get_company_metrics, get_portfolio_snapshot</td><td><span class="st st-warn">Delvis</span></td></tr>
         <tr><td>3 Premier</td><td>get_premium_flows</td><td><span class="st st-warn">Delvis</span></td></tr>
-        <tr><td>4 Kapital och avkastning</td><td>C per försäkring</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
+        <tr><td>4 Kapital och avkastning</td><td>C per försäkring (S-04)</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
         <tr><td>5 Avgifter och kostnader</td><td>Ekonomi</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
-        <tr><td>6 Garanti</td><td>Garantidelar och värderingsmotor</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
+        <tr><td>6 Garanti och återbäring</td><td>Garantidelar och värderingsmotor</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
         <tr><td>7 Risk- och dödlighetsutfall</td><td>Utbetalningar och dödsfall</td><td><span class="st st-plan">Ej beräknat</span></td></tr>
         <tr><td>8 Känslighet</td><td>Scenarier</td><td><span class="st st-warn">Produktparametrar</span></td></tr>
         <tr><td>9 Kundutfall och värde</td><td>Typfall ur premiemotorn</td><td><span class="st st-warn">Delvis</span></td></tr>
@@ -625,13 +654,13 @@
   // Uppdrag – lokal svarsmall
   const PRE = {
     fta: ["Förklara förändringen i FTA under fjärde kvartalet för styrelsen.",
-      `<p><strong>Svar (exempel):</strong> FTA ökade med 3,2 Mkr till 44,4 Mkr. Huvudorsakerna är inbetalda premier (+3,1 Mkr) och avkastning (+0,7 Mkr), delvis motverkat av utbetald pension (−0,4 Mkr). Den nya räntekurvan sänkte FTA marginellt (−0,06 Mkr). Oanalyserat är 0,05 %.</p>
-       <p class="note">Underlag: V-2026-12-31 v1, förändringsanalys v1. Begränsning: garantidelarna är rekonstruerade (S-04). Verktyg: get_valuation_result, run_change_analysis, write_draft.</p>`],
+      `<p><strong>Svar (exempel):</strong> FTA, det garanterade åtagandet, ökade med 2,4 Mkr till 32,2 Mkr. Nya garantidelar gav +3,1 Mkr, varav −1,05 Mkr försvann vid omvärderingen från garantigrund till FTA-grund. Lägre räntor höjde FTA med 0,4 Mkr. Villkorad återbäring ökade med 0,8 Mkr till 12,2 Mkr, främst genom avkastningen. Oanalyserat är 0,16 %.</p>
+       <p class="note">Underlag: V-2026-12-31 v1, förändringsanalys v1. Begränsning: garantidelarna är rekonstruerade (S-04). Verktyg: get_valuation_result, run_change_analysis, write_draft. Alecta-modellen: FTA avser bara garantin.</p>`],
     product: ["Ta fram ett utkast till produktrapport för PR-ITP1 2026.",
       `<p><strong>Svar (exempel):</strong> Utkastet har avsnitt 1–3, 8 och 9 med underlag. Avsnitt 4–7 är markerade som ej beräknade med orsak. Utkastet väntar på din granskning i flödet product_report.</p>
        <p class="note">Verktyg: get_company_metrics, get_portfolio_snapshot, get_premium_flows, calculate_premium_preview, write_draft.</p>`],
-    rate: ["Vad händer med FTA och garantigapet om räntan faller 100 punkter?",
-      `<p><strong>Svar (exempel):</strong> Scenario S-2027-… mot låst bas: garantigapet ökar och FTA stiger med samma belopp, eftersom C inte påverkas direkt. Kohort 1959–1962 är dold (färre än 10).</p>
+    rate: ["Vad händer med FTA och villkorad återbäring om räntan faller 100 punkter?",
+      `<p><strong>Svar (exempel):</strong> Scenario S-2027-… mot låst bas: FTA stiger med cirka 18 % eftersom garantin diskonteras med lägre ränta. Villkorad återbäring minskar lika mycket där C räcker, och underskottet ökar där det inte gör det. Kohort 1959–1962 är dold (färre än 10).</p>
        <p class="note">Talen kommer från run_assumption_scenario, inte från agenten. Scenariot är sparat men ändrar inte basen.</p>`]
   };
   let cur = "fta";

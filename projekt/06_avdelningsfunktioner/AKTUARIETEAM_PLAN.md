@@ -1,7 +1,8 @@
 # Aktuarieteamet – arbetssätt, harness och arbetsyta (utredning och planförslag)
 
-> **Version:** 0.1 | **Datum:** 2026-10-31 | **Status:** Utredning och förslag. Inget beslut,
-> ingen kod, ingen ny behörighet. Underlag för ett kommande designstopp (jfr B-033/B-035/B-041).
+> **Version:** 0.2 | **Datum:** 2026-10-31 | **Status:** Utredning och förslag. Inget beslut,
+> ingen kod, ingen ny behörighet. Operatörens svar på Q1–Q7 (2026-10-31) är inarbetade och
+> designstoppet finns som [beslutsförslag A0](AKTUARIETEAM_BESLUTSFORSLAG.md).
 > **Hör till:** projekt 6 (aktuariell värdering, FTA) med kopplingar till projekt 2, 10 och
 > compliance-teamet. Kompletterar [projektplanen](PROJEKTPLAN.md) och `harness.md` §9.2.
 
@@ -122,39 +123,91 @@ dödlighet × 0,80) och produktens garantivärde `V_g`. Ingen av dem är FTA
 `SIM-V-2026-01` som arbetsnamn – med diskonteringskurva, bästa skattning eller försiktig
 dödlighet, driftkostnadsantagande och skatt.
 
-Metodalternativ (val för designstoppet, inte beslutade här):
+**Operatörens val 2026-10-31: efterlikna Alecta.** Det motsvarar alternativ A nedan.
+Alectas försäkringstekniska riktlinjer (beslutade av styrelsen 2025-12-18) och
+årsredovisningen för 2025 beskriver metoden för Alecta Optimal Pension, som är premiebestämd
+traditionell ITP1-försäkring:
 
-| Alternativ | FTA per försäkring | För | Mot |
-|---|---|---|---|
-| **A** Garanterat åtagande + villkorad återbäring | FTA = garantins värde på värderingsgrunden; `C − FTA` redovisas som villkorad återbäring om positiv, annars som garantibrist mot bolagets kapital | Speglar traditionell försäkring; tydlig garantirisk | Kräver regel för fördelning av villkorad återbäring; C tillhör kunden i vår produkt |
-| **B** Kundkapital med garantigolv *(rekommenderat som första steg)* | FTA = max(`C`, garantins värde på värderingsgrunden) + avsättning för framtida driftkostnader utöver avgiften | Följer produktens direkta fördelning; deterministisk; garantigapet blir ett eget, synligt tal | Fångar inte garantins tidsvärde |
-| **C** B + tidsvärde för garantin | Som B plus marknadskonsistent värde av garantigolvet ur stokastiska räntescenarier | Mest riktigt ekonomiskt | Kräver scenariogenerator; senare |
+- **FTA är prospektiv och avser bara garantin.** Avsättningen är kapitalvärdet av det
+  garanterade försäkringsåtagandet (riktlinjerna §4). Den beräknas med aktsamma antaganden och
+  på samma sätt för solvens och redovisning. Diskontering sker med en räntekurva enligt 4 kap.
+  i FFFS 2019:21. Kapitalvärdet av framtida driftskostnader och avkastningsskatt ingår, liksom
+  optioner (flytt, ändrad uttagsålder, premieupphörande) när de är materiella.
+- **Pensionskapitalet är retrospektivt.** Retrospektivreserven byggs månadsvis med premier,
+  återbäringsränta ur faktisk totalavkastning, belastning för avkastningsskatt och
+  driftskostnader samt arvsvinst (§6.2.2). Överskottet fördelas preliminärt enligt
+  kontributionsprincipen och betalas ut som tilläggsbelopp: kapitalet fördelat med
+  prognosantaganden minus garanterad pension, lägst noll (§6.2, §6.2.3).
+- **Överskottet över garantin är inte garanterat.** Alecta är ömsesidigt och redovisar det som
+  preliminärt fördelad återbäring i eget kapital (årsredovisningen, not 1).
+- **Kollektiv konsolideringsnivå.** Marknadsvärdet av fördelningsbara tillgångar delat med
+  kundernas samlade pensionskapital plus underskott till följd av garanti. Målet är 100 % med
+  intervallet 98–102 % (§6.2.1).
+- **Flytt och återköp.** Värdet är pensionskapitalet, lägst kapitalvärdet av den garanterade
+  förmånen (§5.1, §5.4).
+- **FTA-förändringen förklaras per orsak** i förvaltningsberättelsen: premier och utbetalningar,
+  skillnaden mellan premiegrunder och avsättningsantaganden, ändrad räntekurva, löpande
+  förräntning efter frigjord skatt och driftskostnader, nya dödlighetsantaganden och övrigt.
 
-Oavsett alternativ ska motorn lämna garantigapet `max(0, V_garanti − C)` per kohort. Det är
-samma storhet som PR-028:s stressbuffert redan använder, men värderad på värderingsgrunden.
+Vår produkt har redan samma retrospektiva sida: `C` med direkt fördelad faktisk avkastning
+(PR-020/021). Det som tillkommer är den prospektiva FTA-värderingen av garantin på en egen
+värderingsgrund.
+
+| Alternativ | FTA per försäkring | Status |
+|---|---|---|
+| **A** Garanterat åtagande + villkorad återbäring (Alecta-modellen) | Kapitalvärdet av garanterad pension `G` på värderingsgrunden (FI-kurva, aktsam dödlighet, driftskostnader, avkastningsskatt) | **Valt 2026-10-31**, fastställs i A0 |
+| B Kundkapital med garantigolv | max(`C`, garantins värde) | Ej valt |
+| C A + garantins tidsvärde | Stokastisk värdering av garantin | Möjlig senare utbyggnad |
+
+**Storheterna i alternativ A:**
+
+```text
+FTA_i  = kapitalvärdet av G_i på SIM-V (prospektivt)
+VÅ_i   = max(0, C_i − FTA_i)     villkorad återbäring, inte garanterad
+U_i    = max(0, FTA_i − C_i)     underskott till följd av garanti, bärs av bolagets kapital (PR-028)
+Konsolideringsnivå = fördelningsbara tillgångar / (Σ C_i + Σ U_i)
+```
+
+Faktisk avkastning påverkar alltså `C` och därmed villkorad återbäring, men inte FTA. FTA rör
+sig med nya garantidelar, utbetalningar, förräntning, dödlighet och antaganden.
+
+**Redovisning (operatörens val Q1b).** Bolaget har en ägare som skjuter till kapital (PR-028)
+och liknar därför ett aktiebolag. Villkorad återbäring redovisas som en egen post bland
+skulderna, skild från eget kapital. Det skiljer sig från Alecta, som är ömsesidigt.
+
+**Följder för produktdokumenten** (flaggas här men ändras inte): `aktuariell_grund.md` §1 och
+PR-ITP1-021 kallar hela `C` kundkapital. Med alternativ A är `C − FTA` villkorad återbäring,
+alltså inte garanterad. Det stämmer med PR-021 ("ingen individuell rätt till en viss framtida
+avkastning"), men begreppet bör stämmas av i villkoren (§4–6) och kundinformationen innan
+FTA-motorn byggs. Den ändringen hör till projekt 4. Konsolideringsnivån kräver en tillgångssida,
+som saknas så länge kapitalförvaltningen är pausad. Tills dess visas nivån som *ej beräknad*.
 
 ### 3.2 FTA-analys för vår produkt
 
-Föreslagen stegordning. Varje steg räknas om i motorn, så att summan av stegen är exakt UB − IB:
+Stegordningen följer Alectas förklaring av FTA-förändringen. Varje steg räknas om i motorn
+så att stegens summa är exakt UB − IB:
 
 | Steg | Orsak | FI-koppling (år) |
 |---|---|---|
 | 0 | IB = föregående låsta värderings UB (hård kontroll) | F1 |
-| 1 | Inbetalda nettopremier och nya garantidelar | F2 |
-| 2 | Utbetald pension och slutavräkningar | F3 |
-| 3 | Kapitalavgift och avkastningsskattebelastning | F4 |
-| 4 | Faktisk avkastning tillförd C, jämfört med diskonteringsränta | F5, E15–E16 |
-| 5 | Ränteuppräkning (avveckling av diskontering) | F5 |
-| 6 | Dödlighetsutfall: avgångar och arvsvinst (PR-010/011) | E1–E2, E29–E48 |
-| 7 | Planändringar: uttagsstart, paus, deluttag, fribrev | E11 |
-| 8 | Ändrat ränteantagande (ny kurva) | E17, F6 |
-| 9 | Ändrade övriga antaganden (dödlighet, kostnad) | E11, F6 |
-| 10 | Modell-, metod- och dataändringar (egen rad, aldrig gömd i oanalyserat) | – |
-| 11 | Oanalyserat = UB − (IB + steg 1–10). Över tröskel → stopp och mänsklig granskning | E23 |
-| 12 | UB = ny värdering | – |
+| 1 | Premier: nya garantidelar värderade på FTA-grunden | F2 |
+| 2 | Skillnad mellan garantigrunden (SIM-G, 0 % ränta) och FTA-grunden för nya garantidelar | E8 |
+| 3 | Utbetald garanterad pension och slutavräkningar | F3 |
+| 4 | Löpande förräntning efter frigjord avkastningsskatt och driftskostnader | F4, F5 |
+| 5 | Dödlighetsresultat: avgångar och frigjord avsättning | E1–E2, E29–E48 |
+| 6 | Planändringar: uttagsstart, paus, deluttag | E11 |
+| 7 | Ändrad diskonteringsränta (ny kurva) | E17, F6 |
+| 8 | Ändrade övriga antaganden (dödlighet, kostnad, skatt) | E11, F6 |
+| 9 | Modell-, metod- och dataändringar (egen rad, aldrig gömd i oanalyserat) | – |
+| 10 | Oanalyserat = UB − (IB + steg 1–9). Över tröskel → stopp och mänsklig granskning | E23 |
+| 11 | UB = ny värdering | – |
 
-Antagandeändringar (8–9) läggs sist så att de mäts på det faktiska beståndet vid periodens
-slut. Ordningen ska vara fast och versionerad, eftersom den påverkar hur differensen fördelas.
+Antagandeändringar (7–8) läggs sist så att de mäts på beståndet vid periodens slut. Ordningen
+är fast och versionerad, eftersom den påverkar hur differensen fördelas.
+
+**Avstämning av villkorad återbäring.** Bredvid FTA-analysen visas pensionskapitalets rörelse:
+premier, återbäringsränta (faktisk avkastning), avgifter och skatt, utbetalningar och arvsvinst.
+Kontrollen är att `ΣVÅ − ΣU = ΣC − FTA` vid både IB och UB.
 
 ### 3.3 FTA-bokföring för oss
 
@@ -162,7 +215,8 @@ Ekonomiteamet och huvudboken finns inte (V-10). Förslag till mellanläge: aktua
 **avsättningsunderlag** med verifikationsförslag (period, post, belopp, underlagets
 kontrollsumma) som godkänns av människa och sparas som underlag. När ekonomi byggs tar dess
 bokföringstjänst emot samma underlag. Kontoplanen fastställs av ekonomi; aktuarien levererar
-belopp per analyssteg, inte konton.
+belopp per analyssteg, inte konton. Underlaget har två delar: förändring i
+livförsäkringsavsättning (FTA) och förändring i villkorad återbäring.
 
 ### 3.4 Simulering av antagandeändringar
 
@@ -170,10 +224,10 @@ Aktuarien och agenten ska kunna köra "tänk om"-scenarier mot en låst basvärd
 
 | Scenariodimension | Exempel | Utfall |
 |---|---|---|
-| Diskonteringsränta | Parallellskift ±50/±100 bp, ny kurva, FI:s ändrade metod | ΔFTA, Δgarantigap, räntekänslighet (duration) |
+| Diskonteringsränta | Parallellskift ±50/±100 bp, ny kurva, FI:s ändrade metod | ΔFTA, Δvillkorad återbäring, Δunderskott, räntekänslighet (duration) |
 | Dödlighet | −10/−20 % dödsrisk, annan förbättringstakt, annan unisexvikt | ΔFTA, livslängdsrisk, ΔPR-028-buffert |
 | Kostnader | Driftkostnad +10 %, ändrad kapitalavgift (kräver PR-030-prövning) | Kostnadsresultat, avsättning för kostnader |
-| Avkastning | Avkastningsbana 0/3/5 % eller chock −20 % aktier | Garantigap per kohort, kapitalbehov |
+| Avkastning | Avkastningsbana 0/3/5 % eller chock −20 % aktier | `C`, villkorad återbäring och underskott per kohort, kapitalbehov (FTA påverkas inte) |
 | Beteende | Andel tidiga uttag, tidsbegränsade uttag, pauser | Kassaflödesprofil, likviditet |
 | Produktparametrar | Premieålder, satser, brytpunkter (finns i dag som premieeffekt) | Premieflöden och nya garantidelar |
 
@@ -263,8 +317,9 @@ Utöver dagens (tal bara från verktyg, ingen individdata, källor är underlag 
 5. **Avstämning som hårda stopp.** IB = föregående UB. Stegens summa = differensen. Oanalyserat över
    tröskel ger `needs_human`; tröskeln är ett val, förslagsvis 0,5 % av FTA. Antal och `C` stäms
    av mot beståndet. Leveranskontrollens oberoende kontrollfall körs vid varje motorversion.
-6. **Storheter.** Resultatscheman anger storhet (`C`, `G`, `V_g`, FTA, garantigap,
-   premieeffekt) och grund. En premieeffekt eller ett garantivärde kan inte presenteras som FTA.
+6. **Storheter.** Resultatscheman anger storhet (`C`, `G`, `V_g`, FTA, villkorad återbäring,
+   underskott, premieeffekt) och grund. En premieeffekt eller ett garantivärde kan inte
+   presenteras som FTA.
 7. **Ingen extern handling.** FI-rapport och inlämning är `external` och går bara via compliance
    och rapporteringsgatewayen, med människans godkännande av exakt fil, period och mottagare (§3.5).
 8. **Ansvar.** Agentens leverans är ett utkast tills människan har granskat den. Second opinion är
@@ -311,9 +366,9 @@ som inte skriver något, inte kör någon agent och inte är kopplad till system
 
 | Sida | Innehåll | Handlingar |
 |---|---|---|
-| **Översikt** | Årshjul med kommande leveranser och FI-frister; senaste låsta värdering; nyckeltal (FTA, kundkapital, garantigap, buffert, oanalyserat); öppna avvikelser; väntande granskningar | Starta periodens flöde |
+| **Översikt** | Årshjul med kommande leveranser och FI-frister; senaste låsta värdering; nyckeltal (FTA, villkorad återbäring, underskott till följd av garanti, oanalyserat, konsolideringsnivå); öppna avvikelser; väntande granskningar | Starta periodens flöde |
 | **Värderingar** | Lista per datum och grund med status (utkast, låst, rättad); detalj med indata och hashar, resultat per kohort och tillstånd, kontrollernas utfall | Kör värdering, jämför, lås (grind) |
-| **FTA-analys** | Vattenfall IB → steg 1–11 → UB, med FI-radkoppling; klick ner till kohort; oanalyserat markerat | Kommentera steg, godkänn analys |
+| **FTA-analys** | Vattenfall IB → steg 1–10 → UB, med FI-radkoppling; avstämning av villkorad återbäring; klick ner till kohort; oanalyserat markerat | Kommentera steg, godkänn analys |
 | **Bokföringsunderlag** | Avsättningsunderlag per period, verifikationsförslag, status och avstämning | Godkänn eller avslå förslag |
 | **Antaganden** | Grunder och versioner, diff mellan versioner, källor; erfarenhetsanalys | Skapa förslag, se känslighet, för in styrelsebeslut |
 | **Scenarier** | Välj bas; skjutreglage och fält för ränta, dödlighet, kostnad, avkastning och beteende; resultat bas mot scenario | Kör, spara, bifoga till rapport |
@@ -325,18 +380,19 @@ som inte skriver något, inte kör någon agent och inte är kopplad till system
 
 ```text
 ┌ Aktuarie ─ FTA-analys ────────────────── Period: 2026-Q4 ▾  Grund: SIM-V-2026-01 v1 ┐
-│ IB 2026-09-30   41,2 Mkr   ✓ = UB föregående låsta värdering                        │
+│ IB 2026-09-30   29,8 Mkr   ✓ = UB föregående låsta värdering                        │
 │                                                                                     │
-│  IB ████████████████████████████████████ 41,2                                       │
-│  + Premier          ███ +3,1                                     F2                 │
-│  − Utbetalningar    █ −0,4                                       F3                 │
-│  − Avgifter/skatt   ▏ −0,1                                       F4                 │
-│  + Avkastning       ██ +0,7                                      F5                 │
-│  ± Dödlighet        ▏ ±0,0                                       E1–E2              │
-│  ± Ränteantagande   ▏ −0,1                                       E17/F6             │
-│  ± Oanalyserat      ▏ 0,02  (0,05 % ✓ under tröskel 0,5 %)       E23                │
-│  UB ███████████████████████████████████████ 44,4                                    │
+│  IB ██████████████████████████████ 29,8                                             │
+│  + Premier (nya garantidelar)  ███ +3,1                          F2                 │
+│  − Garantigrund → FTA-grund    █ −1,05                           E8                 │
+│  − Utbetald pension            ▏ −0,3                            F3                 │
+│  + Förräntning                 ▏ +0,2                            F4/F5              │
+│  ± Dödlighet                   ▏ ±0,0                            E1–E2              │
+│  + Ändrad ränta                ▏ +0,4                            E17/F6             │
+│  ± Oanalyserat                 ▏ 0,05 (0,16 % ✓ under 0,5 %)     E23                │
+│  UB ████████████████████████████████ 32,2                                           │
 │                                                                                     │
+│ Villkorad återbäring 11,4 → 12,2 · underskott 0,25 → 0,30 · ΣVÅ − ΣU = ΣC − FTA ✓   │
 │ Kontroller: 7/7 ✓    Agentens kommentar (utkast) ▸    Second opinion: 0 avvikelser  │
 │ [Jämför med föregående kvartal]  [Öppna kohort]       [Godkänn och lås – G1]        │
 └─────────────────────────────────────────────────────────────────────────────────────┘
@@ -347,17 +403,18 @@ Talen är påhittade för skissen.
 ### 5.3 Skiss: Scenarier
 
 ```text
-┌ Aktuarie ─ Scenarier ─────────────── Bas: värdering 2026-12-31 (låst) ──────────────┐
+┌ Aktuarie ─ Scenarier ─────────────── Bas: värdering 2026-09-30 (låst) ──────────────┐
 │ Diskonteringsränta  [−100 ─────●───── +100] bp   −50                                │
 │ Dödsrisk            [−20 % ──●─────── +20 %]     −10 %                              │
 │ Driftkostnad        [ 0 % ●────────── +50 %]      0 %                               │
 │ Avkastningsbana     (●) 3 %  ( ) 0 %  ( ) chock −20 % aktier                        │
-│ [Kör scenario]                                    Scenario S-2026-014 · hash 9f3c…  │
+│ [Kör scenario]                                    Scenario S-2027-014 · hash 9f3c…  │
 │                                                                                     │
-│              Bas      Scenario    Δ                                                 │
-│ FTA          44,4     46,1       +1,7  Mkr                                          │
-│ Garantigap    0,3      0,9       +0,6  Mkr   (kohort 1959–62: dold < 10)            │
-│ PR-028-buff.  2,1      2,8       +0,7  Mkr                                          │
+│                        Bas    Scenario    Δ                                         │
+│ FTA                    29,8    33,1      +3,3  Mkr                                  │
+│ Villkorad återbäring   11,4     8,2      −3,2  Mkr                                  │
+│ Underskott (garanti)    0,25    0,42     +0,17 Mkr  (kohort 1959–62: dold < 10)     │
+│ Konsolideringsnivå     ej beräknad – tillgångssidan saknas                          │
 │ [Spara]  [Bifoga till rapport]  [Be agenten förklara]          SCENARIO – ej bas    │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -399,7 +456,7 @@ sig?). Mottagare VD och styrelse; underlag till compliance.
 | 3. Premier | Premievolym per år och månad, premietrappans fördelning, avvikelser | 🟡 Delvis (betalmarkerade premier) |
 | 4. Kapital och avkastning | Kundkapital, levererad avkastning, jämförelse med prognos 0/3/5 % | 🔲 Kräver `C` (paket B eller S-04) |
 | 5. Avgifter och kostnader | Avgiftsintäkt mot driftkostnad, kostnadsresultat | 🔲 Kräver ekonomi |
-| 6. Garanti | Garantinivå, garantigap per kohort, PR-028-buffert | 🔲 Kräver `G_j` och motor |
+| 6. Garanti och återbäring | Garantinivå, FTA, villkorad återbäring och underskott per kohort, PR-028-buffert | 🔲 Kräver `G_j` och motor |
 | 7. Risk- och dödlighetsutfall | Arvsvinster, utfall mot antagande | 🔲 Kräver utbetalningar och dödsfall |
 | 8. Känslighet | Scenarier enligt §3.4 | 🟡 Endast produktparametrar i dag |
 | 9. Kundutfall och värde | Prognostiserad pension per typfall, kostnadsandel, informationsbesked | 🟡 Typfall ur premiemotorn |
@@ -417,12 +474,12 @@ Förslaget startar inget bygge och ändrar inte prioriteringen i ATT_GORA (OC-3a
 
 | Steg | Leverans | Beroenden | Kan börja |
 |---|---|---|---|
-| **A0** | Designstopp *aktuarieteamets harness och arbetsyta* med val enligt §9 | Detta dokument | Efter dina svar |
+| **A0** | Designstopp: [beslutsförslag](AKTUARIETEAM_BESLUTSFORSLAG.md) | Detta dokument | Väntar på godkännande |
 | **A1** | Värderings- och förklaringskontrakt (projektplanens första kontraktsarbete) | A0 | Direkt efter A0 |
 | **A2** | Produktrapport v0 (avsnitt 1–3, 8, 9) och `get_portfolio_snapshot`, `get_premium_flows` | Befintliga data | Parallellt med A1 |
 | **A3** | Teamyta v1: översikt, rapporter och uppdrag på befintliga data | OC-8, A2 | Efter A2 |
 | **A4** | Antagandebibliotek som data (`valuation_bases`) med förslag och införande | A1 | Efter A1 |
-| **A5** | Startbestånd med `G_j` och `C` (rekonstruerat S-04 eller paket B) | A1, val Q4 | Efter beslut |
+| **A5** | Rekonstruerat startbestånd S-04 med `G_j` och `C` (svar Q4) | A1 | Efter A1 |
 | **A6** | Värderingsmotor med kontrollfall, `valuation_runs`, `lock_valuation` | A4, A5 | |
 | **A7** | Förändringsanalys och scenariomotor; sidorna FTA-analys och Scenarier | A6 | |
 | **A8** | Flödet `valuation_close`, avsättningsunderlag och rapportunderlag till compliance | A7, compliancekontrakt | |
@@ -431,20 +488,21 @@ Förslaget startar inget bygge och ändrar inte prioriteringen i ATT_GORA (OC-3a
 
 ---
 
-## 9. Öppna frågor till operatören
+## 9. Operatörens svar 2026-10-31
 
-| Nr | Fråga | Rekommendation |
+| Nr | Fråga | Svar |
 |---|---|---|
-| Q1 | FTA-metod för produkten (§3.1) | B först, C som senare utbyggnad |
-| Q2 | Rapporteringsnivå: verklig storlek (under trösklarna) eller "som om" större bolag, för att öva full kvartals- och EU-rapportering? | Verklig storlek, med rapportnivån som parameter |
-| Q3 | Vad avses med produktrapport: förslaget i §7, eller en annan rapport (t.ex. FI avsnitt C per produkt)? | §7 |
-| Q4 | Startbestånd: vänta på paket B eller rekonstruera `G_j`/`C` som märkt S-04? | Rekonstruera, märkt och ersättningsbart |
-| Q5 | Vem är ansvarig aktuarie och aktuariefunktion i simuleringen – du, eller en utsedd fiktiv roll med din inloggning? | Du som operatör, med rollen i sessionen |
-| Q6 | Diskonteringskurva: simulerad FI-kurva som versionerad indata nu, eller vänta på marknadsdata? | Versionerad indata nu; FI:s metodändring 2026 prövas av compliance |
-| Q7 | Ny agent för aktuariefunktionen, eller granskningsskill + människa (§4.1)? | Skill + människa |
+| Q1 | FTA-metod | Efterlikna Alecta: garanterat åtagande + villkorad återbäring (alternativ A, §3.1) |
+| Q1b | Var redovisas överskottet över garantin? | Villkorad återbäring som skuld, eftersom bolaget har en ägare (PR-028) |
+| Q2 | Rapporteringsnivå mot FI | Verklig storlek, med rapportnivån som parameter |
+| Q3 | Produktrapport | Förslaget i §7 |
+| Q4 | Startbestånd | Rekonstruera `G_j` och `C` som märkt S-04, ersätts när paket B finns |
+| Q5 | Ansvarig aktuarie och aktuariefunktion | Operatören (Karl), med rollen i sessionen |
+| Q6 | Diskonteringskurva | Versionerad indata nu; compliance prövar FI:s metodändring 2026 som källändring |
+| Q7 | Aktuariefunktionens granskning | Granskningsskill + människa, ingen egen agent |
 
-Efter svaren formuleras A0 som beslutsförslag med valbara alternativ. Ingen post i BESLUTSLOGG
-skrivs utan ditt godkännande.
+Svaren är underlag för [beslutsförslaget A0](AKTUARIETEAM_BESLUTSFORSLAG.md). Ingen post i
+BESLUTSLOGG skrivs utan operatörens godkännande av förslaget.
 
 ---
 
@@ -455,8 +513,12 @@ skrivs utan ditt godkännande.
 - [FI: FFFS 2019:22 i registret](https://www.fi.se/sv/vara-register/fffs/sok-fffs/2019/201922/)
 - [FFFS 2019:21 på lagen.nu](https://lagen.nu/fffs/2019:21) och
   [FPK:s aktuariella antaganden](https://lawinsider.com/sv/contracts/2or5sm5JCAh) – diskontering med swapräntor, negativa räntor
-- [Alecta: försäkringstekniska riktlinjer](https://www.alecta.se/media/f5inriwi/forsakringstekniska-riktlinjer.pdf)
-  och [KPA: försäkringstekniska riktlinjer](https://kpa.se/globalassets/trycksaker/kpa-tjanstepensionsforsakring---ftr---2026-01-01---oppen.pdf) – styrelsens beslut, aktuariefunktionens förslag
+- [Alecta: försäkringstekniska riktlinjer](https://www.alecta.se/media/f5inriwi/forsakringstekniska-riktlinjer.pdf),
+  beslutade av styrelsen 2025-12-18 – §4 FTA, §5 återköp och flytt, §6.2 premiebestämd
+  försäkring och retrospektivreserv
+- [Alecta: års- och hållbarhetsredovisning 2025](https://www.alecta.se/media/kgfg3n0t/alectas-ars-och-hallbarhetsredovisning-2025.pdf)
+  – förklaring av FTA-förändringen, konsolideringsnivå, not 1 om över- och underskott
+- [KPA: försäkringstekniska riktlinjer](https://kpa.se/globalassets/trycksaker/kpa-tjanstepensionsforsakring---ftr---2026-01-01---oppen.pdf) – styrelsens beslut, aktuariefunktionens förslag
 - [FI: kalibreringar RKK tjänstepension](https://www.fi.se/contentassets/77f3d56daed74051aed8044001cdcd37/kalibreringar-rkk-tjanstepension-ver-02.pdf) – riskkänsligt kapitalkrav
 - [Realtid 2026-06-16: FI ändrar regler för tjänstepension](https://www.realtid.se/bors-finans/fi-andrar-regler-tjanstepension/) – ändrad metod för diskonteringsräntan (ej kontrollerad mot FI)
 - [EIOPA/ECB: instruktioner för pensionsmallar](https://data.ecb.europa.eu/sites/default/files/2025-05/PensionFunds_instructions_ECB_add-on.pdf) – PF.29.05, PF.29.06
