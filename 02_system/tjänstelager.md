@@ -347,7 +347,8 @@ Beslutat av operatören 2026-10-25 (**B-035**, underlag i `02_system/flaggskepps
 |---|---|---|---|---|
 | `get_product_parameters` | `read` | Nej | `AGENT` | Värdena som gäller en dag (standard i dag) och alla versioner med giltighet, tillstånd (gällande, kommande, upphörd, återkallad), produktregel, källa och beslut. Sedan A5 även kapitalavgift och skattebelastning per år |
 | `schedule_product_parameter_change` | `write` | Nej | `APPROVAL` | Ny version från en framtida månadsförsta; den föregående avslutas dagen före (3c-P2) |
-| `withdraw_product_parameter_change` | `write` | Nej | `HUMAN_ONLY` | Drar tillbaka en version som inte börjat gälla; den föregående gäller igen tills vidare (3c-P2) |
+| `withdraw_product_parameter_change` | `write` | Nej | `HUMAN_ONLY` | Drar tillbaka en version som inte börjat gälla; den föregående gäller igen tills vidare (3c-P2). En årssats för skattebelastningen kan också dras tillbaka; föregående år förlängs då inte |
+| `schedule_customer_tax_rate` | `write` | Nej | `APPROVAL` | Kundbelastningen för avkastningsskatt för ett kalenderår, räknad ur SLR året före (PR-ITP1-023) |
 
 **Premieberäkningen följer parametrarna för premiemånaden.** `calculate_premium_preview` och `correct_premium_transaction` slår upp premieålder, satser och brytpunkter i `product_parameters` och skickar dem till premiemotorn. Versionerna står i `calculation_basis` (`parameters`, `age_window`).
 
@@ -370,6 +371,13 @@ Skrivoperationerna bär produktreglerna PR-ITP1-001, -013 och -032 (respektive -
 - *Konflikt:* en senare version finns. *Saknas:* ingen giltig version från dagen.
 
 En återkallad version ligger kvar som historik. Samma giltighetsdag kan inte återanvändas för parametern (unik nyckel och dag); välj en annan månad.
+
+**`schedule_customer_tax_rate`** – år, genomsnittlig SLR året före (andel), regelns version, källa och beslut. Satsen räknas i operationen, `0,15 × max(SLR, 0,005)` med sex decimaler, och gäller 1 januari–31 december det året. Den bär PR-ITP1-023 och -032 och är `APPROVAL`: en agent får föreslå, en människa godkänner. Den monteras inte i någon podd.
+
+- *Stöds:* nästa år, och innevarande år i efterhand. SLR för ett år publiceras först efter årsskiftet. Inget kan ha räknats på det nya året utan satsen, eftersom en saknad sats stoppar kapitalavräkningen (PR-ITP1-023).
+- *Blockeras:* andra år än innevarande och nästa; ett glapp, alltså att föregående år saknar sats; innevarande år när det redan finns sparade datautdrag från årets början.
+- *Konflikt:* året har redan en sats, även en återkallad (unik nyckel och dag); den rättas manuellt.
+- *Inte här:* kapitalavgiften (PR-ITP1-022). En ändring kräver PR-ITP1-030:s ändrings- och informationsprövning, inte bara ett nytt tal.
 
 ### 9.5 Beståndsinsikt för en parameterändring (Fas 3c, 3c-B) – vad som stöds och vad som spärras
 

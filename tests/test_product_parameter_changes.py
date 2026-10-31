@@ -197,3 +197,84 @@ def test_forhandsberakningen_foljer_den_schemalagda_versionen(service, insurance
     out = service.execute("calculate_premium_preview", HUMAN, preview).output
     assert out.total_premium_sek == Decimal("1800.00")
     assert out.calculation_basis["age_window"] == [25, 67]
+
+
+def tax(**overrides) -> dict:
+    return {"year": 2027, "slr_previous_year": "0.0250", "rule_version": "1.0",
+            "source_ref": "K-SKV-SLR", "decision_ref": "SKV A 2027:1", **overrides}
+
+
+class TestSkattebelastning:
+    """Årets kundbelastning för avkastningsskatt (PR-ITP1-023): 15 % × max(SLR året före, 0,5 %), ett år i taget."""
+
+    def test_satsen_for_nasta_ar_raknas_ur_slr_och_galler_bara_aret(self, service, insurance_db):
+        out = service.execute("schedule_customer_tax_rate", HUMAN, tax()).output
+        assert (out.value, out.rule_id, out.valid_from) == (Decimal("0.00375"), "PR-ITP1-023", date(2027, 1, 1))
+        assert (out.previous_value, out.previous_valid_to) == (Decimal("0.00354"), date(2026, 12, 31))
+        assert versions(insurance_db, "customer_tax_rate")[-2:] == [
+            (date(2026, 1, 1), date(2026, 12, 31), Decimal("0.003540"), "valid"),
+            (date(2027, 1, 1), date(2027, 12, 31), Decimal("0.003750"), "valid")]
+        from services.parameters import capital_rates
+
+        with insurance_db.session_factory() as s:
+            rates = capital_rates(s, [date(2027, 1, 1), date(2027, 12, 1)])
+        assert {r[1] for r in rates.values()} == {Decimal("0.00375")}
+
+    @pytest.mark.parametrize("slr, rate", [("0.0146", "0.00219"), ("0.0248", "0.00372"), ("0.0215", "0.003225"),
+                                           ("0.0236", "0.00354"), ("0.003", "0.00075"), ("-0.001", "0.00075")])
+    def test_formeln_ger_registrets_satser_och_golvet(self, slr, rate):
+        from services.operations.product_parameters import customer_tax_rate
+
+        assert customer_tax_rate(Decimal(slr)) == Decimal(rate)
+
+    @pytest.mark.parametrize("year", [2025, 2028, 2030])
+    def test_bara_innevarande_eller_nasta_ar(self, service, year):
+        with pytest.raises(BlockedError, match="innevarande år"):
+            service.execute("schedule_customer_tax_rate", HUMAN, tax(year=year))
+
+    def test_innevarande_ar_i_efterhand_men_inte_efter_sparat_utdrag(self, service, insurance_db, monkeypatch):
+        from models import ValuationExtractRecord
+
+        monkeypatch.setattr(common, "today", lambda: date(2027, 1, 10))  # SLR för 2026 publiceras i januari
+        with insurance_db.session_factory() as s:
+            s.add(ValuationExtractRecord(valuation_date=date(2027, 1, 31), source="reconstructed_s04", checksum="0" * 64,
+                                         approved=True, policies=0, guarantee_parts=0, capital_sek=Decimal(0),
+                                         content={}, created_by="test"))
+            s.commit()
+        with pytest.raises(BlockedError, match="sparade datautdrag"):
+            service.execute("schedule_customer_tax_rate", HUMAN, tax())
+        with insurance_db.session_factory() as s:
+            s.query(ValuationExtractRecord).delete()
+            s.commit()
+        assert service.execute("schedule_customer_tax_rate", HUMAN, tax()).output.valid_from == date(2027, 1, 1)
+
+    def test_ett_ar_en_gang_och_inget_glapp(self, service, insurance_db):
+        service.execute("schedule_customer_tax_rate", HUMAN, tax())
+        with pytest.raises(ConflictError, match="redan en sats"):
+            service.execute("schedule_customer_tax_rate", HUMAN, tax(slr_previous_year="0.03"))
+        with insurance_db.session_factory() as s:
+            s.query(ProductParameter).filter(ProductParameter.key == "customer_tax_rate",
+                                             ProductParameter.valid_from == date(2027, 1, 1)).delete()
+            s.query(ProductParameter).filter(ProductParameter.key == "customer_tax_rate",
+                                             ProductParameter.valid_from == date(2026, 1, 1)).delete()
+            s.commit()
+        with pytest.raises(BlockedError, match="2026 saknas"):
+            service.execute("schedule_customer_tax_rate", HUMAN, tax())
+
+    def test_kommande_sats_dras_tillbaka_utan_att_foregaende_ar_forlangs(self, service, insurance_db):
+        service.execute("schedule_customer_tax_rate", HUMAN, tax())
+        out = service.execute("withdraw_product_parameter_change", HUMAN,
+                              {"key": "customer_tax_rate", "valid_from": "2027-01-01"}).output
+        assert (out.previous_value, out.previous_valid_to) == (Decimal("0.00354"), date(2026, 12, 31))
+        assert versions(insurance_db, "customer_tax_rate")[-1][3] == "withdrawn"
+        assert versions(insurance_db, "customer_tax_rate")[-2][1] == date(2026, 12, 31)
+        with pytest.raises(ConflictError, match="återkallad"):
+            service.execute("schedule_customer_tax_rate", HUMAN, tax())
+
+    def test_agenten_foreslar_och_manniskan_godkanner(self, service, insurance_db):
+        assert service.decision("schedule_customer_tax_rate").effective is AgentAccess.APPROVAL
+        result = service.execute("schedule_customer_tax_rate", AGENT, tax())
+        assert result.status.value == "pending_approval"
+        assert versions(insurance_db, "customer_tax_rate")[-1][0] == date(2026, 1, 1)
+        done = service.approve(result.approval_id, APPROVER, note="SLR kontrollerad mot SKV")
+        assert done.output.value == Decimal("0.00375")

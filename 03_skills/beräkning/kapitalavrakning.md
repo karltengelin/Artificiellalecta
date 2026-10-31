@@ -27,7 +27,8 @@ Varje månad, för hela kollektivet:
 Satserna är versionerad data i `product_parameters` (`capital_fee_rate`, `customer_tax_rate`), inte
 konstanter i koden. Datautdraget slår upp månadens versioner med `services.parameters.capital_rates`
 och sparar vilka versioner som användes. Skattebelastningen har en version per kalenderår, så ett år
-utan beslutad sats stoppar avräkningen (PR-023).
+utan beslutad sats stoppar avräkningen (PR-023). Nästa års sats läggs in med `schedule_customer_tax_rate`
+ur SLR året före (`tjänstelager.md` §9.4).
 
 Det som inte kan debiteras avstås av bolaget och redovisas som avstått. Arvsvinst och
 pensionsdebitering ingår inte: beståndet har inga dödsfall eller påbörjade uttag, så poolen är noll.

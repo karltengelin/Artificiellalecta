@@ -223,7 +223,7 @@ Kopplingen ska kontrolleras mot gällande konsoliderad FFFS 2019:22 innan rappor
 |---|---|---|
 | Premiehistorik och bestånd i tjänstelagret | S-04 | Projekt 1 (finns) |
 | `AVK-SIM-2026` avkastningsserie | `C` | Aktuarien tills kapitalförvaltningen återupptas |
-| SLR per år i parameterregistret och skattebelastningen per år i `product_parameters` | Skatt (S) och kapitalets skattebelastning i S-04 | Projekt 4 (finns 2023–2026; 2027 behövs före 2027-01) |
+| SLR per år i parameterregistret och skattebelastningen per år i `product_parameters` | Skatt (S) och kapitalets skattebelastning i S-04 | Projekt 4 (finns 2023–2026; 2027 läggs in med `schedule_customer_tax_rate` när SLR för 2026 är publicerad) |
 | Syntetisk FI-kurva | R | Aktuarien, med compliance för metoden |
 | Paket B | Ersätter S-04, utbetalningar och dödsfall | Projekt 1/6 |
 | Begreppsavstämning kundkapital/villkorad återbäring | Kundinformation | Projekt 4 (B-042) |
