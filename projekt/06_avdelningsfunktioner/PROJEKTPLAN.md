@@ -37,6 +37,8 @@ byggda grunden och innebär inte att dessa bredare funktioner är implementerade
 - [Agentkarta](../../02_system/agentkarta.md), aktuarieprofil och avgränsad
   premieeffektanalys; ekonomi- och rapporteringsagenter är fortfarande planerade.
 - [Processöversikt](../../01_domän/processer_översikt.md), V-10–12 och paket A/B.
+- [Aktuarieteamet – utredning och planförslag](AKTUARIETEAM_PLAN.md) (2026-10-31, ej beslutat):
+  arbetsår, FI-rapportering, FTA-analys, harness, arbetsyta och produktrapport.
 
 ## Nästa kontraktsarbete att förbereda
 
