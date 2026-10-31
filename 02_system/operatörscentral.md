@@ -24,6 +24,13 @@
 
 ## 1. VD-nivå och specialiserade arbetsytor
 
+**Operatörens målbild 2026-10-31:** teamytorna ska ha öppna samtal med respektive
+teamledare, och *Fråga bolaget* en samordnande LLM-funktion som kan beställa och
+följa upp flera teams bidrag. Ingen fördefinierad meny över tillåtna frågor.
+[Designunderlaget för öppna frågor](oppna_fragor_beslutsforslag.md) skiljer
+detta krav från föreslagna interna kontrakt och befintligt stöd. Den första
+avgränsade frågekedjan är byggd enligt B-041; den öppna samordningen återstår.
+
 Centralen samlar bolagets läge, teamens leveranser och kostnader, analysfrågor
 och inriktningsbeslut. Enskilda handläggarärenden och deras godkännanden
 stannar i specialistgränssnitten. En sammanlagd avvikelse kan motivera en
