@@ -63,9 +63,10 @@ class TestStartgrunder:
         out = service.execute("list_valuation_bases", KARL, {}).output
         states = {b.code: b.state for b in out.bases}
         assert states == {"SIM-HIST-2023-01": "upphörd", "SIM-G-2026-01": "gällande", "SIM-B-2026-01": "gällande",
-                          "SIM-R-2026-01": "gällande", "FI-SIM-2026-10": "gällande", "SIM-V-2026-01": "kommande"}
+                          "SIM-R-2026-01": "gällande", "FI-SIM-2026-10": "gällande", "SIM-V-2026-01": "kommande",
+                          "AVK-SIM-2026-01": "gällande"}
         assert out.in_force == {"FI-SIM": "FI-SIM-2026-10", "SIM-B": "SIM-B-2026-01", "SIM-G": "SIM-G-2026-01",
-                                "SIM-R": "SIM-R-2026-01"}
+                                "SIM-R": "SIM-R-2026-01", "AVK-SIM": "AVK-SIM-2026-01"}
         assert all(b.checksum_ok for b in out.bases)
 
     def test_historisk_dag_visar_historikgrunden(self, service):
@@ -80,6 +81,22 @@ class TestStartgrunder:
         curve = service.execute("get_valuation_basis", KARL, {"code": "FI-SIM-2026-10"}).output.assumptions
         rates = {p["term_years"]: p["spot_rate"] for p in curve["points"]}
         assert curve["synthetic"] and (rates[1], rates[20], rates[150]) == ("0.0250", "0.0300", "0.0340")
+
+    def test_avkastningsserien(self, service):
+        series = service.execute("get_valuation_basis", KARL, {"code": "AVK-SIM-2026-01"}).output.assumptions
+        months = series["months"]
+        assert series["synthetic"] and len(months) == 46
+        assert (months[0]["month"], months[-1]["month"]) == ("2023-01-01", "2026-10-01")
+        from decimal import Decimal
+        growth = Decimal(1)
+        for m in months[:12]:
+            growth *= 1 + Decimal(m["rate"])
+        assert f"{(growth - 1) * 100:.2f}" == "7.07"  # helåret 2023 enligt kommentaren i START_BASES
+
+    def test_avkastningsserien_ska_vara_i_foljd(self):
+        with pytest.raises(vb.BasisError, match="i följd"):
+            vb.normalize("return_series", {"synthetic": True, "description": "x", "months": [
+                {"month": "2023-01-01", "rate": "0.01"}, {"month": "2023-03-01", "rate": "0.01"}]})
 
     def test_kontrollsumman_ar_deterministisk(self):
         first, second = vb.default_rows(), vb.default_rows()
@@ -208,6 +225,16 @@ class TestMigration:
         assert [s.split()[2] for s in statements if s.startswith("CREATE TABLE")] == ["valuation_bases"]
         assert any("uq_valuation_bases_one_open" in s and "WHERE" in s for s in statements)
 
+    def test_uppgraderingen_byter_bara_villkoren(self):
+        from sqlalchemy.dialects import postgresql
+
+        from utils.migration_valuation_bases import compile_upgrade
+
+        statements = compile_upgrade(postgresql.dialect(), ["ck_valuation_bases_family"])
+        assert statements[0] == "ALTER TABLE valuation_bases DROP CONSTRAINT IF EXISTS ck_valuation_bases_family"
+        assert statements[1].startswith("ALTER TABLE valuation_bases ADD CONSTRAINT ck_valuation_bases_family")
+        assert "'AVK-SIM'" in statements[1] and len(statements) == 2
+
     def test_migrationen_mot_postgres(self):
         from tests.conftest import seed_insurance
         from tests.test_services_postgres import TEST_URL, isolated_schema
@@ -230,3 +257,19 @@ class TestMigration:
                 assert sorted(r.code for r in rows) == sorted(c for c, *_ in vb.START_BASES)
                 for row in rows:
                     vb.verify_checksum(row)  # JSONB ger samma kanoniska text
+
+            # A4-läget i Lakebase: villkoret utan AVK-SIM och utan avkastningsserien – uppgraderingen fyller på
+            with lakebase_like.engine.begin() as conn:
+                conn.exec_driver_sql("DELETE FROM valuation_bases WHERE family = 'AVK-SIM'")
+                conn.exec_driver_sql("ALTER TABLE valuation_bases DROP CONSTRAINT ck_valuation_bases_family")
+                conn.exec_driver_sql("ALTER TABLE valuation_bases ADD CONSTRAINT ck_valuation_bases_family CHECK "
+                                     "(family IN ('SIM-G', 'SIM-HIST', 'SIM-B', 'SIM-R', 'SIM-V', 'FI-SIM'))")
+            dry = migrate_valuation_bases(lakebase_like.engine)
+            assert dry.upgrade and not dry.applied and dry.seeded == ["AVK-SIM-2026-01"]
+            assert len(dry.statements) == 4  # familj och ändamål: DROP + ADD
+            done = migrate_valuation_bases(lakebase_like.engine, dry_run=False)
+            assert done.applied and done.row_counts == dry.row_counts
+            assert migrate_valuation_bases(lakebase_like.engine, dry_run=False).already_applied
+            with lakebase_like.session_factory() as s:
+                avk = s.scalar(select(ValuationBasis).where(ValuationBasis.code == "AVK-SIM-2026-01"))
+                vb.verify_checksum(avk)

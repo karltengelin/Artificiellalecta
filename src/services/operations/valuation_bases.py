@@ -29,7 +29,7 @@ from services.operations import common
 from services.operations.product_parameters import first_of_next_month
 
 STATE_TEXT = {"proposed": "förslag", "rejected": "avslagen"}
-CODE_PATTERN = r"^(SIM-G|SIM-HIST|SIM-B|SIM-R|SIM-V|FI-SIM)-\d{4}-\d{2}$"
+CODE_PATTERN = r"^(SIM-G|SIM-HIST|SIM-B|SIM-R|SIM-V|FI-SIM|AVK-SIM)-\d{4}-\d{2}$"
 
 
 class ListQuery(BaseModel):

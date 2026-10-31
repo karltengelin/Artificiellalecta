@@ -619,8 +619,8 @@ Append-only: ett beslut är en ny rad, ingen rad ändras.
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK | |
 | `code` | `VARCHAR(30)` | NOT NULL, UNIQUE | T.ex. `SIM-V-2026-01`, `FI-SIM-2026-10` |
-| `family` | `VARCHAR(20)` | NOT NULL, CHECK | `SIM-G`, `SIM-HIST`, `SIM-B`, `SIM-R`, `SIM-V` eller `FI-SIM` |
-| `purpose` | `VARCHAR(20)` | NOT NULL, CHECK | `guarantee`, `payout`, `risk`, `valuation` eller `discount_curve` |
+| `family` | `VARCHAR(20)` | NOT NULL, CHECK | `SIM-G`, `SIM-HIST`, `SIM-B`, `SIM-R`, `SIM-V`, `FI-SIM` eller `AVK-SIM` (sedan A5) |
+| `purpose` | `VARCHAR(20)` | NOT NULL, CHECK | `guarantee`, `payout`, `risk`, `valuation`, `discount_curve` eller `return_series` |
 | `title` | `VARCHAR(200)` | NOT NULL | |
 | `assumptions` | `JSONB` | NOT NULL | Antagandena i normaliserad form enligt ändamålets schema |
 | `checksum` | `VARCHAR(64)` | NOT NULL, CHECK längd 64 | SHA-256 av kanonisk JSON; prövas vid läsning |
@@ -639,6 +639,7 @@ Partiellt unikt index: högst en antagen, inte avslutad grund per familj (`uq_va
 - `SIM-G-2026-01`, `SIM-B-2026-01` och `SIM-R-2026-01` gäller från 2026-11-01 (B-031).
 - Den syntetiska kurvan `FI-SIM-2026-10` gäller från 2026-10-31 (B-042, A1 M1).
 - `SIM-V-2026-01` gäller från 2026-12-31 (B-042, A1 M2–M5).
+- `AVK-SIM-2026-01` gäller från 2023-01-01 (A5, operatörens val 2026-10-31). Det är en syntetisk varierande månadsavkastning 2023-01–2026-10 för rekonstruktionen av pensionskapitalet. Avkastningen är räknad efter direkta placeringskostnader men före avgift och skatt (PR-ITP1-021). **Inte införd i Lakebase:** familjen kräver uppgraderade villkor, se §12.
 
 **Läses av** `list_valuation_bases` och `get_valuation_basis` (`AGENT`, podden `antaganden`). **Skrivs av** migrationen (startgrunderna), `propose_valuation_basis` (`APPROVAL`, PR-ITP1-031), `adopt_valuation_basis` och `reject_valuation_basis` (`HUMAN_ONLY`), med radlås på familjens antagna grunder (`tjänstelager.md` §9.7). `agent_aktuarie` får `SELECT`. Inga personuppgifter.
 
@@ -687,6 +688,7 @@ Partiellt unikt index: högst en antagen, inte avslutad grund per familj (`uq_va
   - radantalen kontrolleras före och efter.
 
   Migrationen lägger in startgrunderna och prövar varje kontrollsumma. Minsta avvikelse rullar tillbaka allt. Verifierat mot isolerad Postgres 2026-10-31 (`tests/test_valuation_bases.py`). **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --team aktuarie --apply`. **Körd mot Lakebase 2026-10-31** efter backup `backups/20261031T124616Z` och torrkörning, med operatörens OK: tabellen och de sex startgrunderna skapade, radantalen i övriga tabeller oförändrade och en andra körning gjorde ingenting. Därefter sattes `agent_aktuarie`s rättigheter, också OC-3a:s kolumnrätter (B-041). Verifierat med rollens egen anslutning: läser grunderna och kontrollsummorna stämmer; nekas UPDATE, DELETE och INSERT på tabellen
+- **A5 (2026-10-31) – uppgradering av `valuation_bases`:** samma skript, `migrate_valuation_bases.py`, uppgraderar en befintlig tabell. Villkoren för familj och ändamål byts till modellens (familjen `AVK-SIM`, ändamålet `return_series`) och startgrunder som saknas läggs in. Befintliga grunder ändras inte. Allt sker i en transaktion med torrkörning som standard, kontroll av kontrollsummor och radantal, och skriptet är idempotent. **Ej körd mot Lakebase**
 
 ---
 

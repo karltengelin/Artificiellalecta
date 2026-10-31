@@ -3,7 +3,8 @@
 Se 02_system/databasschema.md §9j och projekt/06_avdelningsfunktioner/VARDERINGSKONTRAKT.md §4.
 Varje rad är en grund med ett oföränderligt innehåll (`assumptions`) och dess kontrollsumma:
 garantigrunderna SIM-G/SIM-HIST, utbetalningsgrunden SIM-B, riskgrunden SIM-R,
-värderingsgrunden SIM-V och de syntetiska diskonteringskurvorna FI-SIM. En grund föreslås,
+värderingsgrunden SIM-V, de syntetiska diskonteringskurvorna FI-SIM och den deklarerade
+avkastningsserien AVK-SIM. En grund föreslås,
 antas med giltighetsdag och beslutsreferens och avslutas när en nyare grund i samma familj
 antas. Innehållet ändras aldrig efter att raden skapats (B-027: historiska grunder bevaras).
 
@@ -30,6 +31,7 @@ BASIS_FAMILIES = {
     "SIM-R": "risk",
     "SIM-V": "valuation",
     "FI-SIM": "discount_curve",
+    "AVK-SIM": "return_series",  # deklarerad avkastning för S-04 tills kapitalförvaltningen levererar
 }
 BASIS_STATUSES = ("proposed", "adopted", "rejected")
 _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgresql")

@@ -104,7 +104,7 @@ refererar till det.
   Grunden är SIM-HIST-2023-01 för 2023-01 till och med 2026-10 och SIM-G-2026-01 därefter
   (`PARAMETERREGISTER.md`).
 - **Pensionskapital:** `C` rullas fram månad för månad enligt PR-020:s ordning. Avkastningen
-  kommer ur den versionerade serien `AVK-SIM-2026`. Därefter dras kapitalavgift (PR-022) och
+  kommer ur den versionerade serien `AVK-SIM-2026-01` i antagandebiblioteket (syntetisk varierande bana, operatörens val 2026-10-31). Därefter dras kapitalavgift (PR-022) och
   skattebelastning (PR-023). Månadens premier tillförs vid månadsslut, och arvsvinst fördelas
   enligt PR-011 med SIM-R.
 - **Utbetalningar:** demobeståndet har inga påbörjade uttag. Om sådana finns räknas de enligt

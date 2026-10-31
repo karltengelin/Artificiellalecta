@@ -439,7 +439,7 @@ Beslutat i **B-042** (val C och I) och värderingskontraktet A1 §4. Kod: `src/s
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
-| `list_valuation_bases` | `read` | Nej | `AGENT` | Grunder och kurvor med status, giltighet, beslut och kontrollsumma, och den gällande grunden per familj en viss dag |
+| `list_valuation_bases` | `read` | Nej | `AGENT` | Grunder, kurvor och avkastningsserier (`AVK-SIM`, sedan A5) med status, giltighet, beslut och kontrollsumma, och den gällande grunden per familj en viss dag |
 | `get_valuation_basis` | `read` | Nej | `AGENT` | En grund med alla antaganden. Ett innehåll som inte stämmer med kontrollsumman stoppar läsningen |
 | `propose_valuation_basis` | `write` | Nej | `APPROVAL` | Ny grund som förslag. Innehållet prövas mot ändamålets schema. Förslaget gäller inte |
 | `adopt_valuation_basis` | `write` | Nej | `HUMAN_ONLY` | Antar ett förslag med giltighetsdag och beslutsreferens. Den gällande grunden i familjen avslutas dagen före |

@@ -1,8 +1,9 @@
-"""Schemamigration för A4 mot Lakebase: antagandebiblioteket `valuation_bases` (databasschema.md §9j, §12, B-042).
+"""Schemamigration mot Lakebase: antagandebiblioteket `valuation_bases` (databasschema.md §9j, §12, B-042).
 
-Skapar bara valuation_bases med index och startgrunderna (SIM-HIST/G/B/R-…, SIM-V-2026-01 och den
-syntetiska kurvan FI-SIM-2026-10), i en transaktion. Ändrar inga befintliga tabeller eller rader och
-kontrollerar radantal och kontrollsummor. Idempotent: finns tabellen redan görs ingenting.
+Saknas tabellen skapas den med index och startgrunderna (A4). Finns den uppgraderas villkoren för
+familj och ändamål till modellen och startgrunder som saknas läggs in, t.ex. avkastningsserien
+AVK-SIM-2026-01 (A5). Allt i en transaktion; befintliga grunder och övriga tabeller ändras inte, och
+radantal och kontrollsummor kontrolleras. Idempotent: är allt aktuellt görs ingenting.
 
 Standard är torrkörning: visar SQL, startgrunder och radantal, ändrar ingenting. En skarp körning
 kräver --apply och --backup med backupmappen, så att den inte kan köras utan backup. Körs mot den
@@ -44,9 +45,10 @@ def main() -> None:
 
     result = migrate_valuation_bases(make_engine(), dry_run=not args.apply)
     if result.already_applied:
-        print("Tabellen valuation_bases finns redan – ingenting gjort.")
+        print("Tabellen valuation_bases och startgrunderna är aktuella – ingenting gjort.")
         return
-    print("--- MIGRERAT ---" if result.applied else "--- TORRKÖRNING (inget ändrat) ---")
+    print(("--- MIGRERAT" if result.applied else "--- TORRKÖRNING (inget ändrat)")
+          + (", uppgradering av befintlig tabell ---" if result.upgrade else ", ny tabell ---"))
     for statement in result.statements:
         print(statement.rstrip() + ";\n")
     print(f"Startgrunder: {', '.join(result.seeded)}")
@@ -54,7 +56,7 @@ def main() -> None:
     for name, count in result.row_counts.items():
         print(f"  {name}: {count}")
     if not result.applied:
-        print("Kör med --apply --backup <mapp> för att skapa tabellen.")
+        print("Kör med --apply --backup <mapp> för att genomföra.")
 
 
 if __name__ == "__main__":

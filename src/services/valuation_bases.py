@@ -79,6 +79,35 @@ class CurveAssumptions(_Strict):
         return points
 
 
+class MonthlyReturn(_Strict):
+    month: date = Field(description="Månadsförsta")
+    rate: Decimal = Field(ge=-1, le=1, description="Avkastning under månaden, t.ex. 0.012 = 1,2 %")
+
+
+class ReturnSeriesAssumptions(_Strict):
+    """Deklarerad månadsavkastning för rekonstruktionen av pensionskapitalet (S-04, PR-ITP1-021).
+
+    Avkastningen är efter direkta placeringskostnader men före kapitalavgiften och
+    avkastningsskattebelastningen, som dras separat (PR-ITP1-022/023).
+    """
+
+    synthetic: bool = Field(description="Syntetisk bana, inte kapitalförvaltningens leverans")
+    description: str = Field(min_length=1, max_length=500)
+    definition: Literal["after_direct_costs_before_fee_and_tax"] = "after_direct_costs_before_fee_and_tax"
+    months: list[MonthlyReturn] = Field(min_length=1)
+
+    @field_validator("months")
+    @classmethod
+    def _consecutive(cls, months: list[MonthlyReturn]) -> list[MonthlyReturn]:
+        for previous, current in zip(months, months[1:]):
+            expected = date(previous.month.year + (previous.month.month == 12), previous.month.month % 12 + 1, 1)
+            if current.month != expected:
+                raise ValueError(f"Månaderna ska vara i följd: {current.month} efter {previous.month}")
+        if any(m.month.day != 1 for m in months):
+            raise ValueError("Varje månad anges med månadsförsta")
+        return months
+
+
 class Tax(_Strict):
     rate: Decimal = Field(ge=0, le=1, description="Skattesats på schablonintäkten")
     slr_floor: Decimal = Field(ge=0, le=Decimal("0.1"))
@@ -108,6 +137,7 @@ SCHEMAS: dict[str, type[_Strict]] = {
     "risk": RiskAssumptions,
     "valuation": ValuationAssumptions,
     "discount_curve": CurveAssumptions,
+    "return_series": ReturnSeriesAssumptions,
 }
 
 
@@ -185,6 +215,24 @@ START_BASES: tuple[tuple[str, str, dict[str, Any], date, date | None, str, str],
      date(2026, 12, 31), None, "B-042; A1 M2–M5 fastställda 2026-10-31",
      "VARDERINGSKONTRAKT.md §4; PR-ITP1-023; Alecta FTR §4"),
 )
+#: AVK-SIM-2026-01: syntetisk varierande bana 2023-01–2026-10 i procent per månad (operatörens val 2026-10-31).
+#: Helår: 2023 +7,07 %, 2024 +9,20 %, 2025 +4,84 %; 2026 januari–oktober +2,09 %.
+_RETURN_PATH = {
+    2023: "2.10 -1.20 0.40 0.90 0.30 1.40 1.30 -0.80 -1.80 -1.50 3.30 2.60",
+    2024: "0.80 1.60 1.90 -1.60 1.70 1.20 0.60 0.50 1.10 -0.40 1.80 -0.30",
+    2025: "1.90 -0.50 -2.40 -3.10 2.80 1.30 1.40 0.70 1.10 1.20 -0.30 0.80",
+    2026: "1.10 0.60 -1.40 0.90 -0.70 0.40 1.20 -0.50 0.30 0.20",
+}
+START_BASES += (
+    ("AVK-SIM-2026-01", "Syntetisk avkastningsserie för rekonstruerat startbestånd",
+     {"synthetic": True,
+      "description": "Syntetisk varierande bana 2023-01–2026-10 för en traditionell portfölj, ungefär 55 % räntor, "
+                     "35 % aktier och 10 % kassa. Inte kapitalförvaltningens leverans.",
+      "months": [{"month": date(y, m + 1, 1).isoformat(), "rate": str(Decimal(r) / 100)}
+                 for y, rates in _RETURN_PATH.items() for m, r in enumerate(rates.split())]},
+     date(2023, 1, 1), None, "Operatörens val 2026-10-31: syntetisk varierande bana (A5)",
+     "AKTUARIETEAM_PLAN.md §3.5; VARDERINGSKONTRAKT.md §5.2; PR-ITP1-021"),
+)
 SEED_ACTOR = "system:seed"
 
 
@@ -213,7 +261,8 @@ def add_missing_defaults(session: Session) -> int:
 
 
 __all__ = [
-    "SCHEMAS", "START_BASES", "BasisError", "CurveAssumptions", "GuaranteeAssumptions", "RiskAssumptions",
+    "SCHEMAS", "START_BASES", "BasisError", "CurveAssumptions", "GuaranteeAssumptions", "ReturnSeriesAssumptions",
+    "RiskAssumptions",
     "ValuationAssumptions", "add_missing_defaults", "checksum", "default_rows", "family_of", "in_force",
     "normalize", "verify_checksum",
 ]
