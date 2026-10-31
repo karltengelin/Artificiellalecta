@@ -17,5 +17,7 @@ from services.operations import (  # noqa: F401
     portfolio_impact,
     premiums,
     product_parameters,
+    product_report_data,
     salary,
+    valuation_bases,
 )

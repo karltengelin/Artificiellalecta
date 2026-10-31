@@ -341,6 +341,9 @@ class CaseWorkspace:
                     try:
                         self.trusted.complete_case_automatically(work_id, ident, policy_path=self.policy_path)
                     except (ApprovalError, ValueError):
+                        decided = self.trusted.approvals.get(ident)
+                        if decided and decided.status in {"approved", "rejected"}:
+                            continue  # en annan arbetare hann avgöra; följ det sparade beslutet
                         with self.session_factory() as session:
                             row = session.get(CaseWork, work_id)
                             row.result = {**row.result, "automatic_stopped": True}

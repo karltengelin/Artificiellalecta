@@ -243,7 +243,7 @@ centralens route kan gå över till den. Adaptern tar renderaren som argument. C
 Codex rendering och webbvyer är lokalt byggda 2026-10-28; se
 [rapportens struktur](../06_design/rapportmall.md#oc-3a-deterministisk-markdown-till-pdf) och
 [webbvyer och anslutning](fragekedja_webb.md). Samordnat röktest med den ordinarie renderaren och
-DM Sans återstår. Kolumnrätterna är inte satta i Lakebase.
+DM Sans återstår. Kolumnrätterna sattes i Lakebase 2026-10-31 efter backup `backups/20261031T124616Z` och operatörens OK, i samma körning som antagandebibliotekets läsrätt (A4, B-042); `get_company_metrics` fungerar med rollens egen anslutning.
 
 *2026-10-28:* röktestskriptet för steg 4 (`scripts/diagnostics/smoke_test_question.py`) är klart och kört i demo med riktig modell: 19 av 19 kontroller efter två rättelser – talkontrollen godtar nu periodens sista dag (perioden enligt §6), och resultatschemat säger att en precisering utanför underlaget ger `unavailable`. Rapporten renderades provisoriskt. Kolumnrätternas torrkörning mot Lakebase passerar förkontrollen; `--apply` väntar på backup och operatörens OK.
 

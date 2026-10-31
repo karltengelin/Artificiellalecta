@@ -123,6 +123,15 @@ def test_ledningsaggregatet_med_aktuariens_roll(db):
     assert out.insured_count is not None and out.insured_count >= 10
 
 
+def test_produktrapportens_aggregat_med_aktuariens_roll(db):
+    """A2, B-042: dagens tabell- och kolumnrätter räcker för bestånd och premieflöden."""
+    service = actuary_service(db)
+    snapshot = service.execute("get_portfolio_snapshot", ACTUARY, {"year": 2026}).output
+    assert snapshot.policies_total is not None and snapshot.policies_total >= 10
+    flows = service.execute("get_premium_flows", ACTUARY, {"year": 2026}).output
+    assert flows.total_state in {"available", "suppressed"} and flows.months
+
+
 def test_bestandsinsikten_med_aktuariens_roll(db):
     before = events(db)
     out = actuary_service(db).execute("estimate_parameter_change_impact", ACTUARY, ESTIMATE).output

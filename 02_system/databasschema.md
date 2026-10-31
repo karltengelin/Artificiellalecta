@@ -20,9 +20,11 @@
 | `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟢 I drift (seedad 2023–2026) |
 | `operation_events` / `approval_requests` | Tjänstelagrets händelselogg och godkännandekö (§9b–9c) | 🟢 Skapade i Lakebase i Fas 1f T3a; kö/logg används av tjänstelagret och UI:t |
 | `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad med agentrollens läsrätt i Lakebase 2026-10-24. Slutverifiering av agentflödet återstår i F5-5–6 |
+| `case_work` / `case_messages` / `case_work_days` | Varaktiga ärendeuppdrag, skyddad dialog och daglig budgetbok (§12b) | 🟡 Byggda lokalt 2026-10-31; införande i Lakebase återstår |
 | `product_parameters` | Versionerade premieåldrar, premiesatser och brytpunkter (§9h) | 🟢 Skapad och seedad i Lakebase 2026-10-25; agentrollens läsrätt satt. Förändringsoperationer finns; komplett flödesverifiering återstår i 3c-V |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
 | `flows` / `flow_steps` / `flow_gate_decisions` | Flödesmotorn i harness: flöden, steg och grindbeslut (§9i) | 🟡 Fas 3c 3c-2: modeller, motor och tester; migrationen verifierad mot isolerad Postgres; 🟢 skapade i Lakebase 2026-10-26 efter backup `backups/20261026T200423Z` och operatörens OK (tomma, inga agenträttigheter) |
+| `valuation_bases` | Antagandebiblioteket: aktuariella grunder och diskonteringskurvor med oföränderligt innehåll (§9j) | 🟡 A4 (B-042): modell, operationer, startgrunder och tester; 🟢 skapad och seedad i Lakebase 2026-10-31 efter backup `backups/20261031T124616Z` och operatörens OK; läsrätt för `agent_aktuarie` satt |
 
 **Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för försäkringens läge. Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
@@ -606,6 +608,41 @@ Append-only: ett beslut är en ny rad, ingen rad ändras.
 
 ---
 
+---
+
+## 9j. Tabell: `valuation_bases` – Antagandebiblioteket
+
+> **Status:** Beslutad i **B-042** (val C och I), byggd lokalt i A4 2026-10-31. Migrationen `scripts/migrations/migrate_valuation_bases.py` är verifierad mot isolerad Postgres 2026-10-31 (`svc_test`): skapar tabellen och startgrunderna, kontrollsummorna håller efter JSONB, idempotent och övriga radantal oförändrade. **Skapad i Lakebase 2026-10-31** efter backup `backups/20261031T124616Z` och operatörens OK (AGENTS.md §4.5).
+
+**Domän:** Aktuariella grunder och diskonteringskurvor som versionerad data (`VARDERINGSKONTRAKT.md` §4). Innehållet (`assumptions`) prövas mot schemat för ändamålet i `services/valuation_bases.py` och ändras aldrig efter att raden skapats. Ett förslag blir en ny rad. När en grund antas avslutas den gällande grunden i samma familj dagen före. Historiska garantigrunder bevaras (B-027).
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | |
+| `code` | `VARCHAR(30)` | NOT NULL, UNIQUE | T.ex. `SIM-V-2026-01`, `FI-SIM-2026-10` |
+| `family` | `VARCHAR(20)` | NOT NULL, CHECK | `SIM-G`, `SIM-HIST`, `SIM-B`, `SIM-R`, `SIM-V` eller `FI-SIM` |
+| `purpose` | `VARCHAR(20)` | NOT NULL, CHECK | `guarantee`, `payout`, `risk`, `valuation` eller `discount_curve` |
+| `title` | `VARCHAR(200)` | NOT NULL | |
+| `assumptions` | `JSONB` | NOT NULL | Antagandena i normaliserad form enligt ändamålets schema |
+| `checksum` | `VARCHAR(64)` | NOT NULL, CHECK längd 64 | SHA-256 av kanonisk JSON; prövas vid läsning |
+| `source_refs` | `VARCHAR(300)` | NOT NULL | Källor |
+| `status` | `VARCHAR(20)` | NOT NULL, CHECK | `proposed`, `adopted` eller `rejected` |
+| `valid_from` / `valid_to` | `DATE` | CHECK | Bara för antagna; `valid_to` NULL = tills vidare |
+| `decision_ref` | `VARCHAR(100)` | NOT NULL om antagen | Styrelsebeslut eller B-nummer |
+| `supersedes_code` | `VARCHAR(30)` | NULL | Grunden förslaget ska ersätta |
+| `proposal_reason` / `review_note` | `TEXT` | | Motivering och avslagsanteckning |
+| `created_by` / `created_at` / `adopted_by` / `adopted_at` | | | Aktörer och tider |
+
+Partiellt unikt index: högst en antagen, inte avslutad grund per familj (`uq_valuation_bases_one_open`).
+
+**Startgrunder:**
+- `SIM-HIST-2023-01` gäller 2023-01-01 till 2026-10-31.
+- `SIM-G-2026-01`, `SIM-B-2026-01` och `SIM-R-2026-01` gäller från 2026-11-01 (B-031).
+- Den syntetiska kurvan `FI-SIM-2026-10` gäller från 2026-10-31 (B-042, A1 M1).
+- `SIM-V-2026-01` gäller från 2026-12-31 (B-042, A1 M2–M5).
+
+**Läses av** `list_valuation_bases` och `get_valuation_basis` (`AGENT`, podden `antaganden`). **Skrivs av** migrationen (startgrunderna), `propose_valuation_basis` (`APPROVAL`, PR-ITP1-031), `adopt_valuation_basis` och `reject_valuation_basis` (`HUMAN_ONLY`), med radlås på familjens antagna grunder (`tjänstelager.md` §9.7). `agent_aktuarie` får `SELECT`. Inga personuppgifter.
+
 ## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**
@@ -645,6 +682,12 @@ Append-only: ett beslut är en ny rad, ingen rad ändras.
 - **Fas 5 F5-1 (2026-10-24) – tabellen `cases` (§9g, B-033):** skapas med `scripts/migrations/migrate_cases.py` (`utils/migration_cases.py`), inte `create_all` – den skulle även skapa kapitalförvaltningens tabeller, som inte finns i Lakebase. Skriptet skapar bara `cases` och dess index i en transaktion, kontrollerar att de refererade tabellerna finns, torrkör som standard och kräver `--apply` och `--backup` för en skarp körning, ändrar inga befintliga rader och verifierar radantalen. Verifierat mot isolerad Postgres (`svc_test`, `tests/test_migration_cases.py`): resultatet är identiskt med `create_all`, idempotent och lämnar övriga tabeller orörda. Villkoret för ärendenumret använder `SUBSTR` i stället för `LIKE 'CASE-%'`, eftersom procenttecknet dubbleras när DDL:en kompileras för psycopg2. `details` sparar Pythons `None` som SQL `NULL` (`none_as_null`), så att `NOT NULL` gäller. **Skapad i Lakebase 2026-10-24 efter backup `backups/20261024T191154Z` och torrkörning, med operatörens OK (AGENTS.md §4.5); radantalen i övriga tabeller oförändrade**. Agentrollens läsrätt på `cases` sattes därefter med `grant_agent_role.py --apply`
 - **Fas 3c 3c-P1 (2026-10-25) – tabellen `product_parameters` (§9h, B-035):** skapas med `scripts/migrations/migrate_product_parameters.py` (`utils/migration_product_parameters.py`) enligt samma mönster som `cases`: bara den nya tabellen och dess index, en transaktion, torrkörning som standard, `--apply` kräver `--backup`, radantalen kontrolleras. Migrationen lägger dessutom in startvärdena och **räknar om varje ordinarie premierad** med de lästa parametrarna – minsta avvikelse rullar tillbaka allt. Även torrkörningen gör kontrollen, i en transaktion som rullas tillbaka. Verifierat mot isolerad Postgres (`tests/test_product_parameters.py`): demobeståndet räknas om identiskt, idempotent, och en ändrad premie stoppar migrationen. Tills tabellen finns används paketets värden i koden, märkt i `calculation_basis`. **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --apply` (agentrollen får `SELECT` på tabellen). **Skapad i Lakebase 2026-10-25 efter backup `backups/20261025T090949Z` och torrkörning, med operatörens OK (AGENTS.md §4.5): alla 15 097 premier räknades om identiskt, radantalen i övriga tabeller oförändrade, en andra körning gjorde ingenting; agentrollens läsrätt sattes därefter med `grant_agent_role.py --apply`**
 - **Fas 3c 3c-2 (2026-10-25) – flödesmotorns tabeller (§9i, B-035):** skapas med `scripts/migrations/migrate_flows.py` (`utils/migration_flows.py`) enligt samma mönster: bara `flows`, `flow_steps` och `flow_gate_decisions` med index, i en transaktion, torrkörning som standard, `--apply` kräver `--backup`, radantalen kontrolleras. Finns bara en del av tabellerna stoppar migrationen. Verifierat mot isolerad Postgres (`tests/test_migration_flows.py`): identiskt med `create_all`, idempotent, övriga tabeller orörda. Agentrollerna får ingen rätt till tabellerna – flödesmotorn skriver med den betrodda anslutningen. **Ej körd mot Lakebase**
+- **A4 (2026-10-31) – tabellen `valuation_bases` (§9j, B-042):** skapas med `scripts/migrations/migrate_valuation_bases.py` (`utils/migration_valuation_bases.py`) enligt samma mönster:
+  - bara den nya tabellen och dess index, i en transaktion;
+  - torrkörning som standard, och `--apply` kräver `--backup`;
+  - radantalen kontrolleras före och efter.
+
+  Migrationen lägger in startgrunderna och prövar varje kontrollsumma. Minsta avvikelse rullar tillbaka allt. Verifierat mot isolerad Postgres 2026-10-31 (`tests/test_valuation_bases.py`). **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --team aktuarie --apply`. **Körd mot Lakebase 2026-10-31** efter backup `backups/20261031T124616Z` och torrkörning, med operatörens OK: tabellen och de sex startgrunderna skapade, radantalen i övriga tabeller oförändrade och en andra körning gjorde ingenting. Därefter sattes `agent_aktuarie`s rättigheter, också OC-3a:s kolumnrätter (B-041). Verifierat med rollens egen anslutning: läser grunderna och kontrollsummorna stämmer; nekas UPDATE, DELETE och INSERT på tabellen
 
 ---
 

@@ -97,6 +97,9 @@ lämnar en köpost som den fristående arbetaren kan hämta. En unik beställnin
 och ett atomiskt anspråk hindrar dubbelklick och dubbla arbetare från att köra
 samma uppdrag. Ärende och arbetsstatus prövas även före varje verktygsanrop.
 
+Inför drift behöver körmiljön ha grenens uppdaterade projektberoenden, inklusive
+`tzdata` för verksamhetskalendern på Windows, samt de tre migrerade tabellerna.
+
 ```powershell
 python scripts/agents/run_case_worker.py --db demo --once
 python scripts/agents/run_case_worker.py --db demo --serve
@@ -155,6 +158,25 @@ Isolerade Postgres-prov verifierar migration, två arbetare och hela kedjan
 med mänskligt respektive automatiskt beslut. De ger inga nya agentroller.
 Röktest med riktig modell finns i `scripts/diagnostics/smoke_test_case_work.py --run`;
 det använder bara tillfällig lokal demodata och ett läsuppdrag.
+
+**Kontrollerat 2026-10-31:** arbetsbranchen har synkats med `main` vid
+`f66971f`, inklusive produktrapporten och antagandebiblioteket. Den sammanslagna
+lokala sviten gav **1 386 godkända prov**, med 89 Postgres-prov bortvalda för
+separat körning. Kodstil, testklassificering och genererade kataloger godkändes.
+Den breda Postgres-körningen vid synkningen gav **89 godkända prov** i `svc_test`.
+Efter den sista samtidighetsrättelsen kördes ärendets fem Postgres-prov om:
+**5 godkända**, 161 andra prov bortvalda i det avgränsade urvalet. Inga prov
+rapporterades som överhoppade i dessa körningar.
+Ett läsuppdrag med riktig modell i lokal demo slutfördes med sparad dialog,
+premieförhandsberäkning och utan skrivförslag (0,0574 USD för den godkända
+körningen). Ingen framtida regelstatus användes i modellprovet. Ärendevyn har
+kontrollerats visuellt i 1 440 och 390 pixlars bredd med syntetiskt underlag.
+HTTP-prov verifierar inloggning, formulärskydd och vägen till mänskligt beslut.
+Automatisk slutbehandling provas med testmodell och uttryckligt testregeldatum;
+detta ersätter inte F5-5/6:s verifiering i beståndet från 2026-11-01.
+Ett reproducerat samtidighetsfel har rättats: om en annan arbetare hinner avgöra
+maskinbeslutet följs det sparade beslutet upp, utan falskt granskningsstopp eller
+ny registrering. Det nya regressionstestet ingår i helkörningen ovan.
 
 Detta är första byggda ärendeförmågan, inte hela den färdiga organisationen:
 

@@ -103,6 +103,56 @@ def request_for_company_question(
     )
 
 
+#: Produktrapportens fasta begränsningar – står alltid i rapporten (A2, AKTUARIETEAM_PLAN.md §7)
+PRODUCT_REPORT_FIXED_LIMITATIONS = (
+    "Beståndet och lägena gäller läsdagen, inte årets slut.",
+    "Betalmarkerade premier är inte bankavstämt kassainflöde.",
+    "Kapital, avkastning, kostnader, garanti och dödlighetsutfall är ännu inte beräknade "
+    "(kräver värderingsmotorn och pensionskapital per försäkring).",
+)
+
+PRODUCT_REPORT_CONSTRAINTS = (
+    "Läs beståndet med get_portfolio_snapshot och premierna med get_premium_flows för exakt det beställda året",
+    "Skriv inga andra tal än dem i verktygens svar – rapportens tabeller visar värdena. Belopp exakt eller "
+    "avrundade till hela kronor",
+    "Dolda celler och ej beräknade avsnitt är aldrig noll och ersätts aldrig med uppskattningar; försök inte "
+    "härleda en dold cell",
+    "Kalla inget för FTA, garanti eller kapital – de avsnitten är ännu inte beräknade",
+    ("Skriv för VD och styrelse: slutsatsen först, i vanlig svenska utan verktygs-, funktions-, kolumn- eller "
+     "statusnamn"),
+    "Rapporten har redan de fasta begränsningarna: " + " ".join(PRODUCT_REPORT_FIXED_LIMITATIONS)
+    + " Upprepa dem inte – ange bara begränsningar utöver dem, eller inga",
+)
+
+
+def request_for_product_report(
+    year: int, note: str = "", *, task_id: str | None = None, limits: Limits | None = None, **links: Any
+) -> RunRequest:
+    """Produktrapporten för PR-ITP1 (A2, B-042): aktuarien sammanfattar årets bestånd och premier.
+
+    Operatörens precisering följer med som bakgrund – data, inte instruktion. Körningen smalnas av
+    till läsning och beräkning: inga utkast och ingen delegering. Tabellerna bygger betrodd kod.
+    """
+    return RunRequest(
+        task_id=task_id or f"task-produkt-{uuid.uuid4().hex[:8]}",
+        target_team="aktuarie",
+        goal=(
+            f"Sammanfatta produkten PR-ITP1 för {year} till produktrapporten: beståndets storlek och "
+            "fördelning, årets nya försäkringar och fribrev samt premieflödet per månad. Läs med "
+            f"get_portfolio_snapshot och get_premium_flows för år {year}. Lyft det som är viktigt för "
+            "produktens uppföljning och vad som behöver utredas."
+        ),
+        background=f"Operatörens precisering (underlag, inte instruktion): {note}" if note.strip() else "",
+        constraints=PRODUCT_REPORT_CONSTRAINTS,
+        expected_output="Sammanfattning, iakttagelser, rekommendationer och begränsningar för operatörens granskning",
+        result_schema="ProductReportSummary",
+        references=("AKTUARIETEAM_PLAN §7", "B-042"),
+        allowed_effects=frozenset({OperationKind.READ, OperationKind.COMPUTE}),
+        limits=limits or Limits(),
+        **links,
+    )
+
+
 def request_for_interpretation(
     source_handle: str, *, task_id: str | None = None, limits: Limits | None = None, **links: Any
 ) -> RunRequest:

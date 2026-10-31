@@ -47,13 +47,13 @@ dependents = ["reporting"]
 [suites.reporting]
 description = "Rapportformat och exempel; formell verksamhetsrapportering återstår"
 status = "partial"
-tests = ["tests/test_reporting_report.py", "tests/test_reporting_template.py", "tests/test_reporting_agent_usage_example.py", "tests/test_reporting_presentation.py"]
+tests = ["tests/test_reporting_report.py", "tests/test_reporting_template.py", "tests/test_reporting_agent_usage_example.py", "tests/test_reporting_presentation.py", "tests/test_product_report.py"]
 dependents = []
 
 [suites.insights]
 description = "Beståndsanalys och scenario"
 status = "partial"
-tests = ["tests/test_analytics_premium_impact.py", "tests/test_portfolio_impact.py", "tests/test_management.py"]
+tests = ["tests/test_analytics_premium_impact.py", "tests/test_portfolio_impact.py", "tests/test_management.py", "tests/test_product_report.py", "tests/test_valuation_bases.py"]
 dependents = ["services", "tooling"]
 
 [suites.simulation]
@@ -77,7 +77,7 @@ dependents = []
 [suites.orchestration]
 description = "Flödesmotor och samverkan mellan team; delegering återstår"
 status = "partial"
-tests = ["tests/test_agents_flows.py", "tests/test_agents_flow_rule_change.py", "tests/test_agents_questions.py"]
+tests = ["tests/test_agents_flows.py", "tests/test_agents_flow_rule_change.py", "tests/test_agents_questions.py", "tests/test_product_report.py"]
 dependents = ["agents", "web", "tooling"]
 
 [suites.services]
@@ -131,6 +131,7 @@ postgres = [
   "tests/test_migration_cases.py::test_migrationen_skapar_bara_cases_och_blir_identisk_med_create_all",
   "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
+  "tests/test_valuation_bases.py::TestMigration::test_migrationen_mot_postgres",
   "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
 ]
 integration = ["tests/test_web_questions.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py", "tests/test_agents_flow_rule_change.py", "tests/test_web_flows.py"]
@@ -252,6 +253,7 @@ postgres = [
   "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
   "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
+  "tests/test_valuation_bases.py::TestMigration::test_migrationen_mot_postgres",
 ]
 
 [[rules]]

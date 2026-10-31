@@ -41,6 +41,7 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | migrations | [migrate_cases.py](../scripts/migrations/migrate_cases.py) | Skapa tabellen `cases` (Fas 5, B-033) | Torrkörning som standard; `--apply` kräver `--backup`. Skapar bara `cases`, inga andra tabeller. Samordna enligt AGENTS.md §4.5 |
 | migrations | [migrate_product_parameters.py](../scripts/migrations/migrate_product_parameters.py) | Skapa `product_parameters` med startvärden (Fas 3c, B-035) | Torrkörning som standard, även den räknar om alla premier i en transaktion som rullas tillbaka; `--apply` kräver `--backup`. Avvikande premie rullar tillbaka allt. Kör `grant_agent_role.py --apply` efteråt. Samordna enligt AGENTS.md §4.5 |
 | migrations | [migrate_flows.py](../scripts/migrations/migrate_flows.py) | Skapa flödesmotorns tabeller `flows`, `flow_steps` och `flow_gate_decisions` (Fas 3c, B-035) | Torrkörning som standard; `--apply` kräver `--backup`. Skapar bara de tre tabellerna; stoppar om bara en del finns. Samordna enligt AGENTS.md §4.5 |
+| migrations | [migrate_valuation_bases.py](../scripts/migrations/migrate_valuation_bases.py) | Skapa antagandebiblioteket `valuation_bases` med startgrunderna (A4, B-042) | Torrkörning som standard; `--apply` kräver `--backup`. Prövar startgrundernas kontrollsummor; därefter `grant_agent_role.py --team aktuarie`. Samordna enligt AGENTS.md §4.5 |
 | migrations/legacy | [rebuild_insurance_tables.py](../scripts/migrations/legacy/rebuild_insurance_tables.py) | Historisk ombyggnad för B-022 | Tar bort tabeller/data; inte dagens uppgraderingsväg |
 | diagnostics | [test_db_connection.py](../scripts/diagnostics/test_db_connection.py) | Verifiera anslutning med SELECT 1 | Läser databasen; namnet betyder manuell diagnos, inte pytest-test |
 | diagnostics | [smoke_test_ai.py](../scripts/diagnostics/smoke_test_ai.py) | Prova leverantörer, strukturerade svar och verktygsloop | Riktiga API-anrop, kostnad och anropslogg |
@@ -48,6 +49,7 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | diagnostics | [smoke_test_delegation.py](../scripts/diagnostics/smoke_test_delegation.py) | Röktest av delegering compliance → aktuarie med riktiga modeller (3c-1, B-039) | Utan `--run` inga anrop; med `--run` billigaste modellen per leverantör för rollen deep, `--deep` de konfigurerade. Demobeståndet i minnet med simulerade teamroller; compliance högst 1,00 USD inom körpolicyns rotbudget. Ingen Lakebase |
 | diagnostics | [smoke_test_flow.py](../scripts/diagnostics/smoke_test_flow.py) | Röktest av parameterändringsflödet med riktiga modeller för compliance och aktuarie (3c-V) | Utan `--run` inga anrop; med `--run` riktiga API-anrop inom teamens kostnadstak. `--db demo` (SQLite i minnet) eller `svc_test` (eget schema, tas bort efteråt; teamen med begränsade testroller). `--avvikelser` tolkar två testkällor ur `tests/data/regelverk_avvikelser/`. Ingen Lakebase |
 | diagnostics | [smoke_test_question.py](../scripts/diagnostics/smoke_test_question.py) | Röktest av bolagsfrågan (`company_question`) från beställning till granskad leverans med riktig modell för aktuarien (OC-3a, B-041) | Utan `--run` inga anrop; med `--run` riktiga API-anrop, högst 1,00 USD per fråga. Samma `--db demo`/`svc_test` som `smoke_test_flow.py`; `--avvikelser` lägger till fråga utanför stödet och styrningsprov. Läsbarhetskontroll: inga tekniska namn i slutsatsen. `reporting.render_report` med DM Sans ur `--report-font-dir`, annars mallens Helvetica-alternativ. Leveranser i `logs/deliveries/rooktest_<tid>/`. Ingen Lakebase |
+| diagnostics | [smoke_test_product_report.py](../scripts/diagnostics/smoke_test_product_report.py) | Röktest av produktrapporten (`product_report`) från beställning till granskad leverans med riktig modell för aktuarien (A2, B-042) | Utan `--run` inga anrop; med `--run` riktiga API-anrop, högst 1,00 USD per rapport. Samma `--db demo`/`svc_test` som `smoke_test_flow.py`; `--avvikelser` lägger till ett styrningsprov med påhittat FTA-belopp. Facit: rapportens tabeller mot operationernas egna svar. Leveranser i `logs/deliveries/rooktest_produkt_<tid>/`. Ingen Lakebase |
 | analysis | [analyze_premium_impact.py](../scripts/analysis/analyze_premium_impact.py) | Jämför premieeffekt av hypotetiskt IBB | Ren beräkning på demo eller offline-backup; stdout eller rapportfil |
 | documentation | [list_operations.py](../scripts/documentation/list_operations.py) | Generera operationsförteckning med behörigheter | Skriver Markdown; `--check` jämför utan att skriva. Ingen databas eller AI |
 | documentation | [list_skills.py](../scripts/documentation/list_skills.py) | Uppdatera körpolicyns skills i skillkatalogen | Skriver tabellen i `03_skills/skillkatalog.md`; `--check` jämför utan att skriva. Ingen databas eller AI |
@@ -107,9 +109,7 @@ python scripts/migrations/migrate_t3_schema.py --help
 Den innehåller ingen egen AI-logik. Nya instruktioner använder kategorisökvägen.
 Gamla schemalagda kommandon och instruktioner utanför repot behöver uppdateras separat.
 
-## När ett nytt verktyg läggs till
-
-**Ärendeuppdrag (2026-10-31):**
+## Ärendeuppdrag (2026-10-31)
 
 - `scripts/agents/run_case_worker.py --db demo --once|--serve`: hämtar den
   varaktiga kön, följer upp beslut och tillämpar aktiverade dagliga regler.
@@ -121,6 +121,8 @@ Gamla schemalagda kommandon och instruktioner utanför repot behöver uppdateras
   läsning/beräkning i tillfällig lokal demodatabas; utan flaggan inga anrop.
 
 Fulla driftgränser finns i [ärendedialogen](arendedialog_och_automation.md).
+
+## När ett nytt verktyg läggs till
 
 Placera det efter användning, inte efter vilken agent som skrev det. Återanvändbar logik
 hör hemma i `src/`; håll kommandoradsingången liten. Uppdatera katalogen med syfte,

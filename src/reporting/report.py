@@ -30,7 +30,7 @@ class _PaginatedReport(Report):
     def new_page(self):
         if self.page:
             self.finish(f"page-{self.page}")
-        self.begin(f"page-{self.page + 1}", "BESTÅNDSÖVERSIKT / RAPPORT", self.metadata.title,
+        self.begin(f"page-{self.page + 1}", self.metadata.eyebrow, self.metadata.title,
                    show_title=self.page == 0)
         self.page_capacity = self.y - 57
 

@@ -143,6 +143,23 @@ def test_automatisk_policy_slutfor_utan_att_uppfinna_manskligt_beslut(insurance_
         assert event.actor_type == "agent" and "Automatisk ärendepolicy" in event.detail
 
 
+def test_redan_avgjort_maskinbeslut_foljs_upp_utan_falskt_granskningsstopp(insurance_db, tmp_path, monkeypatch):
+    env = make_workspace(insurance_db.session_factory, tmp_path, automatic=True)
+    number = create(env)
+    ident = submit(env, number, mode="handle")
+    decide = env.trusted.complete_case_automatically
+
+    def another_worker_won(*args, **kwargs):
+        decide(*args, **kwargs)
+        raise ApprovalError("Beslutet har redan avgjorts av en annan arbetare")
+
+    monkeypatch.setattr(env.trusted, "complete_case_automatically", another_worker_won)
+    env.fake.queue(read_case(number), proposal())
+    assert env.workspace.process(ident)
+    assert work(env, ident).status == "completed" and count(env, SalaryReport) == 1
+    assert not work(env, ident).result.get("automatic_stopped")
+
+
 @pytest.mark.parametrize("kind", ["cancel", "changed", "wrong_salary", "policy"])
 def test_fel_eller_andrat_underlag_far_inte_verkstallas(env, kind):
     number = create(env)

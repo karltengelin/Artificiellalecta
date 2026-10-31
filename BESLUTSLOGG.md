@@ -8,6 +8,74 @@
 
 ## Beslut
 
+### B-042 | 2026-10-31 | Aktuarieteamets metod, harness och arbetsyta (A0)
+
+**Beslut:** Operatören godkände valen A–N i
+`projekt/06_avdelningsfunktioner/AKTUARIETEAM_BESLUTSFORSLAG.md` i chatten 2026-10-31:
+”Godkänn A–N”. Valen bygger på operatörens svar på Q1–Q7 samma dag
+(`AKTUARIETEAM_PLAN.md` §9).
+
+1. **Metod (A–D).** FTA beräknas enligt Alecta-modellen. FTA är det prospektiva kapitalvärdet
+   av den garanterade pensionen `G` på värderingsgrunden SIM-V, med FI-kurva enligt 4 kap.
+   FFFS 2019:21 som versionerad indata, aktsam dödlighet samt kapitalvärdet av driftskostnader
+   och avkastningsskatt. Pensionskapitalet `C` är retrospektivt.
+   - Överskottet `max(0, C − FTA)` redovisas per försäkring som villkorad återbäring, en egen
+     skuldpost.
+   - Underskottet `max(0, FTA − C)` bärs av bolagets kapital enligt PR-028.
+   - FTA-förändringen förklaras i en fast, versionerad stegordning med FI-radkoppling.
+     Oanalyserat över 0,5 % av FTA stoppar för mänsklig granskning.
+2. **Underlag (E, F).** Aktuarien levererar bokföringsunderlag på nivån APPROVAL: förändring
+   i livförsäkringsavsättning och i villkorad återbäring. Underlaget sparas tills ekonomin har
+   en bokföringstjänst. FI-underlag lämnas till compliance enligt bolagets verkliga storlek:
+   kvartal C, E och F, år A–K, EU-mallar L–O och årlig kvalitativ sammanfattning. Rapportnivån
+   är en parameter.
+3. **Ansvar och harness (G–K).** Operatören är ansvarig aktuarie och aktuariefunktion.
+   - Granskningen sker med en skill som körs hos en annan leverantör. Ingen ny agent skapas.
+     Data scientist byggs i steg A9.
+   - Nya poddar: `antaganden`, `aktuariell`, `rapportunderlag`, `ekonomiunderlag` och
+     `granskning`, samt nya läsverktyg i `bestand`. Lås av värdering, antagande av grund och
+     släpp av rapportunderlag är HUMAN_ONLY.
+   - Värderingar, grunder och rapportunderlag är verksamhetsdata i tjänstelagret.
+   - Planens guardrails gäller. Flödena `valuation_close`, `assumption_review`,
+     `product_report` och `regulatory_basis` körs i flödesmotorn.
+4. **Data, yta och rapport (L–N).**
+   - Startbeståndet rekonstrueras och märks S-04: `G_j` räknas ur premiehistoriken med
+     SIM-HIST-2023-01 och `C` med en deklarerad avkastningsserie. Det ersätts när paket B finns.
+   - Arbetsytan blir `/team/aktuarie` inom OC-8 enligt skissen.
+   - Produktrapporten följer planens §7, med v0 som första leverans.
+
+**Motivering:** Att efterlikna Alectas metod för premiebestämd traditionell ITP1-försäkring ger
+en känd, källbelagd och spårbar metod. Garanti och överskott hålls isär. Arbetet återanvänder
+tjänstelagret, flödesmotorn och harness i stället för att bygga en ny körmiljö.
+
+**Övervägda alternativ:**
+- FTA = max(C, garantins värde): enklare, men avviker från Alecta och blandar ihop garanti och
+  överskott.
+- Garantins tidsvärde med stokastisk värdering: kan bli en senare utbyggnad.
+- Överskottet i eget kapital som hos Alecta: kräver ömsesidig bolagsform.
+- Full FI-rapportering som ett större bolag.
+- En egen agent för aktuariefunktionen.
+- Att vänta på paket B i stället för att rekonstruera startbeståndet.
+
+Se underlagets §2.
+
+**Konsekvenser:**
+- Byggstegen A1–A10 enligt `AKTUARIETEAM_PLAN.md` §8. Först A1, kontraktet för värdering och
+  förklaring, och A2, produktrapport v0. ATT_GORA:s prioritering ändras inte.
+- Projekt 4 stämmer av begreppen kundkapital och villkorad återbäring i `aktuariell_grund.md`
+  §1, PR-ITP1-021 och villkoren §4–6 före FTA-motorn.
+- Compliance prövar FI:s ändrade metod för diskonteringsräntan 2026 som källändring och
+  kontrollerar FFFS 2019:22:s radkoder mot gällande konsoliderad version.
+- Konsolideringsnivån visas som ej beräknad tills kapitalförvaltningen, som är pausad,
+  levererar en tillgångssida.
+- Beslutet ändrar ingen körkod, databas, produktregel eller behörighet. Migrationer, roller och
+  körningar mot Lakebase görs efter backup och operatörens OK (AGENTS.md §4.5).
+
+**Preciserar:** B-027 (garantin), B-028 (tjänstelagret), B-036 (teamområden) och projekt 6:s
+kontraktsuppdrag. B-008 och B-026 består.
+
+---
+
 ### B-041 | 2026-10-27 | OC-3a: första fråge- och rapportkedjan
 
 **Beslut:** Operatören godkände valen A–L i `02_system/fragekedja_beslutsforslag.md` i chatten

@@ -33,6 +33,8 @@ READ_DOCUMENT = "read_regulatory_document"
 WRITE_DRAFT = "write_draft"
 ESTIMATE = "estimate_parameter_change_impact"
 COMPANY_METRICS = "get_company_metrics"
+SNAPSHOT = "get_portfolio_snapshot"
+PREMIUM_FLOWS = "get_premium_flows"
 
 
 class _Strict(BaseModel):
@@ -100,11 +102,28 @@ class CaseAnswer(_Strict):
     limitations: list[str] = Field(max_length=8)
 
 
+class ProductReportSummary(_Strict):
+    """Produktrapporten (A2, B-042): aktuarien sammanfattar bestånd och premier för ett år.
+
+    Tabellerna i rapporten kommer ur get_portfolio_snapshot och get_premium_flows, inte ur texten.
+    """
+
+    year: int = Field(description="Året du läste med get_portfolio_snapshot och get_premium_flows")
+    conclusion: str = Field(description="Sammanfattningen för VD och styrelse: slutsatsen först, i vanlig svenska "
+                                        "utan verktygs-, funktions- eller kolumnnamn. Skriv inga andra tal än dem "
+                                        "i verktygens svar")
+    key_findings: list[str] = Field(description="De viktigaste iakttagelserna om bestånd och premier")
+    recommendations: list[str] = Field(description="Åtgärder eller utredningar du föreslår, om några")
+    limitations: list[str] = Field(description="Begränsningar utöver rapportens fasta (ej beräknade avsnitt, läsdag, "
+                                               "bankavstämning) – ofta inga")
+
+
 RESULT_SCHEMAS: dict[str, type[_Strict]] = {
     "CaseAnswer": CaseAnswer,
     "InterpretationProposal": InterpretationProposal,
     "PortfolioImpactResult": PortfolioImpactResult,
     "CompanyAnswer": CompanyAnswer,
+    "ProductReportSummary": ProductReportSummary,
 }
 
 
@@ -138,6 +157,7 @@ def verify(
     drafts: dict[str, dict] = {}
     estimate: dict | None = None
     metrics: dict[str, dict] = {}  # månad -> senaste lyckade get_company_metrics
+    yearly: dict[str, dict[int, dict]] = {SNAPSHOT: {}, PREMIUM_FLOWS: {}}  # år -> senaste lyckade läsning
     metrics_failed = False  # ett anrop som tjänstelagret avböjde, t.ex. en datakälla som inte kunde läsas
     read_case = False
     for outcome in dispatches:
@@ -161,6 +181,8 @@ def verify(
                 estimate = output
             elif operation == COMPANY_METRICS:
                 metrics[output["period_from"]] = output
+            elif operation in yearly:
+                yearly[operation][output["year"]] = output
 
     # CompanyAnswer läser inga dokument och skriver inga utkast (B-041 val A)
     handles, names = getattr(result, "source_handles", ()), getattr(result, "draft_names", ())
@@ -190,6 +212,16 @@ def verify(
             problems += [f"talet {n} i svaret finns inte i underlaget" for n in unsupported_numbers(texts, read)]
         evidence["metrics"] = read
         evidence["metrics_failed"] = read is None and metrics_failed
+    if isinstance(result, ProductReportSummary):
+        snapshot, flows = yearly[SNAPSHOT].get(result.year), yearly[PREMIUM_FLOWS].get(result.year)
+        problems += [f"ingen läsning med {name} för {result.year} i körningen"
+                     for name, read in ((SNAPSHOT, snapshot), (PREMIUM_FLOWS, flows)) if read is None]
+        if snapshot is not None and flows is not None:
+            texts = [result.conclusion, *result.key_findings, *result.recommendations, *result.limitations]
+            values, dates = _values_and_dates([snapshot, flows])
+            problems += [f"talet {n} i sammanfattningen finns inte i underlaget"
+                         for n in _unsupported(texts, values | _SECTION_NUMBERS, dates)]
+        evidence["snapshot"], evidence["premium_flows"] = snapshot, flows
     if problems:
         raise ResultError(problems)
     return {
@@ -207,12 +239,53 @@ _NUMBER = re.compile(rf"(?<![\w§.,-])\d{{1,3}}(?:{_SPACES}\d{{3}})+(?:[.,]\d+)?
                      r"|(?<![\w§.,-])\d+(?:[.,]\d+)?(?![\w-])")
 
 
+#: Produktrapportens avsnittsnummer 1–10 får nämnas
+_SECTION_NUMBERS = {Decimal(n) for n in range(1, 11)}
+
+
+def _values_and_dates(outputs: Iterable[dict[str, Any]]) -> tuple[set[Decimal], set[date]]:
+    """Alla tal och datum i verktygssvaren – belopp exakt och avrundade till hela kronor."""
+    values: set[Decimal] = set()
+    dates: set[date] = set()
+
+    def walk(node: Any, key: str = "") -> None:
+        if isinstance(node, dict):
+            for k, v in node.items():
+                walk(v, k)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v, key)
+        elif isinstance(node, bool) or node is None:
+            return
+        elif isinstance(node, (int, float)):
+            values.add(Decimal(str(node)))
+        elif isinstance(node, str):
+            if key == "read_at":
+                dates.add(datetime.fromisoformat(node).date())
+            elif _ISO_DATE.fullmatch(node) and node.count("-") == 2:
+                d = date.fromisoformat(node)
+                dates.add(d)
+                if key == "period_to":  # exklusivt slut: periodens sista dag
+                    dates.add(d - timedelta(days=1))
+            else:
+                try:
+                    value = Decimal(node)
+                except InvalidOperation:  # etiketter som 1960–1969: talen i etiketten får nämnas
+                    values.update(Decimal(n) for n in re.findall(r"\d+", node))
+                    return
+                values.update({value, value.quantize(Decimal(1))})
+
+    for output in outputs:
+        walk(output)
+    return values, dates
+
+
 def unsupported_numbers(texts: Iterable[str], metrics: dict[str, Any]) -> list[str]:
     """Tal i modellens text som inte motsvarar ett mätvärde, ett datum i läsningen eller en känd gräns (val F).
 
     Belopp får skrivas exakt eller avrundat till hela kronor, med mellanslag som tusentalsavgränsare.
     """
-    allowed = set(_STRUCTURAL_NUMBERS)
+    allowed: set[Decimal] = set()
     for key in ("insured_count", "paid_sek"):
         if metrics.get(key) is not None:
             value = Decimal(str(metrics[key]))
@@ -222,6 +295,12 @@ def unsupported_numbers(texts: Iterable[str], metrics: dict[str, Any]) -> list[s
         dates.add(date.fromisoformat(metrics["period_to"]) - timedelta(days=1))
     if metrics.get("read_at"):
         dates.add(datetime.fromisoformat(metrics["read_at"]).date())
+    return _unsupported(texts, allowed, dates)
+
+
+def _unsupported(texts: Iterable[str], values: set[Decimal], dates: set[date]) -> list[str]:
+    """Tal och ISO-datum i texterna som varken är bland värdena, datumens delar eller strukturella gränser."""
+    allowed = set(_STRUCTURAL_NUMBERS) | values
     allowed |= {Decimal(part) for d in dates for part in (d.year, d.month, d.day)}
     months = {(d.year, d.month) for d in dates}
     found: list[str] = []
