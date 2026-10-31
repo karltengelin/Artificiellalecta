@@ -247,7 +247,7 @@ DM Sans återstår. Kolumnrätterna är inte satta i Lakebase.
 
 *2026-10-28:* röktestskriptet för steg 4 (`scripts/diagnostics/smoke_test_question.py`) är klart och kört i demo med riktig modell: 19 av 19 kontroller efter två rättelser – talkontrollen godtar nu periodens sista dag (perioden enligt §6), och resultatschemat säger att en precisering utanför underlaget ger `unavailable`. Rapporten renderades provisoriskt. Kolumnrätternas torrkörning mot Lakebase passerar förkontrollen; `--apply` väntar på backup och operatörens OK.
 
-*2026-10-31:* röktestet med OpenAI (`gpt-6-astra`) i demo, `--avvikelser` och `reporting.render_report` med Helvetica gav 19 av 19 kontroller, 0,23 USD. Rapporten granskades översiktligt; Codex visuella kontroll med DM Sans och webbvyerna återstår. `svc_test` kunde inte köras eftersom Lakebase-endpointen är avstängd hos Databricks.
+*2026-10-31:* röktestet med OpenAI (`gpt-6-astra`) i demo, `--avvikelser` och `reporting.render_report` med Helvetica gav 19 av 19 kontroller, 0,23 USD. Rapporten granskades översiktligt; Codex visuella kontroll med DM Sans och webbvyerna återstår. Samma dag i `svc_test` med `claude-opus-5` och aktuariens begränsade testroll, inklusive kolumnrätterna: 19 av 19 kontroller, 0,31 USD, sedan operatören slagit på den avstängda Lakebase-endpointen.
 
 Steg 1 och 2 kan gå parallellt eftersom filerna är åtskilda. Steg 3 för webben förutsätter
 adaptern. Lakebase-ändringarna (kolumnrätter) samordnas enligt AGENTS.md §4.5 och krockar inte
