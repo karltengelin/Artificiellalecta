@@ -9,7 +9,16 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
 
-from reporting.template import C, CW, M, DEFAULT_FONTS, Fonts, Report, ReportMetadata, markup
+from reporting.template import (
+    CW,
+    DEFAULT_FONTS,
+    C,
+    Fonts,
+    M,
+    Report,
+    ReportMetadata,
+    markup,
+)
 
 
 def _inline(text: str) -> str:
@@ -21,7 +30,9 @@ class _PaginatedReport(Report):
     def new_page(self):
         if self.page:
             self.finish(f"page-{self.page}")
-        self.begin(f"page-{self.page + 1}", "BESTÅNDSÖVERSIKT / RAPPORT", self.metadata.title)
+        self.begin(f"page-{self.page + 1}", "BESTÅNDSÖVERSIKT / RAPPORT", self.metadata.title,
+                   show_title=self.page == 0)
+        self.page_capacity = self.y - 57
 
     def put(self, item):
         """Split paragraphs and table rows without drawing below the reserved footer."""
@@ -66,7 +77,6 @@ def render_report(markdown: str, metadata: ReportMetadata, *, fonts: Fonts = DEF
     stream = io.BytesIO()
     report = _PaginatedReport(stream, metadata, fonts=fonts)
     report.new_page()
-    report.page_capacity = report.y - 57
     heading = ParagraphStyle("ReportHeading", parent=report.style, fontName=fonts.bold,
                              fontSize=12, leading=16)
     lines = markdown.replace("\r\n", "\n").splitlines()

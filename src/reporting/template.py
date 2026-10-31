@@ -180,7 +180,7 @@ class Report:
                 f"Page {self.page}: content extends below footer by {57 - (self.y - height):.1f} pt"
             )
 
-    def begin(self, ident, kicker, title):
+    def begin(self, ident, kicker, title, *, show_title=True):
         self.page += 1
         c = self.c
         c.setFillColor(WHITE)
@@ -193,20 +193,23 @@ class Report:
         c.setFont(self.fonts.regular, 9)
         c.setFillColor(C["text_muted"])
         c.drawRightString(W - M, H - 44, self.metadata.header)
-        self.label(M, H - 85, kicker, 9, PURPLE, self.fonts.medium)
-        p = Paragraph(
-            markup(title),
-            ParagraphStyle(
-                "Title",
-                fontName=self.fonts.bold,
-                fontSize=27,
-                leading=30,
-                textColor=NAVY,
-            ),
-        )
-        _, h = p.wrap(CW, 200)
-        p.drawOn(c, M, H - 103 - h)
-        self.y = H - 103 - h - 21
+        if show_title:
+            self.label(M, H - 85, kicker, 9, PURPLE, self.fonts.medium)
+            p = Paragraph(
+                markup(title),
+                ParagraphStyle(
+                    "Title",
+                    fontName=self.fonts.bold,
+                    fontSize=27,
+                    leading=30,
+                    textColor=NAVY,
+                ),
+            )
+            _, h = p.wrap(CW, 200)
+            p.drawOn(c, M, H - 103 - h)
+            self.y = H - 103 - h - 21
+        else:
+            self.y = H - 75
         self.place(0)
         c.setStrokeColor(C["border"])
         c.setLineWidth(0.5)

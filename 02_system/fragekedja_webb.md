@@ -49,7 +49,16 @@ status, aktuellt steg, kostnad (okänd när den saknas), rapportversion och
 granskningsstatus. Detaljens projektion och granskningshash byggs ur samma
 lästa flödesversion. Svar och PDF visas sida vid sida på bred skärm och efter
 varandra på smal. PDF kan också öppnas separat och Markdown hämtas.
-Webbläsarens inbyggda PDF-läsare behöver vara aktiverad för den inbäddade vyn.
+Förhandsvisningen använder lokalt paketerad PDF.js med sidbläddring, zoom
+och breddanpassning. Den läser samma kontrollsummeverifierade PDF genom
+leveransrouten och behöver ingen inbyggd PDF-läsare i webbläsaren.
+Inga rapportdata eller läsarfiler hämtas från en extern CDN.
+JavaScript krävs för förhandsvisningen; länkarna till PDF och Markdown finns kvar
+även om visningen inte kan laddas. Version, licens och kontrollsummor finns i
+`src/web/static/PDFJS_README.md`.
+Tidigare sparade PDF-leveranser skrivs inte om när renderaren ändras. En ny
+beställning använder den aktuella layouten; befintliga rapporter behåller
+sina bundna kontrollsummor och visas med sitt ursprungliga innehåll.
 
 Endast `portfolio_overview` till `aktuarie` är tillgängligt. Formuläret erbjuder
 de elva avslutade månaderna från adaptern och högst 500 tecken precisering.

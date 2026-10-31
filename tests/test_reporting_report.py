@@ -47,6 +47,17 @@ def test_every_paragraph_survives_page_boundaries():
     assert all(content.count(marker.encode()) == 1 for marker in markers)
 
 
+def test_continuation_pages_keep_header_and_footer_without_repeating_title():
+    pages = streams(render("# Beståndsöversikt\n\n" + "\n\n".join(f"Rad {i}" for i in range(100))))
+    assert len(pages) > 1
+    # ReportLab uses octal escapes for Swedish letters in its built-in font.
+    title = rb"Best\345nds\366versikt"
+    assert title in pages[0]
+    assert all(title not in page for page in pages[1:])
+    assert all(b"Artificiellalecta" in page and b"FLOW-000001" in page and b"P2-FRAGA-001" in page
+               for page in pages)
+
+
 def test_markup_is_text_and_cannot_load_images_or_links():
     pages = streams(render('# Beståndsöversikt\n\n<img src="https://example.invalid/leak"> & test\n\n`get_company_metrics`'))
     assert b"example.invalid/leak" in pages[0]

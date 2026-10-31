@@ -97,7 +97,9 @@ def test_normal_case_same_assignment_both_surfaces_pdf_and_verified_actor(questi
     team = q.client.get(f"{TEAM}/{view.flow_id}")
     assert team.context["assignment"] == view
     assert "145 971,41" in page.text.replace("\u00a0", " ") and "35 personer" in page.text
-    assert "iframe" in page.text and "Svar och underlag" in page.text
+    assert 'data-pdf-preview' in page.text and '<iframe' not in page.text
+    assert f'data-pdf-url="{BASE}/{view.flow_id}/leverans/1/rapport.pdf"' in page.text
+    assert "Svar och underlag" in page.text
     assert "raw_messages" not in page.text
     url = f"{BASE}/{view.flow_id}/leverans/1/rapport.pdf"
     pdf = q.client.get(url)
@@ -112,6 +114,15 @@ def test_normal_case_same_assignment_both_surfaces_pdf_and_verified_actor(questi
     assert done.context["assignment"].accepted and "godkänd av karl" in done.text
     assert q.client.get(url).content == pdf.content
     assert q.client.get(BASE).context["items"] == q.client.get(TEAM).context["items"]
+
+
+def test_preview_assets_are_served_locally_with_browser_module_mime_type(questions):
+    client = questions.client
+    for name in ("pdf-preview.mjs", "pdfjs-6.4.299.min.mjs", "pdfjs-worker-6.4.299.min.mjs"):
+        asset = client.get(f"/static/{name}")
+        assert asset.status_code == 200
+        assert "javascript" in asset.headers["content-type"]
+    assert client.get("/static/PDFJS_LICENSE.txt").status_code == 200
 
 
 def test_repeated_form_only_starts_once_and_new_form_gets_new_assignment(questions):
@@ -180,7 +191,7 @@ def test_tampered_report_is_not_displayed_downloaded_or_delivered(questions):
     path.write_bytes(b"altered")
     detail = q.client.get(f"{BASE}/{flow_id}")
     assert detail.status_code == 409 and "Granskning är spärrad" in detail.text
-    assert "<iframe" not in detail.text and "Godkänn leveransen" not in detail.text
+    assert "data-pdf-preview" not in detail.text and "Godkänn leveransen" not in detail.text
     assert q.client.get(f"{BASE}/{flow_id}/leverans/1/rapport.pdf").status_code == 409
     decision(q, page)
     assert not q.c.get(flow_id).accepted
@@ -276,8 +287,8 @@ def test_data_failure_never_uses_replacement_values_or_exposes_details(questions
 
 
 def test_explicit_workspace_connection_binds_environment_and_real_lakebase_role(questions, monkeypatch):
-    from web import database
     import services.db
+    from web import database
     q = questions
     with q.db() as session:
         engine = session.get_bind()

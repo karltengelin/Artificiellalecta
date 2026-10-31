@@ -42,7 +42,7 @@ templates.env.globals["field_names"] = presenters.FIELD_NAMES
 def static_version() -> str:
     """Kort innehållshash för CSS och JavaScript, så att ändringar hämtas direkt."""
     digest = hashlib.sha256()
-    for path in sorted(p for p in STATIC_DIR.iterdir() if p.suffix in {".css", ".js"}):
+    for path in sorted(p for p in STATIC_DIR.iterdir() if p.suffix in {".css", ".js", ".mjs"}):
         digest.update(path.name.encode() + b"\0" + path.read_bytes())
     return digest.hexdigest()[:12]
 

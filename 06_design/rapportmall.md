@@ -183,8 +183,10 @@ avvisas; inga resurser hämtas. Indata är begränsad till 100 KiB UTF-8.
 
 Till skillnad från den manuella sidmallen delar denna export brödtext,
 listpunkter och tabeller över sidor automatiskt. Tabellhuvudet upprepas;
-mycket långa celler kan delas. Sidhuvud, sidfot och sidnummer återanvänds
-på alla sidor. En odelbar del som inte ryms på en tom sida ger fel.
+mycket långa celler kan delas. Den stora rapporttiteln och överrubriken visas
+bara på första sidan. Fortsättningssidor har kompakt sidhuvud; avsändare,
+uppdragsreferens, sidfot och sidnummer återanvänds på alla sidor.
+En odelbar del som inte ryms på en tom sida ger fel.
 Tabellens fem kontraktskolumner har fasta proportioner, övriga lika bredd.
 
 Webbvyer, uttrycklig anslutning och granskningsförlopp beskrivs i
