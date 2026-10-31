@@ -476,7 +476,7 @@ Förslaget startar inget bygge och ändrar inte prioriteringen i ATT_GORA (OC-3a
 | Steg | Leverans | Beroenden | Kan börja |
 |---|---|---|---|
 | **A0** | Designstopp: [beslutsförslag](AKTUARIETEAM_BESLUTSFORSLAG.md) | Detta dokument | ✅ Godkänt 2026-10-31 (B-042) |
-| **A1** | [Värderings- och förklaringskontrakt](VARDERINGSKONTRAKT.md) (projektplanens första kontraktsarbete) | A0 | 🟡 Utkast 2026-10-31; M1–M6 väntar på fastställande |
+| **A1** | [Värderings- och förklaringskontrakt](VARDERINGSKONTRAKT.md) (projektplanens första kontraktsarbete) | A0 | ✅ Fastställt 2026-10-31 |
 | **A2** | Produktrapport v0 (avsnitt 1–3, 8, 9) och `get_portfolio_snapshot`, `get_premium_flows` | Befintliga data | Parallellt med A1 |
 | **A3** | Teamyta v1: översikt, rapporter och uppdrag på befintliga data | OC-8, A2 | Efter A2 |
 | **A4** | Antagandebibliotek som data (`valuation_bases`) med förslag och införande | A1 | Efter A1 |

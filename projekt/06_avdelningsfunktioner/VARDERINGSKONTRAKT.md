@@ -1,8 +1,8 @@
 # A1 – värderings- och förklaringskontrakt för FTA
 
-> **Version:** 0.1 | **Datum:** 2026-10-31 | **Status:** kontraktsutkast enligt B-042, steg A1.
-> Ingen kod, databasändring eller ny behörighet. Talen i §4 är förslag som operatören
-> fastställer. Kvarstående ställningstaganden står i §12.
+> **Version:** 1.0 | **Datum:** 2026-10-31 | **Status:** fastställt kontrakt enligt B-042, steg A1.
+> Operatören fastställde M1–M6 (§12) i chatten 2026-10-31: ”Fastställ M1–M6”. Ingen kod,
+> databasändring eller ny behörighet ingår.
 > **Underlag:** [beslutsförslaget A0](AKTUARIETEAM_BESLUTSFORSLAG.md) (B-042),
 > [planen](AKTUARIETEAM_PLAN.md), `01_domän/aktuariell_grund.md`, `PARAMETERREGISTER.md`,
 > PR-ITP1-008/011/020–023/028, [Alectas försäkringstekniska riktlinjer](https://www.alecta.se/media/f5inriwi/forsakringstekniska-riktlinjer.pdf)
@@ -70,9 +70,9 @@ rapportering.
 ## 4. Värderingsgrund SIM-V-2026-01
 
 Grunden är versionerad data i `valuation_bases`, med källa, kontrolldatum, beslut och
-kontrollsumma (B-042, val C). Förslag till första version:
+kontrollsumma (B-042, val C). Första versionen, fastställd 2026-10-31 (§12):
 
-| Kod | Antagande | Förslag v1 | Källa och motivering |
+| Kod | Antagande | Värde v1 | Källa och motivering |
 |---|---|---|---|
 | R | Diskonteringskurva | Versionerad spotkurva `FI-SIM-ÅÅÅÅ-MM` med årliga löptider 1–150 år, konstruerad enligt 4 kap. FFFS 2019:21. Interpolation mellan löptider och månadsvis diskontering `v(t, n) = (1 + r_⌈n/12⌉)^(−n/12)` | FFFS 2019:21 4 kap., Alecta §4.1. Värdena är syntetiska i sandboxen; FI:s metodändring 2026 prövas av compliance (M1) |
 | S | Avkastningsskatt | Diskontera med `r − s_y`, där `s_y = 0,15 × max(SLR, 0,005)` från parameterregistret (2026: 0,354 %) | AvPL och PR-ITP1-023. Motsvarar Alectas "kapitalvärdet av den avkastningsskatt som förväntas betalas på tillgångar motsvarande FTA". Approximationen prövas i M2 |
@@ -217,7 +217,7 @@ Kopplingen ska kontrolleras mot gällande konsoliderad FFFS 2019:22 innan rappor
 ## 11. Acceptans för A1
 
 A1 är klart när följande är uttryckligt i detta dokument och operatören har fastställt
-punkterna M1–M6 i §12:
+punkterna M1–M6 i §12. **Uppfyllt 2026-10-31.**
 
 - omfattning och ej beräknade fall,
 - grundens parametrar,
@@ -228,9 +228,12 @@ punkterna M1–M6 i §12:
 
 Därefter avgränsas A4 (antagandebibliotek), A5 (S-04) och A6 (motor) som byggsteg mot kontraktet.
 
-## 12. Kvarstående ställningstaganden
+## 12. Fastställda ställningstaganden
 
-| Nr | Fråga | Förslag |
+Operatören fastställde förslagen M1–M6 oförändrade 2026-10-31. M6 är ett uppdrag till
+compliance som ska vara utfört före A8.
+
+| Nr | Fråga | Fastställt |
 |---|---|---|
 | M1 | Startkurvans värden och form | Syntetisk kurva som stiger från 2,5 % (1 år) till 3,0 % (20 år) och närmar sig 3,4 % på lång sikt, märkt syntetisk. Compliance prövar FI:s metodändring 2026 |
 | M2 | Skatt genom diskontering med `r − s_y` | Godta i v1; kontrollera mot en explicit skatteprojektion i K2-varianten |
