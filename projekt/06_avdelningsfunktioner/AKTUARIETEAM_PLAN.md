@@ -2,7 +2,8 @@
 
 > **Version:** 0.2 | **Datum:** 2026-10-31 | **Status:** Utredning och förslag. Inget beslut,
 > ingen kod, ingen ny behörighet. Operatörens svar på Q1–Q7 (2026-10-31) är inarbetade och
-> designstoppet finns som [beslutsförslag A0](AKTUARIETEAM_BESLUTSFORSLAG.md).
+> [designstoppet A0](AKTUARIETEAM_BESLUTSFORSLAG.md) är godkänt och loggat som **B-042**.
+> Kontraktet A1 finns i [VARDERINGSKONTRAKT.md](VARDERINGSKONTRAKT.md).
 > **Hör till:** projekt 6 (aktuariell värdering, FTA) med kopplingar till projekt 2, 10 och
 > compliance-teamet. Kompletterar [projektplanen](PROJEKTPLAN.md) och `harness.md` §9.2.
 
@@ -155,7 +156,7 @@ värderingsgrund.
 
 | Alternativ | FTA per försäkring | Status |
 |---|---|---|
-| **A** Garanterat åtagande + villkorad återbäring (Alecta-modellen) | Kapitalvärdet av garanterad pension `G` på värderingsgrunden (FI-kurva, aktsam dödlighet, driftskostnader, avkastningsskatt) | **Valt 2026-10-31**, fastställs i A0 |
+| **A** Garanterat åtagande + villkorad återbäring (Alecta-modellen) | Kapitalvärdet av garanterad pension `G` på värderingsgrunden (FI-kurva, aktsam dödlighet, driftskostnader, avkastningsskatt) | **Beslutat, B-042** |
 | B Kundkapital med garantigolv | max(`C`, garantins värde) | Ej valt |
 | C A + garantins tidsvärde | Stokastisk värdering av garantin | Möjlig senare utbyggnad |
 
@@ -474,8 +475,8 @@ Förslaget startar inget bygge och ändrar inte prioriteringen i ATT_GORA (OC-3a
 
 | Steg | Leverans | Beroenden | Kan börja |
 |---|---|---|---|
-| **A0** | Designstopp: [beslutsförslag](AKTUARIETEAM_BESLUTSFORSLAG.md) | Detta dokument | Väntar på godkännande |
-| **A1** | Värderings- och förklaringskontrakt (projektplanens första kontraktsarbete) | A0 | Direkt efter A0 |
+| **A0** | Designstopp: [beslutsförslag](AKTUARIETEAM_BESLUTSFORSLAG.md) | Detta dokument | ✅ Godkänt 2026-10-31 (B-042) |
+| **A1** | [Värderings- och förklaringskontrakt](VARDERINGSKONTRAKT.md) (projektplanens första kontraktsarbete) | A0 | 🟡 Utkast 2026-10-31; M1–M6 väntar på fastställande |
 | **A2** | Produktrapport v0 (avsnitt 1–3, 8, 9) och `get_portfolio_snapshot`, `get_premium_flows` | Befintliga data | Parallellt med A1 |
 | **A3** | Teamyta v1: översikt, rapporter och uppdrag på befintliga data | OC-8, A2 | Efter A2 |
 | **A4** | Antagandebibliotek som data (`valuation_bases`) med förslag och införande | A1 | Efter A1 |
@@ -501,8 +502,8 @@ Förslaget startar inget bygge och ändrar inte prioriteringen i ATT_GORA (OC-3a
 | Q6 | Diskonteringskurva | Versionerad indata nu; compliance prövar FI:s metodändring 2026 som källändring |
 | Q7 | Aktuariefunktionens granskning | Granskningsskill + människa, ingen egen agent |
 
-Svaren är underlag för [beslutsförslaget A0](AKTUARIETEAM_BESLUTSFORSLAG.md). Ingen post i
-BESLUTSLOGG skrivs utan operatörens godkännande av förslaget.
+Svaren låg till grund för [beslutsförslaget A0](AKTUARIETEAM_BESLUTSFORSLAG.md), som operatören
+godkände 2026-10-31. Beslutet är loggat som B-042.
 
 ---
 

@@ -1,7 +1,7 @@
 # A0 – beslutsförslag för aktuarieteamets harness och arbetsyta
 
-> **Datum:** 2026-10-31. **Version:** 0.1. **Status:** förslag, väntar på operatörens
-> godkännande. Inget är loggat i BESLUTSLOGG.
+> **Datum:** 2026-10-31. **Version:** 0.1. **Status:** valen A–N godkända av operatören i
+> chatten 2026-10-31 (”Godkänn A–N”) och loggade som **B-042**.
 > **Omfattning:** endast Markdown. Ingen kod, databasändring, ny behörighet eller ändrad
 > körpolicy införs genom dokumentet. Bygget följer §5.
 > **Bygger på:** [utredningen och planförslaget](AKTUARIETEAM_PLAN.md) v0.2 med operatörens svar

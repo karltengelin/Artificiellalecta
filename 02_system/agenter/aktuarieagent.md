@@ -95,3 +95,4 @@ Aggregat via `bestand`, regel- och källdokument via `regelverk`, produktparamet
 
 - B-035: teamet och profilen infördes i 3c-T. B-037 styr fortsatt verksamhetsutveckling.
 - B-039: mandatet omfattar granskning och beräkningsunderlag på beställning av compliance.
+- B-042: FTA-metod (Alecta-modellen), kommande poddar och arbetsytan `/team/aktuarie` är beslutade. Verktygen är inte byggda; körpolicyn ovan gäller tills de införs (`projekt/06_avdelningsfunktioner/AKTUARIETEAM_PLAN.md` §4).

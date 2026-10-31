@@ -40,14 +40,15 @@ byggda grunden och innebär inte att dessa bredare funktioner är implementerade
 - [Aktuarieteamet – utredning och planförslag](AKTUARIETEAM_PLAN.md) (2026-10-31, ej beslutat):
   arbetsår, FI-rapportering, FTA-analys, harness, arbetsyta och produktrapport, med
   [klickbar skiss](aktuarie-arbetsyta.html) och [beslutsförslag A0](AKTUARIETEAM_BESLUTSFORSLAG.md)
-  (Alecta-modellen för FTA, väntar på godkännande).
+  (Alecta-modellen för FTA, godkänt som **B-042**).
+- [Värderings- och förklaringskontrakt A1](VARDERINGSKONTRAKT.md) (utkast 2026-10-31).
 
 ## Nästa kontraktsarbete att förbereda
 
 ### Första aktuariella värderingen och förklaringen av FTA
 
-**Planeringsprioritet godkänd 2026-10-27; metod och motor är inte beslutade
-genom detta dokument.** Ta fram ett värderings- och förklaringskontrakt som
+**Planeringsprioritet godkänd 2026-10-27. Metoden är beslutad i B-042 (Alecta-modellen);
+kontraktsutkastet är [VARDERINGSKONTRAKT.md](VARDERINGSKONTRAKT.md). Motorn är inte byggd.** Ta fram ett värderings- och förklaringskontrakt som
 kan ligga till grund för ett separat avgränsat bygguppdrag.
 
 | Del av kontraktet | Vad som ska fastställas före motorbygget |
