@@ -71,7 +71,9 @@ def compile_upgrade(dialect, stale: list[str]) -> list[str]:
     statements = []
     for name in stale:
         statements.append(f"ALTER TABLE {TABLE} DROP CONSTRAINT IF EXISTS {name}")
-        statements.append(str(AddConstraint(_constraint(name)).compile(dialect=dialect)).strip())
+        # isolate_from_table=False: annars tar SQLAlchemy bort villkoret ur tabellens CREATE TABLE
+        add = AddConstraint(_constraint(name), isolate_from_table=False)
+        statements.append(str(add.compile(dialect=dialect)).strip())
     return statements
 
 

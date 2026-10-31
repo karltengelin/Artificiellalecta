@@ -234,6 +234,9 @@ class TestMigration:
         assert statements[0] == "ALTER TABLE valuation_bases DROP CONSTRAINT IF EXISTS ck_valuation_bases_family"
         assert statements[1].startswith("ALTER TABLE valuation_bases ADD CONSTRAINT ck_valuation_bases_family")
         assert "'AVK-SIM'" in statements[1] and len(statements) == 2
+        # kompileringen får inte ta bort villkoret ur tabellens egen CREATE TABLE
+        from utils.migration_valuation_bases import compile_ddl
+        assert "ck_valuation_bases_family CHECK" in compile_ddl(postgresql.dialect())[0]
 
     def test_migrationen_mot_postgres(self):
         from tests.conftest import seed_insurance
@@ -264,6 +267,9 @@ class TestMigration:
                 conn.exec_driver_sql("ALTER TABLE valuation_bases DROP CONSTRAINT ck_valuation_bases_family")
                 conn.exec_driver_sql("ALTER TABLE valuation_bases ADD CONSTRAINT ck_valuation_bases_family CHECK "
                                      "(family IN ('SIM-G', 'SIM-HIST', 'SIM-B', 'SIM-R', 'SIM-V', 'FI-SIM'))")
+                conn.exec_driver_sql("ALTER TABLE valuation_bases DROP CONSTRAINT ck_valuation_bases_purpose")
+                conn.exec_driver_sql("ALTER TABLE valuation_bases ADD CONSTRAINT ck_valuation_bases_purpose CHECK "
+                                     "(purpose IN ('discount_curve', 'guarantee', 'payout', 'risk', 'valuation'))")
             dry = migrate_valuation_bases(lakebase_like.engine)
             assert dry.upgrade and not dry.applied and dry.seeded == ["AVK-SIM-2026-01"]
             assert len(dry.statements) == 4  # familj och ändamål: DROP + ADD
