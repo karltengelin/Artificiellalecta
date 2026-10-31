@@ -58,6 +58,8 @@ agenter hör hemma i centralen respektive i teamens egna områden.
     operatör för alla skrivande handlingar.
     [Aktuariens teamyta A3](aktuarie_teamyta.md) har översikt på `/team/aktuarie`,
     produktrapporter och antagandebibliotek ovanpå befintliga tjänster/adaptrar.
+    [Värderingssidorna](aktuarie_varderingar.md) ansluter körning, lista, detalj
+    och mänskligt fastställande via samma värderingsoperationer som kommande systemsteg.
 - **Motivering i varje skrivformulär**, eftersom tjänstelagret kräver den för `write`.
 - **Personuppgifter i webbläsaren.**
   - Adresserna innehåller personnummer, så serverns accesslogg är avstängd.

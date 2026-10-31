@@ -1,11 +1,11 @@
 {% macro team_links() %}
   <nav aria-label="Aktuariens sidor">
-  {% for href, label in [('/team/aktuarie','Översikt'),('/team/aktuarie/rapporter','Rapporter'),('/team/aktuarie/antaganden','Antaganden'),('/team/aktuarie/uppdrag','Uppdrag')] %}
+  {% for href, label in [('/team/aktuarie','Översikt'),('/team/aktuarie/varderingar','Värderingar'),('/team/aktuarie/rapporter','Rapporter'),('/team/aktuarie/antaganden','Antaganden'),('/team/aktuarie/uppdrag','Uppdrag')] %}
     <a href="{{ href }}"{% if request.url.path == href or (href != '/team/aktuarie' and request.url.path.startswith(href ~ '/')) %} aria-current="page"{% endif %}>{{ label }}</a>
   {% endfor %}
-  <p class="small muted">Följande delar kräver värderingsmotorn (A6):</p>
-  {% for label in ['Värderingar','FTA-analys','Bokföringsunderlag','Scenarier','Data och kvalitet'] %}
-    <span class="actuary-nav__unavailable" aria-disabled="true" title="Kräver värderingsmotorn (A6)">{{ label }}</span>
+  <p class="small muted">Kommande arbetsvägar:</p>
+  {% for label in ['FTA-analys','Bokföringsunderlag','Scenarier','Data och kvalitet'] %}
+    <span class="actuary-nav__unavailable" aria-disabled="true" title="Arbetsvägen är ännu inte byggd">{{ label }}</span>
   {% endfor %}
   </nav>
 {% endmacro %}

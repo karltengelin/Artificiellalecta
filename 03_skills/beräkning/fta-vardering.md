@@ -47,7 +47,10 @@ leveranskontrollens facit består.
 - **Segment** är läge × födelsedecennium. Celler med 1–9 försäkringar döljs, med kompletterande döljning mot
   totalen, och sparas utan belopp. Ej beräknade fall sparas per orsak.
 - **`lock_valuation`** är bara för människa. Kontrollerna, utdragets och grundernas kontrollsummor prövas
-  igen. En ny låsning för samma datum ersätter den gamla (`superseded`).
+  igen. Indata är `{run_id, reviewed_checksum}`, med summan från granskad `get_valuation_run`.
+  Ändrad läsprojektion eller fastställd bas kräver ny granskning. Besluten serialiseras per datum
+  i Postgres. En ny låsning för samma datum ersätter den gamla (`superseded`).
+  Människans [värderingssidor](../../02_system/aktuarie_varderingar.md) använder samma operationer.
 - **Agenten** läser bara aggregat (`list_valuation_runs`, `get_valuation_run` i podden `aktuariell`) och kan
   inte läsa utdraget.
 

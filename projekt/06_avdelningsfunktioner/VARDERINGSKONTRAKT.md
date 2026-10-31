@@ -153,6 +153,12 @@ En körning per kvartalsslut på gällande grund är bas; ett scenario får anna
 uttryckligen angiven grund och kurva och kan aldrig låsas (§2). Skatteavdraget s_y är årets
 `customer_tax_rate` i `product_parameters`. Driftkostnaden räknas upp månadsvis med `1,02^(n/12)`.
 
+**Webbkoppling 2026-10-31:** [Värderingssidorna](../../02_system/aktuarie_varderingar.md)
+ger människan samma tjänsteoperationer. Fastställandet skickar körnings-id och
+`reviewed_checksum` från den granskade `get_valuation_run`. Operationen kontrollerar
+underlaget och den bas som skulle ersättas i samma transaktion; ett inaktuellt beslut
+kräver en ny granskning. Det ändrar ingen metod, grund eller giltighetsdag.
+
 ## 7. Kontroll
 
 Motorn ska klara följande kontrollfall innan en värdering får låsas. Fallen körs automatiskt

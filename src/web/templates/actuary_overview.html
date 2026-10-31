@@ -4,6 +4,12 @@
 <p class="oc-eyebrow">TEAMETS ARBETSPLATS</p><h1>Aktuarieteamet</h1>
 <p class="actuary-intro">Följ uppdrag, granska rapporter och fastställ antaganden på samma underlag som teamets agent.</p>
 {% for error in errors %}<p class="alert alert--info">{{ error }}</p>{% endfor %}
+<section class="panel"><div class="panel__head"><h2>Värderingar</h2><a href="/team/aktuarie/varderingar">Kör eller granska →</a></div>
+{% if valuations is not none %}
+{% set locked = valuations | selectattr('status','equalto','locked') | list %}
+{% if locked %}{% set latest = locked[0] %}<p>Senaste fastställda bas: <a href="/team/aktuarie/varderingar/{{ latest.run_id }}">{{ latest.valuation_date | iso_date }} · v{{ latest.version }}</a> · FTA {{ latest.fta_sek | sek if latest.fta_sek is not none else 'dolt' }}.</p>{% else %}<p>Ingen fastställd basvärdering i denna miljö.</p>{% endif %}
+{% for item in valuations[:5] %}<div class="actuary-row"><a href="/team/aktuarie/varderingar/{{ item.run_id }}">{{ item.valuation_date | iso_date }} · {{ 'Bas' if item.purpose == 'base' else 'Scenario' }} · v{{ item.version }}</a><span class="pill">{{ {'draft':'Utkast','locked':'Fastställd','superseded':'Ersatt'}[item.status] }} · {{ 'Kontroller godkända' if item.checks_passed else 'Kontroller underkända' }}</span></div>{% else %}<p>Inga sparade körningar ännu.</p>{% endfor %}
+{% endif %}</section>
 <div class="actuary-grid">
 <section class="panel"><div class="panel__head"><h2>Grunder att utgå från</h2><a href="/team/aktuarie/antaganden">Antagandebiblioteket →</a></div>
 {% if basis_list %}<p class="small muted">Gällande {{ basis_list.on_date | iso_date }}</p>

@@ -20,8 +20,9 @@ B-036 och B-041. Arbetsbranch: `codex/aktuarie-teamyta-a3`.
 Äldre POST till teamroten stöds för befintliga formulär. Nya formulär och
 länkar använder `/uppdrag`. Centralens adresser och arbetsflöde består.
 
-Värderingar, FTA-analys, Bokföringsunderlag, Scenarier samt Data och kvalitet
-visas inaktiva med orsaken **kräver värderingsmotorn (A6)**. Teammenyn är
+Värderingar är nu ansluten till A6 genom [värderingssidorna](aktuarie_varderingar.md).
+FTA-analys, Bokföringsunderlag, Scenarier samt Data och kvalitet
+visas som kommande arbetsvägar. Teammenyn är
 öppningsbar på smala skärmar så att innehållet kommer före hela menyn.
 Inga värden från skissens exempelläge används.
 
@@ -122,9 +123,9 @@ aktuariella läsverktyg. Inga konflikter uppstod och A3:s webbimplementation
 urval är fortsatt `web` och `tooling`; inga nya databaskontrakt eller roller
 införs av webbändringen.
 
-Värderingsmotorn finns nu i backend. De planerade värderingsvyerna är fortfarande
-inaktiva i A3: deras arbetsflöden behöver anslutas till teamytan i ett kommande
-webbuppdrag. Menyns A6-hänvisning anger deras beroende, inte en ansluten vy.
+Värderingsmotorn finns nu i backend. [Värderingsvyerna](aktuarie_varderingar.md)
+har anslutits i det efterföljande webbuppdraget 2026-10-31: kör, läs och granska
+utkast samt fastställ en basvärdering. Förändringsanalys och periodflödet återstår.
 
 ## Föreslagna statusuppdateringar i delade dokument
 

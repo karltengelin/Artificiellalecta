@@ -21,6 +21,8 @@ godkända dokument- och prioriteringsuppdrag 2026-10-27.
 Ekonomimotorer och körbara ekonomi-/rapporteringsfunktioner är inte byggda. FTA-värderingsmotorn
 (aktuarieteamets steg A6, [planen](AKTUARIETEAM_PLAN.md) §8) är byggd och testad 2026-10-31,
 med tabellerna införda i Lakebase; förändringsanalys och rapportunderlag återstår (A7–A8).
+Människans [värderingsväg](../../02_system/aktuarie_varderingar.md) är ansluten
+med lista, körning, granskning och granskningsbundet fastställande.
 Aktuarieagentens befintliga profil och premieanalys hör till den tidigare
 byggda grunden och innebär inte att dessa bredare funktioner är implementerade.
 
@@ -39,7 +41,7 @@ byggda grunden och innebär inte att dessa bredare funktioner är implementerade
 - [Agentkarta](../../02_system/agentkarta.md), aktuarieprofil och avgränsad
   premieeffektanalys; ekonomi- och rapporteringsagenter är fortfarande planerade.
 - [Processöversikt](../../01_domän/processer_översikt.md), V-10–12 och paket A/B.
-- [Aktuarieteamet – utredning och planförslag](AKTUARIETEAM_PLAN.md) (2026-10-31, ej beslutat):
+- [Aktuarieteamet – utredning och planförslag](AKTUARIETEAM_PLAN.md) (A0 beslutat genom B-042, byggstatus i §8):
   arbetsår, FI-rapportering, FTA-analys, harness, arbetsyta och produktrapport, med
   [klickbar skiss](aktuarie-arbetsyta.html) och [beslutsförslag A0](AKTUARIETEAM_BESLUTSFORSLAG.md)
   (Alecta-modellen för FTA, godkänt som **B-042**).

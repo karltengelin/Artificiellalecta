@@ -152,7 +152,8 @@ def test_vardering_las_med_aktuariens_roll(db):
     detail = service.execute("get_valuation_run", ACTUARY, {"run_id": str(done.run_id)}).output
     assert (detail.result_checksum, detail.segments) == (done.result_checksum, done.segments)
     with pytest.raises(Exception, match="endast handläggare"):
-        service.execute("lock_valuation", replace(ACTUARY, reason="Försök"), {"run_id": str(done.run_id)})
+        service.execute("lock_valuation", replace(ACTUARY, reason="Försök"),
+                        {"run_id": str(done.run_id), "reviewed_checksum": detail.review_checksum})
 
 
 def test_bestandsinsikten_med_aktuariens_roll(db):

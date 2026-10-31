@@ -28,6 +28,7 @@ from models import ValuationBasis, ValuationExtractRecord, ValuationResult, Valu
 from services import valuation_bases as vb
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import (
+    AccessDeniedError,
     BlockedError,
     ConflictError,
     InvalidInputError,
@@ -68,6 +69,11 @@ class ListQuery(BaseModel):
 class RunQuery(BaseModel):
     model_config = ConfigDict(extra="forbid")
     run_id: uuid.UUID = Field(description="Körningens id ur list_valuation_runs")
+
+
+class LockInput(RunQuery):
+    reviewed_checksum: str = Field(pattern=r"^[0-9a-f]{64}$",
+                                  description="review_checksum från den granskade get_valuation_run")
 
 
 class Segment(BaseModel):
@@ -119,6 +125,8 @@ class RunList(BaseModel):
 
 
 class RunDetail(RunSummary):
+    review_checksum: str
+    current_locked_run_id: uuid.UUID | None
     source_note: str
     purpose_note: str
     note: str
@@ -153,12 +161,12 @@ def _visible_total(policies: int) -> bool:
 
 def _summary(run: ValuationRun) -> dict:
     show = _visible_total(run.policies)
-    return dict(run_id=run.id, valuation_date=run.valuation_date, purpose=run.purpose, version=run.version,
-                status=run.status, source=run.source, basis_code=run.basis_code, curve_code=run.curve_code,
-                fta_sek=_ore(run.fta_sek) if show else None, surplus_sek=_ore(run.surplus_sek) if show else None,
-                deficit_sek=_ore(run.deficit_sek) if show else None, checks_passed=run.checks_passed,
-                created_by=run.created_by, created_at=run.created_at, locked_by=run.locked_by,
-                locked_at=run.locked_at)
+    return {"run_id": run.id, "valuation_date": run.valuation_date, "purpose": run.purpose, "version": run.version,
+                "status": run.status, "source": run.source, "basis_code": run.basis_code, "curve_code": run.curve_code,
+                "fta_sek": _ore(run.fta_sek) if show else None, "surplus_sek": _ore(run.surplus_sek) if show else None,
+                "deficit_sek": _ore(run.deficit_sek) if show else None, "checks_passed": run.checks_passed,
+                "created_by": run.created_by, "created_at": run.created_at, "locked_by": run.locked_by,
+                "locked_at": run.locked_at}
 
 
 def _detail(session, run: ValuationRun) -> RunDetail:
@@ -169,20 +177,27 @@ def _detail(session, run: ValuationRun) -> RunDetail:
                         policies=r.policies, hidden_reason=r.hidden_reason,
                         **{name: _ore(getattr(r, name)) for name in AMOUNTS}) for r in rows]
     balanced = run.surplus_sek - run.deficit_sek == run.capital_sek - run.fta_sek
-    return RunDetail(
+    current_locked = session.scalar(select(ValuationRun.id).where(
+        ValuationRun.valuation_date == run.valuation_date, ValuationRun.status == "locked"))
+    detail = RunDetail(
+        review_checksum="", current_locked_run_id=current_locked,
         **_summary(run), source_note=SOURCE_NOTE[run.source],
         purpose_note=SCENARIO_NOTE if run.purpose == "scenario" else "Basvärdering per kvartalsslut",
         note=run.note, basis_checksum=run.basis_checksum, curve_checksum=run.curve_checksum,
-        tax_reduction=run.tax_reduction, tax_parameter=run.tax_parameter, extract_checksum=run.extract_checksum,
+        tax_reduction=run.tax_reduction.normalize(), tax_parameter=run.tax_parameter, extract_checksum=run.extract_checksum,
         code_version=run.code_version, result_checksum=run.result_checksum,
         policies=run.policies if show else None, capital_sek=_ore(run.capital_sek) if show else None,
         guarantee_sek_per_month=_ore(run.guarantee_sek_per_month) if show else None,
         expenses_sek=_ore(run.expenses_sek) if show else None,
         balance_check="stämmer på öret" if balanced else "STÄMMER INTE",
         segments=segments, not_calculated=[NotCalculatedCell(**n) for n in run.not_calculated],
-        checks=[CheckView(**c) for c in run.checks], lock_note=run.lock_note, supersedes_run_id=run.supersedes_id,
+        checks=[CheckView(**{**c, "detail": c["detail"] if show else "Detaljer dolda – småcellsskydd"})
+                for c in run.checks], lock_note=run.lock_note, supersedes_run_id=run.supersedes_id,
         quantities=QUANTITIES, min_cell_size=MIN_CELL,
     )
+    # Binder hela den tillåtna läsprojektionen och den bas som skulle ersättas.
+    detail.review_checksum = vb.checksum(detail.model_dump(mode="json", exclude={"review_checksum"}))
+    return detail
 
 
 def _not_calculated(computation: Computation) -> list[dict]:
@@ -198,8 +213,8 @@ def _segments(run_id: uuid.UUID, computation: Computation) -> list[ValuationResu
     out = []
     for (state, cohort), t in computation.segments.items():
         reason = hidden.get(f"{state}|{cohort}")
-        amounts = {} if reason else dict(capital_sek=t.capital, fta_sek=t.fta, expenses_sek=t.expenses,
-                                         surplus_sek=t.surplus, deficit_sek=t.deficit)
+        amounts = {} if reason else {"capital_sek": t.capital, "fta_sek": t.fta, "expenses_sek": t.expenses,
+                                         "surplus_sek": t.surplus, "deficit_sek": t.deficit}
         out.append(ValuationResult(run_id=run_id, state=state, cohort=cohort,
                                    policies=None if reason else t.policies, hidden_reason=reason, **amounts))
     return out
@@ -317,8 +332,17 @@ def get_valuation_run(ctx: OperationContext, data: RunQuery) -> RunDetail:
     kind=OperationKind.WRITE,
     rules=["PR-ITP1-031"],
 )
-def lock_valuation(ctx: OperationContext, data: RunQuery) -> RunDetail:
+def lock_valuation(ctx: OperationContext, data: LockInput) -> RunDetail:
+    if ctx.actor.type != "human":
+        raise AccessDeniedError("En människa måste fastställa värderingen", operation="lock_valuation",
+                                actor_id=ctx.actor.id)
     session = ctx.require_session()
+    day = _get(session, data.run_id).valuation_date
+    if session.bind.dialect.name == "postgresql":
+        # Serialiserar även första låsningen (då det ännu inte finns någon basrad
+        # att låsa). Alla beslut för datumet tar samma transaktionsbundna lås.
+        session.execute(select(func.pg_advisory_xact_lock(6042, day.toordinal())))
+        session.expire_all()
     run = _get(session, data.run_id, lock=True)
     if run.purpose != "base":
         raise BlockedError(SCENARIO_NOTE)
@@ -327,6 +351,8 @@ def lock_valuation(ctx: OperationContext, data: RunQuery) -> RunDetail:
     if not run.checks_passed:
         failed = ", ".join(c["name"] for c in run.checks if not c["passed"])
         raise BlockedError(f"Kontrollerna är inte godkända ({failed}) – värderingen kan inte låsas")
+    if _detail(session, run).review_checksum != data.reviewed_checksum:
+        raise ConflictError("Granskningsunderlaget eller periodens fastställda bas har ändrats. Läs körningen igen.")
     extract = session.get(ValuationExtractRecord, run.extract_id)
     content = {k: v for k, v in extract.content.items() if k != "checksum"}
     if not extract.approved or vb.checksum(content) != run.extract_checksum:
