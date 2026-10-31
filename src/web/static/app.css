@@ -310,6 +310,12 @@ pre.draft { white-space: pre-wrap; background: var(--color-background); border-r
 .actuary-facts dd { margin: 0; overflow-wrap: anywhere; }
 .actuary-form input:not([type=hidden]), .actuary-form select, .actuary-form textarea { width: min(100%, 40rem); display: block; margin: var(--space-2) 0 var(--space-4); }
 .actuary-form button { margin-bottom: var(--space-2); white-space: normal; }
+.actuary-form input.valuation-checkbox { display: inline-block; width: auto; margin-right: var(--space-2); }
+.actuary-form .valuation-confirmation { display: block; margin-bottom: var(--space-4); }
+.valuation-metrics { margin-bottom: var(--space-5); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.valuation-metrics dd { font-size: clamp(1rem, 2vw, 1.4rem); overflow-wrap: anywhere; }
+.valuation-segments { min-width: 65rem; }
+.valuation-segments th:first-child { min-width: 14rem; width: 16rem; }
 @media (max-width: 900px) { .actuary-shell, .actuary-grid { grid-template-columns: minmax(0, 1fr); } .actuary-nav__desktop { display: none; } .actuary-nav__mobile { display: block; } .actuary-nav nav { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--space-3); } .actuary-nav nav p { grid-column: 1 / -1; } }
 @media (max-width: 500px) { .actuary-facts { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); } .actuary-facts dd { margin-bottom: var(--space-3); } .actuary-form button { width: 100%; } .actuary-nav { padding: var(--space-3); } }
 .case-desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(20rem, 27rem); gap: 1.25rem; align-items: start; }

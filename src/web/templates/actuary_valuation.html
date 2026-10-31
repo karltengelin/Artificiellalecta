@@ -1,0 +1,47 @@
+{% extends "actuary_base.html" %}
+{% macro amount(value) %}{{ value | sek if value is not none else 'Dolt – småcellsskydd' }}{% endmacro %}
+{% block title %}Värdering {{ run.valuation_date | iso_date }} · v{{ run.version }}{% endblock %}
+{% block actuary_content %}
+<p><a href="/team/aktuarie/varderingar">← Alla värderingar</a></p>
+<p class="oc-eyebrow">{{ valuation_purpose[run.purpose] }} · VERSION {{ run.version }}</p>
+<h1>Värdering {{ run.valuation_date | iso_date }}</h1>
+<p><span class="pill">{{ valuation_status[run.status] }}</span> · {{ 'Kontroller godkända' if run.checks_passed else 'Kontroller underkända' }}</p>
+{% if error %}<p class="alert alert--error" role="alert">{{ error }}</p>{% endif %}
+{% if run.purpose == 'scenario' %}<p class="alert alert--info"><strong>Scenario – kan aldrig fastställas som bas.</strong> {{ run.purpose_note }}</p>{% endif %}
+<p>{{ run.source_note }}</p>
+<dl class="metrics valuation-metrics">{% for field, label in [('fta_sek','FTA'),('capital_sek','Pensionskapital'),('surplus_sek','Villkorad återbäring'),('deficit_sek','Underskott')] %}<div class="metric"><dt>{{ label }}</dt><dd>{{ amount(run[field]) }}</dd></div>{% endfor %}</dl>
+<section class="panel"><h2>Underlag och omfattning</h2><dl class="actuary-facts">
+<dt>Värderingsdatum</dt><dd>{{ run.valuation_date | iso_date }} · {{ run.purpose_note }}</dd>
+<dt>Värderingsgrund</dt><dd><a href="/team/aktuarie/antaganden/{{ run.basis_code }}">{{ run.basis_code }}</a></dd>
+<dt>Diskonteringskurva</dt><dd><a href="/team/aktuarie/antaganden/{{ run.curve_code }}">{{ run.curve_code }}</a></dd>
+<dt>Värderade försäkringar</dt><dd>{{ run.policies if run.policies is not none else 'Dolt – småcellsskydd' }}</dd>
+<dt>Därav driftkostnader</dt><dd>{{ amount(run.expenses_sek) }}</dd>
+<dt>Garanterad pension</dt><dd>{{ amount(run.guarantee_sek_per_month) }} per månad</dd>
+<dt>Skatteavdrag i kurvan</dt><dd>{{ run.tax_reduction }} · {{ run.tax_parameter }}</dd>
+<dt>Körningens motivering</dt><dd>{{ run.note }}</dd></dl>
+<details><summary>Så definieras beloppen</summary><ul>{% for name, definition in run.quantities.items() %}<li>{{ definition }}</li>{% endfor %}</ul></details></section>
+<section class="panel"><h2>Kontroller</h2><p>Summakontroll: {{ run.balance_check }}.</p>
+{% for check in run.checks %}<div class="actuary-row"><strong>{{ check.name }}</strong><span class="pill">{{ 'Godkänd' if check.passed else 'Underkänd' }}</span><p>{{ check.detail }}</p></div>{% endfor %}</section>
+<section class="panel"><h2>Begränsningar och ej beräknade fall</h2>
+<p>Konsolideringsnivå: ej beräknad – tillgångssidan saknas. Förändringsanalys, avancerade scenarier och periodflödet byggs i senare steg.</p>
+{% if run.not_calculated %}<p>Följande fall ingår inte i beloppen ovan:</p><ul>{% for cell in run.not_calculated %}<li>{{ cell.reason }} · {{ cell.policies if cell.policies is not none else 'Dolt antal' }}{% if cell.hidden_reason %} · {{ cell.hidden_reason }}{% endif %}</li>{% endfor %}</ul>{% else %}<p>Inga ej beräknade fall rapporterades av körningen.</p>{% endif %}</section>
+<section class="panel"><h2>Försäkringsläge och födelsekohort</h2><p class="small muted">Endast tjänstens tillåtna aggregat visas. Celler under {{ run.min_cell_size }} och kompletterande celler döljs; dolda värden får inte summeras fram.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Värderingsaggregat, rulla vid behov"><table class="table valuation-segments"><thead><tr><th>Läge / födelsekohort</th><th>Antal</th><th class="num">Pensionskapital, kr</th><th class="num">FTA, kr</th><th class="num">Driftkostnader, kr</th><th class="num">Återbäring, kr</th><th class="num">Underskott, kr</th></tr></thead><tbody>
+{% for cell in run.segments %}<tr><th scope="row">{{ cell.state_label }} · {{ cell.cohort }}{% if cell.hidden_reason %}<p class="small muted">{{ cell.hidden_reason }}</p>{% endif %}</th><td>{{ cell.policies if cell.policies is not none else 'Dolt' }}</td>{% for field in ['capital_sek','fta_sek','expenses_sek','surplus_sek','deficit_sek'] %}<td class="num">{{ cell[field] | sek if cell[field] is not none else 'Dolt' }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></section>
+<section class="panel"><h2>Spårbarhet</h2><dl class="actuary-facts">
+<dt>Körning</dt><dd>{{ run.run_id }} · v{{ run.version }}</dd><dt>Skapad</dt><dd>{{ run.created_at | iso_date }} av {{ run.created_by }}</dd>
+<dt>Källa</dt><dd>{{ run.source }}</dd><dt>Motorversion</dt><dd><code>{{ run.code_version }}</code></dd>
+{% for field, label in [('extract_checksum','Datautdrag'),('basis_checksum','Värderingsgrund'),('curve_checksum','Kurva'),('result_checksum','Resultat'),('review_checksum','Granskningsunderlag')] %}<dt>{{ label }} · SHA-256</dt><dd><code>{{ run[field] }}</code></dd>{% endfor %}
+{% if run.supersedes_run_id %}<dt>Ersätter</dt><dd><a href="/team/aktuarie/varderingar/{{ run.supersedes_run_id }}">Tidigare basvärdering</a></dd>{% endif %}
+{% if run.locked_at %}<dt>Fastställd</dt><dd>{{ run.locked_at | iso_date }} av {{ run.locked_by }}</dd><dt>Beslutsmotivering</dt><dd>{{ run.lock_note }}</dd>{% endif %}</dl></section>
+{% if run.purpose == 'base' and run.status == 'draft' %}<section class="panel"><h2>Granska och fastställ</h2>
+<p>Beslutet gäller denna körning, dess belopp, kontroller, begränsningar och underlagets kontrollsummor.</p>
+{% if run.current_locked_run_id %}<p class="alert alert--info">Fastställandet ersätter <a href="/team/aktuarie/varderingar/{{ run.current_locked_run_id }}">periodens nuvarande bas</a>. Den tidigare körningen bevaras som ersatt.</p>{% endif %}
+{% if not run.checks_passed %}<p class="alert alert--error">Kontrollerna är underkända. Körningen kan inte fastställas.</p>
+{% elif operator_user %}<form method="post" action="/team/aktuarie/varderingar/{{ run.run_id }}/faststall" hx-boost="false" class="actuary-form" data-valuation-action>
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="request_token" value="{{ request_token }}"><input type="hidden" name="reviewed_checksum" value="{{ run.review_checksum }}">
+<label class="valuation-confirmation"><input class="valuation-checkbox" type="checkbox" name="reviewed" value="yes" required> Jag har granskat beloppen, kontrollerna, begränsningarna och underlaget ovan.</label>
+<label for="lock-note">Beslutsmotivering</label><textarea id="lock-note" name="note" rows="3" maxlength="1000" required></textarea>
+<button type="submit">Fastställ basvärderingen</button><p hidden data-valuation-progress role="status">Beslutet behandlas. Vänta på resultatet.</p></form>
+{% else %}<p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att fastställa basvärderingen.</p>{% endif %}</section>{% endif %}
+{% endblock %}

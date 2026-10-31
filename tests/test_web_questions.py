@@ -558,8 +558,9 @@ def test_a3_overview_unavailable_modules_and_legacy_assignment_address(actuary):
     q = actuary
     p = q.client.get("/team/aktuarie")
     assert p.status_code == 200 and "Rapporteringsrytm" in p.text
-    assert "kräver värderingsmotorn (A6)" in p.text
-    assert 'aria-disabled="true"' in p.text and 'href="/team/aktuarie/varderingar"' not in p.text
+    assert "Kommande arbetsvägar" in p.text
+    assert 'href="/team/aktuarie/varderingar"' in p.text
+    assert 'aria-disabled="true"' in p.text  # Återstående arbetsvägar är fortfarande inaktiva.
     q.app.state.product_report_console = None
     p = q.client.get("/team/aktuarie")
     assert p.context["reports"] is None and "Antagandebiblioteket" in p.text

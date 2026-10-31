@@ -31,6 +31,7 @@ from web.operator_auth import OperatorAuth
 from web.presenters import ErrorView
 from web.routes import (
     actuary,
+    actuary_valuations,
     auth,
     case_workspace,
     cases,
@@ -106,6 +107,7 @@ def create_app(
     app.include_router(environments.router)
     app.include_router(operator.router)
     app.include_router(actuary.router)
+    app.include_router(actuary_valuations.router)
     app.include_router(questions.router)
 
     @app.get("/_instance")

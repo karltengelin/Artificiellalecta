@@ -697,7 +697,7 @@ Partiellt unikt index: högst en låst körning per datum (`uq_valuation_runs_on
 
 Ett segment per läge och födelsedecennium (`UNIQUE (run_id, state, cohort)`). Celler med 1–9 försäkringar döljs, med kompletterande döljning mot totalen, och sparas utan antal och belopp, bara med `hidden_reason` (CHECK `ck_valuation_results_hidden`). Beloppen är `capital_sek`, `fta_sek`, `expenses_sek`, `surplus_sek` och `deficit_sek`.
 
-**Skrivs av** `run_valuation` (`APPROVAL`, PR-ITP1-028 och PR-ITP1-031; systemsteg eller människa) och `lock_valuation` (`HUMAN_ONLY`, radlås på körningen och datumets låsta körning). **Läses av** `list_valuation_runs` och `get_valuation_run` (`AGENT`, podden `aktuariell`), som aldrig läser `valuation_extracts`. `agent_aktuarie` får `SELECT` på `valuation_runs` och `valuation_results`, men ingen rättighet på `valuation_extracts` (`tjänstelager.md` §9.8).
+**Skrivs av** `run_valuation` (`APPROVAL`, PR-ITP1-028 och PR-ITP1-031; systemsteg eller människa) och `lock_valuation` (`HUMAN_ONLY`, granskningssumma och transaktionsbundet datumlås före radlås på körningen och datumets låsta körning; `tjänstelager.md` §9.8). **Läses av** `list_valuation_runs` och `get_valuation_run` (`AGENT`, podden `aktuariell`), som aldrig läser `valuation_extracts`. `agent_aktuarie` får `SELECT` på `valuation_runs` och `valuation_results`, men ingen rättighet på `valuation_extracts` (`tjänstelager.md` §9.8).
 
 ## 10. Datakvalitet och valideringar
 
