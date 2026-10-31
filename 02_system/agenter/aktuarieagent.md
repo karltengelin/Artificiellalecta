@@ -7,7 +7,7 @@
 | **Funktionsområde** | Aktuariell verksamhet |
 | **Team** | Aktuarie & analys (`aktuarie`) – se `../agentekosystem.md` §3 (B-026) |
 | **Roll i teamet** | Ledande agent (orkestrerare) |
-| **Status** | 🟡 Profil och beståndsinsikt för godkända parameterändringar byggda (3c-T); tar emot delegerade uppdrag från compliance (3c-1, B-039). Verifiering mot Lakebase återstår (3c-V); reserv-, garanti- och ALM-motorer saknas |
+| **Status** | 🟡 Profil och beståndsinsikt för godkända parameterändringar byggda (3c-T); tar emot delegerade uppdrag från compliance (3c-1, B-039). Läser antagandebiblioteket (A4) och värderingskörningarna (A6) som aggregat; körning och låsning av värderingar görs av system och människa. Verifiering mot Lakebase återstår (3c-V); förändringsanalys (A7), reserv-, garanti- och ALM-motorer saknas |
 | **Skapad** | 2026-05-15 |
 
 ## Mandat
