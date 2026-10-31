@@ -120,7 +120,8 @@ granskad policy per ärendetyp. En särskild betrodd väg kan senare tillåta
 automatisk slutbehandling av verifierade interna standardfall; generella
 godkännandegolv, produktregelkontroller och kravet på mänskligt beslut för
 externa handlingar består. Schema/automatisk slutbehandling är avstängda
-i standardpolicyn, och nya tabeller är ännu inte införda i Lakebase.
+i standardpolicyn. De tre nya tabellerna infördes tomma i Lakebase 2026-10-31
+efter backup och operatörens OK; tidigare radantal är oförändrade.
 Se [plan och byggstatus](02_system/arendedialog_och_automation.md).
 
 ### 3.9 Gemensamt grafiskt designspråk – Digital klarhet
@@ -149,7 +150,7 @@ Dessa områden ska på sikt täckas av system och/eller agenter:
 | Kapitalförvaltning | Placering av premiereserver, portföljövervakning | 🟡 Påbörjat – styrdokumentshierarki och placeringsriktlinje som beslutsutkast (Fas 2a/2b); datamodell för paper trading byggd/testad lokalt (Fas 2c, 2026-10-24), ej skapad i Lakebase. Antagande, gateway, marknadsdata och förvaltningslogik återstår |
 | Aktuariell verksamhet | Reservberäkningar, antaganden, riskanalys | 🟡 SIM-grund och parameterregister införda genom B-031; agentprofil och premieeffektanalys för parameterändringar byggda. FTA-metod (Alecta-modellen), harness och arbetsyta beslutade i B-042; värderingskontrakt A1 fastställt produktrapport v0 (A2) och antagandebibliotek (A4) byggda lokalt. Modellverifiering 3c-V samt värderings-, garanti- och ALM-motorer återstår |
 | Kundadministration | Försäkringar, löneunderlag och premiehantering inom ITP1 ålderspension utan efterlevande-/återbetalningsskydd | 🟡 Påbörjat – datamodell för arbetsgivare, försäkrade, försäkringar/förmåner/lägen och premier (B-022), premiemotor som skill, seedad databas med premiehistorik 2023–2026, tjänstelager med läs- och skrivoperationer, inklusive anslutning av ny försäkrad och stamdata (B-028, B-030, B-032) |
-| Ärende­hantering | Inkommande ärenden, handläggning, svar | 🟡 Handläggar-UI v1 och ärenden med handläggaragent för `salary_report` byggda (Fas 4/5). `cases` och agentrollens rättigheter finns i Lakebase. Ärendedialog och självständig köhandläggning byggda lokalt 2026-10-31, med granskning som standard och avstängt schema. Införande av de nya tabellerna, slutverifiering från 2026-11-01 och fler ärendetyper återstår |
+| Ärende­hantering | Inkommande ärenden, handläggning, svar | 🟡 Handläggar-UI v1 och ärenden med handläggaragent för `salary_report` byggda (Fas 4/5). `cases` och agentrollens rättigheter finns i Lakebase. Ärendedialog och självständig köhandläggning byggda lokalt 2026-10-31, med granskning som standard och avstängt schema. Tabellerna är införda i Lakebase; slutverifiering från 2026-11-01 och fler ärendetyper återstår |
 | Regelefterlevnad | Lagkrav, FI-tillsyn, kollektivavtalskrav | 🟡 Regelverkskarta, källregister, underlag och tio tolkningar finns. Compliance-profil, källäsning, utkast och parametertolkning byggda; modellverifiering 3c-V och generell regeländringshantering återstår. Styrdokumentshierarki och placeringsriktlinje är beslutsutkast |
 | Rapportering | Tillämpliga myndighetsrapporter, intern rapportering, revisionsunderlag | 🟡 Rapportmall och avgränsade analysrapporter finns; rapportkontrakt, samlad verksamhetsrapportering och rapporteringsagent återstår |
 | Internrevision | Kontroller, granskning, avvikelsehantering | 🔲 Ej påbörjat |

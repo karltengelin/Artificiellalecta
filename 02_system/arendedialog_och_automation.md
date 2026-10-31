@@ -22,7 +22,8 @@ lagts i BESLUTSLOGG. Historiska beslut skrivs inte om.
 5. Behåll mänsklig granskning som standard. Bygg en smal automationsväg som
    kan slutföra särskilt tillåtna standardärenden utan mänskligt beslut.
 6. Verifiera normalfall, nekanden, samtidighet och återhämtning lokalt och
-   i isolerade Postgres-scheman. Migrera inte Lakebase-beståndet i detta uppdrag.
+   i isolerade Postgres-scheman. Inför Lakebase-tabellerna efter separat
+   operatörsgodkännande, backup och torrkörning enligt driftsättningen nedan.
 
 ## Arbetsvägar
 
@@ -149,6 +150,35 @@ visar torrkörning som standard och kräver `--apply --backup <mapp>` för infö
 Endast de tre tabellerna skapas; befintliga radantal kontrolleras. Migrering
 mot beståndet kräver separat samordning enligt AGENTS.md §4.5.
 
+### Infört i Lakebase 2026-10-31
+
+Efter operatörens uttryckliga OK till merge och samordnad migration har koden
+förts till `main` och `migrate_case_work.py --apply` körts efter granskad
+torrkörning. Backup: `C:/Claude/Artificiellalecta/backups/20261031T144609Z`
+(16 tabeller, 17 212 rader). Backupfilerna har kontrollerats mot manifestet.
+`case_work`, `case_messages` och `case_work_days` skapades tomma med rätt
+kolumner, främmande nycklar och index. Samtliga tidigare tabeller/radantal
+är oförändrade, bland annat 501 försäkrade och 15 097 premietransaktioner.
+Tabellerna ägs av `app_backend`; samtliga tre agentroller saknar direkta
+tabellrättigheter. En omkörning ändrar ingenting.
+
+Webbens appfabrik startar mot Lakebase med ansluten ärendeadapter. Arbetarens
+`--db lakebase --once` behandlade 0 köposter; inga modelluppdrag skapades och
+ingen bakgrundstjänst eller schemaregel har aktiverats. `tzdata` är installerat
+i projektets gemensamma Pythonmiljö.
+Efter driftanteckningarnas uppdatering gav det ändringsstyrda urvalet
+`agents`, `orchestration`, `tooling` och `web` 696 godkända lokala prov;
+70 Postgres-prov var bortvalda i den körningen. Programkoden är samma kodläge
+som i den tidigare fullständiga lokala verifieringen och Postgres-verifieringen.
+
+**Kvar före användning av dialogen i den befintliga miljön:**
+`OPERATOR_PASSWORD_HASH` saknas i den kontrollerade `.env`-konfigurationen.
+Operatören behöver välja en lokal lösenfras via
+`scripts/web/set_operator_password.py` och starta om webbprocessen.
+Inloggningskravet har inte kringgåtts. Ingen ny lösenfras har valts åt operatören.
+Hela verksamhetskedjan med registrering i beståndet verifieras fortfarande
+först från 2026-11-01, när produktreglerna gäller (F5-5/6).
+
 ## Verifiering och kvarstående delar
 
 Lokala förloppsprov omfattar sparad dialog, fria läsuppdrag, kund-/ärendegräns,
@@ -188,7 +218,8 @@ Detta är första byggda ärendeförmågan, inte hela den färdiga organisatione
 - Flera mänskliga roller/teammedlemskap, centralens generella teamsamtal och
   fler ärendetyper ingår i fortsättningen.
 - Ingen schemaregel eller automatisk slutbehandling har aktiverats i den
-  levererade standardpolicyn. Inget bestånd har migrerats eller ändrats.
+  levererade standardpolicyn. Lakebase-tabellerna är införda enligt ovan;
+  inga befintliga verksamhetsrader har ändrats.
 
 **Förslag till senare beslutspost, utan nummer:** inför ärendebunden dialog
 och två arbetsformer ovanpå gemensam harness; tillåt versionsbunden automatisk

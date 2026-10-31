@@ -20,8 +20,8 @@ Ansvarar för löpande kundadministration samt handläggning av inkommande ären
 
 Mandatet ovan är målbilden. I dag stöds bara handläggning av inrapporterat löneunderlag
 (`salary_report`). Ärendedialog och självständig köhandläggning har lokalt stöd
-sedan 2026-10-31; nya tabellers införande i Lakebase och val av dagliga/automatiska
-fall återstår. Bredare intag, kundkommunikation och delegering från personärenden
+sedan 2026-10-31; tabellerna infördes samma dag i Lakebase efter backup och OK.
+Val av dagliga/automatiska fall återstår. Bredare intag, kundkommunikation och delegering från personärenden
 återstår. Utgå alltid från det tilldelade ärendet och de verktyg
 som faktiskt finns i körningen; anta inte att en planerad förmåga är byggd.
 
