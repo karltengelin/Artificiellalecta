@@ -611,7 +611,7 @@ Append-only: ett beslut är en ny rad, ingen rad ändras.
 
 ## 9j. Tabell: `valuation_bases` – Antagandebiblioteket
 
-> **Status:** Beslutad i **B-042** (val C och I), byggd lokalt i A4 2026-10-31. Migrationen `scripts/migrations/migrate_valuation_bases.py` är skriven och provad mot SQLite; Postgres-provet finns. **Ej skapad i Lakebase.**
+> **Status:** Beslutad i **B-042** (val C och I), byggd lokalt i A4 2026-10-31. Migrationen `scripts/migrations/migrate_valuation_bases.py` är verifierad mot isolerad Postgres 2026-10-31 (`svc_test`): skapar tabellen och startgrunderna, kontrollsummorna håller efter JSONB, idempotent och övriga radantal oförändrade. **Ej skapad i Lakebase.**
 
 **Domän:** Aktuariella grunder och diskonteringskurvor som versionerad data (`VARDERINGSKONTRAKT.md` §4). Innehållet (`assumptions`) prövas mot schemat för ändamålet i `services/valuation_bases.py` och ändras aldrig efter att raden skapats. Ett förslag blir en ny rad. När en grund antas avslutas den gällande grunden i samma familj dagen före. Historiska garantigrunder bevaras (B-027).
 
@@ -686,7 +686,7 @@ Partiellt unikt index: högst en antagen, inte avslutad grund per familj (`uq_va
   - torrkörning som standard, och `--apply` kräver `--backup`;
   - radantalen kontrolleras före och efter.
 
-  Migrationen lägger in startgrunderna och prövar varje kontrollsumma. Minsta avvikelse rullar tillbaka allt. Postgres-provet finns i `tests/test_valuation_bases.py`. **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --team aktuarie --apply`. **Ej körd mot Lakebase**
+  Migrationen lägger in startgrunderna och prövar varje kontrollsumma. Minsta avvikelse rullar tillbaka allt. Verifierat mot isolerad Postgres 2026-10-31 (`tests/test_valuation_bases.py`). **Ordning i Lakebase:** backup → torrkörning → `--apply` → `grant_agent_role.py --team aktuarie --apply`. **Ej körd mot Lakebase**
 
 ---
 
