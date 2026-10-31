@@ -1,9 +1,12 @@
 """P2-FRAGA-001 through HTTP → QuestionConsole → real report export; no external calls."""
 
 import json
+import shutil
+import subprocess
 from dataclasses import replace
 from datetime import date
 from functools import partial
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -123,6 +126,42 @@ def test_preview_assets_are_served_locally_with_browser_module_mime_type(questio
         assert asset.status_code == 200
         assert "javascript" in asset.headers["content-type"]
     assert client.get("/static/PDFJS_LICENSE.txt").status_code == 200
+
+
+def test_preview_cleanup_accepts_htmx_text_nodes():
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("Node behövs för klientens livscykelprov")
+    # Run the actual module; only the external PDF engine is replaced.
+    script = r"""
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import { pathToFileURL } from 'node:url';
+const events = {};
+const context = vm.createContext({URL, document: {
+  addEventListener: (name, callback) => { events[name] = callback; },
+}});
+const filename = process.argv[1];
+const source = new vm.SourceTextModule(fs.readFileSync(filename, 'utf8'), {
+  context, initializeImportMeta: meta => { meta.url = pathToFileURL(filename).href; },
+});
+await source.link(() => new vm.SyntheticModule(['getDocument', 'GlobalWorkerOptions'], function () {
+  this.setExport('getDocument', () => { throw Error('Unexpected PDF read'); });
+  this.setExport('GlobalWorkerOptions', {});
+}, {context}));
+await source.evaluate();
+const cleanup = events['htmx:beforeCleanupElement'];
+assert.equal(typeof cleanup, 'function');
+for (const elt of [null, {nodeType: 3}, {nodeType: 8}, {nodeType: 11},
+                  {nodeType: 1, matches: () => false, querySelectorAll: () => []}]) {
+  assert.doesNotThrow(() => cleanup({detail: {elt}}));
+}
+"""
+    module = Path(__file__).resolve().parents[1] / "src/web/static/pdf-preview.mjs"
+    result = subprocess.run([node, "--experimental-vm-modules", "--input-type=module", "-e", script, str(module)],
+                            capture_output=True, text=True, timeout=15, check=False)
+    assert result.returncode == 0, result.stderr
 
 
 def test_repeated_form_only_starts_once_and_new_form_gets_new_assignment(questions):

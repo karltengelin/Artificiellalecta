@@ -16,6 +16,7 @@ async function mount(root) {
   let pageNumber = 1, rendering = false, pending = false, destroyed = false;
   const controller = new AbortController();
   const state = { destroy() {
+    if (destroyed) return;
     destroyed = true;
     controller.abort();
     observer?.disconnect();
@@ -103,6 +104,8 @@ export function mountPreviews() {
 
 document.addEventListener("htmx:beforeCleanupElement", event => {
   const element = event.detail.elt;
+  // HTMX also emits cleanup events for text nodes during body replacement.
+  if (element?.nodeType !== 1) return;
   if (element.matches("[data-pdf-preview]")) previews.get(element)?.destroy();
   element.querySelectorAll("[data-pdf-preview]").forEach(root => previews.get(root)?.destroy());
 });
