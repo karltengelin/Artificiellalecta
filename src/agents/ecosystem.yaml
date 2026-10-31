@@ -95,6 +95,17 @@ pods:
       get_portfolio_snapshot: {service_operation: get_portfolio_snapshot}
       get_premium_flows: {service_operation: get_premium_flows}
 
+  # Antagandebiblioteket i tjänstelagret (A4, B-042): grunder och kurvor, bara läsning. Förslag
+  # (propose_valuation_basis) monteras med antagandeöversynen (A9) när rollen får lägga förslag i kön.
+  antaganden:
+    owner_team: aktuarie
+    mountable_by: [aktuarie]
+    pii: false
+    allowed_effects: [read]
+    skills:
+      list_valuation_bases: {service_operation: list_valuation_bases}
+      get_valuation_basis: {service_operation: get_valuation_basis}
+
   # Delegering till ett annat teams ledande agent (3c-1, B-039). Harness kör barnet med egen profil
   # och gemensam rotbudget; verktyget visas bara när uppdraget anger delegation_targets.
   delegering:
@@ -142,7 +153,7 @@ teams:
     mandate: >-
       Ta fram beståndsinsikter i betrodd kod för godkända parameterändringar, med antaganden och begränsningar,
       samt aktuariell granskning och beräkningsunderlag på beställning av compliance.
-    pods: [bestand, berakning, regelverk, dokument]
+    pods: [bestand, berakning, regelverk, dokument, antaganden]
     allowed_effects: [read, compute, write]
     limits:
       max_steps: 12
@@ -177,7 +188,7 @@ agents:
     team: aktuarie
     instruction: 02_system/agenter/aktuarieagent.md
     model_role: deep
-    pods: [bestand, berakning, regelverk, dokument]
+    pods: [bestand, berakning, regelverk, dokument, antaganden]
     allowed_effects: [read, compute, write]
 
 # Delegering mellan team (3c-1, B-039). Gränserna gäller en hel rotkörning (harness.md §6.3, §10.2).

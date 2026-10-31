@@ -55,6 +55,8 @@ from services.db import session_factory_for
 from services.operations.common import luhn_valid
 from services.parameters import add_missing_defaults as add_missing_parameters
 from services.parameters import default_rows as default_parameter_rows
+from services.valuation_bases import add_missing_defaults as add_missing_bases
+from services.valuation_bases import default_rows as default_basis_rows
 from skills.calculation.calculate_itp1_premium import calculate_itp1_premium, is_in_age_window
 
 DEMO_AGENT = Actor.agent("demo_handlaggaragent", team="forsakring")
@@ -173,7 +175,7 @@ def add_missing_demo_tables(engine: Engine) -> None:
     Base.metadata.create_all(engine)
     # Produktparametrarna (B-035) i en demo- eller testdatabas som skapades före 3c-P1
     with session_factory_for(engine)() as s:
-        if add_missing_parameters(s):
+        if add_missing_parameters(s) + add_missing_bases(s):  # antagandebiblioteket (A4, B-042)
             s.commit()
 
 
@@ -181,6 +183,7 @@ def seed_demo_stock(session_factory, *, with_older_cohort: bool = True) -> None:
     with session_factory() as s:
         s.add_all(BaseAmount(year=y, income_base_amount_sek=Decimal(v)) for y, v in IBB.items())
         s.add_all(default_parameter_rows())
+        s.add_all(default_basis_rows())
         employers = {}
         for data in EMPLOYERS:
             employer = Employer(**data)

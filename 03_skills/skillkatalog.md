@@ -33,13 +33,15 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 | `get_premium_history` | `kunddata` | `get_premium_history` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_product_parameters` | `regelverk` | `get_product_parameters` | read | Nej | AGENT | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 | `get_salary_reports` | `kunddata` | `get_salary_reports` | read | Ja | AGENT | case_handler (Handläggaragent) |
+| `get_valuation_basis` | `antaganden` | `get_valuation_basis` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
 | `list_regulatory_documents` | `regelverk` | gateway `list_regulatory_documents` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
+| `list_valuation_bases` | `antaganden` | `list_valuation_bases` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
 | `read_regulatory_document` | `regelverk` | gateway `read_regulatory_document` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 | `register_salary_report` | `kunddata` | `register_salary_report` | write | Ja | APPROVAL | case_handler (Handläggaragent) |
 | `set_policy_paid_up` | `kunddata` | `set_policy_paid_up` | write | Ja | APPROVAL | – |
 | `write_draft` | `dokument` | gateway `write_draft` | write | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 
-Operationer utan poddmappning – stängda för alla agenter: `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `register_employer`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
+Operationer utan poddmappning – stängda för alla agenter: `adopt_valuation_basis`, `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `propose_valuation_basis`, `register_employer`, `reject_valuation_basis`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
 <!-- list_skills.py: slut -->
 
 ## Planerade skills (ur ATT_GORA)

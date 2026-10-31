@@ -433,6 +433,27 @@ Beslutat i **B-042** (`projekt/06_avdelningsfunktioner/AKTUARIETEAM_PLAN.md` §4
 
 **Spärras:** år före 2023 eller efter innevarande år (ogiltig indata), och okända fält.
 
+### 9.7 Antagandebiblioteket (A4, B-042) – vad som stöds och vad som spärras
+
+Beslutat i **B-042** (val C och I) och värderingskontraktet A1 §4. Kod: `src/services/operations/valuation_bases.py` (operationerna) och `src/services/valuation_bases.py` (scheman, kontrollsumma och startgrunder). Tabell: `valuation_bases` (`databasschema.md` §9j).
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `list_valuation_bases` | `read` | Nej | `AGENT` | Grunder och kurvor med status, giltighet, beslut och kontrollsumma, och den gällande grunden per familj en viss dag |
+| `get_valuation_basis` | `read` | Nej | `AGENT` | En grund med alla antaganden. Ett innehåll som inte stämmer med kontrollsumman stoppar läsningen |
+| `propose_valuation_basis` | `write` | Nej | `APPROVAL` | Ny grund som förslag. Innehållet prövas mot ändamålets schema. Förslaget gäller inte |
+| `adopt_valuation_basis` | `write` | Nej | `HUMAN_ONLY` | Antar ett förslag med giltighetsdag och beslutsreferens. Den gällande grunden i familjen avslutas dagen före |
+| `reject_valuation_basis` | `write` | Nej | `HUMAN_ONLY` | Avslår ett förslag med en anteckning; förslaget finns kvar som historik |
+
+**Produktregel för förslaget:** `propose_valuation_basis` bär PR-ITP1-031. Regeln säger att en språkmodell får föreslå beslut, att aktuariella beräkningar sker deterministiskt enligt låst grund och att människans godkännande loggas före materiell verkställighet. Utan regel skulle golvet göra operationen `HUMAN_ONLY` (§4). Före 2026-11-01 är den `HUMAN_ONLY` för agenter, eftersom paketet då ännu inte gäller.
+
+**Monteras inte för aktuarien i A4:** förslaget kräver att `agent_aktuarie` får lägga förslag i godkännandekön. Det är en ny rättighet, som öppnas med antagandeöversynen (A9) efter granskning. Till dess skriver aktuarieagenten ett förslag som utkast, och en människa registrerar det.
+
+**Spärras:**
+- *Blockeras:* antagande av något annat än ett förslag, och ändrat innehåll (kontrollsumman). En garantigrund (`guarantee`) kan inte antas med giltighet före nästa månadsförsta (B-027).
+- *Konflikt:* en befintlig kod, eller en antagen grund i familjen som redan gäller från samma dag eller senare.
+- *Ogiltig indata:* okänd familj eller kod, ett innehåll som inte följer schemat, och ett förslag som ska ersätta en grund i en annan familj.
+
 ## 10. Öppna frågor
 
 - **Fyraögonprincip** (två olika människor) är inte möjlig med en operatör – framtida option per operation.

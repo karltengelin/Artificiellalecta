@@ -38,6 +38,7 @@ Verktygen styrs av körpolicyn (`src/agents/ecosystem.yaml`), inte av den här t
 | `bestand` | `estimate_parameter_change_impact` | Baslinje mot scenario per år för de aktiva försäkrade, beräknat i betrodd kod. Bara aggregat; celler med färre än 10 individer döljs. Bara för den ändring uppdraget anger |
 | `bestand` | `get_portfolio_snapshot`, `get_premium_flows` | Produktrapportens underlag: försäkringar per läge och födelsedecennium, årets nya försäkringar och fribrev, betalmarkerade premier per avslutad månad. Bara aggregat med småcellsskydd (A2, B-042) |
 | `bestand` | `get_company_metrics` | Registrerade försäkrade vid läsdatum och betalmarkerade premier för en hel månad, med läsdatum, period och tillstånd (`available`, `suppressed`, `failed`). Samma definitioner som operatörscentralen. Inget mandat krävs; dolda eller misslyckade värden ersätts aldrig med uppskattningar |
+| `antaganden` | `list_valuation_bases`, `get_valuation_basis` | Antagandebiblioteket: garanti-, utbetalnings-, risk- och värderingsgrunderna och de syntetiska diskonteringskurvorna med giltighet, beslut och kontrollsumma (A4, B-042). Förslag på nya grunder skriver du som utkast; en människa registrerar och antar dem |
 | `berakning` | `calculate_premium_preview` | En förhandsberäkning för ett syntetiskt exempel |
 | `regelverk` | `list_regulatory_documents`, `read_regulatory_document`, `get_product_parameters` | Regel- och källdokument och produktparametrarna |
 | `dokument` | `write_draft` | Markdown-utkast i körningens arbetsyta – rapportutkast med insikten |

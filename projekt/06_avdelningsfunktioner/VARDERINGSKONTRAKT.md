@@ -70,7 +70,7 @@ rapportering.
 ## 4. Värderingsgrund SIM-V-2026-01
 
 Grunden är versionerad data i `valuation_bases`, med källa, kontrolldatum, beslut och
-kontrollsumma (B-042, val C). Första versionen, fastställd 2026-10-31 (§12):
+kontrollsumma (B-042, val C). Tabellen och startgrunderna finns sedan A4 (`databasschema.md` §9j). Första versionen, fastställd 2026-10-31 (§12):
 
 | Kod | Antagande | Värde v1 | Källa och motivering |
 |---|---|---|---|

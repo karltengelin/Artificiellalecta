@@ -33,6 +33,14 @@ operations:
   get_company_metrics: AGENT          # ledningsaggregat med småcellsskydd, utan personuppgifter (OC-3a val C)
   get_portfolio_snapshot: AGENT       # bestånd per läge och födelsedecennium, småcellsskydd, inga personuppgifter (A2, B-042)
   get_premium_flows: AGENT            # betalmarkerade premier per månad under ett år, småcellsskydd (A2, B-042)
+
+  # Antagandebiblioteket (A4, B-042). Förslaget kräver godkänd PR-ITP1-031 (golvet) och monteras för
+  # aktuarien först med antagandeöversynen (A9); antagande och avslag gör bara en människa.
+  list_valuation_bases: AGENT          # grunder och kurvor med status, giltighet och kontrollsumma
+  get_valuation_basis: AGENT           # en grund med alla antaganden; ändrat innehåll stoppar läsningen
+  propose_valuation_basis: APPROVAL    # ny grund som förslag, gäller inte förrän den antas
+  adopt_valuation_basis: HUMAN_ONLY    # antagande med giltighetsdag och beslutsreferens
+  reject_valuation_basis: HUMAN_ONLY   # avslag av ett förslag med anteckning
   get_operation_events: HUMAN_ONLY     # händelseloggen, personuppgifter (loggas)
 
   # Skrivningar (Fas 1f T3). PR-ITP1 v1.0 är infört (B-031) men gäller först från 2026-11-01;

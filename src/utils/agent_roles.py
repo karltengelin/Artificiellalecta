@@ -94,6 +94,7 @@ AKTUARIE = RoleGrants(
         "policies",
         "policy_states",
         "product_parameters",
+        "valuation_bases",  # antagandebiblioteket (A4, B-042); kräver migrate_valuation_bases.py först
     ),
     insert=("operation_events",),
     columns=(

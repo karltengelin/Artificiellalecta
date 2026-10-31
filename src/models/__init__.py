@@ -21,6 +21,7 @@ from .premium_transaction import PremiumTransaction
 from .product_parameter import ProductParameter
 from .salary_report import SalaryReport
 from .trade import Trade
+from .valuation_basis import ValuationBasis
 
 __all__ = [
     "ApprovalRequestRecord",
@@ -42,4 +43,5 @@ __all__ = [
     "ProductParameter",
     "SalaryReport",
     "Trade",
+    "ValuationBasis",
 ]
