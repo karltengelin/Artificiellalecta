@@ -8,8 +8,9 @@ påverkar åldern vid månadens första dag, aktuariell_grund.md §2).
 - **Garantidelar:** varje betalmarkerad premie eller positiv justering är en egen del med
   `G_j = P_j / A_g(t_j, livsvarigt från 66)`, värderad vid mottagningsmånadens slut på den
   garantigrund som gäller då: SIM-HIST-2023-01 till och med 2026-10, SIM-G-2026-01 därefter.
-- **Pensionskapital:** `C` rullas fram från 2023-01 med `skills.calculation.capital_rollforward`
-  och avkastningsserien AVK-SIM i antagandebiblioteket. Premien tillförs vid
+- **Pensionskapital:** `C` rullas fram från 2023-01 med `skills.calculation.capital_rollforward`,
+  avkastningsserien AVK-SIM i antagandebiblioteket och månadens kapitalavgift och
+  skattebelastning ur `product_parameters` (`services.parameters.capital_rates`). Premien tillförs vid
   mottagningsmånadens slut. Kapital före 2023 finns inte i beståndet och räknas inte.
 - **Ej beräknat:** försäkringar med påbörjat uttag (PR-009) eller negativ premierad (rättelse
   enligt PR-019) listas med orsak och ingår inte i kollektivet.
@@ -42,7 +43,9 @@ from models import (
     PremiumTransaction,
     ValuationBasis,
 )
+from services import parameters
 from services import valuation_bases as vb
+from services.errors import ServiceError
 from skills.calculation import actuarial_annuity as aa
 from skills.calculation.capital_rollforward import Month, RollforwardError, close_month
 
@@ -109,6 +112,8 @@ class NotCalculated(BaseModel):
 class MonthTotals(BaseModel):
     month: date
     rate: Decimal
+    fee_rate: Decimal
+    tax_rate: Decimal
     opening: Decimal
     returns: Decimal
     fees: Decimal
@@ -129,6 +134,7 @@ class ValuationExtract(BaseModel):
     valuation_date: date
     source: str = SOURCE
     bases: dict[str, str] = Field(description="Använda grunder och deras kontrollsummor")
+    parameters: dict[str, list[str]] = Field(description="Använda versioner av kapitalavgift och skattebelastning")
     policies: list[ExtractPolicy]
     not_calculated: list[NotCalculated]
     outside_population: int = Field(description="Försäkringar utan garantidel och kapital vid datumet")
@@ -214,6 +220,10 @@ def build_extract(session: Session, valuation_date: date) -> ValuationExtract:
     months = _months(FIRST_MONTH, valuation_date.replace(day=1))
     guarantee = _Guarantee([r for f in GUARANTEE_FAMILIES for r in _adopted(session, f)])
     return_row, rates = _returns(session, valuation_date, months)
+    try:
+        capital = parameters.capital_rates(session, months)
+    except ServiceError as exc:
+        raise ExtractError(str(exc)) from exc
 
     states = defaultdict(list)
     for policy_id, state in session.execute(select(PolicyState.policy_id, PolicyState.state).where(
@@ -275,7 +285,7 @@ def build_extract(session: Session, valuation_date: date) -> ValuationExtract:
         calculated[key] = (born, model_birth, state)
 
     try:
-        ledger = _roll(months, rates, parts_of)
+        ledger = _roll(months, rates, capital, parts_of)
     except RollforwardError as exc:
         raise ExtractError(str(exc)) from exc
     closing = ledger[-1].lines if ledger else {}
@@ -295,7 +305,8 @@ def build_extract(session: Session, valuation_date: date) -> ValuationExtract:
                                  state=state, plan=Plan(kind="reference_lifelong", start=start),
                                  guarantee_parts=parts, capital=line_c, flows=flows))
 
-    totals = [MonthTotals(month=m.month, rate=m.rate, opening=m.total("opening"),
+    totals = [MonthTotals(month=m.month, rate=m.rate, fee_rate=m.fee_rate, tax_rate=m.tax_rate,
+                          opening=m.total("opening"),
                           returns=m.total("investment_return"), fees=m.total("fee"), taxes=m.total("tax"),
                           fees_waived=m.total("fee_waived"), taxes_waived=m.total("tax_waived"),
                           premiums=m.total("premiums"), closing=m.total("closing")) for m in ledger]
@@ -304,21 +315,26 @@ def build_extract(session: Session, valuation_date: date) -> ValuationExtract:
     problem_count = sum(len(items) for items in problems.values())
     checks = _checks(session, valuation_date, out, not_calculated, totals, problems, guarantee, paid,
                      len(out) + len(not_calculated) + outside + problem_count)
-    extract = ValuationExtract(valuation_date=valuation_date, bases=dict(sorted(used.items())), policies=out,
+    versions = {"capital_fee_rate": sorted({c[2] for c in capital.values()}),
+                "customer_tax_rate": sorted({c[3] for c in capital.values()})}
+    extract = ValuationExtract(valuation_date=valuation_date, bases=dict(sorted(used.items())),
+                               parameters=versions, policies=out,
                                not_calculated=not_calculated, outside_population=outside, months=totals,
                                checks=checks, approved=all(c.passed for c in checks))
     extract.checksum = extract_checksum(extract)
     return extract
 
 
-def _roll(months: list[date], rates: dict[date, Decimal], parts_of: dict[str, list[GuaranteePart]]) -> list[Month]:
+def _roll(months: list[date], rates: dict[date, Decimal], capital: dict[date, tuple],
+          parts_of: dict[str, list[GuaranteePart]]) -> list[Month]:
     added: dict[date, dict[str, Decimal]] = defaultdict(lambda: defaultdict(Decimal))
     for key, parts in parts_of.items():
         for part in parts:
             added[part.received_month][key] += part.premium
     ledger, openings = [], {}
     for month in months:
-        result = close_month(month, rates[month], openings, added.get(month, {}))
+        fee_rate, tax_rate, *_ = capital[month]
+        result = close_month(month, rates[month], openings, added.get(month, {}), fee_rate=fee_rate, tax_rate=tax_rate)
         ledger.append(result)
         openings = {k: line.closing for k, line in result.lines.items()}
     return ledger

@@ -2,7 +2,7 @@
 
 Ett litet bestånd i SQLite med antagandebibliotekets startgrunder. Kapitalet är handräknat med
 AVK-SIM-2026-01 (2023-01 +2,10 %, 2023-02 −1,20 %, 2023-03 +0,40 %), kapitalavgift 0,20 % och
-skattebelastning 0,219 % för 2023. Garantidelarna jämförs med motorns `guarantee_part`.
+skattebelastning 0,219 % för 2023 ur startraderna i `product_parameters`. Garantidelarna jämförs med motorns `guarantee_part`.
 """
 
 from __future__ import annotations
@@ -24,8 +24,10 @@ from models import (
     PolicyBenefit,
     PolicyState,
     PremiumTransaction,
+    ProductParameter,
     ValuationBasis,
 )
+from services import parameters
 from services import valuation_bases as vb
 from services.db import session_factory_for
 from services.valuation_extract import (
@@ -69,6 +71,7 @@ def db():
     factory = session_factory_for(engine)
     with factory() as s:
         vb.add_missing_defaults(s)
+        parameters.add_missing_defaults(s)
         employer = Employer(org_number="5560000001", name="Testbolaget AB", affiliation_date=date(2010, 1, 1))
         s.add(employer)
         s.flush()
@@ -115,6 +118,9 @@ class TestRekonstruktion:
             "inga negativa belopp", "kända grunder", "kapitalavstämning"]
         assert extract.source == SOURCE and extract.outside_population == 1
         assert set(extract.bases) == {"SIM-HIST-2023-01", "AVK-SIM-2026-01"}
+        assert extract.parameters == {"capital_fee_rate": ["PR-ITP1-022 v1.0 från 2023-01-01"],
+                                      "customer_tax_rate": ["PR-ITP1-023 v1.0 från 2023-01-01"]}
+        assert (extract.months[-1].fee_rate, extract.months[-1].tax_rate) == (Decimal("0.002"), Decimal("0.00219"))
 
     def test_kapitalet_ar_handraknat(self, db):
         extract = _extract(db)
@@ -188,6 +194,14 @@ class TestKontroller:
     def test_saknad_avkastning_blockerar(self, db):
         with pytest.raises(ExtractError, match="Avkastning saknas för 2026-11"):
             _extract(db, date(2026, 11, 30))
+
+    def test_saknad_sats_blockerar(self, db):
+        with db.factory() as s:
+            s.delete(s.scalar(select(ProductParameter).where(ProductParameter.key == "customer_tax_rate",
+                                                             ProductParameter.valid_from == date(2023, 1, 1))))
+            s.commit()
+        with pytest.raises(ExtractError, match="2023-01: customer_tax_rate"):
+            _extract(db)
 
     def test_andrad_grund_blockerar(self, db):
         with db.factory() as s:

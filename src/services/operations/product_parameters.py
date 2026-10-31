@@ -85,7 +85,7 @@ def get_product_parameters(ctx: OperationContext, data: ProductParametersQuery) 
     session = ctx.require_session()
     on = data.on_date or common.today()
     if not parameters.has_parameter_table(session):
-        defaults = {d.key: d.value for d in parameters.DEFAULTS}
+        defaults = {d.key: d.value for d in parameters.DEFAULTS if d.key in parameters.PREMIUM_FIELDS}
         return ProductParameters(on_date=on, table_present=False, effective=defaults, versions=[])
 
     rows = session.scalars(select(ProductParameter).order_by(ProductParameter.key, ProductParameter.valid_from)).all()
@@ -97,7 +97,8 @@ def get_product_parameters(ctx: OperationContext, data: ProductParametersQuery) 
         )
         for r in rows
     ]
-    effective = {key: parameters.plain(row.value) for key, row in sorted(parameters.versions_on(session, on).items())}
+    found = parameters.versions_on(session, on, keys=tuple(PARAMETER_UNITS))
+    effective = {key: parameters.plain(row.value) for key, row in sorted(found.items())}
     return ProductParameters(on_date=on, table_present=True, effective=effective, versions=versions)
 
 

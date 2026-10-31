@@ -2,12 +2,13 @@
 
 Instruktion: 03_skills/beräkning/kapitalavrakning.md
 Domänregler: PR-ITP1-020 (ordningen), PR-ITP1-021 (avkastning), PR-ITP1-022 (avgift),
-PR-ITP1-023 (skattebelastning); satserna ur 01_domän/parametrar/PARAMETERREGISTER.md
+PR-ITP1-023 (skattebelastning). Satserna är indata: anroparen slår upp månadens versioner i
+`product_parameters` (`services.parameters.capital_rates`).
 
 Ren beräkning utan sidoeffekter, i hela ören. Månaden för ett kollektiv av delar:
 
     avkastning_i = andel av round_half_up(Σ C_i_öppning × r) efter C_i_öppning × r, största bråkrest
-    F_i          = min(round_half_up(C_i_öppning × 0,002/12), C_i efter avkastning)
+    F_i          = min(round_half_up(C_i_öppning × f/12), C_i efter avkastning)
     T_i          = min(round_half_up(C_i_öppning × s_y/12), C_i efter avgift)
     C_i_stängning = C_i_öppning + avkastning_i − F_i − T_i + månadens premier
 
@@ -25,31 +26,14 @@ from datetime import date
 from decimal import ROUND_FLOOR, ROUND_HALF_UP, Decimal
 
 CENT = Decimal("0.01")
-#: Kapitalavgift nominellt per år (B-021, PR-ITP1-022)
-CAPITAL_FEE_RATE = Decimal("0.002")
-#: Kundbelastning avkastningsskatt per år, 15 % × max(SLR året före, 0,5 %) (PARAMETERREGISTER.md, PR-ITP1-023)
-CUSTOMER_TAX_RATES = {
-    2023: Decimal("0.002190"),
-    2024: Decimal("0.003720"),
-    2025: Decimal("0.003225"),
-    2026: Decimal("0.003540"),
-}
 
 
 class RollforwardError(ValueError):
-    """Avräkningen kan inte göras, t.ex. saknad årssats eller ogiltig avkastning."""
+    """Avräkningen kan inte göras, t.ex. ogiltig avkastning eller sats."""
 
 
 def round_half_up(amount: Decimal) -> Decimal:
     return amount.quantize(CENT, rounding=ROUND_HALF_UP)
-
-
-def tax_rate(year: int) -> Decimal:
-    """Årets skattebelastning; ett saknat år blockerar (PR-023: inte föregående års sats automatiskt)."""
-    try:
-        return CUSTOMER_TAX_RATES[year]
-    except KeyError:
-        raise RollforwardError(f"Skattebelastning för {year} saknas i parameterregistret") from None
 
 
 def allocate_cents(total: Decimal, weights: Sequence[Decimal]) -> list[Decimal]:
@@ -96,6 +80,8 @@ class Line:
 class Month:
     month: date
     rate: Decimal
+    fee_rate: Decimal
+    tax_rate: Decimal
     lines: dict[Hashable, Line]
 
     def total(self, field: str) -> Decimal:
@@ -104,13 +90,17 @@ class Month:
 
 def close_month(
     month: date, rate: Decimal, openings: Mapping[Hashable, Decimal], premiums: Mapping[Hashable, Decimal],
+    *, fee_rate: Decimal, tax_rate: Decimal,
 ) -> Month:
     """Avräkna en månad enligt PR-020 steg 1–4 för alla delar i `openings` och `premiums`.
 
-    Delarna ordnas efter nyckel, så att fördelningen i ören är stabil.
+    `fee_rate` och `tax_rate` är månadens nominella årssatser för kapitalavgift och
+    skattebelastning. Delarna ordnas efter nyckel, så att fördelningen i ören är stabil.
     """
     if rate < -1:
         raise RollforwardError(f"Avkastningen {rate} för {month:%Y-%m} är under −100 %")
+    if not (0 <= fee_rate < 1 and 0 <= tax_rate < 1):
+        raise RollforwardError(f"Satserna för {month:%Y-%m} ska vara andelar mellan 0 och 1")
     keys = sorted(set(openings) | set(premiums))
     opening = {k: openings.get(k, Decimal(0)) for k in keys}
     added = {k: premiums.get(k, Decimal(0)) for k in keys}
@@ -121,14 +111,14 @@ def close_month(
             raise RollforwardError(f"Premien för {k} är negativ")
     shares = [opening[k] * rate for k in keys]
     returns = dict(zip(keys, allocate_cents(round_half_up(sum(shares, Decimal(0))), shares), strict=True))
-    fee_rate, tax_monthly = CAPITAL_FEE_RATE / 12, tax_rate(month.year) / 12
+    fee_monthly, tax_monthly = fee_rate / 12, tax_rate / 12
     lines = {}
     for k in keys:
         available = opening[k] + returns[k]
-        fee_due = round_half_up(opening[k] * fee_rate)
+        fee_due = round_half_up(opening[k] * fee_monthly)
         fee = min(fee_due, available)
         tax_due = round_half_up(opening[k] * tax_monthly)
         tax = min(tax_due, available - fee)
         lines[k] = Line(opening[k], returns[k], fee, tax, added[k], available - fee - tax + added[k],
                         fee_due - fee, tax_due - tax)
-    return Month(month, rate, lines)
+    return Month(month, rate, fee_rate, tax_rate, lines)

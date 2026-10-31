@@ -345,7 +345,7 @@ Beslutat av operatören 2026-10-25 (**B-035**, underlag i `02_system/flaggskepps
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
-| `get_product_parameters` | `read` | Nej | `AGENT` | Värdena som gäller en dag (standard i dag) och alla versioner med giltighet, tillstånd (gällande, kommande, upphörd, återkallad), produktregel, källa och beslut |
+| `get_product_parameters` | `read` | Nej | `AGENT` | Värdena som gäller en dag (standard i dag) och alla versioner med giltighet, tillstånd (gällande, kommande, upphörd, återkallad), produktregel, källa och beslut. Sedan A5 även kapitalavgift och skattebelastning per år |
 | `schedule_product_parameter_change` | `write` | Nej | `APPROVAL` | Ny version från en framtida månadsförsta; den föregående avslutas dagen före (3c-P2) |
 | `withdraw_product_parameter_change` | `write` | Nej | `HUMAN_ONLY` | Drar tillbaka en version som inte börjat gälla; den föregående gäller igen tills vidare (3c-P2) |
 

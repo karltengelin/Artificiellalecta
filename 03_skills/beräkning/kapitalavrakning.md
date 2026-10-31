@@ -20,9 +20,14 @@ Varje månad, för hela kollektivet:
 | Steg | Regel | Beräkning |
 |---|---|---|
 | Avkastning | PR-021 | Kollektivets resultat `round_half_up(Σ C_öppning × r)` fördelas i ören efter `C_öppning`, största bråkrest |
-| Kapitalavgift | PR-022 | `round_half_up(C_öppning × 0,002/12)`, högst kapitalet efter avkastning |
-| Skattebelastning | PR-023 | `round_half_up(C_öppning × s_y/12)` med årets sats ur parameterregistret, högst kapitalet efter avgift |
+| Kapitalavgift | PR-022 | `round_half_up(C_öppning × f/12)` med månadens sats (0,002), högst kapitalet efter avkastning |
+| Skattebelastning | PR-023 | `round_half_up(C_öppning × s_y/12)` med årets sats, högst kapitalet efter avgift |
 | Premier | PR-020 steg 4, PR-018 | Betalmarkerade premier tillförs vid mottagningsmånadens slut och får avkastning först nästa månad |
+
+Satserna är versionerad data i `product_parameters` (`capital_fee_rate`, `customer_tax_rate`), inte
+konstanter i koden. Datautdraget slår upp månadens versioner med `services.parameters.capital_rates`
+och sparar vilka versioner som användes. Skattebelastningen har en version per kalenderår, så ett år
+utan beslutad sats stoppar avräkningen (PR-023).
 
 Det som inte kan debiteras avstås av bolaget och redovisas som avstått. Arvsvinst och
 pensionsdebitering ingår inte: beståndet har inga dödsfall eller påbörjade uttag, så poolen är noll.
@@ -46,12 +51,13 @@ pensionsdebitering ingår inte: beståndet har inga dödsfall eller påbörjade 
 - Produktreglernas kontrollfall: PR-020 (100 000 kr, 1 %: +1 000, 16,67 och 29,50), PR-021
   (−100/−200), PR-022 (noll kapital och −100 %), PR-023 (negativ avkastning, saknat år) och
   fördelningen i ören i PR-011.
-- Skattesatserna och kapitalavgiften prövas mot `PARAMETERREGISTER.md`.
+- Startraderna för kapitalavgift och skattebelastning prövas mot `PARAMETERREGISTER.md`, och uppslaget
+  per månad mot SQLite: rätt år, saknat år och återkallad version.
 - Utdragets kontroller enligt kontraktet §5.3: antal försäkringar, premiesumma mot beståndet,
   fullständiga uppgifter, premiehistorik, inga negativa belopp, kända grunder och
   kapitalavstämning. En underkänd kontroll ger `approved = False`.
 - Ett handräknat bestånd i testerna och samma kontrollsumma för samma bestånd (K6).
-- Saknad avkastning, saknad årssats eller ändrad grund blockerar utdraget.
+- Saknad avkastning, saknad sats eller ändrad grund blockerar utdraget.
 
 ## Gränser
 

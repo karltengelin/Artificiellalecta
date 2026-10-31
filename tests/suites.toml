@@ -131,6 +131,7 @@ postgres = [
   "tests/test_migration_cases.py::test_migrationen_skapar_bara_cases_och_blir_identisk_med_create_all",
   "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
+  "tests/test_product_parameters.py::test_uppgraderingen_lagger_till_kapitalets_parametrar",
   "tests/test_valuation_bases.py::TestMigration::test_migrationen_mot_postgres",
   "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
 ]
@@ -257,6 +258,7 @@ postgres = [
   "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
   "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
+  "tests/test_product_parameters.py::test_uppgraderingen_lagger_till_kapitalets_parametrar",
   "tests/test_valuation_bases.py::TestMigration::test_migrationen_mot_postgres",
 ]
 

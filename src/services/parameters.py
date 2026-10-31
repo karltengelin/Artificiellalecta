@@ -1,4 +1,4 @@
-"""Produktparametrar för premieberäkningen – uppslag per premiemånad (Fas 3c, B-035).
+"""Produktparametrar för premieberäkningen och kapitalavräkningen – uppslag per månad (Fas 3c, B-035; A5).
 
     params = premium_parameters(session, date(2027, 3, 1))
     calculate_itp1_premium(lön, ibb, birth_date=..., period_month=..., parameters=params)
@@ -8,6 +8,11 @@ giltighetsintervall. Saknas en parameter för månaden stoppas beräkningen – 
 reserv. Enda undantaget är en databas där tabellen ännu inte finns (Lakebase före
 migrationen `migrate_product_parameters.py`): då används paketets värden, och
 calculation_basis säger det.
+
+Kapitalavgiften (PR-ITP1-022) och kundbelastningen för avkastningsskatt (PR-ITP1-023) slås upp
+per månad med `capital_rates`. Skattebelastningen har en version per kalenderår som slutar
+31 december, så ett år utan beslutad sats stoppar avräkningen (PR-023: inte föregående års sats
+automatiskt). Här finns ingen reserv i koden.
 """
 
 from __future__ import annotations
@@ -36,7 +41,15 @@ PREMIUM_FIELDS = {
     "premium_breakpoint_high_ibb": "breakpoint_high_ibb",
 }
 AGE_FIELDS = ("age_start", "age_end")
+#: Kapitalavräkningens parametrar (PR-ITP1-022/023), nominella årssatser
+CAPITAL_KEYS = ("capital_fee_rate", "customer_tax_rate")
 FALLBACK_LABEL = "PR-ITP1 v1.0 i koden – tabellen product_parameters saknas (kör migrationen)"
+
+
+#: Startvärdena gäller från 2023-01-01 – samma som premiemotorns standard och premiehistoriken 2023–2026
+DEFAULT_VALID_FROM = date(2023, 1, 1)
+DEFAULT_RULE_VERSION = "1.0"
+DEFAULT_DECISION = "B-035 startvärden"
 
 
 @dataclass(frozen=True)
@@ -46,12 +59,16 @@ class DefaultParameter:
     unit: str
     rule_id: str
     source_ref: str
+    valid_from: date = DEFAULT_VALID_FROM
+    valid_to: date | None = None
 
 
-#: Startvärdena från 2023-01-01 – samma som premiemotorns standard och premiehistoriken 2023–2026
-DEFAULT_VALID_FROM = date(2023, 1, 1)
-DEFAULT_RULE_VERSION = "1.0"
-DEFAULT_DECISION = "B-035 startvärden"
+def _tax_year(year: int, rate: str) -> DefaultParameter:
+    """Årets kundbelastning 15 % × max(SLR året före, 0,5 %) ur PARAMETERREGISTER.md, bara det året."""
+    return DefaultParameter("customer_tax_rate", Decimal(rate), "rate", "PR-ITP1-023", "K-SKV-SLR",
+                            date(year, 1, 1), date(year, 12, 31))
+
+
 DEFAULTS = (
     DefaultParameter("premium_age_start", Decimal("25"), "years", "PR-ITP1-013", "K-ITP-AVTAL-2026"),
     DefaultParameter("premium_age_end", Decimal("66"), "years", "PR-ITP1-013", "K-ITP-FIL"),
@@ -59,6 +76,11 @@ DEFAULTS = (
     DefaultParameter("premium_rate_high", Decimal("0.30"), "rate", "PR-ITP1-001", "K-ITP-AVTAL-2026"),
     DefaultParameter("premium_breakpoint_low_ibb", Decimal("7.5"), "ibb", "PR-ITP1-001", "K-ITP-AVTAL-2026"),
     DefaultParameter("premium_breakpoint_high_ibb", Decimal("30"), "ibb", "PR-ITP1-001", "K-ITP-AVTAL-2026"),
+    DefaultParameter("capital_fee_rate", Decimal("0.002"), "rate", "PR-ITP1-022", "B-021"),
+    _tax_year(2023, "0.002190"),
+    _tax_year(2024, "0.003720"),
+    _tax_year(2025, "0.003225"),
+    _tax_year(2026, "0.003540"),
 )
 
 
@@ -66,7 +88,7 @@ def default_rows(created_by: str = "system:seed") -> list[ProductParameter]:
     """Startvärdena som rader – för migrationen och demo-/testdatabaserna."""
     return [
         ProductParameter(
-            key=d.key, value=d.value, unit=d.unit, valid_from=DEFAULT_VALID_FROM, valid_to=None,
+            key=d.key, value=d.value, unit=d.unit, valid_from=d.valid_from, valid_to=d.valid_to,
             rule_id=d.rule_id, rule_version=DEFAULT_RULE_VERSION, source_ref=d.source_ref,
             decision_ref=DEFAULT_DECISION, status="valid", created_by=created_by,
         )
@@ -152,6 +174,28 @@ def premium_parameters(session: Session, period_month: date) -> PremiumParameter
     if not has_parameter_table(session):
         return PremiumParameters(versions={"källa": FALLBACK_LABEL})
     return _build(versions_on(session, month), month)
+
+
+def capital_rates(session: Session, months) -> dict[date, tuple[Decimal, Decimal, str, str]]:
+    """Kapitalavgift och skattebelastning (årssatser) per månad, med versionernas etiketter.
+
+    En månad utan gällande version av någon av dem stoppar med NotFoundError.
+    """
+    months = sorted({m.replace(day=1) for m in months})
+    if not months:
+        return {}
+    rows = _valid_rows(session, CAPITAL_KEYS, months[0], months[-1])
+    rates = {}
+    for month in months:
+        found = _pick(rows, month)
+        missing = [key for key in CAPITAL_KEYS if key not in found]
+        if missing:
+            raise NotFoundError(
+                f"Produktparametrar saknas för {month:%Y-%m}: {', '.join(missing)} (tabellen product_parameters)"
+            )
+        fee, tax = (found[key] for key in CAPITAL_KEYS)
+        rates[month] = (plain(fee.value), plain(tax.value), label(fee), label(tax))
+    return rates
 
 
 def monthly_premium_parameters(session: Session, months) -> dict[date, PremiumParameters | ServiceError]:

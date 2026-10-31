@@ -14,7 +14,9 @@
 
 Sista kolumnen är `15 % × max(SLR, 0,5 %)`. Den används för bolagets
 månadsvisa kundbelastning enligt PR-023; bolagets verkliga skatteunderlag
-beräknas separat. [Skatteverkets SLR-historik](https://www4.skatteverket.se/rattsligvagledning/edition/2025.2/341469.html),
+beräknas separat. Satsen och kapitalavgiften ligger även som versionerad data i
+`product_parameters` (`customer_tax_rate` per kalenderår, `capital_fee_rate`), som
+kapitalavräkningen läser; ett test kontrollerar att tabellens startrader och tabellen här stämmer. [Skatteverkets SLR-historik](https://www4.skatteverket.se/rattsligvagledning/edition/2025.2/341469.html),
 [SLR 2024, SKV A 2025:1](https://www4.skatteverket.se/download/18.af8c508193bf21a0a6a369/1736323421343/SKV%20A%202025_1.pdf),
 [SLR 2025, SKV A 2026:1](https://www4.skatteverket.se/rattsligvagledning/edition/2026.13/468722.html)
 och [IBB 2026](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/forordning-20251002-om-inkomstbasbelopp-for-ar_sfs-2025-1002/).

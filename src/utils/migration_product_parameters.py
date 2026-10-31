@@ -1,11 +1,16 @@
 """Kontrollerad schemamigration för Fas 3c 3c-P1: tabellen `product_parameters` (databasschema §9h, §12, B-035).
 
-Skapar bara `product_parameters` med index och lägger in startvärdena från 2023-01-01
-(premieålder 25–66, satserna 4,5 och 30 %, brytpunkterna 7,5 och 30 IBB). Därefter
-räknas varje ordinarie premierad om med de lästa parametrarna; minsta avvikelse
-rullar tillbaka allt. Inga befintliga rader ändras och radantalen kontrolleras före
-och efter. Allt i en transaktion; DDL:en härleds ur modellen. Körs med
-scripts/migrations/migrate_product_parameters.py.
+Två lägen, båda i en transaktion och med torrkörning som standard:
+
+- **Ny tabell (3c-P1):** skapar bara `product_parameters` med index och lägger in startvärdena
+  från 2023-01-01 (premieålder 25–66, satserna 4,5 och 30 %, brytpunkterna 7,5 och 30 IBB).
+- **Uppgradering (A5):** finns tabellen redan byts villkoret för kända nycklar till modellens
+  (kapitalavgiften och skattebelastningen) och startvärden som saknas (nyckel och
+  giltighetsdag) läggs in. Befintliga versioner ändras inte.
+
+Därefter räknas varje ordinarie premierad om med de lästa parametrarna; minsta avvikelse
+rullar tillbaka allt. Radantalen i övriga tabeller kontrolleras före och efter. DDL:en
+härleds ur modellen. Körs med scripts/migrations/migrate_product_parameters.py.
 """
 
 from __future__ import annotations
@@ -13,10 +18,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from sqlalchemy import func, inspect, select
+from sqlalchemy import func, inspect, select, text
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session
-from sqlalchemy.schema import CreateIndex, CreateTable
+from sqlalchemy.schema import AddConstraint, CreateIndex, CreateTable
 
 from models import (
     Base,
@@ -27,6 +32,7 @@ from models import (
     PremiumTransaction,
     ProductParameter,
 )
+from models.product_parameter import PARAMETER_UNITS
 from services.errors import BlockedError
 from services.operations.common import birth_date
 from services.parameters import default_rows, premium_parameters
@@ -35,6 +41,8 @@ from skills.calculation.calculate_itp1_premium import calculate_itp1_premium
 TABLE = ProductParameter.__tablename__
 #: Tabellerna kontrollen av premierna läser
 REQUIRED_TABLES = ("base_amounts", "premium_transactions", "policy_benefits", "policies", "insured_persons")
+#: Villkoret som följer modellens nycklar och därför kan behöva uppgraderas
+KEY_CHECK = "ck_product_parameters_key"
 
 
 @dataclass
@@ -56,6 +64,7 @@ class MigrationResult:
     row_counts: dict[str, int] = field(default_factory=dict)
     seeded: int = 0
     check: PremiumCheck | None = None
+    upgrade: bool = False
 
 
 def compile_ddl(dialect) -> list[str]:
@@ -65,6 +74,21 @@ def compile_ddl(dialect) -> list[str]:
         str(CreateTable(table).compile(dialect=dialect)).strip(),
         *(str(CreateIndex(i).compile(dialect=dialect)) for i in sorted(table.indexes, key=lambda i: i.name)),
     ]
+
+
+def key_check_is_stale(conn: Connection) -> bool:
+    """Villkoret för nycklar saknar något av modellens nycklar."""
+    definition = conn.execute(text(
+        "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = CAST(:t AS regclass) AND conname = :c"
+    ), {"t": TABLE, "c": KEY_CHECK}).scalar()
+    return definition is None or not all(f"'{key}'" in definition for key in PARAMETER_UNITS)
+
+
+def compile_upgrade(dialect) -> list[str]:
+    """Byter villkoret för nycklar. isolate_from_table=False: annars tar SQLAlchemy bort det ur CREATE TABLE."""
+    check = next(c for c in ProductParameter.__table__.constraints if c.name == KEY_CHECK)
+    return [f"ALTER TABLE {TABLE} DROP CONSTRAINT IF EXISTS {KEY_CHECK}",
+            str(AddConstraint(check, isolate_from_table=False).compile(dialect=dialect)).strip()]
 
 
 def verify_premiums(session: Session) -> PremiumCheck:
@@ -133,20 +157,29 @@ def migrate_product_parameters(engine: Engine, dry_run: bool = True) -> Migratio
     """
     if engine.dialect.name != "postgresql":
         raise RuntimeError(f"Migrationen är skriven för Postgres (Lakebase), inte {engine.dialect.name}")
-    statements = compile_ddl(engine.dialect)
     conn = engine.connect()
     tx = conn.begin()
     try:
-        if has_table(conn):
-            tx.rollback()
-            return MigrationResult(already_applied=True, applied=False, statements=statements)
+        exists = has_table(conn)
+        rows = default_rows()
+        if exists:
+            present = set(conn.execute(select(ProductParameter.key, ProductParameter.valid_from)).all())
+            rows = [r for r in rows if (r.key, r.valid_from) not in present]
+            stale = key_check_is_stale(conn)
+            if not stale and not rows:
+                tx.rollback()
+                return MigrationResult(already_applied=True, applied=False, upgrade=True)
+            statements = compile_upgrade(engine.dialect) if stale else []
+        else:
+            statements = compile_ddl(engine.dialect)
         before = _row_counts(conn)
         for statement in statements:
             conn.exec_driver_sql(statement)
         session = Session(bind=conn, autoflush=True)
-        rows = default_rows()
         session.add_all(rows)
         session.flush()
+        if exists and key_check_is_stale(conn):
+            raise RuntimeError("Villkoret för nycklar blev inte uppgraderat – allt rullas tillbaka")
         check = verify_premiums(session)
         after = _row_counts(conn)
         if after != before:
@@ -158,7 +191,7 @@ def migrate_product_parameters(engine: Engine, dry_run: bool = True) -> Migratio
             )
         result = MigrationResult(
             already_applied=False, applied=not dry_run, statements=statements,
-            row_counts=after, seeded=len(rows), check=check,
+            row_counts=after, seeded=len(rows), check=check, upgrade=exists,
         )
         if dry_run:
             tx.rollback()

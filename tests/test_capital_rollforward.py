@@ -1,7 +1,9 @@
 """Pensionskapitalets månadsavräkning (A5, B-042) mot produktreglernas kontrollfall.
 
 Kontrollfall: PR-ITP1-020/021/022/023 (avsnittet Kontrollfall) och fördelningen i ören i
-PR-ITP1-011. Satserna prövas mot parameterregistret, så att koden och registret inte glider isär.
+PR-ITP1-011, med 2026 års satser. Startraderna i `product_parameters` prövas mot
+parameterregistret, så att tabellen och registret inte glider isär, och uppslaget per månad
+prövas mot SQLite.
 """
 
 from __future__ import annotations
@@ -12,18 +14,23 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+from sqlalchemy import create_engine, select
+from sqlalchemy.pool import StaticPool
 
-from skills.calculation.capital_rollforward import (
-    CAPITAL_FEE_RATE,
-    CUSTOMER_TAX_RATES,
-    RollforwardError,
-    allocate_cents,
-    close_month,
-    tax_rate,
-)
+from models import Base, ProductParameter
+from services import parameters
+from services.db import session_factory_for
+from services.errors import NotFoundError
+from skills.calculation.capital_rollforward import RollforwardError, allocate_cents
+from skills.calculation.capital_rollforward import close_month as _close_month
 
 REGISTER = Path(__file__).resolve().parents[1] / "01_domän" / "parametrar" / "PARAMETERREGISTER.md"
 OCT_2026 = date(2026, 10, 1)
+FEE, TAX_2026, TAX_2023 = Decimal("0.002"), Decimal("0.00354"), Decimal("0.00219")
+
+
+def close_month(month, rate, openings, premiums, *, tax_rate=TAX_2026):
+    return _close_month(month, rate, openings, premiums, fee_rate=FEE, tax_rate=tax_rate)
 
 
 def d(value: str) -> Decimal:
@@ -59,14 +66,12 @@ class TestKontrollfall:
         line = close_month(OCT_2026, d("-0.05"), {"a": d("100000")}, {}).lines["a"]
         assert line.tax == d("29.50") and line.closing == d("94953.83")
 
-    def test_pr023_saknad_arssats_blockerar(self):
-        with pytest.raises(RollforwardError, match="2027"):
-            tax_rate(2027)
-        with pytest.raises(RollforwardError, match="2027"):
-            close_month(date(2027, 1, 1), d("0.01"), {"a": d("100")}, {})
+    def test_ogiltig_sats(self):
+        with pytest.raises(RollforwardError, match="andelar"):
+            close_month(OCT_2026, d("0.01"), {"a": d("100")}, {}, tax_rate=d("1.2"))
 
     def test_avrundning_halvt_uppat(self):
-        line = close_month(date(2023, 2, 1), d("0"), {"a": d("10000")}, {}).lines["a"]
+        line = close_month(date(2023, 2, 1), d("0"), {"a": d("10000")}, {}, tax_rate=TAX_2023).lines["a"]
         assert line.tax == d("1.83")  # 10 000 × 0,00219/12 = 1,825
 
 
@@ -102,11 +107,48 @@ class TestFordelning:
 
 
 class TestParameterregistret:
-    def test_skattesatserna_stammer_med_registret(self):
+    def test_skattebelastningen_ar_registrets_per_ar(self):
         rows = re.findall(r"^\| (\d{4}) \|.*\| ([\d,]+) % \|$", REGISTER.read_text(encoding="utf-8"), re.MULTILINE)
         register = {int(year): Decimal(rate.replace(",", ".")) / 100 for year, rate in rows}
-        assert register == CUSTOMER_TAX_RATES
+        taxes = [p for p in parameters.DEFAULTS if p.key == "customer_tax_rate"]
+        assert {p.valid_from.year: p.value for p in taxes} == register
+        for p in taxes:
+            assert (p.valid_from, p.valid_to) == (date(p.valid_from.year, 1, 1), date(p.valid_from.year, 12, 31))
 
-    def test_kapitalavgiften_stammer_med_registret(self):
+    def test_kapitalavgiften_ar_registrets(self):
         text = REGISTER.read_text(encoding="utf-8")
-        assert "| Kapitalavgift | 0,20 % nominellt per år" in text and CAPITAL_FEE_RATE == d("0.002")
+        fee = next(p for p in parameters.DEFAULTS if p.key == "capital_fee_rate")
+        assert "| Kapitalavgift | 0,20 % nominellt per år" in text and fee.value == FEE and fee.valid_to is None
+
+
+@pytest.fixture
+def factory():
+    engine = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
+    Base.metadata.create_all(engine)
+    factory = session_factory_for(engine)
+    with factory() as s:
+        parameters.add_missing_defaults(s)
+        s.commit()
+    yield factory
+    engine.dispose()
+
+
+class TestUppslag:
+    def test_satserna_per_manad(self, factory):
+        with factory() as s:
+            rates = parameters.capital_rates(s, [date(2023, 12, 1), date(2024, 1, 1), date(2026, 10, 1)])
+        assert {m: r[:2] for m, r in rates.items()} == {
+            date(2023, 12, 1): (FEE, TAX_2023), date(2024, 1, 1): (FEE, d("0.00372")), date(2026, 10, 1): (FEE, TAX_2026)}
+        assert rates[date(2024, 1, 1)][3] == "PR-ITP1-023 v1.0 från 2024-01-01"
+
+    def test_saknat_ar_blockerar(self, factory):
+        # PR-023: ett år utan beslutad sats stoppar, inte föregående års sats automatiskt
+        with factory() as s, pytest.raises(NotFoundError, match="2027-01: customer_tax_rate"):
+            parameters.capital_rates(s, [date(2026, 12, 1), date(2027, 1, 1)])
+
+    def test_aterkallad_version_galler_inte(self, factory):
+        with factory() as s:
+            s.scalar(select(ProductParameter).where(ProductParameter.key == "capital_fee_rate")).status = "withdrawn"
+            s.flush()
+            with pytest.raises(NotFoundError, match="capital_fee_rate"):
+                parameters.capital_rates(s, [date(2026, 10, 1)])
