@@ -91,6 +91,9 @@ pods:
       estimate_parameter_change_impact: {service_operation: estimate_parameter_change_impact, parameter_mandate: true}
       # Registrerat bestånd och betalmarkerade premier per månad, utan mandat (OC-3a val C)
       get_company_metrics: {service_operation: get_company_metrics}
+      # Produktrapportens bestånd och premieflöden som aggregat (A2, B-042)
+      get_portfolio_snapshot: {service_operation: get_portfolio_snapshot}
+      get_premium_flows: {service_operation: get_premium_flows}
 
   # Delegering till ett annat teams ledande agent (3c-1, B-039). Harness kör barnet med egen profil
   # och gemensam rotbudget; verktyget visas bara när uppdraget anger delegation_targets.

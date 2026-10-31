@@ -406,6 +406,33 @@ En person är berörd ett år om premien skiljer sig någon månad det året. Ex
 
 **Skydd mellan anrop (3c-T).** Operationen skyddar varje enskilt svar, men inte mot differenser mellan upprepade anrop med olika horisont, giltighetsdag eller värde. Därför är den monterad i podden `bestand` med parametermandat: dispatchern binder aktuarieagentens anrop till den parameterändring som grind 1 godkänt (`key`, `value`, `valid_from` och `horizon_years`, `ParameterChangeMandate`). Utan godkänt förslag i uppdraget är verktyget dolt. Före verifiering i Lakebase behövs databasrollen `agent_aktuarie` med `SELECT` på `insured_persons`, `policies`, `policy_states`, `base_amounts` och `product_parameters`, och rätt att skriva loggrader (val I, 3c-V). Rättigheterna är definierade i `src/utils/agent_roles.py`, provade mot isolerad Postgres och satta i Lakebase 2026-10-26 (`harness.md` §5.1).
 
+### 9.6 Produktrapportens bestånd och premieflöden (A2, B-042) – vad som stöds och vad som spärras
+
+Beslutat i **B-042** (`projekt/06_avdelningsfunktioner/AKTUARIETEAM_PLAN.md` §4.2 och §7). Kod: `src/services/operations/product_report_data.py` (operationerna) och `src/analytics/portfolio_snapshot.py` (döljning, födelseår och kohorter). Ingen schemaändring och ingen ny databasrätt: operationerna läser bara de tabeller och kolumner som `agent_aktuarie` redan har.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `get_portfolio_snapshot` | `read` | Nej | `AGENT` | Försäkringar per läge vid läsdagen och, för ej avslutade, per födelsedecennium. Dessutom personer i beståndet och årets nya försäkringar och fribrev. Ändrar ingenting |
+| `get_premium_flows` | `read` | Nej | `AGENT` | Betalmarkerade premier och personer per avslutad månad under ett år, med årstotal. Samma definition som ledningsmåttet `get_company_metrics` |
+
+**Indata:** `year` från 2023 till innevarande år. Inga andra fält: urvalet går inte att bredda eller smalna av till arbetsgivare eller personer.
+
+**Definitioner:**
+- Ett läge är det som gäller läsdagen. En försäkring utan läge den dagen redovisas som *läge saknas*.
+- Födelseåret läses ur personnumret i betrodd kod; samordningsnummer räknas om.
+- Premieflödet omfattar ordinarie premier och justeringar med status `paid`, efter betaldag. Innevarande månad ingår inte.
+- En betalmarkering utan giltig betaldag gör hela året `failed`, som i ledningsmåttet.
+- Flytt in eller ut redovisas som ej tillämpligt, eftersom produkten inte stöder flytt.
+
+**Skydd mot röjande (`harness.md` §5.1):**
+- Celler med 1–9 försäkringar eller personer döljs. Noll visas som noll.
+- Läge och kohort är var sin grupp med känd total. Där döljs fler celler tills de dolda omfattar minst 10 försäkringar.
+- Månaderna döljs så att de dolda tillsammans omfattar minst 10 olika personer. Annars kunde årstotalen röja en dold månad.
+- Årets nya försäkringar och fribrev har ingen total att räknas fram ur och döljs bara primärt.
+- Upprepade anrop med olika år ändrar inte läges- eller kohortcellerna. Rörelserna och månaderna tillhör var sitt år, så differenser mellan anrop röjer inga dolda celler. Därför behövs inget mandat.
+
+**Spärras:** år före 2023 eller efter innevarande år (ogiltig indata), och okända fält.
+
 ## 10. Öppna frågor
 
 - **Fyraögonprincip** (två olika människor) är inte möjlig med en operatör – framtida option per operation.

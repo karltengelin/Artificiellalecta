@@ -453,14 +453,14 @@ sig?). Mottagare VD och styrelse; underlag till compliance.
 | Avsnitt | Innehåll | Kan tas fram i dag? |
 |---|---|---|
 | 1. Sammanfattning | Slutsatser och rekommendationer först | Agentens utkast |
-| 2. Bestånd och rörelser | Antal per tillstånd, in- och utträden, fribrev, åldersfördelning | 🟡 Delvis (`get_company_metrics`; snapshot per tillstånd behövs) |
-| 3. Premier | Premievolym per år och månad, premietrappans fördelning, avvikelser | 🟡 Delvis (betalmarkerade premier) |
+| 2. Bestånd och rörelser | Antal per tillstånd, in- och utträden, fribrev, åldersfördelning | ✅ `get_portfolio_snapshot` (A2) |
+| 3. Premier | Premievolym per år och månad, premietrappans fördelning, avvikelser | ✅ `get_premium_flows` (A2); premietrappans fördelning återstår |
 | 4. Kapital och avkastning | Kundkapital, levererad avkastning, jämförelse med prognos 0/3/5 % | 🔲 Kräver `C` (paket B eller S-04) |
 | 5. Avgifter och kostnader | Avgiftsintäkt mot driftkostnad, kostnadsresultat | 🔲 Kräver ekonomi |
 | 6. Garanti och återbäring | Garantinivå, FTA, villkorad återbäring och underskott per kohort, PR-028-buffert | 🔲 Kräver `G_j` och motor |
 | 7. Risk- och dödlighetsutfall | Arvsvinster, utfall mot antagande | 🔲 Kräver utbetalningar och dödsfall |
-| 8. Känslighet | Scenarier enligt §3.4 | 🟡 Endast produktparametrar i dag |
-| 9. Kundutfall och värde | Prognostiserad pension per typfall, kostnadsandel, informationsbesked | 🟡 Typfall ur premiemotorn |
+| 8. Känslighet | Scenarier enligt §3.4 | 🟡 Premiesatsen under brytpunkten +0,5 procentenhet (A2); värderingskänslighet efter A7 |
+| 9. Kundutfall och värde | Prognostiserad pension per typfall, kostnadsandel, informationsbesked | 🟡 Premie per typlön (A2); prognostiserad pension återstår |
 | 10. Avvikelser och åtgärder | Regeländringar, klagomål, föreslagna ändringar (PR-030) | 🟡 Källbevakning finns delvis |
 
 Ej beräknade avsnitt visas som *ej beräknat* med orsak, aldrig som noll. En första version med
@@ -477,7 +477,7 @@ Förslaget startar inget bygge och ändrar inte prioriteringen i ATT_GORA (OC-3a
 |---|---|---|---|
 | **A0** | Designstopp: [beslutsförslag](AKTUARIETEAM_BESLUTSFORSLAG.md) | Detta dokument | ✅ Godkänt 2026-10-31 (B-042) |
 | **A1** | [Värderings- och förklaringskontrakt](VARDERINGSKONTRAKT.md) (projektplanens första kontraktsarbete) | A0 | ✅ Fastställt 2026-10-31 |
-| **A2** | Produktrapport v0 (avsnitt 1–3, 8, 9) och `get_portfolio_snapshot`, `get_premium_flows` | Befintliga data | Parallellt med A1 |
+| **A2** | Produktrapport v0 (avsnitt 1–3, 8, 9) och `get_portfolio_snapshot`, `get_premium_flows` | Befintliga data | ✅ Byggt och testat lokalt 2026-10-31: flödet `product_report` och adaptern `ProductReportConsole`. Röktest mot riktig modell och Postgres-provet för rollen återstår |
 | **A3** | Teamyta v1: översikt, rapporter och uppdrag på befintliga data | OC-8, A2 | Efter A2 |
 | **A4** | Antagandebibliotek som data (`valuation_bases`) med förslag och införande | A1 | Efter A1 |
 | **A5** | Rekonstruerat startbestånd S-04 med `G_j` och `C` (svar Q4) | A1 | Efter A1 |

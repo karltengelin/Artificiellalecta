@@ -84,6 +84,7 @@ class ReportMetadata:
     footer: str = ""
     author: str = "Artificiellalecta"
     subject: str = f"Digital klarhet v{TOKENS['version']} / {TOKENS['decision']}."
+    eyebrow: str = "BESTÅNDSÖVERSIKT / RAPPORT"  # sidhuvudets etikett i rapportexporten
 
 
 @dataclass(frozen=True)

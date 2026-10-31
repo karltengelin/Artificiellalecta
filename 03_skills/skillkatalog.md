@@ -28,6 +28,8 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 | `get_case` | `kunddata` | `get_case` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_company_metrics` | `bestand` | `get_company_metrics` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
 | `get_insured_overview` | `kunddata` | `get_insured_overview` | read | Ja | AGENT | case_handler (Handläggaragent) |
+| `get_portfolio_snapshot` | `bestand` | `get_portfolio_snapshot` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
+| `get_premium_flows` | `bestand` | `get_premium_flows` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
 | `get_premium_history` | `kunddata` | `get_premium_history` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_product_parameters` | `regelverk` | `get_product_parameters` | read | Nej | AGENT | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 | `get_salary_reports` | `kunddata` | `get_salary_reports` | read | Ja | AGENT | case_handler (Handläggaragent) |

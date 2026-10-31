@@ -47,13 +47,13 @@ dependents = ["reporting"]
 [suites.reporting]
 description = "Rapportformat och exempel; formell verksamhetsrapportering återstår"
 status = "partial"
-tests = ["tests/test_reporting_report.py", "tests/test_reporting_template.py", "tests/test_reporting_agent_usage_example.py", "tests/test_reporting_presentation.py"]
+tests = ["tests/test_reporting_report.py", "tests/test_reporting_template.py", "tests/test_reporting_agent_usage_example.py", "tests/test_reporting_presentation.py", "tests/test_product_report.py"]
 dependents = []
 
 [suites.insights]
 description = "Beståndsanalys och scenario"
 status = "partial"
-tests = ["tests/test_analytics_premium_impact.py", "tests/test_portfolio_impact.py", "tests/test_management.py"]
+tests = ["tests/test_analytics_premium_impact.py", "tests/test_portfolio_impact.py", "tests/test_management.py", "tests/test_product_report.py"]
 dependents = ["services", "tooling"]
 
 [suites.simulation]
@@ -77,7 +77,7 @@ dependents = []
 [suites.orchestration]
 description = "Flödesmotor och samverkan mellan team; delegering återstår"
 status = "partial"
-tests = ["tests/test_agents_flows.py", "tests/test_agents_flow_rule_change.py", "tests/test_agents_questions.py"]
+tests = ["tests/test_agents_flows.py", "tests/test_agents_flow_rule_change.py", "tests/test_agents_questions.py", "tests/test_product_report.py"]
 dependents = ["agents", "web", "tooling"]
 
 [suites.services]

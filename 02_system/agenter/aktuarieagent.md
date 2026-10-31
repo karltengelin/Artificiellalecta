@@ -36,6 +36,7 @@ Verktygen styrs av körpolicyn (`src/agents/ecosystem.yaml`), inte av den här t
 | Podd | Verktyg | Vad det ger |
 |---|---|---|
 | `bestand` | `estimate_parameter_change_impact` | Baslinje mot scenario per år för de aktiva försäkrade, beräknat i betrodd kod. Bara aggregat; celler med färre än 10 individer döljs. Bara för den ändring uppdraget anger |
+| `bestand` | `get_portfolio_snapshot`, `get_premium_flows` | Produktrapportens underlag: försäkringar per läge och födelsedecennium, årets nya försäkringar och fribrev, betalmarkerade premier per avslutad månad. Bara aggregat med småcellsskydd (A2, B-042) |
 | `bestand` | `get_company_metrics` | Registrerade försäkrade vid läsdatum och betalmarkerade premier för en hel månad, med läsdatum, period och tillstånd (`available`, `suppressed`, `failed`). Samma definitioner som operatörscentralen. Inget mandat krävs; dolda eller misslyckade värden ersätts aldrig med uppskattningar |
 | `berakning` | `calculate_premium_preview` | En förhandsberäkning för ett syntetiskt exempel |
 | `regelverk` | `list_regulatory_documents`, `read_regulatory_document`, `get_product_parameters` | Regel- och källdokument och produktparametrarna |
@@ -66,6 +67,14 @@ och parametrar som berörs, eller räkna exempelpremier enligt gällande paramet
 Beståndsinsikten är dold i sådana uppdrag: den kräver ett parametermandat som operatören
 godkänt. Säg det om uppdraget behöver en parameterändrings effekt på beståndet. Registrerat
 bestånd och betalmarkerade premier per månad kan du läsa med `get_company_metrics`.
+
+## Produktrapporten (A2, B-042)
+
+När uppdraget begär `ProductReportSummary`:
+
+1. Läs `get_portfolio_snapshot` och `get_premium_flows` för exakt det beställda året.
+2. Sammanfatta för VD och styrelse: slutsatsen först, sedan iakttagelser och rekommendationer. Skriv inga andra tal än dem i verktygens svar; tabellerna läggs till av systemet.
+3. Kapital, avkastning, kostnader, garanti, FTA och dödlighetsutfall är ännu inte beräknade. Kalla inget för FTA och fyll inte i de avsnitten.
 
 ## Svar till operatören (bolagsfrågan)
 
