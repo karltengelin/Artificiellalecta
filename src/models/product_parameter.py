@@ -22,7 +22,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
-#: Kända parametrar och deras enhet. Nya nycklar kräver ändring här och i premiemotorn.
+#: Kända parametrar och deras enhet. Nya nycklar kräver ändring här och i den beräkning som läser dem:
+#: premiemotorn för premium_*, kapitalavräkningen (A5) för kapitalavgift och skattebelastning per år.
 PARAMETER_UNITS = {
     "premium_age_start": "years",
     "premium_age_end": "years",
@@ -30,6 +31,8 @@ PARAMETER_UNITS = {
     "premium_rate_high": "rate",
     "premium_breakpoint_low_ibb": "ibb",
     "premium_breakpoint_high_ibb": "ibb",
+    "capital_fee_rate": "rate",
+    "customer_tax_rate": "rate",
 }
 PARAMETER_STATUSES = ("valid", "withdrawn")
 

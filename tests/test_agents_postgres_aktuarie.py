@@ -30,7 +30,13 @@ from agents import (
 )
 from agents.gateways import DraftGateway, RegulatoryGateway
 from models import OperationEventRecord
-from services import Actor, OperationContext, ProductRuleCatalog, ServiceLayer, default_registry
+from services import (
+    Actor,
+    OperationContext,
+    ProductRuleCatalog,
+    ServiceLayer,
+    default_registry,
+)
 from services.db import session_factory_for
 from services.operations import common
 from tests.flow_helpers import flow_client
@@ -132,6 +138,23 @@ def test_produktrapportens_aggregat_med_aktuariens_roll(db):
     assert flows.total_state in {"available", "suppressed"} and flows.months
 
 
+def test_vardering_las_med_aktuariens_roll(db):
+    """A6, B-042: körningen görs i betrodd kod; rollen läser körningen och segmenten men aldrig utdraget."""
+    trusted = ServiceLayer(session_factory=db.session_factory, rules=ProductRuleCatalog(today=TODAY))
+    system = OperationContext(actor=Actor.system("flow:valuation_close"), reason="Provvärdering i testschemat")
+    done = trusted.execute("run_valuation", system, {
+        "valuation_date": "2026-09-30", "purpose": "scenario", "basis_code": "SIM-V-2026-01",
+        "curve_code": "FI-SIM-2026-10"}).output
+    assert done.checks_passed and done.balance_check == "stämmer på öret"
+    service = actuary_service(db)
+    listing = service.execute("list_valuation_runs", ACTUARY, {}).output
+    assert [r.run_id for r in listing.runs] == [done.run_id]
+    detail = service.execute("get_valuation_run", ACTUARY, {"run_id": str(done.run_id)}).output
+    assert (detail.result_checksum, detail.segments) == (done.result_checksum, done.segments)
+    with pytest.raises(Exception, match="endast handläggare"):
+        service.execute("lock_valuation", replace(ACTUARY, reason="Försök"), {"run_id": str(done.run_id)})
+
+
 def test_bestandsinsikten_med_aktuariens_roll(db):
     before = events(db)
     out = actuary_service(db).execute("estimate_parameter_change_impact", ACTUARY, ESTIMATE).output
@@ -191,6 +214,10 @@ def test_aktuarien_kan_inte_lagga_forslag_i_kon(db):
         "SELECT * FROM approval_requests",
         "SELECT * FROM operation_events",
         "SELECT * FROM flows",
+        "SELECT * FROM valuation_extracts",
+        "INSERT INTO valuation_runs DEFAULT VALUES",
+        "UPDATE valuation_runs SET status = 'locked'",
+        "DELETE FROM valuation_results",
         "INSERT INTO approval_requests (id) VALUES ('x')",
         "UPDATE product_parameters SET value = 68",
         "DELETE FROM product_parameters",

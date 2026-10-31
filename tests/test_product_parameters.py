@@ -20,9 +20,11 @@ from services import Actor, AgentAccess, MemoryEventLog, OperationContext, Servi
 from services.db import session_factory_for
 from services.errors import BlockedError, NotFoundError
 from services.parameters import (
+    DEFAULTS,
     FALLBACK_LABEL,
     PREMIUM_FIELDS,
     add_missing_defaults,
+    capital_rates,
     premium_parameters,
 )
 from skills.calculation.calculate_itp1_premium import (
@@ -181,7 +183,12 @@ class TestOperationerna:
         assert service.decision("get_product_parameters").effective is AgentAccess.AGENT
         out = service.execute("get_product_parameters", AGENT, {"on_date": "2026-11-01"}).output
         assert out.table_present and out.effective["premium_age_end"] == Decimal("66")
-        assert len(out.versions) == 6 and {v.state for v in out.versions} == {"gällande"}
+        assert len(out.versions) == 11
+        assert {v.state for v in out.versions if v.key != "customer_tax_rate"} == {"gällande"}
+        taxes = {v.valid_from.year: v.state for v in out.versions if v.key == "customer_tax_rate"}
+        assert taxes == {2023: "upphörd", 2024: "upphörd", 2025: "upphörd", 2026: "gällande"}
+        assert (out.effective["capital_fee_rate"], out.effective["customer_tax_rate"]) == (
+            Decimal("0.002"), Decimal("0.00354"))
         age_end = next(v for v in out.versions if v.key == "premium_age_end")
         assert (age_end.rule_id, age_end.source_ref) == ("PR-ITP1-013", "K-ITP-FIL")
 
@@ -257,7 +264,7 @@ def test_migrationen_skapar_fyller_och_raknar_om_identiskt():
     with isolated_schema() as schema:
         _lakebase_like(schema)
         dry = migrate_product_parameters(schema.engine)  # torrkörning är standard
-        assert not dry.applied and dry.check.ok and dry.check.checked > 50 and dry.seeded == 6
+        assert not dry.applied and dry.check.ok and dry.check.checked > 50 and dry.seeded == len(DEFAULTS)
         assert "product_parameters" not in inspect(schema.engine).get_table_names()
 
         done = migrate_product_parameters(schema.engine, dry_run=False)
@@ -265,7 +272,28 @@ def test_migrationen_skapar_fyller_och_raknar_om_identiskt():
         assert migrate_product_parameters(schema.engine, dry_run=False).already_applied
         with schema.session_factory() as s:
             assert premium_parameters(s, date(2026, 5, 1)) == DEFAULT_PARAMETERS
-            assert len(s.scalars(select(ProductParameter)).all()) == 6
+            assert len(s.scalars(select(ProductParameter)).all()) == len(DEFAULTS)
+
+
+@pytest.mark.skipif(not TEST_URL, reason="SERVICES_TEST_POSTGRES_URL saknas – ingen isolerad Postgres")
+def test_uppgraderingen_lagger_till_kapitalets_parametrar():
+    """3c-P1-läget i Lakebase: bara premiernas sex nycklar i villkoret och raderna (A5)."""
+    with isolated_schema() as schema:
+        create_demo_database(schema.engine)
+        with schema.engine.begin() as conn:
+            conn.exec_driver_sql("DELETE FROM product_parameters WHERE key IN ('capital_fee_rate', 'customer_tax_rate')")
+            conn.exec_driver_sql("ALTER TABLE product_parameters DROP CONSTRAINT ck_product_parameters_key")
+            conn.exec_driver_sql(
+                "ALTER TABLE product_parameters ADD CONSTRAINT ck_product_parameters_key CHECK (key IN ("
+                "'premium_age_start', 'premium_age_end', 'premium_rate_low', 'premium_rate_high', "
+                "'premium_breakpoint_low_ibb', 'premium_breakpoint_high_ibb'))")
+        dry = migrate_product_parameters(schema.engine)
+        assert dry.upgrade and not dry.applied and dry.seeded == 5 and len(dry.statements) == 2 and dry.check.ok
+        done = migrate_product_parameters(schema.engine, dry_run=False)
+        assert done.applied and done.row_counts == dry.row_counts
+        assert migrate_product_parameters(schema.engine, dry_run=False).already_applied
+        with schema.session_factory() as s:
+            assert capital_rates(s, [date(2026, 10, 1)])[date(2026, 10, 1)][:2] == (Decimal("0.002"), Decimal("0.00354"))
 
 
 @pytest.mark.skipif(not TEST_URL, reason="SERVICES_TEST_POSTGRES_URL saknas – ingen isolerad Postgres")

@@ -49,16 +49,21 @@ def suppress_counts(cells: Mapping[str, int]) -> dict[str, str]:
     return hidden
 
 
-def birth_year(personal_id_number: str) -> int | None:
-    """Födelseåret ur ett tolvsiffrigt personnummer; None om det inte går att läsa."""
+def birth_date(personal_id_number: str) -> date | None:
+    """Födelsedagen ur ett tolvsiffrigt personnummer; None om det inte går att läsa."""
     if len(personal_id_number) != 12 or not personal_id_number.isdigit():
         return None
     year, month, day = int(personal_id_number[:4]), int(personal_id_number[4:6]), int(personal_id_number[6:8])
     try:
-        date(year, month, day % 60 or day)  # samordningsnummer har dag + 60
+        return date(year, month, day - 60 if day > 60 else day)  # samordningsnummer har dag + 60
     except ValueError:
         return None
-    return year
+
+
+def birth_year(personal_id_number: str) -> int | None:
+    """Födelseåret ur ett tolvsiffrigt personnummer; None om det inte går att läsa."""
+    born = birth_date(personal_id_number)
+    return born.year if born else None
 
 
 def cohort_of(year: int | None) -> str:

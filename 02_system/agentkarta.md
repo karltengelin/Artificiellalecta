@@ -53,7 +53,7 @@ Ska övervaka placeringstillgångar mot antagna placeringsriktlinjer och förber
 Bygger och underhåller kod, agenter, skills och integrationer (utvecklarroll). Ansvarar för datapipelines och databasens integritet (data engineer-roll). Ingår i regelförändringsflödet.
 
 **Aktuarieagent**
-Ska ansvara för aktuariella beräkningar, antaganden och riskanalys. Byggt stöd gäller godkända parameterändringars premieeffekt; reserv-, garanti- och ALM-motorer samt samarbete med planerade specialistagenter återstår.
+Ska ansvara för aktuariella beräkningar, antaganden och riskanalys. Byggt stöd gäller godkända parameterändringars premieeffekt, och sedan A6 läsning av FTA-värderingens aggregat (podden `aktuariell`); garanti- och ALM-motorer samt samarbete med planerade specialistagenter återstår.
 
 **Rapporteringsagent**
 Ska samordna tillämplig myndighetsrapportering och intern rapportering till ledning och styrelse. Rapportkontrakt och arbetsdelning för risk- och solvensbedömning återstår i projekt 2/6. Krav på Solvens II/QRT eller en viss ORSA-process antas inte generellt. Alla externa inlämningar kräver manuellt godkännande (§3.5).

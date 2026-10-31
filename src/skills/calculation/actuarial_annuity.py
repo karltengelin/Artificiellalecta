@@ -22,6 +22,15 @@ har vikten 1, senare månader produkten av månadsöverlevnaden för mellanligga
 nettoränta i diskonteras rätten till slutet av sin månad. En livsvarig plan summeras tills
 dödsrisken nått taket för alla senare åldrar; resten är en exakt geometrisk serie.
 
+Värderingsgrunden (SIM-V, A6) diskonterar i stället med en spotkurva och avdrag för
+avkastningsskatt (VARDERINGSKONTRAKT.md §4 R och S):
+
+    v(t, n)  = (1 + r_⌈n/12⌉ − s_y)^(−n/12)
+
+där n är antalet månader från värderingen till slutet av betalningsmånaden. Kurvan
+interpoleras linjärt mellan löptiderna och är platt utanför dem. Den geometriska svansen
+används först där kurvan är platt; före det summeras månaderna explicit.
+
 Talen är flyttal med dubbel precision; belopp avrundas av anroparen.
 """
 
@@ -45,6 +54,8 @@ TABLE_ID = "SCB-2025-BE0101A"
 MAX_TABLE_AGE = 100
 #: Säkerhetsgräns för summeringen innan svansen är konstant (ålder i år)
 MAX_SUM_AGE = 200
+#: Relativ storlek där resten av en livsvarig summa på taket saknar betydelse i dubbel precision
+TAIL_EPSILON = 1e-30
 
 
 class TableError(ValueError):
@@ -136,9 +147,80 @@ def add_months(month: date, n: int) -> date:
     return date(index // 12, index % 12 + 1, 1)
 
 
+def months_between(first: date, later: date) -> int:
+    """Antal månader från månaden `first` till månaden `later`."""
+    return (later.year - first.year) * 12 + later.month - first.month
+
+
 def first_month_after(valuation: date) -> date:
     """Första månaden efter värderingen vid ett månadsslut."""
     return add_months(valuation.replace(day=1), 1)
+
+
+@dataclass(frozen=True)
+class DiscountCurve:
+    """Spotkurva med årliga löptider och avdrag för avkastningsskatt (SIM-V, A6).
+
+    `points` är (löptid i år, spotränta). Räntan för år y interpoleras linjärt mellan
+    löptiderna och är konstant före den första och efter den sista (antagandebibliotekets
+    `CurveAssumptions`). `tax_reduction` är s_y; diskonteringen sker med r − s_y.
+    """
+
+    points: tuple[tuple[int, float], ...]
+    tax_reduction: float = 0.0
+
+    def __post_init__(self) -> None:
+        terms = [t for t, _ in self.points]
+        if not terms or terms != sorted(set(terms)) or terms[0] < 1:
+            raise ValueError("Kurvans löptider ska vara strikt stigande hela år från 1")
+        if min(r for _, r in self.points) - self.tax_reduction <= -1:
+            raise ValueError("Räntan efter skatt ska vara större än −100 %")
+        object.__setattr__(self, "_factors", {})
+
+    @classmethod
+    def flat(cls, rate: float, tax_reduction: float = 0.0) -> DiscountCurve:
+        return cls(((1, rate),), tax_reduction)
+
+    @classmethod
+    def from_assumptions(cls, curve: Mapping[str, Any], tax_reduction: float = 0.0) -> DiscountCurve:
+        if curve.get("interpolation", "linear") != "linear" or curve.get("extrapolation", "flat") != "flat":
+            raise ValueError("Motorn stöder bara linjär interpolation och platt extrapolation")
+        points = tuple((int(p["term_years"]), float(Decimal(str(p["spot_rate"])))) for p in curve["points"])
+        return cls(points, tax_reduction)
+
+    def spot(self, year: int) -> float:
+        """Spoträntan för löptiden `year` (hela år)."""
+        (first, r_first), (last, r_last) = self.points[0], self.points[-1]
+        if year <= first:
+            return r_first
+        if year >= last:
+            return r_last
+        for (t0, r0), (t1, r1) in zip(self.points, self.points[1:]):
+            if t0 <= year <= t1:
+                return r0 + (r1 - r0) * (year - t0) / (t1 - t0)
+        raise AssertionError("unreachable")
+
+    def factor(self, n: int) -> float:
+        """v(t, n) för n månader efter värderingen."""
+        factors = self._factors  # type: ignore[attr-defined]
+        if n not in factors:
+            factors[n] = (1 + self.spot(math.ceil(n / 12)) - self.tax_reduction) ** (-n / 12)
+        return factors[n]
+
+    @property
+    def flat_from(self) -> int:
+        """Första månaden från vilken räntan är densamma för alla senare löptider."""
+        last, r_last = self.points[-1]
+        year = last
+        while year > 1 and self.spot(year - 1) == r_last:
+            year -= 1
+        return 12 * (year - 1) + 1
+
+    def ratio_from(self, n: int) -> float | None:
+        """v(t, m+1) / v(t, m) för alla m ≥ n, om kurvan är platt därifrån; annars None."""
+        if n < self.flat_from:
+            return None
+        return (1 + self.points[-1][1] - self.tax_reduction) ** (-1 / 12)
 
 
 def _capped_from(basis: MortalityBasis, birth: date) -> int | None:
@@ -158,13 +240,22 @@ def annuity_factor(
     *,
     paused: Iterable[date] = (),
     net_interest_rate: float = 0.0,
+    curve: DiscountCurve | None = None,
+    growth: float = 1.0,
 ) -> float:
     """A(t, D): summan av vikter (och diskontering) för planens betalningsmånader.
 
     `valuation` är ett månadsslut, `start` första betalningsmånaden (månadsförsta, efter
     värderingen). `payments` är antalet betalningsmånader, None för livsvarig plan. `paused`
     är månader utan betalning; överlevnaden under dem ingår ändå i senare vikter.
+
+    Diskonteringen är konstant nettoränta (garantigrunderna) eller en kurva (`curve`, SIM-V),
+    aldrig båda. `growth` räknar upp beloppet per månad: månad n efter värderingen får
+    `growth**n`, t.ex. driftkostnadens uppräkning. Med standardvärdena är beräkningen
+    densamma som före A6, så leveranskontrollens facit består.
     """
+    if curve is not None and net_interest_rate:
+        raise ValueError("Ange antingen nettoränta eller kurva, inte båda")
     first = first_month_after(valuation)
     if start.day != 1 or start < first:
         raise ValueError("Första betalningsmånaden ska vara en månadsförsta efter värderingen")
@@ -176,15 +267,23 @@ def annuity_factor(
     if payments is None and capped is None:
         raise ValueError("Svansen når inte taket – en livsvarig faktor kan inte avslutas exakt")
 
+    def discount(n: int) -> float:
+        return v ** n if curve is None else curve.factor(n)
+
     total, weight, month, made, k = 0.0, 1.0, first, 0, 0
     while True:
         if month >= start and month not in skip:
+            n = k + 1
             if payments is None and capped is not None and age_on(birth, month) >= capped and not any(m >= month for m in skip):
-                # Konstant månadsöverlevnad p från och med nu: Σ w·(p·v)^j = w / (1 − p·v)
-                p = 1 - monthly_q(basis, birth, month)
-                total += weight * v ** (k + 1) / (1 - p * v)
-                return total
-            total += weight * v ** (k + 1)
+                ratio = v if curve is None else curve.ratio_from(n)
+                if ratio is not None:
+                    # Konstant månadsöverlevnad p och diskontering: Σ w·(p·v·g)^j = w / (1 − p·v·g)
+                    p = 1 - monthly_q(basis, birth, month)
+                    total += weight * discount(n) * growth ** n / (1 - p * ratio * growth)
+                    return total
+                if weight < TAIL_EPSILON * total:
+                    return total  # kurvan inte platt än, men resten saknar betydelse
+            total += weight * discount(n) * growth ** n
             made += 1
             if payments is not None and made == payments:
                 return total

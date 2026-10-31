@@ -1,9 +1,10 @@
 """Schemamigration för Fas 3c 3c-P1 mot Lakebase: tabellen product_parameters (02_system/databasschema.md §9h, §12, B-035).
 
-Skapar tabellen product_parameters med startvärdena från 2023-01-01 och räknar om
-varje ordinarie premierad med de lästa parametrarna. Minsta avvikelse, eller ändrade
-radantal i övriga tabeller, rullar tillbaka allt. Idempotent: finns tabellen redan
-görs ingenting.
+Saknas tabellen product_parameters skapas den med startvärdena från 2023-01-01 (3c-P1). Finns
+den uppgraderas villkoret för kända nycklar och startvärden som saknas läggs in, t.ex.
+kapitalavgiften och skattebelastningen per år (A5). Därefter räknas varje ordinarie premierad om
+med de lästa parametrarna. Minsta avvikelse, eller ändrade radantal i övriga tabeller, rullar
+tillbaka allt. Idempotent: är allt aktuellt görs ingenting.
 
 Standard är torrkörning: visar SQL, radantal och kontrollen av premierna i en
 transaktion som rullas tillbaka – ändrar ingenting. En skarp körning kräver --apply och
@@ -44,12 +45,13 @@ def main() -> None:
 
     result = migrate_product_parameters(make_engine(), dry_run=not args.apply)
     if result.already_applied:
-        print("Tabellen product_parameters finns redan – ingenting gjort.")
+        print("Tabellen product_parameters och startvärdena är aktuella – ingenting gjort.")
         return
-    print("--- MIGRERAT ---" if result.applied else "--- TORRKÖRNING (inget ändrat) ---")
+    print(("--- MIGRERAT" if result.applied else "--- TORRKÖRNING (inget ändrat)")
+          + (", uppgradering av befintlig tabell ---" if result.upgrade else ", ny tabell ---"))
     for statement in result.statements:
         print(statement.rstrip() + ";\n")
-    print(f"Startvärden: {result.seeded} parametrar från 2023-01-01")
+    print(f"Startvärden som läggs in: {result.seeded}")
     check = result.check
     print(f"Premier omräknade: {check.checked}, identiska: {check.checked - len(check.mismatches)}, "
           f"överhoppade (saknat IBB-år eller personnummer): {check.skipped}")
@@ -57,7 +59,7 @@ def main() -> None:
     for name, count in result.row_counts.items():
         print(f"  {name}: {count}")
     if not result.applied:
-        print("Kör med --apply --backup <mapp> för att skapa tabellen.")
+        print("Kör med --apply --backup <mapp> för att genomföra.")
 
 
 if __name__ == "__main__":

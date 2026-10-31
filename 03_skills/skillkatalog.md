@@ -11,7 +11,9 @@
 | Skill | Kategori | Podd | Syfte | PII | Behöriga agenter | Status |
 |---|---|---|---|---|---|---|
 | [beräkna-itp1-premie](beräkning/beräkna-itp1-premie.md) | beräkning | `berakning` (som `calculate_premium_preview`) | Premiemotor: ITP1-premie ur lön + IBB enligt premietrappan | Nej | Alla | 🟢 Implementerad |
-| [aktuariell-annuitet](beräkning/aktuariell-annuitet.md) | beräkning | – (monteras i `aktuariell` med A6) | Dödsrisk, annuitetsfaktor och garantidelar enligt aktuariell grund, mot leveranskontrollens facit | Nej | Betrodd kod | 🟢 Implementerad som ren beräkning (A5) |
+| [aktuariell-annuitet](beräkning/aktuariell-annuitet.md) | beräkning | – (betrodd kod i datautdraget och värderingen) | Dödsrisk, annuitetsfaktor och garantidelar enligt aktuariell grund, mot leveranskontrollens facit; diskontering med kurva och skatteavdrag sedan A6 | Nej | Betrodd kod | 🟢 Implementerad som ren beräkning (A5, kurvan A6) |
+| [kapitalavrakning](beräkning/kapitalavrakning.md) | beräkning | – (betrodd kod i `run_valuation`) | Pensionskapitalets månadsavräkning (PR-020–023) och datautdraget S-04 med `G_j` och `C` per försäkring | Ja, i betrodd kod; utdraget har inga personuppgifter | Betrodd kod | 🟢 Implementerad (A5 del 2) |
+| [fta-vardering](beräkning/fta-vardering.md) | beräkning | `aktuariell` (läsning: `list_valuation_runs`, `get_valuation_run`); körningen `run_valuation` är systemsteg | FTA, villkorad återbäring och underskott per försäkring på värderingsgrunden SIM-V, med kontrollfallen K1–K10 och låsbara körningar | Nej för agenten (aggregat); utdraget läses bara i betrodd kod | actuary_agent (läsning) | 🟢 Implementerad lokalt (A6) |
 
 **Kategori och podd är olika saker** (`02_system/agentekosystem.md` §5.1): kategorin styr var dokumentationen ligger, podden styr behörigheten i körning. Agenter når premiemotorn genom tjänstelagrets operation `calculate_premium_preview`, inte genom funktionen direkt.
 
@@ -35,14 +37,16 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 | `get_product_parameters` | `regelverk` | `get_product_parameters` | read | Nej | AGENT | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 | `get_salary_reports` | `kunddata` | `get_salary_reports` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_valuation_basis` | `antaganden` | `get_valuation_basis` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
+| `get_valuation_run` | `aktuariell` | `get_valuation_run` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
 | `list_regulatory_documents` | `regelverk` | gateway `list_regulatory_documents` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 | `list_valuation_bases` | `antaganden` | `list_valuation_bases` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
+| `list_valuation_runs` | `aktuariell` | `list_valuation_runs` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
 | `read_regulatory_document` | `regelverk` | gateway `read_regulatory_document` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 | `register_salary_report` | `kunddata` | `register_salary_report` | write | Ja | APPROVAL | case_handler (Handläggaragent) |
 | `set_policy_paid_up` | `kunddata` | `set_policy_paid_up` | write | Ja | APPROVAL | – |
 | `write_draft` | `dokument` | gateway `write_draft` | write | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 
-Operationer utan poddmappning – stängda för alla agenter: `adopt_valuation_basis`, `amend_salary_case`, `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `propose_valuation_basis`, `register_employer`, `reject_valuation_basis`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
+Operationer utan poddmappning – stängda för alla agenter: `adopt_valuation_basis`, `amend_salary_case`, `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `lock_valuation`, `propose_valuation_basis`, `register_employer`, `reject_valuation_basis`, `run_valuation`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
 <!-- list_skills.py: slut -->
 
 ## Planerade skills (ur ATT_GORA)

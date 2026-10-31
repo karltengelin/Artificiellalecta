@@ -92,6 +92,7 @@ refererar till det.
 |---|---|
 | `policy_id` | Intern nyckel; inget personnummer i utdraget |
 | `birth_month` | Födelseår och månad |
+| `born_on_first` | Om personen är född den första i månaden. Det är allt av födelsedagen som påverkar åldern vid månadens första dag (`aktuariell_grund.md` §2), så `G_j` och `a_V` blir exakta utan födelsedatumet (tillagt i A5) |
 | `state` | Läge vid datumet: premiebetalande, fribrev, ej påbörjad, paus, utbetalning |
 | `plan` | Uttagsplan: start, slut eller livsvarig, pausmånader |
 | `guarantee_parts[]` | Per del: premie `P_j`, mottagningsmånad, grund (SIM-HIST-2023-01 eller SIM-G-2026-01), `G_j` |
@@ -111,6 +112,12 @@ refererar till det.
   PR-009; annars markeras fallet *ej beräknat*.
 - **Märkning:** utdraget får `source = reconstructed_s04`. Rapporter och centralen visar
   märkningen. Inga individuppgifter lämnar betrodd kod.
+- **Genomförande (A5 del 2):** `services/valuation_extract.py` med avräkningen i
+  `skills/calculation/capital_rollforward.py` ([skill](../../03_skills/beräkning/kapitalavrakning.md)).
+  Varje premierad är en egen garantidel med premiens id som spår. Kapitalet rullas fram från 2023-01;
+  kapital före 2023 finns inte i beståndet. Arvsvinsten är noll eftersom beståndet saknar dödsfall,
+  så poolen i PR-011 är tom. En negativ premierad (återtag enligt PR-019) och påbörjat uttag
+  markeras *ej beräknat*.
 
 ### 5.3 Datakvalitet (kontroller före värdering)
 
@@ -138,6 +145,13 @@ Resultaten sparas i tjänstelagret (B-042, val I) och kan inte ändras efter lå
 
 Varje schema anger storhet och grund (B-042, guardrail 6). Ett `ValuationResult` med
 `source = reconstructed_s04` kan inte släppas som FI-underlag utan att märkningen följer med.
+
+**Genomförande (A6):** `ValuationRun` och `ValuationResult` finns som tabellerna `valuation_runs` och
+`valuation_results`, och utdraget sparas i `valuation_extracts` (`databasschema.md` §9k). Beräkningen
+finns i `skills/calculation/fta_valuation.py` ([skill](../../03_skills/beräkning/fta-vardering.md)).
+En körning per kvartalsslut på gällande grund är bas; ett scenario får annat månadsslut eller en
+uttryckligen angiven grund och kurva och kan aldrig låsas (§2). Skatteavdraget s_y är årets
+`customer_tax_rate` i `product_parameters`. Driftkostnaden räknas upp månadsvis med `1,02^(n/12)`.
 
 ## 7. Kontroll
 
@@ -209,7 +223,7 @@ Kopplingen ska kontrolleras mot gällande konsoliderad FFFS 2019:22 innan rappor
 |---|---|---|
 | Premiehistorik och bestånd i tjänstelagret | S-04 | Projekt 1 (finns) |
 | `AVK-SIM-2026` avkastningsserie | `C` | Aktuarien tills kapitalförvaltningen återupptas |
-| SLR per år i parameterregistret | Skatt (S) | Projekt 4 (finns för 2026) |
+| SLR per år i parameterregistret och skattebelastningen per år i `product_parameters` | Skatt (S) och kapitalets skattebelastning i S-04 | Projekt 4 (finns 2023–2026; 2027 behövs före 2027-01) |
 | Syntetisk FI-kurva | R | Aktuarien, med compliance för metoden |
 | Paket B | Ersätter S-04, utbetalningar och dödsfall | Projekt 1/6 |
 | Begreppsavstämning kundkapital/villkorad återbäring | Kundinformation | Projekt 4 (B-042) |

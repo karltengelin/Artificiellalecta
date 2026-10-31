@@ -39,9 +39,9 @@ tests = []
 dependents = ["reporting"]
 
 [suites.risk]
-description = "Reserv, FTA, ALM och finansieringskontroller; beräkningsmotorn för dödlighet och annuitet finns"
+description = "Reserv, FTA, ALM och finansieringskontroller; beräkningsmotorn, datautdraget S-04 och FTA-värderingen med kontrollfallen finns"
 status = "partial"
-tests = ["tests/test_actuarial_annuity.py"]
+tests = ["tests/test_actuarial_annuity.py", "tests/test_capital_rollforward.py", "tests/test_valuation_extract.py", "tests/test_fta_valuation.py", "tests/test_valuation_runs.py"]
 dependents = ["reporting"]
 
 [suites.reporting]
@@ -131,7 +131,9 @@ postgres = [
   "tests/test_migration_cases.py::test_migrationen_skapar_bara_cases_och_blir_identisk_med_create_all",
   "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
+  "tests/test_product_parameters.py::test_uppgraderingen_lagger_till_kapitalets_parametrar",
   "tests/test_valuation_bases.py::TestMigration::test_migrationen_mot_postgres",
+  "tests/test_valuation_runs.py::TestMigration::test_migrationen_mot_postgres",
   "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
 ]
 integration = ["tests/test_web_questions.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py", "tests/test_agents_flow_rule_change.py", "tests/test_web_flows.py"]
@@ -153,7 +155,7 @@ paths = ["src/skills/calculation/**", "src/services/parameters.py", "src/service
 suites = ["premiums"]
 
 [[rules]]
-paths = ["src/skills/calculation/actuarial_annuity.py", "src/services/valuation_bases.py", "01_domän/parametrar/DODLIGHET_SCB_2025.md"]
+paths = ["src/skills/calculation/actuarial_annuity.py", "src/skills/calculation/capital_rollforward.py", "src/skills/calculation/fta_valuation.py", "src/services/valuation_bases.py", "src/services/valuation_extract.py", "src/services/valuation.py", "src/services/operations/valuations.py", "01_domän/parametrar/DODLIGHET_SCB_2025.md", "01_domän/parametrar/PARAMETERREGISTER.md", "scripts/diagnostics/valuation_summary.py", "scripts/migrations/migrate_valuation_runs.py", "src/utils/migration_valuation_runs.py"]
 suites = ["risk"]
 
 [[rules]]
@@ -257,7 +259,9 @@ postgres = [
   "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
   "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
+  "tests/test_product_parameters.py::test_uppgraderingen_lagger_till_kapitalets_parametrar",
   "tests/test_valuation_bases.py::TestMigration::test_migrationen_mot_postgres",
+  "tests/test_valuation_runs.py::TestMigration::test_migrationen_mot_postgres",
 ]
 
 [[rules]]
@@ -275,6 +279,10 @@ postgres = ["tests/test_services_postgres.py"]
 [[rules]]
 paths = ["src/utils/agent_roles.py", "scripts/setup/grant_agent_role.py", "src/services/access.py", "src/services/access_register.yaml"]
 postgres = ["tests/test_agents_postgres_role.py", "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py"]
+
+[[rules]]
+paths = ["src/services/valuation.py", "src/services/operations/valuations.py", "src/models/valuation_run.py"]
+postgres = ["tests/test_agents_postgres_aktuarie.py"]
 
 [[rules]]
 paths = ["src/utils/demo_data.py"]

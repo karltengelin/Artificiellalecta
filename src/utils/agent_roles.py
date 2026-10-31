@@ -95,6 +95,10 @@ AKTUARIE = RoleGrants(
         "policy_states",
         "product_parameters",
         "valuation_bases",  # antagandebiblioteket (A4, B-042); kräver migrate_valuation_bases.py först
+        # Värderingskörningarnas aggregat (A6, B-042); kräver migrate_valuation_runs.py först. Inte
+        # valuation_extracts: utdraget har individrader och läses bara i betrodd kod.
+        "valuation_results",
+        "valuation_runs",
     ),
     insert=("operation_events",),
     columns=(
