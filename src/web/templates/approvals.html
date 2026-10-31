@@ -48,13 +48,13 @@
     <div class="decide">
       <form method="post" action="/godkannanden/{{ r.approval_id }}/godkann" class="decide__form"
             hx-confirm="Godkänna förslaget och utföra {{ r.operation }} nu?">
-        {{ csrf() }}
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf if operator_user else csrf_token }}">
         <label for="ok-{{ r.approval_id }}">Kommentar (valfri)</label>
         <input id="ok-{{ r.approval_id }}" name="note" placeholder="T.ex. kontrollerat mot underlaget">
         <button type="submit" class="ok">Godkänn och utför</button>
       </form>
       <form method="post" action="/godkannanden/{{ r.approval_id }}/avsla" class="decide__form">
-        {{ csrf() }}
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf if operator_user else csrf_token }}">
         <label for="no-{{ r.approval_id }}">Skäl för avslag</label>
         <input id="no-{{ r.approval_id }}" name="note" required placeholder="Sparas i händelseloggen">
         <button type="submit" class="danger">Avslå</button>

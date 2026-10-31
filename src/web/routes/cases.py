@@ -15,6 +15,7 @@ godkänt.
 from __future__ import annotations
 
 import threading
+import uuid
 from datetime import date
 from typing import Any
 
@@ -129,6 +130,11 @@ def case_detail(request: Request, case_number: str, lasningar: str = ""):
 async def case_run_agent(request: Request, case_number: str):
     form = await request.form()
     check_csrf(request, form)
+    if getattr(request.app.state, "case_workspace", None) is not None:
+        error = ErrorView("conflict", "Använd ärendets agentstöd",
+                          "Beställ deluppdrag eller lämna över ärendet i den sparade ärendedialogen.", 409,
+                          nothing_changed=True)
+        return await run_in_threadpool(_case_page, request, case_number, error=error)
     agent = case_agent(request)
     if agent is None:
         error = ErrorView("error", "Agenten är inte konfigurerad",
@@ -195,11 +201,28 @@ def _case_page(request: Request, case_number: str, *, error: ErrorView | None = 
             overview = read(request, "get_insured_overview", {"personal_id_number": case.personal_id_number})
         except ServiceError:
             overview = None
-    return render(request, "case.html", {
+    from web.operator_auth import current_session
+
+    assistant = None
+    assistant_error = None
+    console = getattr(request.app.state, "case_workspace", None)
+    session = current_session(request)
+    if console is not None and session and session.operator_id:
+        try:
+            from services import Actor
+
+            assistant = console.view(case_number, Actor.human(session.operator_id))
+        except Exception:  # noqa: BLE001 – arbetsytans fel får inte exponera ärendedialog/databasuppgifter
+            assistant_error = "Ärendeassistenten kan inte läsas. Kontrollera anslutning och ärendeuppdragens migration."
+    response = render(request, "case.html", {
         "case": case, "o": overview, "approvals": approvals, "history": history,
         "agent": case_agent(request), "run": run, "error": error, "message": message, "form": form,
         "open_statuses": OPEN_STATUSES, "include_reads": include_reads,
+        "assistant": assistant, "assistant_available": console is not None,
+        "assistant_error": assistant_error, "submission_key": uuid.uuid4().hex,
     }, status_code=error.status_code if error else 200, push_url=f"/arenden/{case_number}")
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @router.get("/arenden/{case_number}/{action}")

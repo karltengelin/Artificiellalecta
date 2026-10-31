@@ -109,6 +109,19 @@ python scripts/migrations/migrate_t3_schema.py --help
 Den innehåller ingen egen AI-logik. Nya instruktioner använder kategorisökvägen.
 Gamla schemalagda kommandon och instruktioner utanför repot behöver uppdateras separat.
 
+## Ärendeuppdrag (2026-10-31)
+
+- `scripts/agents/run_case_worker.py --db demo --once|--serve`: hämtar den
+  varaktiga kön, följer upp beslut och tillämpar aktiverade dagliga regler.
+  Använder AI-lager/harness/tjänstelager och kan göra modellanrop och
+  policytillåtna affärsändringar. Standardpolicyn har dagligt urval avstängt.
+- `scripts/migrations/migrate_case_work.py`: torrkörning mot DATABASE_URL;
+  införande kräver `--apply --backup`, backup och databassamordning.
+- `scripts/diagnostics/smoke_test_case_work.py --run`: riktig modell, bara
+  läsning/beräkning i tillfällig lokal demodatabas; utan flaggan inga anrop.
+
+Fulla driftgränser finns i [ärendedialogen](arendedialog_och_automation.md).
+
 ## När ett nytt verktyg läggs till
 
 Placera det efter användning, inte efter vilken agent som skrev det. Återanvändbar logik

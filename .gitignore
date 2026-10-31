@@ -88,3 +88,6 @@ Thumbs.db
 .claude/*
 !.claude/launch.json
 .cursor/
+
+# Lokala verifieringsfiler, testberoenden och visuella förhandsvisningar
+/tmp/

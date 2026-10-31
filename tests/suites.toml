@@ -89,7 +89,7 @@ dependents = ["agents", "web", "tooling"]
 [suites.agents]
 description = "Harness, ärendekörningar, behörigheter och gateways"
 status = "active"
-tests = ["tests/test_agents_case_runs.py", "tests/test_agents_delegation.py", "tests/test_agents_questions.py", "tests/test_agents_demo.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_listing.py", "tests/test_agents_loop.py", "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py", "tests/test_agents_postgres_role.py", "tests/test_agents_skills.py", "tests/test_agents_teams.py"]
+tests = ["tests/test_case_workspace.py", "tests/test_agents_case_runs.py", "tests/test_agents_delegation.py", "tests/test_agents_questions.py", "tests/test_agents_demo.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_listing.py", "tests/test_agents_loop.py", "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py", "tests/test_agents_postgres_role.py", "tests/test_agents_skills.py", "tests/test_agents_teams.py"]
 dependents = ["orchestration", "web", "tooling"]
 
 [suites.ai]
@@ -101,13 +101,13 @@ dependents = ["agents", "services", "web", "tooling"]
 [suites.web]
 description = "HTTP, formulär och handläggarflöden"
 status = "active"
-tests = ["tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_flows.py", "tests/test_web_operator.py", "tests/test_design_web_css.py"]
+tests = ["tests/test_web_case_workspace.py", "tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_flows.py", "tests/test_web_operator.py", "tests/test_design_web_css.py"]
 dependents = ["tooling"]
 
 [suites.data]
 description = "Datamodeller, backup och migrationer"
 status = "active"
-tests = ["tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_flows.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
+tests = ["tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_flows.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
 dependents = []
 
 [suites.design]
@@ -125,6 +125,7 @@ dependents = []
 # Filselektorer gäller alla testfall i filen; ::funktion gäller också parametriseringar.
 [markers]
 postgres = [
+  "tests/test_case_workspace_postgres.py",
   "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py",
   "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py",
   "tests/test_migration_cases.py::test_migrationen_skapar_bara_cases_och_blir_identisk_med_create_all",
@@ -141,6 +142,7 @@ security = ["tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test
 paths = [
   "tests/conftest.py", "tests/__init__.py", "tests/suites.toml", "tests/flow_helpers.py",
   "tests/test_agents_loop.py", "tests/test_services_postgres.py", "tests/test_services_transactions.py",
+  "tests/case_work_helpers.py",
   "tests/test_services_write_ops.py", "tests/test_services_enrollment.py", "tests/test_web_changes.py",
   "pyproject.toml", "src/models/**", "src/testing/**", "scripts/testing/**", ".github/**",
 ]
@@ -249,6 +251,7 @@ documentation = true
 [[rules]]
 paths = ["src/models/**", "src/utils/migration*.py", "scripts/migrations/**"]
 postgres = [
+  "tests/test_case_workspace_postgres.py",
   "tests/test_services_postgres.py",
   "tests/test_migration_cases.py::test_migrationen_skapar_bara_cases_och_blir_identisk_med_create_all",
   "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
@@ -259,7 +262,11 @@ postgres = [
 
 [[rules]]
 paths = ["src/services/transaction.py", "src/services/approvals.py", "src/services/service.py", "src/services/db.py"]
-postgres = ["tests/test_services_postgres.py", "tests/test_agents_postgres_role.py"]
+postgres = ["tests/test_case_workspace_postgres.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py"]
+
+[[rules]]
+paths = ["src/agents/case_workspace.py", "src/agents/case_policy*", "src/services/case_review.py", "src/services/operations/cases.py"]
+postgres = ["tests/test_case_workspace_postgres.py", "tests/test_services_postgres.py"]
 
 [[rules]]
 paths = ["src/services/events.py", "src/services/operations/common.py", "src/services/operations/corrections.py", "src/services/operations/enrollment.py", "src/services/operations/policies.py", "src/services/operations/salary.py"]

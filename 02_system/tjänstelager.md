@@ -456,6 +456,15 @@ Beslutat i **B-042** (val C och I) och värderingskontraktet A1 §4. Kod: `src/s
 
 ## 10. Öppna frågor
 
+**Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
+för komplettering av ärendets löneunderlag med hashkontroll och motivering.
+Den blockerar stängda ärenden, aktiva körningar och väntande förslag och skapar
+ingen lönerapport/premie. För nya ärendeuppdrag kontrollerar godkännandet även
+uppdragets giltighet och exakta underlag. En separat betrodd automationsväg
+och atomiskt ärendeavslut finns enligt operatörens nya beställning;
+åtkomstregistret har ingen generell avstängning av godkännanden.
+Se [villkor och spårbarhet](arendedialog_och_automation.md#granskningspolicy-och-automatisk-slutbehandling).
+
 - **Fyraögonprincip** (två olika människor) är inte möjlig med en operatör – framtida option per operation.
 - **Hur mycket indata som loggas** för PII-operationer – fullt, maskerat eller som referens.
 

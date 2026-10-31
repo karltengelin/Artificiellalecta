@@ -9,6 +9,14 @@
 
 ## 1. Syfte
 
+**Ärendedialog och självständig handläggning, 2026-10-31:** ny sidopanel på
+ärendet för fria deluppdrag, överlämning, komplettering och övertagande.
+Dialogen och dess nya skrivvägar kräver verifierad operatörssession.
+Varaktig kö, fristående arbetare och granskningspolicy beskrivs i
+[driftunderlaget](arendedialog_och_automation.md). Äldre v1-vyer behåller
+sina lokala gränser. Ingen migration eller automatisk ärendehantering
+aktiveras mot Lakebase genom webbstarten.
+
 Ett lokalt webbgränssnitt där handläggaren söker fram en försäkrad och gör ändringar som syns i
 Lakebase-tabellerna och i händelseloggen. UI:t är tjänstelagrets första klient. Agenterna
 (Fas 3b/5) använder senare samma operationer, med samma spår i loggen (B-017).
@@ -290,8 +298,8 @@ som väntande och kan avslås. Tider visas i datorns lokala tid, medan tjänstel
 | `/arenden/{nummer}/status` (POST) | Byt status bland de öppna, och vid behov handläggare | `update_case_status` |
 | `/arenden/{nummer}/stang` (POST) | Stäng med utfall och motivering | `close_case` |
 
-- **Agenten körs synkront**, en körning åt gången i processen (B-033 val D). Knappen frågar först, eftersom körningen gör modellanrop som kostar. Modellklienten skapas vid första körningen – UI:t startar utan API-nycklar.
-- **Planerat: självständiga körningar (F5-7).** Handläggaragenten ska kunna ta ärenden själv, till exempel när ett ärende om löneunderlag registreras, och arbeta utan att handläggaren klickar. Det kräver en utlösare, en bakgrundsarbetare och regler för vilka ärendetyper som går automatiskt, med budget och möjlighet att stänga av. Mandat, budget och godkännande i kön gäller som vid *Starta agent*. Agenten föreslår, handläggaren beslutar. Knappen finns kvar för att starta agenten i ett enskilt ärende.
+- **Tidigare synkron start** (B-033 val D): tabellens `/agent` beskriver v1-vägen. Med den nya arbetsytan ansluten ersätts knappen av ärendepanelens deluppdrag och överlämning; den gamla POST-vägen är då spärrad. Modellklienten skapas vid första körningen – UI:t startar utan API-nycklar.
+- **Byggt lokalt 2026-10-31: självständiga körningar (F5-7).** Varaktiga uppdrag, bakgrundsarbetare, dagligt urval, budget och avstängning finns. Mänskligt godkännande är standard; en särskild policy kan tillåta automatisk slutbehandling av verifierade standardfall. Schema och automatbeslut är avstängda i leveransen. Tabellerna är införda i Lakebase efter backup och OK samma dag. Val av återkommande ärenden återstår; lokal operatörslösenfras behöver konfigureras före dialoganvändning. Se [ärendedialog och automation](arendedialog_och_automation.md) för panelens nya vägar och driftgränser.
 - **Databasrollen per läge** (B-033 val H): i `demo` och `svc_test` simuleras agentens roll och sidan visar *simulerad*; mot `lakebase` används den riktiga rollen `agent_forsakring`, vars läsrätt på `cases` verkställdes i Lakebase 2026-10-24 (F5-5).
 - **Efter körningen** skriver harness ärendets status: *Väntar på godkännande* om ett förslag lagts, annars *Pågår*. Förslaget avgörs i `/godkannanden`, där det länkar till ärendet.
 - **Egen registrering i ärendet.** *Registrera löneunderlaget själv* öppnar löneunderlagsformuläret med ärendets uppgifter och ärendenumret medskickat (`?arende=`). Registreringen hamnar då i ärendets historik, och ärendet kan stängas som *Godkänt*.

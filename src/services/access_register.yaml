@@ -16,6 +16,7 @@
 # En rad för en operation som inte finns ger fel vid start (fångar stavfel).
 
 operations:
+  amend_salary_case: HUMAN_ONLY
   get_insured_overview: AGENT          # läsning, personuppgifter (loggas)
   list_insured_persons: HUMAN_ONLY    # handläggarens beståndslista över personer (loggas); ingen bred agentåtkomst
   get_premium_history: AGENT           # läsning, personuppgifter (loggas)

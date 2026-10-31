@@ -93,6 +93,15 @@ class CompanyAnswer(_Strict):
     next_steps: list[str] = Field(description="Vad som behövs för ett fullständigare svar, om något")
 
 
+class CaseAnswer(_Strict):
+    """Deluppdrag i ett ärende. Ett modellsvar bevisar aldrig att ärendet är genomfört."""
+
+    status: Literal["answered", "needs_information", "needs_human"]
+    summary: str = Field(min_length=1, max_length=12000)
+    questions: list[str] = Field(max_length=8)
+    limitations: list[str] = Field(max_length=8)
+
+
 class ProductReportSummary(_Strict):
     """Produktrapporten (A2, B-042): aktuarien sammanfattar bestånd och premier för ett år.
 
@@ -110,6 +119,7 @@ class ProductReportSummary(_Strict):
 
 
 RESULT_SCHEMAS: dict[str, type[_Strict]] = {
+    "CaseAnswer": CaseAnswer,
     "InterpretationProposal": InterpretationProposal,
     "PortfolioImpactResult": PortfolioImpactResult,
     "CompanyAnswer": CompanyAnswer,
@@ -149,6 +159,7 @@ def verify(
     metrics: dict[str, dict] = {}  # månad -> senaste lyckade get_company_metrics
     yearly: dict[str, dict[int, dict]] = {SNAPSHOT: {}, PREMIUM_FLOWS: {}}  # år -> senaste lyckade läsning
     metrics_failed = False  # ett anrop som tjänstelagret avböjde, t.ex. en datakälla som inte kunde läsas
+    read_case = False
     for outcome in dispatches:
         for call in outcome.calls:
             if call.status != CallStatus.DONE:
@@ -156,6 +167,7 @@ def verify(
                 continue
             output = json.loads(call.result.content).get("output") or {}
             operation = operation_of.get(call.skill)
+            read_case |= operation == "get_case"
             if operation == READ_DOCUMENT:
                 doc = output["document"]
                 sources[doc["handle"]] = {
@@ -180,9 +192,10 @@ def verify(
         "sources": [sources[h] for h in handles if h in sources],
         "drafts": [drafts[n] for n in names if n in drafts],
     }
-    if isinstance(result, InterpretationProposal):
-        if not result.source_handles:
-            problems.append("tolkningen anger ingen läst källa")
+    if isinstance(result, InterpretationProposal) and not result.source_handles:
+        problems.append("tolkningen anger ingen läst källa")
+    if isinstance(result, CaseAnswer) and not read_case:
+        problems.append("ärendet har inte lästs med get_case i körningen")
     if isinstance(result, PortfolioImpactResult):
         if estimate is None:
             problems.append("ingen beräkning med estimate_parameter_change_impact i körningen")

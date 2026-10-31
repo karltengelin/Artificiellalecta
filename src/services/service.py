@@ -42,7 +42,12 @@ from services.errors import (
     MissingReasonError,
     ServiceConfigError,
 )
-from services.events import DatabaseEventLog, EventLog, OperationEvent, default_event_log
+from services.events import (
+    DatabaseEventLog,
+    EventLog,
+    OperationEvent,
+    default_event_log,
+)
 from services.rules import ProductRuleCatalog
 from services.transaction import SessionFactory, guard_operation, transaction
 
@@ -198,6 +203,9 @@ class ServiceLayer:
         self._require_human(ctx)
         with transaction(self._session_factory) as tx:
             request = self.approvals.decide(approval_id, "approved", ctx.actor.id, note, tx)
+            from services.case_review import guard_case_proposal
+
+            guard_case_proposal(tx.session, request, self)
             op = self.registry.get(request.operation)
             validated = self._validate_input(op, request.input)
             run_ctx = replace(
@@ -212,6 +220,34 @@ class ServiceLayer:
                 proposed_by=request.proposed_by, approval_id=request.id,
                 detail=self._rule_detail(op), session=tx.session,
             )
+        return OperationResult(ResultStatus.DONE, op.name, output=output, approval_id=request.id)
+
+    def complete_case_automatically(self, work_id: str, approval_id: str, *, policy_path=None) -> OperationResult:
+        """Betrodd arbetare: exakt ärendebunden löneåtgärd, aldrig ett generellt godkännande.
+
+        Policyn, giltiga regler och underlag prövas i samma transaktion som ändringen.
+        Agentrollen får inga nya databasrättigheter. Ett maskinbeslut märks uttryckligen.
+        """
+        from services.case_review import guard_case_proposal
+
+        with transaction(self._session_factory) as tx:
+            request = self.approvals.decide(
+                approval_id, "approved", "case_automation", "Automatiskt beslut enligt ärendepolicy", tx,
+            )
+            work = guard_case_proposal(tx.session, request, self, work_id=work_id, policy_path=policy_path)
+            op = self.registry.get(request.operation)
+            validated = self._validate_input(op, request.input)
+            from services.contract import Actor
+
+            ctx = OperationContext(
+                actor=Actor.agent(request.proposed_by, request.proposed_by_team),
+                reason=request.reason, run_id=request.run_id, case_id=request.case_id,
+            )
+            output = self._call(op, ctx, validated, tx.session)
+            self._record(op, ctx, validated, outcome="executed", output=output,
+                         proposed_by=request.proposed_by, approval_id=request.id,
+                         detail=f"Automatisk ärendepolicy {work.policy['policy_id']}@{work.policy['sha256']}; "
+                                f"{self._rule_detail(op)}", session=tx.session)
         return OperationResult(ResultStatus.DONE, op.name, output=output, approval_id=request.id)
 
     def reject(self, approval_id: str, ctx: OperationContext, note: str | None = None) -> None:
@@ -230,6 +266,58 @@ class ServiceLayer:
                 detail=note,
                 session=tx.session,
             )
+
+    def finish_case_work(self, work_id: str, *, policy_path=None) -> bool:
+        """Atomiskt avslut efter verifierade beslut; inga modellanrop och ingen omregistrering."""
+        import uuid
+        from datetime import UTC, datetime
+
+        from sqlalchemy import select
+
+        from agents.case_policy import DEFAULT_POLICY, CasePolicy
+        from models import ApprovalRequestRecord, Case, CaseMessage, CaseWork
+        from services.case_review import guard_case_proposal
+        from services.contract import Actor
+
+        policy, version = CasePolicy.load(policy_path or DEFAULT_POLICY)
+        with transaction(self._session_factory) as tx:
+            lookup = tx.session.get(CaseWork, work_id)
+            if lookup is None:
+                raise ApprovalError("Okänt ärendeuppdrag")
+            case = tx.session.scalar(select(Case).where(Case.case_number == lookup.case_number).with_for_update())
+            work = tx.session.scalar(select(CaseWork).where(CaseWork.id == work_id).with_for_update()
+                                     .execution_options(populate_existing=True))
+            if work.status != "waiting_approval" or work.cancel_requested:
+                return False
+            if work.policy != policy.snapshot(case.case_type, version):
+                raise ApprovalError("Ärendepolicyn har ändrats; avslutet kräver handläggare")
+            ids = work.result.get("run", {}).get("pending_approvals", [])
+            if not ids:
+                raise ApprovalError("Uppdraget saknar beslutsunderlag")
+            for ident in ids:
+                record = tx.session.get(ApprovalRequestRecord, ident)
+                if record is None or record.status != "approved":
+                    return False
+                from services.approvals import _from_record
+
+                guard_case_proposal(tx.session, _from_record(record), self)
+            if work.mode == "handle" and work.policy["auto_close"]:
+                op = self.registry.get("close_case")
+                ctx = OperationContext(actor=Actor.system("case_worker"), case_id=work.case_number,
+                                       run_id=work.run_id,
+                                       reason=f"Verifierat ärendeuppdrag {work.id}; policy {version}")
+                data = op.input_model.model_validate({"case_number": work.case_number, "outcome": "approved",
+                    "closing_note": "Verifierad registrering och beslut enligt ärendepolicyn."})
+                output = self._call(op, ctx, data, tx.session)
+                self._record(op, ctx, data, outcome="executed", output=output,
+                             detail=f"Ärendepolicy {version}", session=tx.session)
+            work.status = "completed"
+            work.revision += 1
+            tx.session.add(CaseMessage(id=uuid.uuid4().hex, case_number=work.case_number, work_id=work.id,
+                role="system", author="case_worker", created_at=datetime.now(UTC),
+                body="Åtgärden är genomförd. " + ("Ärendet är avslutat." if case.status == "closed"
+                                                  else "Du kan fortsätta handläggningen.")))
+        return True
 
     # --- interna hjälpare ---------------------------------------------------
 

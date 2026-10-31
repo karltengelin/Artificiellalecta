@@ -1,0 +1,16 @@
+schema_version: 1
+policy_id: case-work-v1
+case_types:
+  salary_report:
+    review_required: true
+    auto_close: true
+    max_jobs_per_day: 20
+    max_daily_cost_usd: 5.0
+    schedule:
+      enabled: false
+      timezone: Europe/Stockholm
+      hour: 7
+      minute: 0
+# Endast granskad konfiguration får ändra policyn. Ingen agent eller webbtext kan
+# stänga av granskning. review_required: false tillåts bara för verifierad
+# register_salary_report som exakt motsvarar aktuellt ärende och giltiga regler.

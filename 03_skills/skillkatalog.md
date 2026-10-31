@@ -42,7 +42,7 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 | `set_policy_paid_up` | `kunddata` | `set_policy_paid_up` | write | Ja | APPROVAL | – |
 | `write_draft` | `dokument` | gateway `write_draft` | write | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 
-Operationer utan poddmappning – stängda för alla agenter: `adopt_valuation_basis`, `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `propose_valuation_basis`, `register_employer`, `reject_valuation_basis`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
+Operationer utan poddmappning – stängda för alla agenter: `adopt_valuation_basis`, `amend_salary_case`, `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `propose_valuation_basis`, `register_employer`, `reject_valuation_basis`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
 <!-- list_skills.py: slut -->
 
 ## Planerade skills (ur ATT_GORA)

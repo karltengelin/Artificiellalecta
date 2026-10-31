@@ -754,6 +754,15 @@ steget och flödet blir `failed` i stället för `reconciliation_required`.
 
 ### 10.4 Återstart utan dubbel handling
 
+**Byggt ärendestöd 2026-10-31:** `agents.case_workspace.CaseWorkspace` återanvänder
+loopen för fria deluppdrag och överlämnad löneunderlagshandläggning. Uppdrag,
+dialog, policybild och dagsreservationer är varaktiga i databasen. Ett atomiskt
+anspråk hindrar dubbel körning; okänt utfall kräver uttrycklig avstämning och
+återställer inte budget. En betrodd arbetare följer upp verkställighet och
+avslut. Samma kö används av webben och dagliga regler. Detta är ingen ny
+generell agentloop eller färdig flerteamdialog. Se
+[arkitektur och begränsningar](arendedialog_och_automation.md).
+
 Fas 3b:s `RunStore`, task-/run-/flow-id, statuses, budgetreservationer och versionsreferenser ska vara stabila kontrakt. Ett godkännande leder till avstämning och fortsättning, inte återspelning av hela loopen. Fas 3c lägger till en beständig tillståndsmaskin med versionsnummer, atomiskt anspråk på steg och idempotens för beställningar/handlingar. Den behöver hantera krasch före/efter proposal, godkännande, verkställighet och nästa steg.
 
 En deterministisk ordning gör processen granskningsbar, men gör inte nätverksoperationer ”exakt en gång”. Verifierade tjänstekvitton, idempotens och manuell avstämning vid okänt utfall är fortfarande nödvändiga. Automatisk återstart är blockerad tills dessa kontrakt är byggda och testade. Ingen full minnesmotor, dynamisk agentskapning, generell MCP-klient eller parallell agentplanering behövs i Fas 3b.

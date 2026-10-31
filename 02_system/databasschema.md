@@ -20,6 +20,7 @@
 | `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟢 I drift (seedad 2023–2026) |
 | `operation_events` / `approval_requests` | Tjänstelagrets händelselogg och godkännandekö (§9b–9c) | 🟢 Skapade i Lakebase i Fas 1f T3a; kö/logg används av tjänstelagret och UI:t |
 | `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad med agentrollens läsrätt i Lakebase 2026-10-24. Slutverifiering av agentflödet återstår i F5-5–6 |
+| `case_work` / `case_messages` / `case_work_days` | Varaktiga ärendeuppdrag, skyddad dialog och daglig budgetbok (§12b) | 🟢 Skapade tomma i Lakebase 2026-10-31 efter backup och operatörens OK; inga direkta agenträttigheter. Schema är avstängt |
 | `product_parameters` | Versionerade premieåldrar, premiesatser och brytpunkter (§9h) | 🟢 Skapad och seedad i Lakebase 2026-10-25; agentrollens läsrätt satt. Förändringsoperationer finns; komplett flödesverifiering återstår i 3c-V |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
 | `flows` / `flow_steps` / `flow_gate_decisions` | Flödesmotorn i harness: flöden, steg och grindbeslut (§9i) | 🟡 Fas 3c 3c-2: modeller, motor och tester; migrationen verifierad mot isolerad Postgres; 🟢 skapade i Lakebase 2026-10-26 efter backup `backups/20261026T200423Z` och operatörens OK (tomma, inga agenträttigheter) |
@@ -691,6 +692,23 @@ Partiellt unikt index: högst en antagen, inte avslutad grund per familj (`uq_va
 - **A5 (2026-10-31) – uppgradering av `valuation_bases`:** samma skript, `migrate_valuation_bases.py`, uppgraderar en befintlig tabell. Villkoren för familj och ändamål byts till modellens (familjen `AVK-SIM`, ändamålet `return_series`) och startgrunder som saknas läggs in. Befintliga grunder ändras inte. Allt sker i en transaktion med torrkörning som standard, kontroll av kontrollsummor och radantal, och skriptet är idempotent. Verifierat mot isolerad Postgres 2026-10-31 från A4-läget, där båda villkoren saknar de nya värdena. **Körd mot Lakebase 2026-10-31** efter backup `backups/20261031T151410Z` och torrkörning, med operatörens OK: villkoren för familj och ändamål bytta, `AVK-SIM-2026-01` inlagd, radantalen i övriga tabeller oförändrade och en andra körning gjorde ingenting. Rättigheterna behövde inte ändras (SELECT på hela tabellen). Verifierat med `agent_aktuarie`s anslutning: läser alla sju grunderna och kontrollsummorna stämmer; nekas UPDATE
 
 ---
+
+## 12b. Ärendeuppdragens schemaändring
+
+**Tillägg 2026-10-31 – ärendeuppdrag:** modellerna i `src/models/case_work.py`
+definierar `case_work`, `case_messages` och `case_work_days`. De hör till
+betrodd harness och ärendeuppföljning; agentrollerna får ingen direkt åtkomst.
+Ärende-/uppdragsreferenser har främmande nycklar, beställningsnyckeln är unik,
+arbetsform/status har CHECK-villkor och köanspråk använder villkorlig UPDATE.
+Dialog/resultat är personuppgiftsbärande. Fält, indexens användning,
+reservationsbok, skydd och migration beskrivs i
+[ärendedialog och automation](arendedialog_och_automation.md#data-migration-och-skydd).
+Migration: `scripts/migrations/migrate_case_work.py`; införd i Lakebase
+2026-10-31 efter backup `backups/20261031T144609Z` och operatörens OK.
+Tre tomma tabeller med rätt kolumner, nycklar och index; övriga 17 212 rader
+oförändrade. Ägare `app_backend`, inga direkta rättigheter för de tre agentrollerna.
+En andra körning gör ingenting. Webbstart och en tom engångskörning av arbetaren
+är verifierade; schema/automatbeslut är fortsatt avstängda.
 
 ## 13. Hänvisningar
 

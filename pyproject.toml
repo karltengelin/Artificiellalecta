@@ -16,6 +16,8 @@ dependencies = [
     "openai>=3.28,<4",
     "pydantic>=2.7",
     "pyyaml>=6.0",
+    # Verksamhetskalenderns tidszoner även på Windows.
+    "tzdata>=2025.1",
     # Handläggar-UI:t (src/web/, Fas 4): serverrenderade sidor med HTMX –
     # inget Node och inget byggsteg. Bara lokalt (127.0.0.1).
     "fastapi>=0.115",
@@ -45,6 +47,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 ai = ["*.yaml"]
+agents = ["*.yaml"]
 design = ["*.json"]
 services = ["*.yaml"]
 web = ["templates/*.html", "templates/partials/*.html", "static/*"]
