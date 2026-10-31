@@ -477,6 +477,22 @@ Beslutat i **B-042** (val I och L) och värderingskontraktet A1 §2–7. Kod: `s
 
 **Bas och scenario:** en basvärdering görs per kvartalsslut med den SIM-V och den kurva som gäller datumet. Ett scenario får ha vilket månadsslut som helst och en uttryckligen angiven grund och kurva (kontraktet §2). Det märks och kan aldrig låsas, varken i operationen eller i databasen.
 
+**Granskningsbundet fastställande (2026-10-31):** `get_valuation_run` ger
+`review_checksum` och `current_locked_run_id`. Läsprojektionens belopp, kontroller,
+begränsningar, källhashar, versioner och den bas som skulle ersättas ingår i
+granskningssumman. `lock_valuation` kräver nu `{run_id, reviewed_checksum}`, där
+`reviewed_checksum` hämtas från den granskade läsningen; äldre anrop med bara id
+måste uppdateras. Skillnaden prövas i låsningens transaktion och ger konflikt om
+underlaget eller periodens bas ändrats. Postgres serialiserar besluten per datum
+med ett transaktionsbundet advisory-lås även när ingen bas ännu finns, därefter
+tas befintliga radlås. Endast en människa kan fastställa, även systemaktör nekas.
+Inga nya tabeller eller rättigheter behövs. Läsning fortsätter utan åtkomst till
+individutdragen. När totalsummor undertrycks döljs även kontrollernas detaljtexter.
+
+Människans arbetsväg finns på `/team/aktuarie/varderingar`, se
+[teamytans värderingssidor](aktuarie_varderingar.md). Det framtida agentflödets
+systemsteg återanvänder `run_valuation`; `valuation_close` är ännu inte byggt.
+
 **Spärras:**
 - *Blockeras:* ett datum som inte är ett månadsslut, en basvärdering som inte är per kvartalsslut eller saknar gällande grund eller kurva, ett underkänt datautdrag (§5.3), saknad skattesats eller ett s_y under grundens golv, och ändrade grunder. Låset blockeras för scenarier, för körningar som inte är utkast, för underkända kontroller och när utdragets eller grundernas kontrollsummor inte stämmer.
 - *Ogiltig indata:* en basvärdering med uttryckligt angiven grund eller kurva.

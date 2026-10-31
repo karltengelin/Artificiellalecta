@@ -1,0 +1,24 @@
+{% extends "actuary_base.html" %}
+{% block title %}Värderingar · Aktuarie{% endblock %}
+{% block actuary_content %}
+<p class="oc-eyebrow">AKTUARIELLT ARBETE</p><h1>Värderingar</h1>
+<p class="actuary-intro">Värdera beståndet, granska resultatet och fastställ en bas för perioden. Motorn beräknar; du fattar beslutet.</p>
+{% if error %}<p class="alert alert--error" role="alert">{{ error }}</p>{% endif %}
+<section class="panel"><h2>Sparade körningar</h2>
+{% if runs %}<table class="table actuary-register"><thead><tr><th>Datum / version</th><th>Typ</th><th>Status</th><th>Grund / kurva</th><th>Kontroller</th></tr></thead><tbody>
+{% for run in runs %}<tr><td data-label="Datum"><a href="/team/aktuarie/varderingar/{{ run.run_id }}">{{ run.valuation_date | iso_date }} · v{{ run.version }}</a><p class="small muted">Skapad {{ run.created_at | iso_date }}</p></td><td data-label="Typ">{{ valuation_purpose[run.purpose] }}</td><td data-label="Status"><span class="pill">{{ valuation_status[run.status] }}</span></td><td data-label="Grund">{{ run.basis_code }}<br>{{ run.curve_code }}</td><td data-label="Kontroller">{{ 'Godkända' if run.checks_passed else 'Underkända – kan inte fastställas' }}</td></tr>{% endfor %}
+</tbody></table>{% else %}<p>Inga sparade värderingar i denna miljö. Starta en körning när underlaget är komplett.</p>{% endif %}</section>
+<section class="panel" id="starta"><h2>Starta en värdering</h2>
+<p>Bas kräver kvartalsslut och gällande grunder. Scenario tillåter annat månadsslut och uttryckligt val av antagen grund och kurva. Ett scenario kan aldrig fastställas som bas.</p>
+<p class="small muted">Tjänsten kontrollerar datum, grunder, avkastningsserie och datautdrag. Saknat underlag stoppar körningen.</p>
+<details><summary>Grunder i aktuellt register</summary><ul>{% for basis in bases if basis.family in ['SIM-V','FI-SIM','AVK-SIM'] %}<li><a href="/team/aktuarie/antaganden/{{ basis.code }}">{{ basis.code }}</a> · {{ basis.state }} · från {{ basis.valid_from | iso_date }}{% if basis.valid_to %} till {{ basis.valid_to | iso_date }}{% endif %}{% if not basis.checksum_ok %} · Innehållskontroll underkänd{% endif %}</li>{% endfor %}</ul></details>
+{% if operator_user %}<form method="post" action="/team/aktuarie/varderingar" hx-boost="false" class="actuary-form" data-valuation-action>
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="request_token" value="{{ request_token }}">
+<label for="valuation-date">Värderingsdatum · månadens sista dag</label><input type="date" id="valuation-date" name="valuation_date" value="{{ values.get('valuation_date','') }}" required>
+<label for="valuation-purpose">Typ</label><select id="valuation-purpose" name="purpose"><option value="base"{% if values.get('purpose','base') == 'base' %} selected{% endif %}>Bas · för mänskligt fastställande</option><option value="scenario"{% if values.get('purpose') == 'scenario' %} selected{% endif %}>Scenario · kan aldrig fastställas</option></select>
+<label for="valuation-basis">Värderingsgrund · välj kod bara för scenario</label><select id="valuation-basis" name="basis_code"><option value="">Gällande vid värderingsdatum</option>{% for b in bases if b.family == 'SIM-V' and b.status == 'adopted' and b.checksum_ok %}<option value="{{ b.code }}"{% if values.get('basis_code') == b.code %} selected{% endif %}>{{ b.code }} · från {{ b.valid_from | iso_date }}</option>{% endfor %}</select>
+<label for="valuation-curve">Diskonteringskurva · välj kod bara för scenario</label><select id="valuation-curve" name="curve_code"><option value="">Gällande vid värderingsdatum</option>{% for b in bases if b.family == 'FI-SIM' and b.status == 'adopted' and b.checksum_ok %}<option value="{{ b.code }}"{% if values.get('curve_code') == b.code %} selected{% endif %}>{{ b.code }} · från {{ b.valid_from | iso_date }}</option>{% endfor %}</select>
+<label for="valuation-note">Varför görs värderingen?</label><textarea id="valuation-note" name="note" rows="3" maxlength="1000" required>{{ values.get('note','') }}</textarea>
+<button type="submit">Beräkna och spara utkast</button><p hidden data-valuation-progress role="status">Värderingen körs. Vänta på resultatet.</p><p class="small muted">Körningen kan ta en stund. Resultatet sparas för granskning.</p>
+</form>{% else %}<p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att starta en värdering.</p>{% endif %}</section>
+{% endblock %}

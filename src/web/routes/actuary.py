@@ -54,7 +54,11 @@ def finish(request, form, result):
 
 @router.get(ROOT)
 def overview(request: Request):
-    context = {"basis_list": None, "reports": None, "assignments": None, "errors": []}
+    context = {"basis_list": None, "reports": None, "assignments": None, "valuations": None, "errors": []}
+    try:
+        context["valuations"] = read(request, "list_valuation_runs", {}).runs
+    except Exception:
+        context["errors"].append("Värderingskörningarna kunde inte läsas.")
     try:
         context["basis_list"] = read(request, "list_valuation_bases", {})
     except Exception:

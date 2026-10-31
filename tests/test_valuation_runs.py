@@ -39,7 +39,12 @@ from services import (
     default_registry,
 )
 from services.db import session_factory_for
-from services.errors import AccessDeniedError, BlockedError, InvalidInputError
+from services.errors import (
+    AccessDeniedError,
+    BlockedError,
+    ConflictError,
+    InvalidInputError,
+)
 from services.operations import common
 from services.operations.valuations import opening_balance
 from services.service import ResultStatus
@@ -98,6 +103,11 @@ def service(demo):
 
 def run(service, day=Q3, ctx=SYSTEM, **extra):
     return service.execute("run_valuation", ctx, {"valuation_date": day.isoformat(), **extra}).output
+
+
+def _lock_data(service, run_id):
+    detail = service.execute("get_valuation_run", KARL, {"run_id": str(run_id)}).output
+    return {"run_id": str(run_id), "reviewed_checksum": detail.review_checksum}
 
 
 class TestKorning:
@@ -187,26 +197,54 @@ class TestKorning:
 
 
 class TestLas:
+    def test_beslut_kraver_manniska_och_granskat_underlag(self, service):
+        out = run(service)
+        assert _lock_data(service, out.run_id)["reviewed_checksum"] == out.review_checksum
+        with pytest.raises(InvalidInputError):
+            service.execute("lock_valuation", KARL, {"run_id": str(out.run_id)})
+        with pytest.raises(AccessDeniedError):
+            service.execute("lock_valuation", SYSTEM, _lock_data(service, out.run_id))
+
+    def test_inaktuellt_beslut_ersatter_inte_en_ny_bas(self, service):
+        first, second = run(service), run(service)
+        reviewed = _lock_data(service, second.run_id)
+        service.execute("lock_valuation", KARL, _lock_data(service, first.run_id))
+        with pytest.raises(ConflictError, match="fastställda bas har ändrats"):
+            service.execute("lock_valuation", KARL, reviewed)
+        reread = service.execute("get_valuation_run", KARL, {"run_id": second.run_id}).output
+        assert reread.status == "draft" and reread.current_locked_run_id == first.run_id
+        assert reread.review_checksum != reviewed["reviewed_checksum"]
+        service.execute("lock_valuation", KARL, _lock_data(service, second.run_id))
+
+    def test_andrat_resultat_efter_granskning_stoppar_beslut(self, service, demo):
+        out = run(service)
+        reviewed = _lock_data(service, out.run_id)
+        with demo() as s:
+            s.get(ValuationRun, out.run_id).fta_sek += 1
+            s.commit()
+        with pytest.raises(ConflictError, match="Granskningsunderlaget"):
+            service.execute("lock_valuation", KARL, reviewed)
+
     def test_las_och_rattelse_ersatter_foregaende(self, service):
         first = run(service)
-        locked = service.execute("lock_valuation", KARL, {"run_id": str(first.run_id)}).output
+        locked = service.execute("lock_valuation", KARL, _lock_data(service, first.run_id)).output
         assert (locked.status, locked.locked_by, locked.lock_note) == ("locked", "karl", "Kvartalsvärdering")
         second = run(service)
-        relocked = service.execute("lock_valuation", replace(KARL, reason="Rättelse"), {"run_id": str(second.run_id)}).output
+        relocked = service.execute("lock_valuation", replace(KARL, reason="Rättelse"), _lock_data(service, second.run_id)).output
         assert relocked.supersedes_run_id == first.run_id
         old = service.execute("get_valuation_run", KARL, {"run_id": str(first.run_id)}).output
         assert old.status == "superseded"
 
     def test_last_eller_ersatt_korning_kan_inte_lasas_igen(self, service):
         first = run(service)
-        service.execute("lock_valuation", KARL, {"run_id": str(first.run_id)})
+        service.execute("lock_valuation", KARL, _lock_data(service, first.run_id))
         with pytest.raises(BlockedError, match="bara ett utkast"):
-            service.execute("lock_valuation", KARL, {"run_id": str(first.run_id)})
+            service.execute("lock_valuation", KARL, _lock_data(service, first.run_id))
 
     def test_scenario_kan_aldrig_lasas(self, service):
         out = run(service, **SCENARIO)
         with pytest.raises(BlockedError, match="aldrig bas"):
-            service.execute("lock_valuation", KARL, {"run_id": str(out.run_id)})
+            service.execute("lock_valuation", KARL, _lock_data(service, out.run_id))
 
     def test_andrat_utdrag_stoppar_laset(self, service, demo):
         out = run(service)
@@ -217,7 +255,7 @@ class TestLas:
             row.content = content
             s.commit()
         with pytest.raises(BlockedError, match="Datautdragets kontrollsumma"):
-            service.execute("lock_valuation", KARL, {"run_id": str(out.run_id)})
+            service.execute("lock_valuation", KARL, _lock_data(service, out.run_id))
 
     def test_andrad_grund_stoppar_laset(self, service, demo):
         out = run(service)
@@ -226,19 +264,59 @@ class TestLas:
             row.assumptions = {**row.assumptions, "option_adjustment": "annat"}
             s.commit()
         with pytest.raises(BlockedError, match="SIM-V-2026-01 stämmer inte"):
-            service.execute("lock_valuation", KARL, {"run_id": str(out.run_id)})
+            service.execute("lock_valuation", KARL, _lock_data(service, out.run_id))
 
     def test_k5_ib_i_period_tva_ar_ub_i_period_ett(self, service, demo):
         q2 = run(service, Q2)
-        service.execute("lock_valuation", KARL, {"run_id": str(q2.run_id)})
+        service.execute("lock_valuation", KARL, _lock_data(service, q2.run_id))
         q3 = run(service, Q3)
-        service.execute("lock_valuation", KARL, {"run_id": str(q3.run_id)})
+        service.execute("lock_valuation", KARL, _lock_data(service, q3.run_id))
         with demo() as s:
             ib = opening_balance(s, Q3)
             assert ib.id == q2.run_id and ib.fta_sek.quantize(q2.fta_sek) == q2.fta_sek
             assert opening_balance(s, date(2026, 12, 31)).id == q3.run_id
             assert opening_balance(s, Q2) is None
             assert compute_valuation(s, Q2).result_checksum == ib.result_checksum  # samma UB vid omräkning
+
+
+class TestLockPostgres:
+    @pytest.mark.parametrize("same_run", [False, True])
+    def test_samtidiga_beslut_kraver_ny_granskning(self, same_run):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+
+        from tests.test_services_postgres import isolated_schema
+
+        with isolated_schema() as db:
+            create_demo_database(db.engine, with_proposals=False, today=date(2026, 10, 27))
+            with db.session_factory() as s:
+                for row in s.scalars(select(ValuationBasis).where(
+                        ValuationBasis.family.in_(("SIM-V", "FI-SIM")))):
+                    row.valid_from = date(2026, 3, 31)
+                s.commit()
+            svc = layer(db.session_factory)
+            first = run(svc)
+            second = first if same_run else run(svc)
+            reviewed = [_lock_data(svc, row.run_id) for row in (first, second)]
+            barrier = Barrier(2)
+
+            def decide(data):
+                barrier.wait(timeout=10)
+                try:
+                    return svc.execute("lock_valuation", KARL, data).output
+                except (ConflictError, BlockedError) as exc:
+                    return exc
+
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                outcomes = list(pool.map(decide, reviewed))
+            successful = [o for o in outcomes if not isinstance(o, Exception)]
+            assert len(successful) == 1 and successful[0].status == "locked"
+            expected = BlockedError if same_run else ConflictError
+            assert sum(isinstance(o, expected) for o in outcomes) == 1
+            with db.session_factory() as s:
+                rows = s.scalars(select(ValuationRun)).all()
+                assert sum(r.status == "locked" for r in rows) == 1
+                assert not any(r.status == "superseded" for r in rows)
 
 
 class TestAtkomst:
@@ -259,7 +337,7 @@ class TestAtkomst:
         assert proposed.status == ResultStatus.PENDING_APPROVAL
         out = run(service)
         with pytest.raises(AccessDeniedError, match="endast handläggare"):
-            service.execute("lock_valuation", replace(AGENT, reason="Lås"), {"run_id": str(out.run_id)})
+            service.execute("lock_valuation", replace(AGENT, reason="Lås"), _lock_data(service, out.run_id))
 
     def test_aktuariens_profil_har_bara_lasverktygen(self, service):
         eco = Ecosystem.load()
