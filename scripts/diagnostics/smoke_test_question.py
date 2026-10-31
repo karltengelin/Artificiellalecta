@@ -36,13 +36,19 @@ Användning (från repo-roten, i .venv):
 from __future__ import annotations
 
 import argparse
-import json
 import os
+import re
 import sys
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from smoke_test_flow import DEEP_MODEL, REPO_ROOT, Report, demo_database, svc_test_database
+from smoke_test_flow import (
+    DEEP_MODEL,
+    REPO_ROOT,
+    Report,
+    demo_database,
+    svc_test_database,
+)
 
 OPERATOR_ID = "rooktest"
 TEAM = "aktuarie"
@@ -115,14 +121,10 @@ def build_console(db, ai, render, deliveries_dir: Path, dataset: str):
                                  deliveries_dir=deliveries_dir)
 
 
-def tools_used(run_id: str | None) -> list[str]:
-    from agents.journal import DEFAULT_JOURNAL_DIR
-
-    path = DEFAULT_JOURNAL_DIR / f"{run_id}.jsonl"
-    if run_id is None or not path.exists():
-        return []
-    events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
-    return [e["skill"] for e in events if e.get("type") == "tool_intent"]
+#: Ord i slutsatsen som avslöjar teknik: verktygs-, funktions-, kolumn- och statusnamn
+TECHNICAL = re.compile(r"\b[a-z]+(?:_[a-z]+)+\b|\b(?:answered|partial|unavailable|needs_clarification)\b")
+#: Ämnen som rapportens fasta begränsningar redan täcker
+FIXED_TOPICS = ("läsdag", "månadens slut", "månadsslut", "bankavst", "tidsjämför")
 
 
 def ask(console, month: date, note: str, report: Report):
@@ -134,9 +136,11 @@ def ask(console, month: date, note: str, report: Report):
     output = (answer_step.result or {}).get("output") or {}
     answer = output.get("result") or {}
     report.cost += view.cost_usd or 0.0
-    tools = tools_used(view.run_id)
+    trace = console.trace(view.flow_id)
+    tools = [t.skill for t in trace.tools] if trace else []
     print(f"  {view.flow_id}: {view.status_text}, körning {view.run_id}, {view.cost_usd or 0:.4f} USD")
-    print(f"    verktyg: {', '.join(tools) or '–'}; svarsstatus: {view.answer_status or '–'}")
+    print(f"    modell: {', '.join(trace.models) if trace else '–'}; verktyg: {', '.join(tools) or '–'}; "
+          f"svarsstatus: {view.answer_status or '–'}")
     if answer:
         print(f"    slutsats: {answer.get('conclusion')}")
         for key in ("limitations", "assumptions", "next_steps"):
@@ -158,6 +162,11 @@ def check_common(view, answer: dict, tools: list[str], month: date, report: Repo
     if answer:
         report.check("verksamhet", "svaret gäller den beställda månaden", answer.get("month") == month.isoformat(),
                      str(answer.get("month")))
+        technical = sorted(set(TECHNICAL.findall(answer.get("conclusion") or "")))
+        report.check("läsbarhet", "slutsatsen har inga tekniska namn", not technical, ", ".join(technical))
+        repeated = [x for x in answer.get("limitations", []) if any(w in x.lower() for w in FIXED_TOPICS)]
+        if repeated:
+            report.note(f"{len(repeated)} begränsning(ar) berör rapportens fasta ämnen: {' | '.join(repeated)}")
     return reached
 
 

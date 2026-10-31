@@ -82,8 +82,11 @@ class CompanyAnswer(_Strict):
                     "något underlaget inte innehåller (t.ex. andra mått eller tidsjämförelser), även om måtten "
                     "kunde läsas; needs_clarification vid oklar fråga")
     month: date = Field(description="Månaden du läste med get_company_metrics (månadsförsta)")
-    conclusion: str = Field(description="Slutsatsen i ord. Skriv inga andra tal än dem i get_company_metrics-svaret")
-    limitations: list[str] = Field(description="Begränsningar i underlaget som påverkar slutsatsen")
+    conclusion: str = Field(description="Slutsatsen för en VD: svaret först, i vanlig svenska utan verktygs-, "
+                                        "funktions- eller kolumnnamn. Skriv inga andra tal än dem i "
+                                        "get_company_metrics-svaret")
+    limitations: list[str] = Field(description="Begränsningar utöver rapportens fasta (läsdag, bankavstämning, "
+                                               "tidsjämförelser) som påverkar slutsatsen – ofta inga")
     assumptions: list[str] = Field(description="Antaganden du har gjort")
     next_steps: list[str] = Field(description="Vad som behövs för ett fullständigare svar, om något")
 

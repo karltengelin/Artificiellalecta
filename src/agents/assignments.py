@@ -51,6 +51,13 @@ IMPACT_CONSTRAINTS = (
 )
 
 
+#: Datakontraktets begränsningar, som rapporten alltid visar (P2-FRAGA-001)
+COMPANY_QUESTION_FIXED_LIMITATIONS = (
+    "Registrerat bestånd gäller läsdagen och är inte ett historiskt månadsslutsbestånd.",
+    "Betalmarkerade premier är inte bankavstämt kassainflöde och garanterar inte att alla premier har kommit in.",
+    "Inga tidsjämförelser och inga resultat från Databricks BI eller Genie.",
+)
+
 COMPANY_QUESTION_CONSTRAINTS = (
     "Läs måtten med get_company_metrics för exakt den beställda månaden",
     "Skriv inga andra tal än dem i get_company_metrics-svaret – rapportens tabell visar värdena",
@@ -59,6 +66,10 @@ COMPANY_QUESTION_CONSTRAINTS = (
     "Dolt, underkänt eller saknat underlag är aldrig noll och ersätts aldrig med en uppskattning",
     "Registrerat bestånd gäller läsdagen, inte månadens slut; betalmarkerat är inte bankavstämt",
     "Ingen individdata och inga försök att härleda dolda celler",
+    ("Skriv för en VD: börja slutsatsen med svaret, i vanlig svenska utan verktygs-, funktions-, kolumn- eller "
+     "statusnamn – rapporten anger källan och visar hur svaret togs fram"),
+    "Rapporten har redan de fasta begränsningarna: " + " ".join(COMPANY_QUESTION_FIXED_LIMITATIONS)
+    + " Upprepa dem inte – ange bara begränsningar utöver dem, eller inga",
 )
 
 

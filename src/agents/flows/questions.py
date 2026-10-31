@@ -39,6 +39,7 @@ from agents.flows.engine import AgentRuntime, FlowEngine, FlowView
 from agents.flows.store import FlowError
 from agents.journal import DEFAULT_JOURNAL_DIR
 from agents.skills import SkillRegistry
+from agents.trace import RunTrace, read_run_trace
 from ai import AIClient
 from services import Actor, ServiceLayer, default_registry
 from services.operations import common
@@ -123,6 +124,7 @@ class QuestionConsole:
     environment_id: str
     dataset_ref: str
     policy_ref: str
+    journal_dir: Path = DEFAULT_JOURNAL_DIR
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
 
     @classmethod
@@ -144,14 +146,15 @@ class QuestionConsole:
             raise ValueError("AI-klient och renderare måste anges uttryckligen")
         eco = Ecosystem.load()
         store = DeliveryStore(deliveries_dir)
+        journal_dir = journal_dir or DEFAULT_JOURNAL_DIR
         runtime = AgentRuntime(
             ai=ai, ecosystem=eco, skills=SkillRegistry.build(eco, default_registry), service=actuary_service,
-            journal_dir=journal_dir or DEFAULT_JOURNAL_DIR, team_services={TEAM: actuary_service},
+            journal_dir=journal_dir, team_services={TEAM: actuary_service},
         )
-        engine = FlowEngine(session_factory, [company_question_definition(renderer, store)],
+        engine = FlowEngine(session_factory, [company_question_definition(renderer, store, journal_dir=journal_dir)],
                             runtime=runtime, trusted=trusted)
         return cls(engine=engine, store=store, ecosystem=eco, environment_id=environment_id,
-                   dataset_ref=dataset_ref, policy_ref=policy_ref(eco, ai))
+                   dataset_ref=dataset_ref, policy_ref=policy_ref(eco, ai), journal_dir=journal_dir)
 
     # --- läsning ----------------------------------------------------------------------------------
 
@@ -180,6 +183,13 @@ class QuestionConsole:
         if flow.flow_type != FLOW_TYPE:
             raise FlowError(f"{flow_id} är ingen bolagsfråga")
         return flow
+
+    def trace(self, flow_id: str) -> RunTrace | None:
+        """Hur svaret togs fram – agent, modell, verktyg och utfall ur körjournalen. None utan körning eller journal.
+
+        För en avancerad vy bredvid rapporten; rapportens avsnitt *Så togs rapporten fram* bygger på samma källa.
+        """
+        return read_run_trace(self.journal_dir, self.flow(flow_id).step("answer").run_id)
 
     def delivery(self, flow_id: str, name: str) -> bytes:
         """En leveransfil, kontrollerad mot kontrollsumman flödet har bundit."""

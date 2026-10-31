@@ -155,20 +155,27 @@ Harness bygger innehållet i `agents/flows/definitions/company_question.py`.
 Den fasta ordningen är:
 
 1. `# Beståndsöversikt ÅÅÅÅ-MM` – samma titel som `metadata.title`.
-2. Uppdragsreferens, team, kontrakt `P2-FRAGA-001 v1.0` och uppgift om
-   att granskningsbeslut, granskare och tid registreras i uppdraget.
-3. `## Svar` – svarsstatus och slutsats.
+2. Uppdragsreferens och team.
+3. `## Svar` – svarsstatus och slutsats, skriven för en VD utan tekniska namn.
 4. `## Värden` – pipe-tabell med kolumnerna `Mått`, `Värde`,
    `Tillgänglighet`, `Kvalitet`, `Tid`.
-5. `## Definitioner` – mått-id, definitionsversion, betydelse,
+5. `## Begränsningar` – datakontraktets fasta begränsningar (historiskt
+   månadsslutsbestånd, bankavstämning, fullständighet, BI/Genie) och därefter
+   aktuariens egna, utan upprepning av de fasta.
+6. Valfria `## Antaganden` och `## Nästa steg`.
+7. `## Definitioner` – mått-id, definitionsversion, betydelse,
    population, källa och kontroller för varje mått.
-6. `## Datakälla och kontroller` – miljö, dataset, läsväg/lästid,
+8. `## Datakälla och kontroller` – miljö, dataset, läsväg/lästid,
    källbevis, observationer, vald avslutad månad och kontrollbegränsningar.
-7. `## Begränsningar` – inklusive frånvaro av historiskt månadsslutsbestånd,
-   bankavstämning, fullständighetsgaranti och BI/Genie-resultat.
-8. Valfria `## Antaganden` och `## Nästa steg`.
-9. `## Spårbarhet` – uppdrag, körning, team, kostnad, körbild, mallreferens
-   och eventuell precisering eller länk till ersatt avslaget uppdrag.
+9. `## Så togs rapporten fram` – uppdrag, kontrakt och var granskningen
+   registreras; körning, team och kostnad; agent, modellroll och modell,
+   antal modellsteg, körpolicy och varje verktygsanrop med typ, nivå och utfall
+   ur körjournalen (`agents.trace`); körbild, mallreferens och eventuell
+   precisering eller länk till ersatt avslaget uppdrag.
+
+Läsaren möter svaret, värdena och begränsningarna först; avsnitt 7–9 är
+underlaget för granskning och revision. Samma spår finns för webbens
+avancerade vy genom `QuestionConsole.trace(flow_id)`.
 
 Renderaren bevarar text och tal från Markdown. Den skapar inga värden,
 byter inga tillstånd och ersätter aldrig dolt eller saknat med noll.

@@ -249,6 +249,8 @@ DM Sans återstår. Kolumnrätterna är inte satta i Lakebase.
 
 *2026-10-31:* röktestet med OpenAI (`gpt-6-astra`) i demo, `--avvikelser` och `reporting.render_report` med Helvetica gav 19 av 19 kontroller, 0,23 USD. Rapporten granskades översiktligt; Codex visuella kontroll med DM Sans och webbvyerna återstår. Samma dag i `svc_test` med `claude-opus-5` och aktuariens begränsade testroll, inklusive kolumnrätterna: 19 av 19 kontroller, 0,31 USD, sedan operatören slagit på den avstängda Lakebase-endpointen.
 
+*2026-10-31, läsbarhet:* på operatörens begäran skrivs rapporten för en VD. Svar, värden och begränsningar kommer först; definitioner, datakälla och det nya avsnittet *Så togs rapporten fram* (agent, modell, verktygsanrop med nivå och utfall ur körjournalen, `agents.trace`) sist. Aktuarien instrueras att skriva slutsatsen utan tekniska namn och inte upprepa datakontraktets fasta begränsningar. Samma spår finns för webbens avancerade vy genom `QuestionConsole.trace`. Röktest i demo med `claude-opus-5` och `--avvikelser`: 22 av 22 kontroller, inklusive den nya läsbarhetskontrollen, 0,29 USD.
+
 Steg 1 och 2 kan gå parallellt eftersom filerna är åtskilda. Steg 3 för webben förutsätter
 adaptern. Lakebase-ändringarna (kolumnrätter) samordnas enligt AGENTS.md §4.5 och krockar inte
 med 3c-V och F5-6 den 1 november om de görs vid olika tillfällen.

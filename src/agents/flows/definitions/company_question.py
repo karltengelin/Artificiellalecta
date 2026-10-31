@@ -21,13 +21,15 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from agents.assignments import request_for_company_question
+from agents.assignments import COMPANY_QUESTION_FIXED_LIMITATIONS, request_for_company_question
 from agents.deliveries import DeliveryError, DeliveryStore
 from agents.flows.definition import AgentStep, FlowContext, FlowDefinition, GateStep, SystemOutcome, SystemStep
+from agents.trace import RunTrace, read_run_trace
 from management.metrics import DEFINITIONS, READ_FAILED_NOTE, MetricObservation, company_observations
 from reporting.template import TOKENS, ReportMetadata
 from services import ServiceLayer
@@ -51,11 +53,9 @@ STATUS_TEXT = {
 AVAILABILITY_TEXT = {"available": "tillgängligt", "suppressed": "dolt", "missing": "saknas"}
 QUALITY_TEXT = {"verified": "kontrollerat", "provisional": "preliminärt", "failed": "underkänt", "unknown": "okänt"}
 NOT_READ_NOTE = "Inte läst – frågan kunde inte besvaras med underlaget."
-CONTRACT_LIMITATIONS = (
-    "Registrerat bestånd gäller läsdagen och är inte ett historiskt månadsslutsbestånd.",
-    "Betalmarkerade premier är inte bankavstämt kassainflöde och garanterar inte att alla premier har kommit in.",
-    "Inga tidsjämförelser och inga resultat från Databricks BI eller Genie.",
-)
+CONTRACT_LIMITATIONS = COMPANY_QUESTION_FIXED_LIMITATIONS
+TOOL_STATUS_TEXT = {"done": "klar", "error": "fel", "denied": "nekad", "pending_approval": "väntar på godkännande",
+                    "not_executed": "inte utförd", "unknown": "utfall saknas i journalen"}
 
 
 class CompanyQuestion(BaseModel):
@@ -113,19 +113,47 @@ def _time(obs: MetricObservation) -> str:
     return f"{obs.period_from.isoformat()} till {obs.period_to.isoformat()} (slutet ingår inte)"
 
 
+def _usd(value: float | None) -> str:
+    return "okänd" if value is None else f"{value:.4f}".replace(".", ",") + " USD"
+
+
+def _tool(tool) -> str:
+    detail = ", ".join(x for x in (tool.kind and f"typ {tool.kind}", tool.level and f"nivå {tool.level}") if x)
+    name = f"`{tool.skill}`" + (f" (operation `{tool.operation}`)" if tool.operation and tool.operation != tool.skill else "")
+    return f"{name}{f', {detail}' if detail else ''}: {TOOL_STATUS_TEXT.get(tool.status, tool.status)}"
+
+
+def _trace_lines(run: dict[str, Any], trace: RunTrace | None) -> list[str]:
+    """Hur svaret togs fram enligt körjournalen; utan journal sägs det, inget fylls i."""
+    lines = [f"- Körning `{run.get('run_id', '–')}`, team `{TEAM}`, kostnad {_usd(run.get('cost_usd'))}"]
+    if trace is None:
+        return lines + ["- Körjournalen finns inte i den här miljön – modell och verktyg kan inte visas"]
+    lines += [
+        f"- Agent `{trace.agent or '–'}`, modellroll `{trace.model_role or '–'}`, "
+        f"modell {', '.join(f'`{m}`' for m in trace.models) or 'okänd'}"
+        + (f" (reserv efter {', '.join(f'`{m}`' for m in trace.fallback_from)})" if trace.fallback_from else ""),
+        f"- Modellsteg {trace.steps if trace.steps is not None else 'okänt'}, verktygsanrop {len(trace.tools)}"
+        + (f", körpolicy `{trace.policy_id}`" if trace.policy_id else ""),
+    ]
+    lines += [f"- Verktyg {_tool(t)}" for t in trace.tools] or ["- Inga verktyg användes"]
+    if not trace.complete:
+        lines.append("- Körjournalen är ofullständig – avstäm körningen innan rapporten godtas")
+    return lines
+
+
 def report_markdown(
     question: CompanyQuestion, *, flow_id: str, answer: dict[str, Any] | None, run: dict[str, Any],
-    observations: list[MetricObservation], read_at: datetime | None,
+    observations: list[MetricObservation], read_at: datetime | None, trace: RunTrace | None = None,
 ) -> str:
-    """Rapportens Markdown med fast struktur. Värdena kommer ur observationerna, aldrig ur modellens text."""
+    """Rapportens Markdown med fast struktur: svaret för läsaren först, underlag och spårbarhet sist.
+
+    Värdena kommer ur observationerna, aldrig ur modellens text.
+    """
     period = question.month.strftime("%Y-%m")
     lines = [
         f"# Beståndsöversikt {period}",
         "",
-        f"Uppdrag {flow_id} · Aktuarieteamet · Kontrakt {CONTRACT_ID} v{CONTRACT_VERSION}",
-        "",
-        f"Granskning: rapporten granskas i uppdrag {flow_id}. Beslut, granskare och datum registreras i "
-        "uppdraget, inte i filen.",
+        f"Uppdrag {flow_id} · Aktuarieteamet",
         "",
         "## Svar",
         "",
@@ -140,6 +168,14 @@ def report_markdown(
             f"| {DEFINITIONS[obs.metric_id].name} | {_value(obs)} | {AVAILABILITY_TEXT[obs.availability]} | "
             f"{QUALITY_TEXT[obs.quality]} | {_time(obs)} |"
         )
+    fixed = set(CONTRACT_LIMITATIONS)
+    lines += ["", "## Begränsningar", ""]
+    lines += [f"- {t}" for t in CONTRACT_LIMITATIONS]
+    lines += [f"- {_text(t)}" for t in (answer or {}).get("limitations", []) if _text(t) not in fixed]
+    for title, key in (("Antaganden", "assumptions"), ("Nästa steg", "next_steps")):
+        items = (answer or {}).get(key, [])
+        if items:
+            lines += ["", f"## {title}", ""] + [f"- {_text(t)}" for t in items]
     lines += ["", "## Definitioner", ""]
     for obs in observations:
         d = DEFINITIONS[obs.metric_id]
@@ -158,20 +194,11 @@ def report_markdown(
         f"- Vald månad {period} är avslutad; båda måtten kommer från samma läsning; småcellsgräns 10 personer",
         "- Inte kontrollerat: bankavstämning, fullständig premieinläsning och historiskt bestånd",
         "",
-        "## Begränsningar",
+        "## Så togs rapporten fram",
         "",
-    ]
-    lines += [f"- {_text(t)}" for t in (answer or {}).get("limitations", [])]
-    lines += [f"- {t}" for t in CONTRACT_LIMITATIONS]
-    for title, key in (("Antaganden", "assumptions"), ("Nästa steg", "next_steps")):
-        items = (answer or {}).get(key, [])
-        if items:
-            lines += ["", f"## {title}", ""] + [f"- {_text(t)}" for t in items]
-    lines += [
-        "",
-        "## Spårbarhet",
-        "",
-        f"- Uppdrag `{flow_id}`, körning `{run.get('run_id', '–')}`, team `{TEAM}`, kostnad {run.get('cost_usd', 0):.4f} USD",
+        f"- Uppdrag `{flow_id}`, kontrakt {CONTRACT_ID} v{CONTRACT_VERSION}. Rapporten granskas i uppdraget; "
+        "beslut, granskare och datum registreras där, inte i filen",
+        *_trace_lines(run, trace),
         f"- Körbild `{question.policy_ref}`",
         f"- Mall: {TEMPLATE_REF}",
     ]
@@ -183,8 +210,10 @@ def report_markdown(
 
 
 def company_question_definition(
-    renderer: Renderer, store: DeliveryStore, *, clock: Callable[[], datetime] = lambda: datetime.now(UTC)
+    renderer: Renderer, store: DeliveryStore, *, clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+    journal_dir: Path | None = None,
 ) -> FlowDefinition:
+    """`journal_dir` är körjournalernas mapp; rapporten visar då modell och verktyg ur journalen."""
     def request(ctx: FlowContext):
         q = CompanyQuestion.model_validate(ctx.input)
         return request_for_company_question(q.month, q.note, task_id=f"task-{ctx.flow_id}")
@@ -206,8 +235,10 @@ def company_question_definition(
             today=now.date(), now=now, missing_note=READ_FAILED_NOTE if failed else NOT_READ_NOTE,
         )
         read_at = datetime.fromisoformat(metrics["read_at"]) if metrics else None
-        markdown = report_markdown(q, flow_id=ctx.flow_id, answer=answer, run=step.get("run") or {},
-                                   observations=observations, read_at=read_at)
+        run = step.get("run") or {}
+        trace = read_run_trace(journal_dir, run.get("run_id")) if journal_dir is not None else None
+        markdown = report_markdown(q, flow_id=ctx.flow_id, answer=answer, run=run,
+                                   observations=observations, read_at=read_at, trace=trace)
         metadata = ReportMetadata(title=f"Beståndsöversikt {q.month.strftime('%Y-%m')}",
                                   header=f"Uppdrag {ctx.flow_id}", footer=f"{CONTRACT_ID} v{CONTRACT_VERSION}")
         try:

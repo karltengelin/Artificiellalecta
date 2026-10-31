@@ -23,7 +23,8 @@ from agents.flows.questions import QuestionConsole
 from agents.flows.store import FlowError
 from agents.results import unsupported_numbers
 from agents.skills import SkillRegistry
-from agents.assignments import request_for_company_question
+from agents.assignments import COMPANY_QUESTION_FIXED_LIMITATIONS, request_for_company_question
+from agents.trace import run_trace
 from ai import AIClient, AIConfig
 from ai.providers.fake import FakeProvider, text_result, tool_call_result
 from ai.tracing import MemoryTraceSink
@@ -110,6 +111,32 @@ class TestHelaKedjan:
             "completed", "Levererad", True, "approved", "karl")
         assert [a.flow_id for a in c.list()] == [view.flow_id] == [a.flow_id for a in c.list("aktuarie")]
         assert c.list("compliance") == []
+
+    def test_rapporten_ar_skriven_for_lasaren_och_visar_hur_den_togs_fram(self, demo, tmp_path):
+        fixed = "Registrerat bestånd gäller läsdagen och är inte ett historiskt månadsslutsbestånd."
+        c = console(demo, tmp_path, read_then(limitations=[fixed, "Inga uppdelningar per arbetsgivare."]))
+        view = c.start(NOVEMBER, "", KARL)
+        report = c.delivery(view.flow_id, "rapport.md").decode("utf-8")
+        headings = [line for line in report.splitlines() if line.startswith("## ")]
+        assert headings == ["## Svar", "## Värden", "## Begränsningar", "## Definitioner",
+                            "## Datakälla och kontroller", "## Så togs rapporten fram"]
+        assert report.count(fixed) == 1 and "- Inga uppdelningar per arbetsgivare." in report
+        trace_part = report.split("## Så togs rapporten fram")[1]
+        for expected in ("Agent `actuary_agent`, modellroll `deep`, modell `alpha:big`",
+                         "Modellsteg 2, verktygsanrop 1", "Verktyg `get_company_metrics`, typ read, nivå AGENT: klar",
+                         "kostnad 0,", "Rapporten granskas i uppdraget"):
+            assert expected in trace_part
+        assert " USD" in trace_part and ".0" not in trace_part.split("kostnad ")[1].split(" USD")[0]
+
+        trace = c.trace(view.flow_id)
+        assert (trace.agent, trace.models, trace.complete) == ("actuary_agent", ("alpha:big",), True)
+        assert [(t.skill, t.kind, t.level, t.status) for t in trace.tools] == [
+            ("get_company_metrics", "read", "AGENT", "done")]
+
+    def test_uppdraget_ber_om_vd_sprak_utan_upprepade_begransningar(self):
+        constraints = " ".join(request_for_company_question(NOVEMBER).constraints)
+        assert "Skriv för en VD" in constraints and "Upprepa dem inte" in constraints
+        assert all(t in constraints for t in COMPANY_QUESTION_FIXED_LIMITATIONS)
 
     def test_uppdraget_ar_avsmalnat_till_lasning(self, demo):
         eco = Ecosystem.load()
@@ -255,6 +282,26 @@ class TestByggstenar:
         assert [o.availability for o in hidden] == ["suppressed", "suppressed"]
         unread = company_observations(None, **kw)
         assert all(o.availability == "missing" and o.value is None and not o.evidence_refs for o in unread)
+
+    def test_korningens_spar_ur_journalen(self):
+        events = [
+            {"type": "run_started", "team": "aktuarie", "agent": "actuary_agent", "model_role": "deep",
+             "versions": {"policy_id": "harness-v1"}},
+            {"type": "model_returned", "model_ref": "b:small", "fallback_from": ["a:big"]},
+            {"type": "tool_intent", "tool_call_id": "1", "skill": "get_company_metrics",
+             "operation": "get_company_metrics", "kind": "read", "effective": "AGENT"},
+            {"type": "tool_completed", "tool_call_id": "1", "skill": "get_company_metrics", "status": "done"},
+            {"type": "tool_denied", "tool_call_id": "2", "skill": "write_draft", "status": "denied"},
+            {"type": "model_returned", "model_ref": "b:small", "fallback_from": []},
+        ]
+        trace = run_trace("run-1", events)
+        assert (trace.models, trace.fallback_from, trace.policy_id) == (("b:small",), ("a:big",), "harness-v1")
+        assert [(t.skill, t.status) for t in trace.tools] == [("get_company_metrics", "done"), ("write_draft", "denied")]
+        assert not trace.complete and trace.steps is None  # inget run_ended: avbruten körning
+        ended = run_trace("run-1", [*events, {"type": "run_ended", "status": "completed",
+                                              "usage": {"steps": 2, "cost_usd": 0.01, "elapsed_seconds": 3.0}}])
+        assert (ended.complete, ended.steps, ended.status) == (True, 2, "completed")
+        assert not run_trace("run-1", [*events, {"type": "run_ended"}], corrupt=True).complete
 
     def test_leveransen_skrivs_en_gang(self, tmp_path):
         store = DeliveryStore(tmp_path)
