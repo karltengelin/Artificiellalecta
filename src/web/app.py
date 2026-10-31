@@ -21,6 +21,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from agents.case_workspace import CaseWorkspace
 from agents.flows.console import FlowConsole
+from agents.flows.product_reports import ProductReportConsole
 from agents.flows.questions import QuestionConsole
 from services import ServiceLayer
 from web.agent import CaseAgent
@@ -29,6 +30,7 @@ from web.handler import STATIC_DIR, new_csrf_token, render
 from web.operator_auth import OperatorAuth
 from web.presenters import ErrorView
 from web.routes import (
+    actuary,
     auth,
     case_workspace,
     cases,
@@ -51,6 +53,7 @@ def create_app(
     flow_console: FlowConsole | None = None,
     question_console: QuestionConsole | None = None,
     case_workspace_console: CaseWorkspace | None = None,
+    product_report_console: ProductReportConsole | None = None,
 ) -> FastAPI:
     """case_agent: handläggaragenten för ärenden. Byggs med tjänstelagret om inget anges;
     med ett givet tjänstelager utan agent visas ärendena utan knappen *Starta agent*.
@@ -82,7 +85,9 @@ def create_app(
     )
     app.state.flow_console = flow_console
     app.state.question_console = question_console
+    app.state.product_report_console = product_report_console
     app.state.question_submissions = questions.Submissions()
+    app.state.actuary_submissions = questions.Submissions()
     app.state.settings = settings
     app.state.csrf_token = new_csrf_token()
     app.state.operator_auth = OperatorAuth(settings.operator_id, settings.operator_password_hash)
@@ -100,6 +105,7 @@ def create_app(
     app.include_router(flows.router)
     app.include_router(environments.router)
     app.include_router(operator.router)
+    app.include_router(actuary.router)
     app.include_router(questions.router)
 
     @app.get("/_instance")

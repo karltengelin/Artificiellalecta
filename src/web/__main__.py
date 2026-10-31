@@ -25,6 +25,7 @@ def main() -> None:
     parser.add_argument("--db", choices=list(DATABASES), help="Databas (överstyr HANDLAGGARE_DB, standard demo)")
     parser.add_argument("--port", type=int, help="Port (Lakebase 8765, test 8766, demo 8767)")
     parser.add_argument("--company-questions", action="store_true", help="Anslut OC-3a med konfigurerad AI-klient och aktuarieteam")
+    parser.add_argument("--actuary-workspace", action="store_true", help="Anslut aktuariens teamyta och rapporter med konfigurerad AI-klient")
     parser.add_argument("--report-font-dir", type=Path, default=Path("tmp/pdfs/fonts"), help="Lokala statiska DM Sans-filer för A4-export")
     parser.add_argument(
         "--reset-demo", action="store_true",
@@ -40,15 +41,16 @@ def main() -> None:
         if settings.database != "demo":
             parser.error("--reset-demo gäller bara demodatabasen")
         settings.demo_path.unlink(missing_ok=True)
-    if args.company_questions:
+    if args.company_questions or args.actuary_workspace:
         from ai import AIClient
         from reporting import render_report
         from reporting.template import register_dm_sans
-        from web.database import build_question_services
+        from web.database import build_actuary_services
 
         register_dm_sans(args.report_font_dir)
-        service, agent, questions = build_question_services(settings, ai=AIClient(), renderer=render_report)
-        app = create_app(service=service, settings=settings, case_agent=agent, question_console=questions)
+        service, agent, questions, reports = build_actuary_services(settings, ai=AIClient(), renderer=render_report)
+        app = create_app(service=service, settings=settings, case_agent=agent,
+                         question_console=questions, product_report_console=reports)
     else:
         app = create_app(settings=settings)
     print(f"Handläggar-UI: http://{HOST}:{port}  ·  {settings.database_label}  ·  handläggare {settings.handler_id}", flush=True)

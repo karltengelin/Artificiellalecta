@@ -1,0 +1,20 @@
+{% macro team_links() %}
+  <nav aria-label="Aktuariens sidor">
+  {% for href, label in [('/team/aktuarie','Översikt'),('/team/aktuarie/rapporter','Rapporter'),('/team/aktuarie/antaganden','Antaganden'),('/team/aktuarie/uppdrag','Uppdrag')] %}
+    <a href="{{ href }}"{% if request.url.path == href or (href != '/team/aktuarie' and request.url.path.startswith(href ~ '/')) %} aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+  <p class="small muted">Följande delar kräver värderingsmotorn (A6):</p>
+  {% for label in ['Värderingar','FTA-analys','Bokföringsunderlag','Scenarier','Data och kvalitet'] %}
+    <span class="actuary-nav__unavailable" aria-disabled="true" title="Kräver värderingsmotorn (A6)">{{ label }}</span>
+  {% endfor %}
+  </nav>
+{% endmacro %}
+<aside class="actuary-nav" aria-label="Aktuariens arbetsyta">
+  <div class="actuary-nav__desktop">
+  <p class="oc-eyebrow">AKTUARIETEAMET</p>
+  <p>Arbetsyta för analys,<br>antaganden och granskning.</p>
+  {{ team_links() }}
+  <p class="small muted">Agent: Aktuarieagenten.<br>Människan fastställer grunder och granskar leveranser.</p>
+  </div>
+  <details class="actuary-nav__mobile"><summary>Aktuarieteamets meny</summary>{{ team_links() }}</details>
+</aside>

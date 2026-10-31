@@ -88,6 +88,17 @@ def build_engine(settings: WebSettings) -> Engine:
     return lakebase_engine()
 
 
+def build_actuary_services(settings: WebSettings, *, ai, renderer):
+    """A3: båda rapportadaptrarna med samma miljö, anslutning och aktuarieroll."""
+    from agents.flows.product_reports import ProductReportConsole
+
+    service, agent, questions = build_question_services(settings, ai=ai, renderer=renderer)
+    reports = ProductReportConsole.build(service._session_factory, trusted=service,
+        actuary_service=questions.engine.runtime.service, ai=ai, renderer=renderer,
+        environment_id=settings.database, dataset_ref=settings.dataset_ref)
+    return service, agent, questions, reports
+
+
 def demo_engine(path: Path) -> Engine:
     """Lokal SQLite-fil. Transaktionerna köas (BEGIN IMMEDIATE), som i tests/conftest.py."""
     from utils.demo_data import create_demo_database

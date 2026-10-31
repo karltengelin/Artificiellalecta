@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ assignment.flow_id }} · Beståndsöversikt{% endblock %}
 {% block content %}
-<nav class="tabs" aria-label="Uppdragets arbetsytor"><a href="{{ base }}">Alla uppdrag</a><a href="/central/fragor/{{ assignment.flow_id }}">I centralen</a><a href="/team/aktuarie/{{ assignment.flow_id }}">I aktuariens teamyta</a></nav>
+{% if base.startswith("/team/aktuarie/") %}<div class="actuary-shell">{% include "partials/actuary_nav.html" %}<div class="actuary-body">{% endif %}
+<nav class="tabs" aria-label="Uppdragets arbetsytor"><a href="{{ base }}">Alla uppdrag</a><a href="/central/fragor/{{ assignment.flow_id }}">I centralen</a><a href="/team/aktuarie/uppdrag/{{ assignment.flow_id }}">I aktuariens teamyta</a></nav>
 <p class="oc-eyebrow">AKTUARIETEAMET · {{ assignment.flow_id }}</p><h1>Beståndsöversikt {{ assignment.month | month }}</h1>
 <p><span class="pill">{{ assignment.status_text }}</span> · Beställare {{ assignment.requested_by }} · Skapad {{ assignment.created_at | iso_date }}</p>
 <p>Uppdragets underlag: {{ flow.input.environment_id }} · {{ flow.input.dataset_ref }} · {% if assignment.cost_usd is not none %}{{ '%.4f'|format(assignment.cost_usd) }} USD{% else %}Kostnad okänd{% endif %}</p>
@@ -61,4 +62,5 @@
 {% endif %}
 {% if assignment.status in ['running', 'waiting_gate', 'reconciliation_required'] %}<section class="panel"><h2>Avbryt uppdrag</h2><form class="question-action" method="post" action="{{ base }}/{{ assignment.flow_id }}/avbryt" hx-boost="false"><input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="version" value="{{ flow.version }}"><label for="cancel-note">Skäl</label><textarea id="cancel-note" name="note" required maxlength="2000"></textarea><button type="submit" class="secondary">Avbryt</button></form></section>{% endif %}
 {% else %}<p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att granska eller avbryta uppdraget.</p>{% endif %}
+{% if base.startswith("/team/aktuarie/") %}</div></div>{% endif %}
 {% endblock %}

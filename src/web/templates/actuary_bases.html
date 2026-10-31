@@ -1,0 +1,7 @@
+{% extends "actuary_base.html" %}
+{% block title %}Antagandebibliotek{% endblock %}
+{% block actuary_content %}<h1>Antaganden</h1><p>Versionerade grunder och kurvor med källor, giltighet och mänskliga beslut.</p>
+<section class="panel"><h2>Antagandebiblioteket</h2><p class="small muted">Status gäller {{ basis_list.on_date | iso_date }} · {{ settings.database_label }}</p>
+<div class="table-scroll"><table class="actuary-register"><thead><tr><th>Grund</th><th>Status</th><th>Giltighet</th><th>Beslut</th><th>Innehållskontroll</th></tr></thead><tbody>
+{% for b in basis_list.bases %}<tr><td data-label="Grund"><a href="/team/aktuarie/antaganden/{{ b.code }}">{{ b.code }}</a><p>{{ b.title }}</p></td><td data-label="Status"><span class="pill">{{ b.state }}</span></td><td data-label="Giltighet">{% if b.valid_from %}{{ b.valid_from | iso_date }} – {{ (b.valid_to | iso_date) if b.valid_to else 'tills vidare' }}{% else %}Ej fastställd{% endif %}</td><td data-label="Beslut">{{ b.decision_ref or 'Ej beslutad' }}</td><td data-label="Innehållskontroll">{{ 'Kontrollerad' if b.checksum_ok else 'Avvikelse – öppna grunden' }}</td></tr>{% else %}<tr><td colspan="5">Inga grunder registrerade.</td></tr>{% endfor %}
+</tbody></table></div></section>{% endblock %}

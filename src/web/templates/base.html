@@ -85,7 +85,8 @@
     </div>
   </dialog>
   <footer class="footer">
-    {% if path.startswith(("/central/fragor", "/team/aktuarie")) %}Bolagsfrågor med källbundet underlag och mänskligt granskade leveranser.
+    {% if path.startswith("/team/aktuarie") %}Källbundna analyser, versionerade grunder och mänskligt granskade leveranser.
+    {% elif path.startswith("/central/fragor") %}Bolagsfrågor med källbundet underlag och mänskligt granskade leveranser.
     {% elif operator_page %}Ledningsaggregat via försäkringstjänsten. Agentekonomi från deklarerade loggkällor. Läsbar översikt enligt B-038.
     {% else %}
     Alla läsningar och ändringar går via tjänstelagret och loggas med handläggare och motivering (B-028).

@@ -1,0 +1,20 @@
+{% extends "actuary_base.html" %}
+{% block title %}{{ basis.code }}{% endblock %}
+{% block actuary_content %}
+<p><a href="/team/aktuarie/antaganden">← Antagandebiblioteket</a></p>
+<h1>{{ basis.code }}</h1><p>{{ basis.title }} · <span class="pill">{{ basis.state }}</span></p>
+{% if error %}<p class="alert alert--error" role="alert">{{ error }}</p>{% endif %}
+<section class="panel"><h2>Grund och beslut</h2><dl class="actuary-facts"><dt>Familj</dt><dd>{{ basis.family }}</dd><dt>Giltighet</dt><dd>{% if basis.valid_from %}{{ basis.valid_from | iso_date }} – {{ (basis.valid_to | iso_date) if basis.valid_to else 'tills vidare' }}{% else %}Ej fastställd{% endif %}</dd><dt>Beslutsreferens</dt><dd>{{ basis.decision_ref or 'Ej beslutad' }}</dd><dt>Källa</dt><dd>{{ basis.source_refs }}</dd><dt>Ersätter</dt><dd>{{ basis.supersedes_code or 'Ingen tidigare grund angiven' }}</dd><dt>Förslagets motivering</dt><dd>{{ basis.proposal_reason }}</dd>{% if basis.review_note %}<dt>Granskningsanteckning</dt><dd>{{ basis.review_note }}</dd>{% endif %}<dt>Kontrollsumma · verifierad</dt><dd><code>{{ basis.checksum }}</code></dd></dl></section>
+{% for group in groups %}<section class="panel"><h2>{{ group.title }}</h2>
+{% if group.rows %}<dl class="actuary-facts">{% for label, value in group.rows %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
+{% else %}<div class="table-scroll"><table><thead><tr>{% for col in group.columns %}<th>{{ col }}</th>{% endfor %}</tr></thead><tbody>{% for cells in group.cells %}<tr>{% for value in cells %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>{% endif %}</section>{% endfor %}
+{% if basis.status == 'proposed' %}<section class="panel"><h2>Beslut om förslaget</h2><p>Beslutet gäller innehållet och kontrollsumman som visas ovan. Historiskt innehåll ändras inte.</p>
+{% if operator_user %}<form method="post" action="/team/aktuarie/antaganden/{{ basis.code }}/anta" hx-boost="false" class="actuary-form">
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="request_token" value="{{ request_token }}"><input type="hidden" name="checksum" value="{{ basis.checksum }}">
+<label for="basis-date">Första giltighetsdag</label><input id="basis-date" type="date" name="valid_from">
+<label for="basis-ref">Beslutsreferens (obligatorisk vid antagande)</label><input id="basis-ref" name="decision_ref" maxlength="100">
+<label for="basis-note">Anteckning (obligatorisk vid avslag)</label><textarea id="basis-note" name="note" maxlength="1000" rows="3"></textarea>
+<p class="small muted">En garantigrund kan tidigast gälla nästa månadsförsta. Tjänsten kontrollerar giltighetsdag och beslut.</p>
+<button type="submit">Anta grunden</button><button type="submit" class="secondary" formaction="/team/aktuarie/antaganden/{{ basis.code }}/avsla">Avslå förslaget</button>
+</form>{% else %}<p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att anta eller avslå förslaget.</p>{% endif %}</section>{% endif %}
+{% endblock %}
