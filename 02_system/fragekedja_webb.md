@@ -49,7 +49,16 @@ status, aktuellt steg, kostnad (okänd när den saknas), rapportversion och
 granskningsstatus. Detaljens projektion och granskningshash byggs ur samma
 lästa flödesversion. Svar och PDF visas sida vid sida på bred skärm och efter
 varandra på smal. PDF kan också öppnas separat och Markdown hämtas.
-Webbläsarens inbyggda PDF-läsare behöver vara aktiverad för den inbäddade vyn.
+Förhandsvisningen använder lokalt paketerad PDF.js med sidbläddring, zoom
+och breddanpassning. Den läser samma kontrollsummeverifierade PDF genom
+leveransrouten och behöver ingen inbyggd PDF-läsare i webbläsaren.
+Inga rapportdata eller läsarfiler hämtas från en extern CDN.
+JavaScript krävs för förhandsvisningen; länkarna till PDF och Markdown finns kvar
+även om visningen inte kan laddas. Version, licens och kontrollsummor finns i
+`src/web/static/PDFJS_README.md`.
+Tidigare sparade PDF-leveranser skrivs inte om när renderaren ändras. En ny
+beställning använder den aktuella layouten; befintliga rapporter behåller
+sina bundna kontrollsummor och visas med sitt ursprungliga innehåll.
 
 Endast `portfolio_overview` till `aktuarie` är tillgängligt. Formuläret erbjuder
 de elva avslutade månaderna från adaptern och högst 500 tecken precisering.
@@ -135,3 +144,35 @@ markera Codex rendering och vyer som lokalt byggda/verifierade i ATT_GORA:s
 rad *Närmast* och OC-3. Nästa steg är gemensamt röktest med riktig modell i
 demo och `svc_test`, inklusive DM Sans, sedan Lakebase-rättigheter och
 verifiering efter backup och operatörens OK. Inget nytt beslut föreslås.
+
+## Röktest av webb och PDF 2026-10-31
+
+Kört från den ordinarie webbstarten med `--db demo --company-questions`, de
+tre lokala statiska DM Sans-filerna och konfigurerad riktig modell
+`anthropic:claude-opus-5`. Aktuariens databasroll var simulerad.
+
+Beståndsfrågan för december 2025 skapade **FLOW-000003**, körning
+`run-18ef7c67922b`: ett anrop till `get_company_metrics`, två modellanrop,
+35 registrerade försäkrade och 145 971,41 SEK. Kostnaden var 0,075955 USD.
+Samma uppdrag följdes i centralens och aktuariens uppdragslistor, detaljvyer
+och granskningsvy. Rapport v1 godkändes genom teamytan med den verifierade
+operatörssessionen och visades därefter som *Levererad / Godkänd* i båda
+listorna. Den kunde öppnas igen från centralen. PDF och Markdown från båda
+arbetsytorna gav HTTP 200, `no-store` och samma kontrollsummor som manifestet.
+
+Alla tre A4-sidor granskades visuellt mot rapportmallen. DM Sans var inbäddat;
+tabell, radbrytning, marginaler och sidfot var läsbara utan överlappning.
+Rapporttiteln förekom bara på första sidan. Den lokala PDF.js-visningen
+fungerade i appens webbläsare, inklusive sidbläddring och zoom.
+
+Röktestet hittade och rättade den svarta inbyggda PDF-vyn, den upprepade
+rapporttiteln och ett klientfel när HTMX skickade textnoder till
+förhandsvisningens städning. Sidbyte och återöppning verifierades därefter
+utan nya konsolfel. Ett första modellanrop stoppades av exekveringssandboxens
+nätverksskydd; demo-servern behövde uttrycklig nätverksåtkomst.
+
+Regressionen kördes med `scripts/testing/run_tests.py --changed --base origin/main --run`.
+Resultat: **389 godkända**, 103,27 sekunder, inklusive klientprovet för HTMX:s
+textnoder. Ruff, JavaScript-syntax och `git diff --check` utan anmärkning.
+Postgres-prov var bortvalda, inte godkända. Ingen körning mot `svc_test` eller
+Lakebase ingick i denna webbkontroll. Delade statusfiler ändrades inte.
