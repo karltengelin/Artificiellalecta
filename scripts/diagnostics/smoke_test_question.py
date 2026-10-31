@@ -18,9 +18,9 @@ Kontrollerna skiljer **verksamhetskontroller** (flödet, verktygsläsningen, tal
 leveransen ska fungera för alla frågor) från **facit för demobeståndet** (datakontraktet
 P2-FRAGA-001 §5). Ett godkänt röktest ersätter inte visuell kontroll av rapporten.
 
-Rapporten renderas med `reporting.render_report` när den finns (Codex, underlagets §10.1). Annars
-används en provisorisk renderare som bara skriver Markdown-texten på A4 – då prövas kedjan men
-inte rapportmallen, och den visuella kontrollen återstår.
+Rapporten renderas med `reporting.render_report` (Codex, underlagets §10.1), med DM Sans ur
+`--report-font-dir` eller annars mallens uttryckliga Helvetica-alternativ. Då prövas rapportmallen,
+men den visuella kontrollen med DM Sans återstår.
 
 Utan --run görs inga modellanrop. Kostnaden begränsas av aktuarieteamets tak i ecosystem.yaml
 (1,00 USD per körning, en körning per fråga). Nycklar läses ur .env och skrivs aldrig ut.
@@ -85,12 +85,19 @@ def provisional_renderer(markdown: str, metadata) -> bytes:
     return buffer.getvalue()
 
 
-def renderer():
+def renderer(font_dir: Path | None):
+    """Rapportmallen med DM Sans ur `font_dir`, annars mallens uttryckliga Helvetica-alternativ."""
     try:
         from reporting import render_report
     except ImportError:
         return provisional_renderer, "provisorisk (render_report finns inte ännu)"
-    return render_report, "reporting.render_report"
+    from functools import partial
+
+    from reporting.template import Fonts, register_dm_sans
+
+    if font_dir is None:
+        return partial(render_report, fonts=Fonts.helvetica()), "reporting.render_report med Helvetica"
+    return partial(render_report, fonts=register_dm_sans(font_dir)), "reporting.render_report med DM Sans"
 
 
 # --- flödet --------------------------------------------------------------------------------------
@@ -233,6 +240,8 @@ def main() -> int:
     parser.add_argument("--db", choices=("demo", "svc_test"), default="demo")
     parser.add_argument("--provider", choices=sorted(DEEP_MODEL), help="Peka rollen deep på leverantörens modell")
     parser.add_argument("--avvikelser", action="store_true", help="Ställ även frågan utanför stödet och styrningsprovet")
+    parser.add_argument("--report-font-dir", type=Path,
+                        help="Mapp med de statiska DM Sans-filerna (rapportmall.md); utan den används Helvetica")
     args = parser.parse_args()
 
     from ai import AIClient, MissingKeyError
@@ -252,7 +261,7 @@ def main() -> int:
     except MissingKeyError as exc:
         print(f"{TEAM}: {exc}")
         return 1
-    render, render_label = renderer()
+    render, render_label = renderer(args.report_font_dir)
     questions = 4 if args.avvikelser else 2
     print(f"Plan: {args.db}, {questions} frågor ({NORMAL:%Y-%m} godkänns, {ZERO:%Y-%m} avslås"
           + (", utanför stödet och styrningsprov avslås" if args.avvikelser else "") + f"). Renderare: {render_label}.")
@@ -270,6 +279,8 @@ def main() -> int:
             deviation_scenarios(console, report)
     if render is provisional_renderer:
         report.note("provisorisk renderare – den visuella kontrollen av rapportmallen återstår")
+    elif args.report_font_dir is None:
+        report.note("rapportmallen med Helvetica – den visuella kontrollen med DM Sans återstår")
 
     failed = [(kind, label) for kind, label, passed, _ in report.checks if not passed]
     print(f"\nTotalt {report.cost:.4f} USD, {len(report.checks)} kontroller, {len(failed)} fel, {len(report.notes)} iakttagelser.")
