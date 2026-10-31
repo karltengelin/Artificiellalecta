@@ -28,7 +28,19 @@
   <section class="panel"><h2>Rapport{% if assignment.delivery_version %} v{{ assignment.delivery_version }}{% endif %}</h2>
   {% if assignment.delivery_version and not integrity_error %}{% set delivery = base ~ '/' ~ assignment.flow_id ~ '/leverans/' ~ assignment.delivery_version %}
     <p><a href="{{ delivery }}/rapport.pdf" target="_blank" rel="noopener" hx-boost="false">Öppna PDF</a> · <a href="{{ delivery }}/rapport.md" hx-boost="false">Hämta Markdown-underlag</a></p>
-    <iframe class="question-pdf" src="{{ delivery }}/rapport.pdf" title="Rapport {{ assignment.flow_id }}, version {{ assignment.delivery_version }}"></iframe>
+    <div class="question-pdf" data-pdf-preview data-pdf-url="{{ delivery }}/rapport.pdf" aria-label="Rapport {{ assignment.flow_id }}, version {{ assignment.delivery_version }}">
+      <div class="question-pdf__toolbar" aria-label="Rapportens sidvisning">
+        <button type="button" class="secondary" data-pdf-previous disabled>Föregående</button>
+        <span data-pdf-page aria-live="polite"></span>
+        <button type="button" class="secondary" data-pdf-next disabled>Nästa</button>
+        <label>Zoom <select data-pdf-zoom disabled><option value="fit">Anpassa bredd</option><option value="1">100 %</option><option value="1.5">150 %</option><option value="2">200 %</option></select></label>
+      </div>
+      <p data-pdf-status role="status">Läser rapporten…</p>
+      <div class="question-pdf__page" data-pdf-scroll tabindex="0" aria-label="Rapportsida">
+        <canvas data-pdf-canvas role="img" aria-label="Rapporten laddas" hidden></canvas>
+      </div>
+      <noscript>Aktivera JavaScript för förhandsvisningen eller öppna PDF-länken ovan.</noscript>
+    </div>
   {% else %}<p>Ingen kontrollerad rapport att visa.</p>{% endif %}
   </section>
 </div>
