@@ -477,7 +477,7 @@ Förslaget startar inget bygge och ändrar inte prioriteringen i ATT_GORA (OC-3a
 |---|---|---|---|
 | **A0** | Designstopp: [beslutsförslag](AKTUARIETEAM_BESLUTSFORSLAG.md) | Detta dokument | ✅ Godkänt 2026-10-31 (B-042) |
 | **A1** | [Värderings- och förklaringskontrakt](VARDERINGSKONTRAKT.md) (projektplanens första kontraktsarbete) | A0 | ✅ Fastställt 2026-10-31 |
-| **A2** | Produktrapport v0 (avsnitt 1–3, 8, 9) och `get_portfolio_snapshot`, `get_premium_flows` | Befintliga data | ✅ Byggt och testat lokalt 2026-10-31: flödet `product_report` och adaptern `ProductReportConsole`. Röktest mot riktig modell och Postgres-provet för rollen återstår |
+| **A2** | Produktrapport v0 (avsnitt 1–3, 8, 9) och `get_portfolio_snapshot`, `get_premium_flows` | Befintliga data | ✅ Byggt och testat lokalt 2026-10-31: flödet `product_report` och adaptern `ProductReportConsole`. Postgres-proven godkända 2026-10-31 mot `svc_test` (79 av 79, inklusive operationerna med rollen `agent_aktuarie`). Röktest mot riktig modell återstår |
 | **A3** | Teamyta v1: översikt, rapporter och uppdrag på befintliga data | OC-8, A2 | Efter A2 |
 | **A4** | Antagandebibliotek som data (`valuation_bases`) med förslag och införande | A1 | Efter A1 |
 | **A5** | Rekonstruerat startbestånd S-04 med `G_j` och `C` (svar Q4) | A1 | Efter A1 |
