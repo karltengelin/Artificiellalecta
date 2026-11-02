@@ -209,12 +209,12 @@ slutsida. Den separata gränskontrollen hittade och rättade att sista
 styckets mellanrum kunde skapa en innehållslös sida; två regressionsfall
 kontrollerar att nytt innehåll fortfarande får en ny sida.
 
-Detta är lokal webb- och layoutverifiering. Riktig modell, teamroll och
-slutgranskning mot Lakebase ingår i det gemensamma slutprovet efter Claudes
+Detta är lokal webb- och layoutverifiering. Ny modellkörning via webben,
+teamroll och slutgranskning mot Lakebase ingår i det gemensamma slutprovet efter Claudes
 körning. Befintliga sparade leveranser skrivs inte om. Delade statusdokument
 lämnas till samordningen enligt AGENTS.md §4.3.
 
-Verifierat mot hämtad `origin/main` på `9855fea`, med denna ändring:
+Första kontrollen mot hämtad `origin/main` på `9855fea`, med denna ändring:
 
 | Urval via `scripts/testing/run_tests.py` | Resultat |
 |---|---|
@@ -224,11 +224,35 @@ Verifierat mot hämtad `origin/main` på `9855fea`, med denna ändring:
 
 De två felen är `test_documentation_entrypoint_matches_generated_inventory`
 och `test_forteckningen_i_repot_stammer_med_koden_registret_och_regelstatusen`.
-Båda gäller den befintliga operationsförteckningen som fortfarande anger
-reglerna som kommande efter 2026-11-01. Omgenereringen ligger i Claudes
-parallella uppdrag och ingår inte här. Den fullständiga sviten är därmed
-inte godkänd. Ruff och `git diff --check` passerar. Ändringsplanen pekar inte
+Båda gällde den befintliga operationsförteckningen som fortfarande angav
+reglerna som kommande efter 2026-11-01. Omgenereringen låg i Claudes
+parallella uppdrag. Denna första fullständiga körning var därmed inte
+godkänd. Ruff och `git diff --check` passerar. Ändringsplanen pekar inte
 ut berörda Postgres-prov; inga Postgres- eller Lakebase-körningar gjordes.
+
+Efteråt togs Claudes nya `main` på `55ecd05` in i Codex-branchen utan
+konflikter, inklusive omgenereringen, `only_skills` och Lakebase-röktestet.
+
+**Slutkontroll på det sammanslagna kodläget (`441aba8`):**
+`scripts/testing/run_tests.py --all --run` gav **1 563 godkända, 98 bortvalda
+Postgres-prov**, inga fallerande eller överhoppade prov, 273,91 sekunder.
+Inga extra bortval gjordes. De två förteckningsproven är nu godkända.
+Denna helkörning omfattar både ändringens grupper och deras beroenden.
+Ruff och `git diff --check` passerar även efter sammanslagningen.
+
+Även två sparade rapporter från Claudes nya demokörning med riktig modell
+(`rooktest_20261102T171005Z`, `anthropic:claude-opus-5`) renderades om lokalt
+med DM Sans. Normalfallet `FLOW-000001` gav två sidor och frågan utanför
+stödet `FLOW-000003` tre. Samtliga fem sidor granskades visuellt: ingen
+tom slutsida, ingen upprepad titel eller förlorad text, och körspåret sist.
+I tre-sidorsrapporten fortsätter körspåret på sista sidan. Originalfilerna
+ändrades inte och inga ytterligare modellanrop gjordes.
+
+**Innehållsfråga att ta vidare, utanför webb-/renderingsändringen:** i
+normalfallets slutsats kallas registrerade försäkrade senare för
+försäkringar. Måttet räknar personer, inte försäkringar. Formuleringen
+behöver granskas hos harness-/svarsägaren före rapportens slutgodkännande;
+renderaren bevarar modellens text.
 
 Till den gemensamma statusuppdateringen: spårvyn och den förnyade lokala
 DM Sans-kontrollen är klara; titelrättningen är verifierad och den tomma

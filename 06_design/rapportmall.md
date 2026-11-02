@@ -211,3 +211,8 @@ visuellt. En separat gränskontroll återskapade en tom slutsida från ett
 avslutande mellanrum; rättningen är skyddad av regressionsprov, även med
 efterföljande innehåll. Underlaget kom från en uttrycklig lokal testmodell
 genom `QuestionConsole`, inte från en riktig modell eller Lakebase.
+Dessutom renderades två redan sparade modellrapporter från Claudes
+demokörning samma dag med DM Sans: normalfallet gav två sidor och frågan
+utanför stödet tre, samtliga granskade visuellt. Körspåret kan fortsätta
+på nästa sida, men titel och text bevaras utan innehållslös slutsida.
+Ingen ny modellkörning eller omskrivning av originalleveranser ingick.
