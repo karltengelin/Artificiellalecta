@@ -1,6 +1,6 @@
 # Beslutsförslag: självständiga ärendekörningar (F5-7)
 
-> **Status:** Designstopp. Förslag till operatören, inte beslutat. Ingen kod, policy eller drift är ändrad.
+> **Status:** Godkänt av operatören i chatten 2026-11-02 (”Approve A–E”) och loggat som **B-043**. Genomförs enligt §3–4.
 > **Datum:** 2026-11-02, på `main` `4f769ac` (F5-5–6 verifierade i Lakebase).
 > **Underlag:** [ärendedialog och automation](../../02_system/arendedialog_och_automation.md),
 > [handläggar-UI §4](../../02_system/handläggar-ui.md#4-sidor), `src/agents/case_policy.yaml`,
@@ -186,7 +186,7 @@ kör mot databasen. Bara märkta verifieringsärenden med Vera Verifiering (AL-0
 - Gallring av dialog och resultat i `case_messages`/`case_work`, som behövs före bredare drift.
 - Ett lägre körtak för handläggaragenten och veckodagar i policyn. Schemaläggaren styr veckodagar.
 
-## 6. Förslag till beslutspost (inte införd i BESLUTSLOGG)
+## 6. Beslutspost (loggad som B-043)
 
 > **B-0xx | 2026-11-xx | Självständiga ärendekörningar för löneunderlag (F5-7)**
 >

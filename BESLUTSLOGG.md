@@ -8,6 +8,51 @@
 
 ## Beslut
 
+### B-043 | 2026-11-02 | Självständiga ärendekörningar för löneunderlag (F5-7)
+
+**Beslut:** Operatören godkände valen A–E i
+`projekt/01_ärendehantering/SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md` i chatten 2026-11-02:
+”Approve A–E”.
+
+1. **Ärendefall (A).** Det dagliga urvalet omfattar `salary_report` från arbetsgivare, både nya
+   rapporter och rättelser. Manuella underlag överlämnas för hand i ärendepanelen.
+2. **Urval och budget (B).** Urvalet körs från 07.00 Europe/Stockholm med högst 5 ärenden ur
+   schemat. Ärendetypen har totalt högst 20 försök och 5 USD reserverat per verksamhetsdag, så
+   att det finns utrymme för manuella överlämningar och deluppdrag.
+3. **Granskning (C).** `review_required` förblir `true` för alla fall. Automatisk slutbehandling
+   av nya arbetsgivarrapporter prövas bara i demo och `svc_test`. Den föreslås för drift först när
+   det finns en verifierad inkommande kanal och betrodda rimlighetskontroller, och då genom ett nytt
+   beslut.
+4. **Drift (D).** Arbetaren körs som `--once` från Windows Schemaläggaren vardagar 07.05, med en
+   loggfil. Operatören följer dagligen upp fel, förslag och uppdrag som behöver handläggare. Arbetaren
+   skriver en statusrad, och `/arenden` får ett filter för sådana uppdrag.
+5. **Intag (E).** Ärenden registreras av handläggaren tills ett intag av arbetsgivarfiler har
+   designats inom paket A.
+
+**Motivering:** Agentens förberedelse ger nytta med låg risk, eftersom varje registrering granskas.
+Utan en inkommande kanal skulle automatisk slutbehandling bara bekräfta handläggarens egen
+inknappning, utan att någon annan ser den. Ett eget schematak hindrar urvalet från att ta hela
+dagsbudgeten.
+
+**Övervägda alternativ:** Att bara välja nya rapporter, eller alla fall, i urvalet. Att höja
+dagsbudgeten i stället för att införa ett schematak. Att köra arbetaren med `--serve` i stället
+för `--once`. Att tillåta automatisk slutbehandling direkt. Se underlagets §2.
+
+**Konsekvenser:**
+- Policyändringen `case-work-v2` med urvalsfilter, schematak, statusrad och listfilter.
+  Verifiering i demo och `svc_test` med riktig modell. Därefter Lakebase efter backup,
+  operatörens OK och bekräftelse att ingen annan agent kör mot databasen (AGENTS.md §4.5).
+- Policyn byts när inga ärendeuppdrag är aktiva i måldatabasen.
+- Driften startar först när uppgiften i Schemaläggaren skapas. YAML-ändringen ensam startar ingen
+  körning.
+- ATT_GORA, arendedialog_och_automation, handläggar-UI, harness, agentkarta och
+  handläggaragentens instruktion uppdateras.
+
+**Preciserar:** B-033 (val D, synkrona körningar) och B-036 (punkt 4, självständiga agenter).
+B-028:s godkännandegolv består.
+
+---
+
 ### B-042 | 2026-10-31 | Aktuarieteamets metod, harness och arbetsyta (A0)
 
 **Beslut:** Operatören godkände valen A–N i
