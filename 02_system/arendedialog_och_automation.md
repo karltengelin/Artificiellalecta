@@ -116,7 +116,10 @@ Köposter och återstående dagsbudget begränsar urvalet redan före beställni
 underlaget senare ändras; fel leder inte till tysta dagliga omförsök.
 Nya ärenden kan därför väljas utan att gamla uppföljningsfall blockerar kön.
 Mer detaljerade urvalsregler
-läggs till när de återkommande ärendena valts.
+läggs till när de återkommande ärendena valts. I dag väljs alla öppna `salary_report`,
+även rättelser och manuella underlag, och urvalet kan fylla hela dagsbudgeten.
+[Beslutsförslaget för F5-7](../projekt/01_ärendehantering/SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md)
+(2026-11-02, inte beslutat) föreslår urvalsfilter och ett eget schematak.
 
 En körning som stod som `running` efter en processkrasch körs aldrig om
 automatiskt. Operatören kontrollerar att föregående arbetare har stoppats,
@@ -239,7 +242,9 @@ Detta är första byggda ärendeförmågan, inte hela den färdiga organisatione
   levererade standardpolicyn. Lakebase-tabellerna är införda enligt ovan;
   inga befintliga verksamhetsrader har ändrats.
 
-**Förslag till senare beslutspost, utan nummer:** inför ärendebunden dialog
+**Förslag till senare beslutspost, utan nummer:** (preciseras för driftvalen i
+[beslutsförslaget för F5-7](../projekt/01_ärendehantering/SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md) §6)
+inför ärendebunden dialog
 och två arbetsformer ovanpå gemensam harness; tillåt versionsbunden automatisk
 slutbehandling för uttryckligen valda interna standardfall med giltiga regler,
 exakt underlagsbindning, separat maskinidentitet och atomiskt spår. Behåll
