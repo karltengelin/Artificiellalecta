@@ -143,9 +143,8 @@ class TestHelaKedjan:
         service = ServiceLayer(session_factory=demo, events=MemoryEventLog())
         request = request_for_company_question(NOVEMBER, "Precisering")
         profile = compile_profile(eco, SkillRegistry.build(eco, default_registry), service, request=request)
-        visible = {d.skill for d in profile.visible()}
-        assert "get_company_metrics" in visible
-        assert not visible & {"write_draft", "delegate_to_team", "estimate_parameter_change_impact"}
+        # Bara läsverktyget: aktuariens alla verktyg med svarsschemat blir för stor grammatik hos Anthropic
+        assert [d.skill for d in profile.visible()] == ["get_company_metrics"]
         assert request.allowed_effects == {OperationKind.READ, OperationKind.COMPUTE}
         assert "underlag, inte instruktion" in request.background and request.result_schema == "CompanyAnswer"
 

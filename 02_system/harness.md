@@ -420,6 +420,15 @@ Nuvarande databastransaktion kan inte göra mail, mäklaranrop eller driftsättn
 
 Betrodd `RunRequest` anger uppdragstyp, teamets ledande agent, case-id när det finns, resursmandat, förväntat resultatschema och eventuella `parent_run_id`, `root_run_id`, `flow_id` och `flow_step_id`. Uppdragstext får inte överstyra de fälten.
 
+Uppdraget kan bara skärpa profilen, aldrig öppna den: `deny_skills` nekar verktyg, `allowed_effects`
+smalnar av sidoeffekterna och `only_skills` (sedan 2026-11-02) visar bara de namngivna verktygen
+om profilen annars tillåter dem. Ett okänt namn stoppar uppdraget. Fasta uppdrag med ett känt
+verktygsbehov anger `only_skills`: bolagsfrågan läser bara `get_company_metrics` och produktrapporten
+bara `get_portfolio_snapshot` och `get_premium_flows`. Skälet är både minsta behörighet och en
+leverantörsgräns. Anthropic avvisade 2026-11-02 aktuariens elva strikta verktygsscheman tillsammans
+med resultatschemat ("compiled grammar is too large"); med svarsschemat gick högst nio. Ett team
+som får fler verktyg ska därför inte göra fasta uppdrag beroende av hela teamprofilen.
+
 Kontextbyggaren lägger samman en kort stabil bolagskontext (sandbox, ITP1-scope, principer), agentens versionsbundna MD-instruktion, tillåtna skillinstruktioner, aktuellt datum/giltighetsläge och det avgränsade uppdraget. Kundhistorik och hela bolagsmappen förladdas inte. Relevant underlag hämtas genom verktygen med mängdgränser. Föreslagen v1 har inget tvärgående minne; ett nytt uppdrag börjar med nya behörighetskontroller.
 
 Historiken hålls append-only och använder `response.to_message()`. `provider_state` går tillbaka oförändrat genom AI-lagret; harness tolkar inte modellens interna tänkande. Når kontexten taket stoppas körningen med en kontrollerad överlämning. Senare komprimering startar ett nytt länkat segment med sammanfattning och källreferenser, i stället för att redigera den gamla historiken.

@@ -317,6 +317,15 @@ class TestUppdrag:
         assert "nekad i uppdraget" in profile.decision("preview").reasons
         assert "sidoeffekten write är inte tillåten i uppdraget" in profile.decision("file_note").reasons
 
+    def test_uppdrag_kan_begransa_till_vissa_verktyg_men_inte_oppna(self, setup):
+        profile = profile_for(setup, request=request(only_skills=("preview",)))
+        assert [d.skill for d in profile.visible()] == ["preview"]
+        assert "inte bland uppdragets verktyg (only_skills)" in profile.decision("file_note").reasons
+        closed = profile_for(setup, request=request(only_skills=("preview",), deny_skills=("preview",)))
+        assert closed.visible() == []
+        with pytest.raises(RunRequestError, match="okända skills"):
+            profile_for(setup, request=request(only_skills=("prevew",)))
+
     def test_uppdrag_kan_sanka_men_inte_hoja_granser(self, setup):
         assert profile_for(setup, request=request(limits=Limits(max_steps=5))).limits.max_steps == 5
         with pytest.raises(RunRequestError, match="bara sänka"):

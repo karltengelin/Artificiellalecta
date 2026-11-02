@@ -56,6 +56,9 @@ class RunRequest(_Strict):
     delegation_targets: tuple[str, ...] = ()
     # Skärpningar – kan aldrig öppna något
     deny_skills: tuple[str, ...] = ()
+    # Bara dessa verktyg visas, om de annars är tillåtna. None = ingen avsmalning. Håller också
+    # nere antalet strikta scheman per anrop (Anthropic avvisar för stor grammatik, 2026-11-02).
+    only_skills: tuple[str, ...] | None = None
     allowed_effects: frozenset[OperationKind] | None = None  # None = ingen extra avsmalning
     limits: Limits = Limits()
 
