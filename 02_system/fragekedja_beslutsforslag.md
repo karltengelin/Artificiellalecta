@@ -242,14 +242,16 @@ leveranslagringen (`src/agents/deliveries.py`) och adaptern med `AssignmentView`
 centralens route kan gå över till den. Adaptern tar renderaren som argument. Codex operatörsinloggning (val H) är klar;
 Codex rendering och webbvyer är lokalt byggda 2026-10-28; se
 [rapportens struktur](../06_design/rapportmall.md#oc-3a-deterministisk-markdown-till-pdf) och
-[webbvyer och anslutning](fragekedja_webb.md). Samordnat röktest med den ordinarie renderaren och
-DM Sans återstår. Kolumnrätterna sattes i Lakebase 2026-10-31 efter backup `backups/20261031T124616Z` och operatörens OK, i samma körning som antagandebibliotekets läsrätt (A4, B-042); `get_company_metrics` fungerar med rollens egen anslutning.
+[webbvyer och anslutning](fragekedja_webb.md). Codex kontroll av webb och PDF med DM Sans gjordes
+2026-10-31, före omställningen för en VD nedan. Kolumnrätterna sattes i Lakebase 2026-10-31 efter backup `backups/20261031T124616Z` och operatörens OK, i samma körning som antagandebibliotekets läsrätt (A4, B-042); `get_company_metrics` fungerar med rollens egen anslutning.
 
 *2026-10-28:* röktestskriptet för steg 4 (`scripts/diagnostics/smoke_test_question.py`) är klart och kört i demo med riktig modell: 19 av 19 kontroller efter två rättelser – talkontrollen godtar nu periodens sista dag (perioden enligt §6), och resultatschemat säger att en precisering utanför underlaget ger `unavailable`. Rapporten renderades provisoriskt. Kolumnrätternas torrkörning mot Lakebase passerar förkontrollen; `--apply` väntar på backup och operatörens OK.
 
 *2026-10-31:* röktestet med OpenAI (`gpt-6-astra`) i demo, `--avvikelser` och `reporting.render_report` med Helvetica gav 19 av 19 kontroller, 0,23 USD. Rapporten granskades översiktligt; Codex visuella kontroll med DM Sans och webbvyerna återstår. Samma dag i `svc_test` med `claude-opus-5` och aktuariens begränsade testroll, inklusive kolumnrätterna: 19 av 19 kontroller, 0,31 USD, sedan operatören slagit på den avstängda Lakebase-endpointen.
 
 *2026-10-31, läsbarhet:* på operatörens begäran skrivs rapporten för en VD. Svar, värden och begränsningar kommer först; definitioner, datakälla och det nya avsnittet *Så togs rapporten fram* (agent, modell, verktygsanrop med nivå och utfall ur körjournalen, `agents.trace`) sist. Aktuarien instrueras att skriva slutsatsen utan tekniska namn och inte upprepa datakontraktets fasta begränsningar. Samma spår finns för webbens avancerade vy genom `QuestionConsole.trace`. Röktest i demo med `claude-opus-5` och `--avvikelser`: 22 av 22 kontroller, inklusive den nya läsbarhetskontrollen, 0,29 USD.
+
+*2026-11-02:* röktestet i demo misslyckades före första verktygsanropet. Anthropic avvisade aktuariens elva strikta verktygsscheman tillsammans med resultatschemat (*compiled grammar is too large*), sedan A4–A6 gett teamet fler verktyg; produktrapporten (A2) drabbades likadant. Uppdraget visar nu bara `get_company_metrics` genom den nya skärpningen `RunRequest.only_skills` ([harness §6.1](harness.md#61-kontextbygge)). Därefter i demo med `claude-opus-5` och `--avvikelser`: 22 av 22 kontroller, 0,27 USD; produktrapporten 22 av 22, 0,20 USD. Röktestet har fått `--db lakebase`: förkontrollen läser facit med en fristående SQL-fråga på både den betrodda anslutningen och `agent_aktuarie` och skriver ingenting. Båda gav 501 registrerade, 1 170 404,34 SEK för december 2025 och 0,00 SEK för september 2026. Körningen mot Lakebase sparar uppdragen i `flows` och görs efter backup och operatörens OK.
 
 Steg 1 och 2 kan gå parallellt eftersom filerna är åtskilda. Steg 3 för webben förutsätter
 adaptern. Lakebase-ändringarna (kolumnrätter) samordnas enligt AGENTS.md §4.5 och krockar inte

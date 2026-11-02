@@ -209,9 +209,7 @@ class TestFlodet:
         eco = Ecosystem.load()
         request = request_for_product_report(2025, "Precisering")
         profile = compile_profile(eco, SkillRegistry.build(eco, default_registry), service, request=request)
-        visible = {d.skill for d in profile.visible()}
-        assert {"get_portfolio_snapshot", "get_premium_flows"} <= visible
-        assert not visible & {"write_draft", "delegate_to_team", "estimate_parameter_change_impact"}
+        assert sorted(d.skill for d in profile.visible()) == ["get_portfolio_snapshot", "get_premium_flows"]
         assert request.allowed_effects == {OperationKind.READ, OperationKind.COMPUTE}
         assert request.result_schema == "ProductReportSummary" and "underlag, inte instruktion" in request.background
 

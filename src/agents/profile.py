@@ -191,6 +191,7 @@ def compile_profile(
     limits = ecosystem.agent_limits(agent_id)
 
     run_denied: set[str] = set()
+    run_only: set[str] | None = None
     run_effects: frozenset[OperationKind] | None = None
     if request is not None:
         if over := request.limits.exceeding(limits):
@@ -199,6 +200,10 @@ def compile_profile(
         if unknown := sorted(set(request.deny_skills) - set(skills.names())):
             raise RunRequestError(f"Uppdraget nekar okända skills: {', '.join(unknown)}")
         run_denied = set(request.deny_skills)
+        if request.only_skills is not None:
+            if unknown := sorted(set(request.only_skills) - set(skills.names())):
+                raise RunRequestError(f"Uppdraget begränsar till okända skills: {', '.join(unknown)}")
+            run_only = set(request.only_skills)
         run_effects = request.allowed_effects
         if extra := sorted(set(request.delegation_targets) - set(agent.delegates_to)):
             raise RunRequestError(
@@ -228,6 +233,8 @@ def compile_profile(
         ):
             if skill.name in denied:
                 reasons.append(f"nekad {where}")
+        if run_only is not None and skill.name not in run_only:
+            reasons.append("inte bland uppdragets verktyg (only_skills)")
 
         for where, effects in (
             ("globalt", ecosystem.defaults.allowed_effects),

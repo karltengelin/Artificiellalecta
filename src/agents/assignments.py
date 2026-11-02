@@ -97,6 +97,7 @@ def request_for_company_question(
         expected_output="Svar med status, slutsats, begränsningar och nästa steg för operatörens granskning",
         result_schema="CompanyAnswer",
         references=("P2-FRAGA-001",),
+        only_skills=("get_company_metrics",),
         allowed_effects=frozenset({OperationKind.READ, OperationKind.COMPUTE}),
         limits=limits or Limits(),
         **links,
@@ -131,7 +132,7 @@ def request_for_product_report(
     """Produktrapporten för PR-ITP1 (A2, B-042): aktuarien sammanfattar årets bestånd och premier.
 
     Operatörens precisering följer med som bakgrund – data, inte instruktion. Körningen smalnas av
-    till läsning och beräkning: inga utkast och ingen delegering. Tabellerna bygger betrodd kod.
+    till de två läsverktygen: inga utkast och ingen delegering. Tabellerna bygger betrodd kod.
     """
     return RunRequest(
         task_id=task_id or f"task-produkt-{uuid.uuid4().hex[:8]}",
@@ -147,6 +148,7 @@ def request_for_product_report(
         expected_output="Sammanfattning, iakttagelser, rekommendationer och begränsningar för operatörens granskning",
         result_schema="ProductReportSummary",
         references=("AKTUARIETEAM_PLAN §7", "B-042"),
+        only_skills=("get_portfolio_snapshot", "get_premium_flows"),
         allowed_effects=frozenset({OperationKind.READ, OperationKind.COMPUTE}),
         limits=limits or Limits(),
         **links,
