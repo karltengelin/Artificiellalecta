@@ -235,6 +235,8 @@ def compile_profile(
                 reasons.append(f"nekad {where}")
         if run_only is not None and skill.name not in run_only:
             reasons.append("inte bland uppdragets verktyg (only_skills)")
+        if skill.name == "actuarial_workbench" and (run_only is None or skill.name not in run_only):
+            reasons.append("arbetsbänken kräver ett uttryckligt verktygsurval för aktuariedialogen")
 
         for where, effects in (
             ("globalt", ecosystem.defaults.allowed_effects),

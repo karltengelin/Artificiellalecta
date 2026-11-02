@@ -44,6 +44,17 @@ Se [MASTER_CONTEXT §1](MASTER_CONTEXT.md#1-vision-och-syfte) och
 
 ## 🔴 Hög prioritet – grunden
 
+### Aktuellt operatörsuppdrag 2026-11-02 – aktuarien som verksamhetskollega
+
+På Karls uppdrag har [dialog och analysarbetsbänk](02_system/aktuarie_dialog.md) byggts och verifierats
+utifrån företagsvisionen. Aktuarien väljer data, scenarier, erfarenhetsanalys,
+dödlighetsmodellering, diagram och rapport utifrån samtalet. Återanvänder A3–A6,
+tjänstelagret, harness och Digital klarhet. Inga separata analysknappar eller
+ny agent införs. [Plan och acceptans](projekt/06_avdelningsfunktioner/AKTUARIE_DIALOG_PLAN.md).
+Införande och verifieringsresultat redovisas i driftbeskrivningen. Dataproducenter
+för verkligt utfall, full förändringsanalys och ALM/solvens har kvarstående beroenden.
+Detta uppdrag ersätter inte befintliga slutkontroller för OC-3a eller andra team.
+
 ### Närmaste prioritering efter riktningsgranskningen
 
 Operatören godkände **dokument och prioriteringar först** i chatten 2026-10-27,

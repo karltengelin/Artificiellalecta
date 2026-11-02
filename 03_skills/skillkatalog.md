@@ -14,6 +14,7 @@
 | [aktuariell-annuitet](beräkning/aktuariell-annuitet.md) | beräkning | – (betrodd kod i datautdraget och värderingen) | Dödsrisk, annuitetsfaktor och garantidelar enligt aktuariell grund, mot leveranskontrollens facit; diskontering med kurva och skatteavdrag sedan A6 | Nej | Betrodd kod | 🟢 Implementerad som ren beräkning (A5, kurvan A6) |
 | [kapitalavrakning](beräkning/kapitalavrakning.md) | beräkning | – (betrodd kod i `run_valuation`) | Pensionskapitalets månadsavräkning (PR-020–023) och datautdraget S-04 med `G_j` och `C` per försäkring | Ja, i betrodd kod; utdraget har inga personuppgifter | Betrodd kod | 🟢 Implementerad (A5 del 2) |
 | [fta-vardering](beräkning/fta-vardering.md) | beräkning | `aktuariell` (läsning: `list_valuation_runs`, `get_valuation_run`); körningen `run_valuation` är systemsteg | FTA, villkorad återbäring och underskott per försäkring på värderingsgrunden SIM-V, med kontrollfallen K1–K10 och låsbara körningar | Nej för agenten (aggregat); utdraget läses bara i betrodd kod | actuary_agent (läsning) | 🟢 Implementerad lokalt (A6) |
+| [aktuariell-analys](beräkning/aktuariell-analys.md) | beräkning/analys | `analys` | Dialogstyrd dataupptäckt, scenarier, kassaflöden, erfarenhet, dödlighetsmodellering och källbundna diagram/rapporter | Bara skyddade aggregat | actuary_agent | Byggd 2026-11-02; införande/verifiering i `02_system/aktuarie_dialog.md` |
 
 **Kategori och podd är olika saker** (`02_system/agentekosystem.md` §5.1): kategorin styr var dokumentationen ligger, podden styr behörigheten i körning. Agenter når premiemotorn genom tjänstelagrets operation `calculate_premium_preview`, inte genom funktionen direkt.
 
@@ -24,6 +25,7 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 <!-- list_skills.py: start – genererad, ändra inte för hand -->
 | Skill | Podd | Operation eller verktyg | Typ | PII | Åtkomstregistret | Behöriga agenter |
 |---|---|---|---|---|---|---|
+| `actuarial_workbench` | `analys` | gateway `actuarial_workbench` | write | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent) |
 | `calculate_premium_preview` | `berakning` | `calculate_premium_preview` | compute | Nej | AGENT | actuary_agent (Aktuarieagent), case_handler (Handläggaragent), compliance_agent (Compliance-agent) |
 | `correct_premium_transaction` | `kunddata` | `correct_premium_transaction` | write | Ja | HUMAN_ONLY | – |
 | `delegate_to_team` | `delegering` | harness `delegate_to_team` | read | Nej | – (körpolicyns delegeringsmål och uppdragets `delegation_targets`) | compliance_agent (Compliance-agent) |
@@ -46,7 +48,7 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 | `set_policy_paid_up` | `kunddata` | `set_policy_paid_up` | write | Ja | APPROVAL | – |
 | `write_draft` | `dokument` | gateway `write_draft` | write | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
 
-Operationer utan poddmappning – stängda för alla agenter: `adopt_valuation_basis`, `amend_salary_case`, `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `lock_valuation`, `propose_valuation_basis`, `register_employer`, `reject_valuation_basis`, `run_valuation`, `schedule_customer_tax_rate`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
+Operationer utan poddmappning – stängda för alla agenter: `adopt_valuation_basis`, `amend_salary_case`, `close_case`, `count_approval_requests`, `create_case`, `enroll_insured_person`, `get_operation_events`, `list_approval_requests`, `list_cases`, `list_employers`, `list_insured_persons`, `lock_valuation`, `perform_actuarial_analysis`, `propose_valuation_basis`, `register_actuarial_dataset`, `register_employer`, `reject_valuation_basis`, `run_valuation`, `schedule_customer_tax_rate`, `schedule_product_parameter_change`, `update_case_status`, `update_contact_details`, `update_current_salary`, `withdraw_product_parameter_change`.
 <!-- list_skills.py: slut -->
 
 ## Planerade skills (ur ATT_GORA)
@@ -69,3 +71,11 @@ Operationer utan poddmappning – stängda för alla agenter: `adopt_valuation_b
 - Agenternas skill-listor: `02_system/agenter/<agent>.md`
 - Skill-kontrakt och skill-poddar (behörighetsenhet i körning, B-026): `02_system/agentekosystem.md` §5
 - Körpolicy och skill-register: `src/agents/ecosystem.yaml`, `src/agents/skills.py`, `02_system/harness.md` §3–4
+
+## Aktuariens domänarbetsbänk
+
+Den genererade listans omappade operationer är stängda för direkta skillanrop.
+`actuarial_workbench` kapslar uttryckliga domänkontrakt: agentens läsningar prövas
+mot aktuell profil, tunga analyser körs av en avgränsad systemarbetare och ett
+grundförslag går genom tjänstelagrets ordinarie APPROVAL-kö. Arbetsbänken kan
+aldrig anta en grund eller fastställa en värdering. Se [aktuariell analys](beräkning/aktuariell-analys.md).

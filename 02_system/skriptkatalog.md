@@ -14,7 +14,7 @@ Det finns ingen separat kodbas per delprojekt eller avdelning (B-015/B-024).
 | ai | Modellroller, leverantörsadaptrar, strukturerade svar, nycklar och anropslogg |
 | analytics | Rena beståndsberäkningar: IBB-scenariot, adapter för offline-backup och konsekvensen av en ändrad produktparameter med undertryckning (`parameter_impact.py`, används av `estimate_parameter_change_impact`, 3c-B) |
 | design | Digital klarhets tokenfil (B-034), webbens CSS-variabler som härleds ur den (`web_css.py`) och märket som ikon (`icon.py`) |
-| reporting | [Återanvändbar rapportmall i Digital klarhet](../06_design/rapportmall.md), [presentationsmall i 16:9](../06_design/presentationsmall.md) och syntetiska exempel: PDF från Markdown och diagram. Ingen aktiverad skill |
+| reporting | [Återanvändbar rapportmall i Digital klarhet](../06_design/rapportmall.md), [presentationsmall i 16:9](../06_design/presentationsmall.md) och syntetiska exempel: PDF från Markdown och diagram. Källbundna diagram och rapporter används av [aktuariedialogens arbetsbänk](aktuarie_dialog.md) |
 | utils | Databasanslutning, backup/återställning, återanvändbar migrationskod och demobeståndet för handläggar-UI:t, med den äldre kohorten födda 1959–1962 (B-035 val K) |
 | web | Handläggar-UI:t (Fas 4): FastAPI-sidor som bara anropar tjänstelagret, och flödena `/floden` genom flödesadaptern, se [handläggar-ui.md](handläggar-ui.md) |
 | agents | Harness: körpolicy, skill-register, dispatcher, agentloop, körjournal, ärendekörningar, gatewayerna `regelverk` och `dokument` (`agents/gateways/`, 3c-G), teamen compliance och aktuarie med parametermandat, resultatscheman (`results.py`) och uppdragsmallar (`assignments.py`, 3c-T), flödesmotorn (`agents/flows/`, 3c-2), och flödet `rule_change_parameter` med adaptern för UI:t (`agents/flows/definitions/`, `console.py`, 3c-3). Adaptern kräver uttrycklig AI-klient; det tidigare skriptade demosvaret är borttaget enligt B-037 |
@@ -65,6 +65,17 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | web | [open_ui.ps1](../scripts/web/open_ui.ps1) | Starta och öppna handläggar-UI:t med verifierat databasläge | Startar `start_ui.py` dolt; standard Lakebase på 8765, test på 8766, demo på 8767. Fel eller okänt läge på en upptagen port blockeras; stoppar inga processer |
 | web | [set_operator_password.py](../scripts/web/set_operator_password.py) | Operatören sätter själv en lokal lösenfras för bolagsfrågor (OC-3a H–I) | Dold interaktiv inmatning; skriver operatörs-id och Argon2id-hash till `.env`, bevarar övrig konfiguration. Ingen databas, AI eller utskrift av lösenfras/hash; se [operatörsinloggning](operator_inloggning.md) |
 | web | [start_ui.py](../scripts/web/start_ui.py) | Starta handläggar-UI:t på 127.0.0.1 | `--db demo` (standard) skapar en lokal SQLite med demobestånd; `--db svc_test` ett eget schema i den isolerade testdatabasen; `--db lakebase` läser och skriver beståndet via tjänstelagret |
+
+## Aktuariedialogens körverktyg, tillbyggnad 2026-11-02
+
+| Skript | Syfte och gräns |
+|---|---|
+| [migrate_actuarial_workspace.py](../scripts/migrations/migrate_actuarial_workspace.py) | Fyra nya tabeller. Torrkörning som standard; skarp körning kräver backup och databassamordning |
+| [import_actuarial_dataset.py](../scripts/analysis/import_actuarial_dataset.py) | Validerar versionsmärkt erfarenhetsdata utan DB-anslutning. Import kräver `--apply`, operatör och motivering |
+| [smoke_test_actuarial_dialogue.py](../scripts/diagnostics/smoke_test_actuarial_dialogue.py) | Separat lokal demodatabas; `--run-model` provar katalog, grundläsning, analys, diagram och rapport mot riktig modell inom teamets budget |
+
+Dialogen ansluts till ordinarie webbstart med `--actuary-workspace`.
+Se [arbetsväg och drift](aktuarie_dialog.md).
 
 ## Typiska arbetsflöden
 

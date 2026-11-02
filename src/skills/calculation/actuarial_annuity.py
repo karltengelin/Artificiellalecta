@@ -40,7 +40,7 @@ import hashlib
 import math
 import re
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal
 from functools import lru_cache
@@ -90,6 +90,7 @@ class MortalityBasis:
     tail_from_age: int
     tail_intensity_growth: float
     tail_q_cap: float
+    intensity_factor: float = 1.0  # uttryckligt scenario; antagna grunder förblir oförändrade
 
     @classmethod
     def from_assumptions(cls, mortality: Mapping[str, Any]) -> MortalityBasis:
@@ -111,7 +112,7 @@ class MortalityBasis:
         """Samma grund med dödsrisken multiplicerad, t.ex. PR-028:s stress (0,80)."""
         return MortalityBasis(self.male_weight, self.improvement_per_year, self.improvement_base_year,
                               self.risk_factor * factor, self.tail_from_age, self.tail_intensity_growth,
-                              self.tail_q_cap)
+                              self.tail_q_cap, self.intensity_factor)
 
 
 def _table_q(basis: MortalityBasis, age: int, year: int) -> float:
@@ -126,10 +127,12 @@ def annual_q(basis: MortalityBasis, age: int, year: int, birth_year: int) -> flo
     if age < 0:
         raise ValueError("Negativ ålder")
     if age <= basis.tail_from_age:
-        return _table_q(basis, age, year)
-    q100 = _table_q(basis, basis.tail_from_age, birth_year + basis.tail_from_age)
-    mu = -math.log(1 - q100) * (1 + basis.tail_intensity_growth) ** (age - basis.tail_from_age)
-    return min(basis.tail_q_cap, 1 - math.exp(-mu))
+        q = _table_q(basis, age, year)
+    else:
+        q100 = _table_q(basis, basis.tail_from_age, birth_year + basis.tail_from_age)
+        mu = -math.log(1 - q100) * (1 + basis.tail_intensity_growth) ** (age - basis.tail_from_age)
+        q = min(basis.tail_q_cap, 1 - math.exp(-mu))
+    return q if basis.intensity_factor == 1 else -math.expm1(math.log1p(-q) * basis.intensity_factor)
 
 
 def monthly_q(basis: MortalityBasis, birth: date, month: date) -> float:
@@ -225,8 +228,9 @@ class DiscountCurve:
 
 def _capped_from(basis: MortalityBasis, birth: date) -> int | None:
     """Åldern från vilken årsrisken ligger på taket för alla senare åldrar, om den nås."""
+    reference = replace(basis, intensity_factor=1.0)
     for age in range(basis.tail_from_age + 1, MAX_SUM_AGE):
-        if annual_q(basis, age, birth.year + age, birth.year) >= basis.tail_q_cap:
+        if annual_q(reference, age, birth.year + age, birth.year) >= reference.tail_q_cap:
             return age
     return None
 

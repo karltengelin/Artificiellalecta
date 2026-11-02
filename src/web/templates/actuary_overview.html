@@ -3,6 +3,7 @@
 {% block actuary_content %}
 <p class="oc-eyebrow">TEAMETS ARBETSPLATS</p><h1>Aktuarieteamet</h1>
 <p class="actuary-intro">Följ uppdrag, granska rapporter och fastställ antaganden på samma underlag som teamets agent.</p>
+<section class="panel"><h2>Arbeta tillsammans med aktuarien</h2><p>Ställ en fråga, beställ en analys eller undersök om antagandena behöver ändras. Aktuarien väljer underlag och verktyg utifrån samtalet.</p><p><a href="/team/aktuarie/dialog">Öppna samtalet med aktuarien →</a></p></section>
 {% for error in errors %}<p class="alert alert--info">{{ error }}</p>{% endfor %}
 <section class="panel"><div class="panel__head"><h2>Värderingar</h2><a href="/team/aktuarie/varderingar">Kör eller granska →</a></div>
 {% if valuations is not none %}

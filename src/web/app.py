@@ -30,6 +30,7 @@ from web.handler import STATIC_DIR, new_csrf_token, render
 from web.operator_auth import OperatorAuth
 from web.presenters import ErrorView
 from web.routes import (
+    actuarial_dialogue,
     actuary,
     actuary_valuations,
     auth,
@@ -55,6 +56,7 @@ def create_app(
     question_console: QuestionConsole | None = None,
     case_workspace_console: CaseWorkspace | None = None,
     product_report_console: ProductReportConsole | None = None,
+    actuarial_dialogue_console=None,
 ) -> FastAPI:
     """case_agent: handläggaragenten för ärenden. Byggs med tjänstelagret om inget anges;
     med ett givet tjänstelager utan agent visas ärendena utan knappen *Starta agent*.
@@ -87,6 +89,7 @@ def create_app(
     app.state.flow_console = flow_console
     app.state.question_console = question_console
     app.state.product_report_console = product_report_console
+    app.state.actuarial_dialogue = actuarial_dialogue_console
     app.state.question_submissions = questions.Submissions()
     app.state.actuary_submissions = questions.Submissions()
     app.state.settings = settings
@@ -107,6 +110,7 @@ def create_app(
     app.include_router(environments.router)
     app.include_router(operator.router)
     app.include_router(actuary.router)
+    app.include_router(actuarial_dialogue.router)
     app.include_router(actuary_valuations.router)
     app.include_router(questions.router)
 

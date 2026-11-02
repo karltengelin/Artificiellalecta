@@ -14,7 +14,7 @@ Varje agent tillhör ett team (B-026). Teamets ledande agent är dess orkestrera
 | Försäkring & kund (`forsakring`) | [Handläggaragent](agenter/handlaggaragent.md) | Ledande (orkestrerare) | Kundadministration & ärendehantering | 🟡 Byggd för `salary_report` (F5-1–4); hela ärendeflödet verifierat i Lakebase 2026-11-02 (F5-5–6). Självständig drift (F5-7) och fler ärendetyper återstår |
 | Kommunikation (`kommunikation`) | [Kommunikationsagent](agenter/kommunikationsagent.md) | Ledande (orkestrerare) | Kund- & intressentkommunikation | 🔲 Ej påbörjad |
 | Kapitalförvaltning (`kapital`) | [Portföljförvaltningsagent](agenter/portfoljforvaltningsagent.md) | Ledande (orkestrerare) | Kapitalförvaltning | 🔲 Ej påbörjad |
-| Aktuarie & analys (`aktuarie`) | [Aktuarieagent](agenter/aktuarieagent.md) | Ledande (orkestrerare) | Aktuariell verksamhet | 🟡 Profil och premieeffektanalys för parameterändringar byggda (3c-T); metod, harness och arbetsyta beslutade (B-042); antagandebibliotek (A4) och värderingsmotor (A6) byggda med läsande poddar. Modellverifiering 3c-V, förändringsanalys (A7) samt garanti-, reserv- och ALM-motorer återstår |
+| Aktuarie & analys (`aktuarie`) | [Aktuarieagent](agenter/aktuarieagent.md) | Ledande (orkestrerare) | Aktuariell verksamhet | Dialog och analysarbetsbänk tillbyggda 2026-11-02: behöriga data, värderingsscenarier, kassaflöden, utfallsanalys, begränsad dödlighetsmodellering och källbundna diagram/rapporter. Full förändringsanalys, ALM och solvens har kvarstående beroenden; [drift](aktuarie_dialog.md) |
 | Aktuarie & analys (`aktuarie`) | [Data scientist-agent](agenter/data-scientist-agent.md) | Specialist | Datahantering & analys | 🔲 Ej påbörjad |
 | Regelefterlevnad & rapportering (`compliance`) | [Compliance-agent](agenter/compliance-agent.md) | Ledande (orkestrerare) | Regelefterlevnad | 🟡 Profil, källäsning, utkast och parametertolkning byggda (3c-T); modellverifiering 3c-V och generell regeländringshantering återstår |
 | Regelefterlevnad & rapportering (`compliance`) | [Rapporteringsagent](agenter/rapporteringsagent.md) | Specialist | Regulatorisk rapportering | 🔲 Ej påbörjad |
@@ -53,7 +53,7 @@ Ska övervaka placeringstillgångar mot antagna placeringsriktlinjer och förber
 Bygger och underhåller kod, agenter, skills och integrationer (utvecklarroll). Ansvarar för datapipelines och databasens integritet (data engineer-roll). Ingår i regelförändringsflödet.
 
 **Aktuarieagent**
-Ska ansvara för aktuariella beräkningar, antaganden och riskanalys. Byggt stöd gäller godkända parameterändringars premieeffekt, och sedan A6 läsning av FTA-värderingens aggregat (podden `aktuariell`); garanti- och ALM-motorer samt samarbete med planerade specialistagenter återstår.
+Ska ansvara för aktuariella beräkningar, antaganden och riskanalys. Utöver parameterändringars premieeffekt och A6:s FTA-aggregat finns en dialogbaserad analysarbetsbänk: dataupptäckt, scenarier, kassaflöden, erfarenhet, modellprövning och källbundna diagram/rapporter. Människan fastställer; full förändringsanalys och ALM har kvarstående beroenden. Se [arbetsväg och drift](aktuarie_dialog.md).
 
 **Rapporteringsagent**
 Ska samordna tillämplig myndighetsrapportering och intern rapportering till ledning och styrelse. Rapportkontrakt och arbetsdelning för risk- och solvensbedömning återstår i projekt 2/6. Krav på Solvens II/QRT eller en viss ORSA-process antas inte generellt. Alla externa inlämningar kräver manuellt godkännande (§3.5).

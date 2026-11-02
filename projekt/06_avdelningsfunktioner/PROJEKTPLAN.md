@@ -20,11 +20,14 @@ från projekt 4 återanvänds; nya värderingsgrunder måste fastställas separa
 godkända dokument- och prioriteringsuppdrag 2026-10-27.
 Ekonomimotorer och körbara ekonomi-/rapporteringsfunktioner är inte byggda. FTA-värderingsmotorn
 (aktuarieteamets steg A6, [planen](AKTUARIETEAM_PLAN.md) §8) är byggd och testad 2026-10-31,
-med tabellerna införda i Lakebase; förändringsanalys och rapportunderlag återstår (A7–A8).
+med tabellerna införda i Lakebase. Dialog och analysarbetsbänk byggdes och verifierades
+2026-11-02: scenarier, kassaflöden, utfall, begränsad dödlighetsmodellering och
+källbundna diagram/rapporter. Grundjämförelsen förklarar delar av förändringen;
+full förändringsanalys per verksamhetshändelse och boksluts-/rapporteringskedjan
+återstår (A7–A8). [Drift och verifiering](../../02_system/aktuarie_dialog.md).
 Människans [värderingsväg](../../02_system/aktuarie_varderingar.md) är ansluten
 med lista, körning, granskning och granskningsbundet fastställande.
-Aktuarieagentens befintliga profil och premieanalys hör till den tidigare
-byggda grunden och innebär inte att dessa bredare funktioner är implementerade.
+ALM och solvens behöver tillgångs-, ekonomi- och riskunderlag som ännu saknas.
 
 ## Beroenden
 
@@ -52,8 +55,9 @@ byggda grunden och innebär inte att dessa bredare funktioner är implementerade
 ### Första aktuariella värderingen och förklaringen av FTA
 
 **Planeringsprioritet godkänd 2026-10-27. Metoden är beslutad i B-042 (Alecta-modellen);
-kontraktet [VARDERINGSKONTRAKT.md](VARDERINGSKONTRAKT.md) är fastställt 2026-10-31. Motorn är inte byggd.** Ta fram ett värderings- och förklaringskontrakt som
-kan ligga till grund för ett separat avgränsat bygguppdrag.
+kontraktet [VARDERINGSKONTRAKT.md](VARDERINGSKONTRAKT.md) är fastställt 2026-10-31.
+A6-motorn är byggd; full förklaringskedja och övriga beroenden ovan återstår.**
+Tabellen nedan bevarar kontraktsarbetets omfattning och kontrollpunkter.
 
 | Del av kontraktet | Vad som ska fastställas före motorbygget |
 |---|---|

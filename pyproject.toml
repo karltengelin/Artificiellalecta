@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Simulerat tjänstepensionsbolag för ITP1 ålderspension"
 requires-python = ">=3.11"
 dependencies = [
+    # Etablerade statistiska fördelningar för aktuariell erfarenhetsanalys.
+    "scipy>=1.14,<2",
     # <2.1: SQLAlchemy 2.1 byter standarddrivrutin för postgresql:// till psycopg (v3);
     # projektet använder psycopg2-binary mot Lakebase (DATABASE_URL utan +drivrutin)
     "sqlalchemy>=2.0,<2.1",

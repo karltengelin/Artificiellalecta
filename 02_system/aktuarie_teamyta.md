@@ -140,3 +140,9 @@ AKTUARIETEAM_PLAN medan A5 pågår. Förslag till operatören:
   Teamytan visar alltid tjänstens faktiska register och inga egna startvärden.
 
 Inga adapter- eller operationsändringar behövdes för A3:s arbetsvägar.
+
+## Dialog och analys, tillbyggnad 2026-11-02
+
+`/team/aktuarie/dialog` är ingången för öppna aktuariella uppdrag och följdfrågor.
+Agenten väljer behöriga data och analysverktyg. Registervyer och mänskligt
+fastställande finns kvar. Se [arbetsväg och drift](aktuarie_dialog.md).

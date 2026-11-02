@@ -254,6 +254,7 @@ class TestUtkast:
 class TestVerktyg:
     def test_kontrakten(self):
         assert {(t.name, t.pod, t.side_effect, t.pii) for t in GATEWAY_TOOLS.values()} == {
+            ("actuarial_workbench", "analys", "write", False),
             ("list_regulatory_documents", "regelverk", "read", False),
             ("read_regulatory_document", "regelverk", "read", False),
             ("write_draft", "dokument", "write", False),

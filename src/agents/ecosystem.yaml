@@ -34,6 +34,13 @@ defaults:
     max_wall_seconds: 600
 
 pods:
+  analys:
+    owner_team: aktuarie
+    mountable_by: [aktuarie]
+    pii: false
+    allowed_effects: [write]
+    skills:
+      actuarial_workbench: {gateway_tool: actuarial_workbench}
   # Kunddata via tjänstelagret. PII: kräver execution_scope i uppdraget (dispatchern prövar
   # varje anrop mot det) och en egen databasroll innan verktygen visas (harness.md §5.1).
   kunddata:
@@ -163,9 +170,10 @@ teams:
   aktuarie:
     lead: actuary_agent
     mandate: >-
-      Ta fram beståndsinsikter i betrodd kod för godkända parameterändringar, med antaganden och begränsningar,
-      samt aktuariell granskning och beräkningsunderlag på beställning av compliance.
-    pods: [bestand, berakning, regelverk, dokument, antaganden, aktuariell]
+      Utför aktuariella uppdrag i dialog: välj behörigt underlag och betrodda analysverktyg,
+      pröva antaganden, förklara värderingar och leverera källbundna analyser och förslag.
+      Samverka med compliance inom mandatet; fastställ aldrig grunder eller värderingar.
+    pods: [bestand, berakning, regelverk, dokument, antaganden, aktuariell, analys]
     allowed_effects: [read, compute, write]
     limits:
       max_steps: 12
@@ -200,7 +208,7 @@ agents:
     team: aktuarie
     instruction: 02_system/agenter/aktuarieagent.md
     model_role: deep
-    pods: [bestand, berakning, regelverk, dokument, antaganden, aktuariell]
+    pods: [bestand, berakning, regelverk, dokument, antaganden, aktuariell, analys]
     allowed_effects: [read, compute, write]
 
 # Delegering mellan team (3c-1, B-039). Gränserna gäller en hel rotkörning (harness.md §6.3, §10.2).
