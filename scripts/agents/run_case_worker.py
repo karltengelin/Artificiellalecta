@@ -2,18 +2,22 @@
 
 python scripts/agents/run_case_worker.py --db demo --once
 python scripts/agents/run_case_worker.py --db demo --serve
-Ingen daglig regel är påslagen i levererad konfiguration. Inga testmodeller injiceras.
+Det dagliga urvalet startar först när arbetaren körs, i drift som --once från
+Windows Schemaläggaren (B-043). Varje varv skriver en statusrad för uppföljning.
+Inga testmodeller injiceras.
 """
 
 import argparse
 import sys
 import time
+from collections import Counter
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from agents.case_workspace import CaseWorkspace
+from agents.case_workspace import FOLLOW_UP, STATUS_LABELS, CaseWorkspace
 from services import ProductRuleCatalog
 from web.config import WebSettings
 from web.database import build_services
@@ -37,10 +41,13 @@ def main():
         trusted.rules = ProductRuleCatalog()
         try:
             count = workspace.tick()
+            waiting = Counter(workspace.follow_up().values())
         except Exception:  # noqa: BLE001 – inga råa databasfel/personuppgifter i driftloggen
             print("Ärendearbetaren stoppades. Kontrollera anslutning, schema och uppdragens status.")
             raise SystemExit(1) from None
-        print(f"Behandlade köposter: {count}", flush=True)
+        follow_up = ", ".join(f"{STATUS_LABELS[s].lower()} {waiting[s]}" for s in FOLLOW_UP)
+        stamp = datetime.now().astimezone().isoformat(timespec="seconds")
+        print(f"{stamp} Behandlade köposter: {count}. Uppföljning: {follow_up}.", flush=True)
         if args.once:
             return
         time.sleep(args.poll_seconds)

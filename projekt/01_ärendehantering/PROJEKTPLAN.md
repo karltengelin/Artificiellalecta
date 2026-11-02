@@ -14,7 +14,7 @@ faktiskt påverkar systemen och databaserna bakom: policys, förmåner, tillstå
 `cases` och agentrollens rättigheter infördes i Lakebase 2026-10-24. Kvar i
 F5-5–6: agentförslag och hela ärendeflödet verifierade i Lakebase 2026-11-02.
 Ärendedialog och självständig köhandläggning har lokalt stöd sedan 2026-10-31;
-tabellerna är införda i Lakebase efter backup och OK samma dag. Val av dagliga/automatiska fall återstår. Fler ärendetyper
+tabellerna är införda i Lakebase efter backup och OK samma dag. Ärendefallen är valda i B-043 och policyn verifierad i demo och `svc_test` 2026-11-02; Lakebase-verifiering och aktivering av driften återstår. Fler ärendetyper
 är fortsatt obygda. Den breda modelloberoende
 bolagsdialogen planeras i projekt 10; den är ingen separat Claude-chatt i detta projekt.
 
@@ -63,7 +63,8 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 **Byggt lokalt 2026-10-31 på operatörens uppdrag:** ärendebunden dialog med
 fria deluppdrag, överlämning, komplettering och övertagande samt varaktig kö,
 daglig arbetare och versionsbunden granskningspolicy. Mänsklig granskning
-är standard; schema och automatisk slutbehandling är avstängda. Tabellerna
+är standard; dagligt urval av arbetsgivarens nya rapporter och rättelser är valt i B-043,
+automatisk slutbehandling är avstängd. Tabellerna
 är införda i Lakebase efter backup och OK samma dag. Individbunden teamdelegering och extern
 komplettering är fortsatt stängda. Se [plan, drift och gränser](../../02_system/arendedialog_och_automation.md).
 
@@ -87,7 +88,7 @@ Den närmaste fråge-/rapportkedjan i [projekt 10](../10_operatörscentral/PROJE
   - försäkringsbesked
   - interna id:n i adresserna
 - Agentförslag och hela ärendeflödet är slutverifierade i F5-5–6 (klart 2026-11-02, se ATT_GORA).
-- Verifiera hela verksamhetsflödet med ärendearbetaren från 2026-11-01 enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy. Designstopp 2026-11-02: [beslutsförslag](SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md) väntar på operatörens beslut.
+- Verifiera hela verksamhetsflödet med ärendearbetaren från 2026-11-01 enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy. Designstopp 2026-11-02: [beslutsunderlaget](SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md) godkänt som B-043. Policyn `case-work-v2` verifierad i demo och `svc_test` samma dag; kvar är Lakebase efter backup och OK och därefter uppgiften i Windows Schemaläggaren.
 - Samordna modelloberoende bolagsdialog med [projekt 10](../10_operatörscentral/PROJEKTPLAN.md), OC-3, och försäkringsteamets område med OC-8 (B-036).
 
 ## Öppna designfrågor

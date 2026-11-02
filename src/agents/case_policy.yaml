@@ -1,5 +1,5 @@
 schema_version: 1
-policy_id: case-work-v1
+policy_id: case-work-v2
 case_types:
   salary_report:
     review_required: true
@@ -7,10 +7,17 @@ case_types:
     max_jobs_per_day: 20
     max_daily_cost_usd: 5.0
     schedule:
-      enabled: false
+      enabled: true
       timezone: Europe/Stockholm
       hour: 7
       minute: 0
+      max_cases: 5
+      kinds: [new, correction]
+      sources: [employer]
 # Endast granskad konfiguration får ändra policyn. Ingen agent eller webbtext kan
 # stänga av granskning. review_required: false tillåts bara för verifierad
 # register_salary_report som exakt motsvarar aktuellt ärende och giltiga regler.
+# B-043 (2026-11-02): dagligt urval av arbetsgivarens nya rapporter och rättelser,
+# högst 5 ur schemat per dag; manuella underlag överlämnas för hand. Urvalet körs
+# först när arbetaren startas (--once från Windows Schemaläggaren). Byt policyn
+# bara när inga ärendeuppdrag är aktiva i måldatabasen: uppdrag binder policyns hash.

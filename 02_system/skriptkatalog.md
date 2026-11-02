@@ -52,6 +52,7 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | diagnostics | [smoke_test_question.py](../scripts/diagnostics/smoke_test_question.py) | Röktest av bolagsfrågan (`company_question`) från beställning till granskad leverans med riktig modell för aktuarien (OC-3a, B-041) | Utan `--run` inga anrop; med `--run` riktiga API-anrop, högst 1,00 USD per fråga. Samma `--db demo`/`svc_test` som `smoke_test_flow.py`; `--avvikelser` lägger till fråga utanför stödet och styrningsprov. Läsbarhetskontroll: inga tekniska namn i slutsatsen. `reporting.render_report` med DM Sans ur `--report-font-dir`, annars mallens Helvetica-alternativ. Leveranser i `logs/deliveries/rooktest_<tid>/`. Ingen Lakebase |
 | diagnostics | [smoke_test_product_report.py](../scripts/diagnostics/smoke_test_product_report.py) | Röktest av produktrapporten (`product_report`) från beställning till granskad leverans med riktig modell för aktuarien (A2, B-042) | Utan `--run` inga anrop; med `--run` riktiga API-anrop, högst 1,00 USD per rapport. Samma `--db demo`/`svc_test` som `smoke_test_flow.py`; `--avvikelser` lägger till ett styrningsprov med påhittat FTA-belopp. Facit: rapportens tabeller mot operationernas egna svar. Leveranser i `logs/deliveries/rooktest_produkt_<tid>/`. Ingen Lakebase |
 | diagnostics | [smoke_test_case_flow.py](../scripts/diagnostics/smoke_test_case_flow.py) | Röktest av hela ärendeflödet (F5-6): ärende → handläggaragent → förslag → godkännande eller avslag → stängt, genom ärendepanelens adapter | Utan `--run` inga anrop; mot Lakebase då bara läsning av radantal och verifieringspersonens underlag. Med `--run` riktiga API-anrop, högst 0,50 USD per ärende, och skrivningar i vald databas. `--db demo`/`svc_test` är tillfälliga; `lakebase` kräver märkt verifieringsperson, backup och operatörens OK |
+| diagnostics | [smoke_test_case_schedule.py](../scripts/diagnostics/smoke_test_case_schedule.py) | Röktest av dagligt urval, stoppvägar och uppföljning genom arbetarens varv (F5-7, B-043) | Utan `--run` inga anrop; mot Lakebase då bara läsning och kontroll att inga öppna löneärenden eller aktiva uppdrag finns. Med `--run` riktiga API-anrop, högst 0,50 USD per ärende. Stoppvägar och automatisk slutbehandling bara i demo/`svc_test` med tillfällig policykopia; `lakebase` kräver märkt verifieringsperson, backup och operatörens OK |
 | diagnostics | [s04_extract_summary.py](../scripts/diagnostics/s04_extract_summary.py) | Bygg datautdraget S-04 per ett månadsslut och visa aggregat: garantidelar, pensionskapital, kapitalets rörelser per år och kontrollerna (A5, B-042) | Demobeståndet i minnet som standard; `--db lakebase` läser den delade databasen i en skrivskyddad transaktion. Bara aggregat skrivs ut, utdraget sparas inte |
 | diagnostics | [valuation_summary.py](../scripts/diagnostics/valuation_summary.py) | Provvärdera beståndet per ett månadsslut och visa aggregat: FTA, därav driftkostnader, villkorad återbäring, underskott, segment med småcellsskydd och kontrollerna (A6, B-042) | Demobeståndet i minnet som standard; `--db lakebase` läser i en skrivskyddad transaktion. Scenario med SIM-V-2026-01 och FI-SIM-2026-10 som standard; ingen körning sparas |
 | analysis | [analyze_premium_impact.py](../scripts/analysis/analyze_premium_impact.py) | Jämför premieeffekt av hypotetiskt IBB | Ren beräkning på demo eller offline-backup; stdout eller rapportfil |
@@ -118,7 +119,10 @@ Gamla schemalagda kommandon och instruktioner utanför repot behöver uppdateras
 - `scripts/agents/run_case_worker.py --db demo --once|--serve`: hämtar den
   varaktiga kön, följer upp beslut och tillämpar aktiverade dagliga regler.
   Använder AI-lager/harness/tjänstelager och kan göra modellanrop och
-  policytillåtna affärsändringar. Standardpolicyn har dagligt urval avstängt.
+  policytillåtna affärsändringar. Policyn `case-work-v2` (B-043) väljer från 07.00
+  högst 5 ärenden per dag: arbetsgivarens nya rapporter och rättelser, inte manuella
+  underlag. Inget körs förrän arbetaren startas; i drift `--once` från Windows
+  Schemaläggaren. Varje varv skriver en tidsstämplad rad med antal uppdrag att följa upp.
 - `scripts/migrations/migrate_case_work.py`: torrkörning mot DATABASE_URL;
   införande kräver `--apply --backup`, backup och databassamordning.
 - `scripts/diagnostics/smoke_test_case_work.py --run`: riktig modell, bara
@@ -128,6 +132,11 @@ Gamla schemalagda kommandon och instruktioner utanför repot behöver uppdateras
   med automatiskt avslut och (med `--avslag`) avslag. Jämför radantal i alla tabeller.
   Demo och `svc_test` är tillfälliga; mot Lakebase krävs märkt verifieringsperson
   (`--pnr`, `--arbetsgivare`, `--lon`), backup och operatörens OK. Utan `--run` bara läsning.
+- `scripts/diagnostics/smoke_test_case_schedule.py --run [--db demo|svc_test|lakebase] [--provider]`:
+  dagligt urval med levererad policy genom arbetarens varv, godkännande och avslag med
+  uppföljning, stoppvägar (schematak, dagens försök, policybyte) och automatisk
+  slutbehandling med tillfällig policykopia. Mot Lakebase bara urvalsdelen, efter
+  förkontroll, backup och operatörens OK (`--pnr`, `--arbetsgivare`, `--manad`, `--lon`).
 
 Fulla driftgränser finns i [ärendedialogen](arendedialog_och_automation.md).
 

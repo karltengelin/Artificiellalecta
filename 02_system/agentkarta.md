@@ -11,7 +11,7 @@ Varje agent tillhör ett team (B-026). Teamets ledande agent är dess orkestrera
 
 | Team | Agent | Roll i teamet | Funktionsområde | Status |
 |------|-------|---------------|-----------------|--------|
-| Försäkring & kund (`forsakring`) | [Handläggaragent](agenter/handlaggaragent.md) | Ledande (orkestrerare) | Kundadministration & ärendehantering | 🟡 Byggd för `salary_report` (F5-1–4); hela ärendeflödet verifierat i Lakebase 2026-11-02 (F5-5–6). Självständig drift (F5-7) och fler ärendetyper återstår |
+| Försäkring & kund (`forsakring`) | [Handläggaragent](agenter/handlaggaragent.md) | Ledande (orkestrerare) | Kundadministration & ärendehantering | 🟡 Byggd för `salary_report` (F5-1–4); hela ärendeflödet verifierat i Lakebase 2026-11-02 (F5-5–6). Dagligt urval valt i B-043 och verifierat i demo och `svc_test` 2026-11-02; Lakebase, aktivering (F5-7) och fler ärendetyper återstår |
 | Kommunikation (`kommunikation`) | [Kommunikationsagent](agenter/kommunikationsagent.md) | Ledande (orkestrerare) | Kund- & intressentkommunikation | 🔲 Ej påbörjad |
 | Kapitalförvaltning (`kapital`) | [Portföljförvaltningsagent](agenter/portfoljforvaltningsagent.md) | Ledande (orkestrerare) | Kapitalförvaltning | 🔲 Ej påbörjad |
 | Aktuarie & analys (`aktuarie`) | [Aktuarieagent](agenter/aktuarieagent.md) | Ledande (orkestrerare) | Aktuariell verksamhet | 🟡 Profil och premieeffektanalys för parameterändringar byggda (3c-T); metod, harness och arbetsyta beslutade (B-042); antagandebibliotek (A4) och värderingsmotor (A6) byggda med läsande poddar. Modellverifiering 3c-V, förändringsanalys (A7) samt garanti-, reserv- och ALM-motorer återstår |

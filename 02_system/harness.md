@@ -768,7 +768,10 @@ loopen för fria deluppdrag och överlämnad löneunderlagshandläggning. Uppdra
 dialog, policybild och dagsreservationer är varaktiga i databasen. Ett atomiskt
 anspråk hindrar dubbel körning; okänt utfall kräver uttrycklig avstämning och
 återställer inte budget. En betrodd arbetare följer upp verkställighet och
-avslut. Samma kö används av webben och dagliga regler. Detta är ingen ny
+avslut. Samma kö används av webben och dagliga regler; urvalet filtreras på
+ärendets sort och källa och har ett eget dagstak (`case-work-v2`, B-043).
+`CaseWorkspace.follow_up` visar öppna ärenden vars senaste uppdrag väntar på
+människa, för arbetarens statusrad och listan *Att följa upp*. Detta är ingen ny
 generell agentloop eller färdig flerteamdialog. Se
 [arkitektur och begränsningar](arendedialog_och_automation.md).
 

@@ -1,6 +1,7 @@
 """Ärenden och handläggaragenten (Fas 5 F5-4, B-033).
 
-- `/arenden` – handläggarens lista (`list_cases`): aktiva, stängda eller alla.
+- `/arenden` – handläggarens lista (`list_cases`): aktiva, stängda eller alla, samt *Att följa upp*:
+  öppna ärenden vars senaste uppdrag väntar på godkännande, handläggare eller avstämning (B-043).
 - `/arenden/ny` – registrera ett ärende om inrapporterat löneunderlag (`create_case`).
 - `/arenden/{nummer}` – ärendet med uppgifter, förslag i kön, historik och agentens senaste körning.
 - *Starta agent* kör handläggaragenten i ärendet (`run_case`) – synkront, en körning åt gången.
@@ -23,6 +24,7 @@ from fastapi import APIRouter, Request
 from starlette.concurrency import run_in_threadpool
 
 from agents import HarnessError
+from agents.case_workspace import STATUS_LABELS
 from services import ServiceError
 from web.handler import (
     check_csrf,
@@ -45,7 +47,7 @@ from web.routes.insured import redirect
 router = APIRouter()
 
 #: Urvalen i listan: adressens värde → list_cases status
-LIST_FILTERS = {"aktiva": "active", "stangda": "closed", "alla": None}
+LIST_FILTERS = {"aktiva": "active", "stangda": "closed", "alla": None, "uppfoljning": "active"}
 OPEN_STATUSES = ("open", "in_progress", "waiting_approval", "waiting_info")
 
 #: En agentkörning åt gången i processen (lokalt, en handläggare – B-033 val D)
@@ -66,7 +68,15 @@ def case_list(request: Request, status: str = "aktiva"):
         cases = read(request, "list_cases", {"status": LIST_FILTERS[key]})
     except ServiceError as exc:
         return render_error(request, exc)
-    return render(request, "cases.html", {"cases": cases, "filter": key}, push_url=f"/arenden?status={key}")
+    follow_up = None
+    if key == "uppfoljning":
+        # Uppdragsstatus finns bara i ärendearbetet; listan filtreras på öppna ärenden därifrån.
+        console = getattr(request.app.state, "case_workspace", None)
+        follow_up = console.follow_up() if console is not None else {}
+        kept = [c for c in cases.cases if c.case_number in follow_up]
+        cases = cases.model_copy(update={"cases": kept, "count": len(kept)})
+    return render(request, "cases.html", {"cases": cases, "filter": key, "follow_up": follow_up,
+                                          "work_labels": STATUS_LABELS}, push_url=f"/arenden?status={key}")
 
 
 @router.get("/arenden/ny")

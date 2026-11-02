@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import exists, func, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import aliased
 
 from agents.case_policy import DEFAULT_POLICY, CasePolicy
 from agents.ecosystem import Ecosystem, Limits
@@ -36,6 +37,9 @@ STATUS_LABELS = {
     "waiting_info": "Väntar på komplettering", "needs_human": "Behöver handläggare", "completed": "Klart",
     "cancelled": "Återtaget", "reconciliation_required": "Kräver avstämning",
 }
+#: Uppdrag som operatören följer upp dagligen (B-043): senaste uppdraget i ett öppet ärende
+FOLLOW_UP = ("waiting_approval", "needs_human", "reconciliation_required")
+DAILY_PREFIX = "system:daily_worker:"
 log = logging.getLogger(__name__)
 
 
@@ -456,23 +460,35 @@ class CaseWorkspace:
                 remaining = rule.max_daily_cost_usd - (day.reserved_usd if day else 0)
                 slots = min(rule.max_jobs_per_day - (day.attempts if day else 0),
                             int((remaining + 1e-9) / cost_limit)) - queued
+                daily = CaseWork.submission_key.startswith(DAILY_PREFIX, autoescape=True)
+                if schedule.max_cases is not None:
+                    # Schemats andel lämnar resten av dagens försök till handläggarens egna uppdrag (B-043).
+                    midnight = local.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(UTC)
+                    selected = session.scalar(select(func.count()).select_from(CaseWork).join(
+                        Case, Case.case_number == CaseWork.case_number).where(
+                        daily, Case.case_type == case_type, CaseWork.created_at >= midnight))
+                    slots = min(slots, schedule.max_cases - selected)
                 if slots <= 0:
                     continue
                 # Tidigare dagliga uppdrag omprövas av handläggare; de får inte
                 # blockera urvalet av nyinkomna ärenden vid varje pollning.
-                previous_daily = exists().where(CaseWork.case_number == Case.case_number,
-                    CaseWork.submission_key.startswith("system:daily_worker:", autoescape=True))
+                previous_daily = exists().where(CaseWork.case_number == Case.case_number, daily)
                 active = exists().where(CaseWork.case_number == Case.case_number, CaseWork.status.in_(ACTIVE))
                 pending = exists().where(ApprovalRequestRecord.case_id == Case.case_number,
                                          ApprovalRequestRecord.status == "pending")
-                cases = session.scalars(select(Case).where(Case.case_type == case_type, Case.status == "open",
-                    ~previous_daily, ~active, ~pending).order_by(Case.created_at, Case.case_number).limit(slots)).all()
+                wanted = [Case.case_type == case_type, Case.status == "open", ~previous_daily, ~active, ~pending]
+                if schedule.kinds is not None:
+                    wanted.append(Case.details["kind"].as_string().in_(schedule.kinds))
+                if schedule.sources is not None:
+                    wanted.append(Case.details["source"].as_string().in_(schedule.sources))
+                cases = session.scalars(select(Case).where(*wanted)
+                                        .order_by(Case.created_at, Case.case_number).limit(slots)).all()
                 candidates = [(c.case_number, case_digest(_view(session, c))) for c in cases]
             for number, digest in candidates:
                 # Samma underlag köas en gång även nästa dag. Ett fel kräver handläggaråtgärd.
                 key = f"daily:{number}:{digest[:20]}"
                 with self.session_factory() as session:
-                    if session.scalar(select(CaseWork.id).where(CaseWork.submission_key == f"system:daily_worker:{key}")):
+                    if session.scalar(select(CaseWork.id).where(CaseWork.submission_key == f"{DAILY_PREFIX}{key}")):
                         continue
                 try:
                     self._submit(number, "Handlägg löneunderlaget och redovisa genomförandet eller behov av hjälp.",
@@ -481,6 +497,18 @@ class CaseWorkspace:
                 except (ConflictError, HarnessError):
                     continue
         return added
+
+    def follow_up(self) -> dict[str, str]:
+        """Öppna ärenden vars senaste uppdrag väntar på människa: ärendenummer → uppdragsstatus."""
+        latest = aliased(CaseWork)
+        newest = select(latest.id).where(latest.case_number == Case.case_number).order_by(
+            latest.created_at.desc(), latest.id.desc()).limit(1).correlate(Case).scalar_subquery()
+        with self.session_factory() as session:
+            rows = session.execute(select(Case.case_number, CaseWork.status).join(
+                CaseWork, CaseWork.case_number == Case.case_number).where(
+                Case.status != "closed", CaseWork.id == newest, CaseWork.status.in_(FOLLOW_UP))
+                .order_by(Case.case_number)).all()
+        return {number: status for number, status in rows}
 
     def mark_interrupted(self, work_id, *, actor, revision):
         """Uttrycklig operatörsåtgärd efter kontroll att den tidigare arbetaren stoppats."""
