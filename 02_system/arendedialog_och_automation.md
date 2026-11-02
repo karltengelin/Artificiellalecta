@@ -171,13 +171,30 @@ Efter driftanteckningarnas uppdatering gav det ändringsstyrda urvalet
 70 Postgres-prov var bortvalda i den körningen. Programkoden är samma kodläge
 som i den tidigare fullständiga lokala verifieringen och Postgres-verifieringen.
 
-**Kvar före användning av dialogen i den befintliga miljön:**
-`OPERATOR_PASSWORD_HASH` saknas i den kontrollerade `.env`-konfigurationen.
-Operatören behöver välja en lokal lösenfras via
-`scripts/web/set_operator_password.py` och starta om webbprocessen.
-Inloggningskravet har inte kringgåtts. Ingen ny lösenfras har valts åt operatören.
-Hela verksamhetskedjan med registrering i beståndet verifieras fortfarande
-först från 2026-11-01, när produktreglerna gäller (F5-5/6).
+**Operatörsinloggning:** operatören valde själv den lokala lösenfrasen via
+`scripts/web/set_operator_password.py` 2026-11-02. Inloggningskravet har inte
+kringgåtts, och ingen lösenfras har valts åt operatören.
+
+### Hela kedjan verifierad i Lakebase 2026-11-02 (F5-5/6)
+
+Efter backup `C:/Claude/Artificiellalecta/backups/20261102T183441Z` (22 tabeller,
+17 244 rader) och operatörens OK provades kedjan skarpt på den märkta
+verifieringspersonen från S6 (Vera Verifiering, AL-000499), med
+`claude-sonnet-5` och den riktiga rollen `agent_forsakring`:
+
+- **F5-5 via UI:t:** operatören loggade in, CASE-000001 (rättelse av 2026-10
+  till 40 000 kr) lämnades över till agenten, förslaget godkändes i
+  `/godkannanden` och betrodd kod stängde ärendet som godkänt (0,0445 USD).
+- **F5-6 med `scripts/diagnostics/smoke_test_case_flow.py --db lakebase --avslag`:**
+  CASE-000002 godkändes och stängdes automatiskt (v3, 40 500 kr), CASE-000003
+  avslogs utan registrering och stängdes av handläggaren som avslaget;
+  28 av 28 kontroller (0,0958 USD). Samma skript gav 28 av 28 i demo och
+  `svc_test` med begränsad testroll.
+
+Tillbakaläst efteråt: bara ärendetabellerna, förslagen, händelseloggen och
+Veras två nya löneunderlagsversioner tillkom; övriga tabeller, bland annat
+501 försäkrade och 15 097 premietransaktioner, är oförändrade. Dagligt urval
+och automatisk slutbehandling är fortfarande avstängda (F5-7).
 
 ## Verifiering och kvarstående delar
 
@@ -187,7 +204,8 @@ idempotens, budget, schema, samtidighet, avbrott och autentisering/CSRF.
 Isolerade Postgres-prov verifierar migration, två arbetare och hela kedjan
 med mänskligt respektive automatiskt beslut. De ger inga nya agentroller.
 Röktest med riktig modell finns i `scripts/diagnostics/smoke_test_case_work.py --run`;
-det använder bara tillfällig lokal demodata och ett läsuppdrag.
+det använder bara tillfällig lokal demodata och ett läsuppdrag. Hela kedjan med
+förslag, beslut och avslut prövas med `scripts/diagnostics/smoke_test_case_flow.py`.
 
 **Kontrollerat 2026-10-31:** arbetsbranchen har synkats med `main` vid
 `f66971f`, inklusive produktrapporten och antagandebiblioteket. Den sammanslagna
@@ -203,7 +221,7 @@ körningen). Ingen framtida regelstatus användes i modellprovet. Ärendevyn har
 kontrollerats visuellt i 1 440 och 390 pixlars bredd med syntetiskt underlag.
 HTTP-prov verifierar inloggning, formulärskydd och vägen till mänskligt beslut.
 Automatisk slutbehandling provas med testmodell och uttryckligt testregeldatum;
-detta ersätter inte F5-5/6:s verifiering i beståndet från 2026-11-01.
+beståndsverifieringen med mänskligt beslut gjordes i F5-5/6 2026-11-02.
 Ett reproducerat samtidighetsfel har rättats: om en annan arbetare hinner avgöra
 maskinbeslutet följs det sparade beslutet upp, utan falskt granskningsstopp eller
 ny registrering. Det nya regressionstestet ingår i helkörningen ovan.
