@@ -345,7 +345,7 @@ def test_actuarial_migration_and_concurrent_submission_postgres():
     from services.db import session_factory_for
     from tests.test_services_postgres import TEST_URL, isolated_schema
     from utils.agent_roles import AKTUARIE
-    from utils.demo_data import create_demo_database
+    from utils.demo_data import seed_demo_stock
 
     if not TEST_URL:
         pytest.skip("Isolerad Postgres saknas")
@@ -373,7 +373,7 @@ def test_actuarial_migration_and_concurrent_submission_postgres():
         # fortfarande saknar rätt till individutdrag, dialog och observationsdata.
         role_url = os.environ.get("SERVICES_TEST_AKTUARIE_POSTGRES_URL") or os.environ.get("SERVICES_TEST_AGENT_POSTGRES_URL")
         assert role_url and role_url != os.environ.get("AGENT_AKTUARIE_DATABASE_URL")
-        create_demo_database(db.engine, with_proposals=False)
+        seed_demo_stock(db.session_factory)
         role_engine = create_engine(role_url, connect_args={"options": f"-csearch_path={db.name}"})
         try:
             with role_engine.connect() as conn:

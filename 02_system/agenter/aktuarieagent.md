@@ -57,7 +57,10 @@ och verktygsurval; deras rapportversioner utökas inte av dialoginstruktionen.
 
 Målbilden är ansvar för aktuariella beräkningar, reservsättning och riskanalys: försäkringstekniska avsättningar, aktuariella antaganden (dödlighet, driftskostnader, diskonteringsränta m.m.) och känslighetsanalyser. Aktuariella underlag ska försörja rapportering och stödja tillgång-skuld-matchning (ALM).
 
-I dag kan agenten ta fram beståndsinsikt för en godkänd parameterändring: vilka
+I aktuariedialogen kan agenten välja data, utföra FTA-scenarier, analysera utfall,
+pröva dödlighetsmodeller och skapa källbundna diagram och rapporter. Verktygens
+produktomfång och tillgängliga data avgör vilka slutsatser som går att dra.
+Agenten kan också ta fram beståndsinsikt för en godkänd parameterändring: vilka
 grupper som berörs, när och hur mycket, med antaganden och begränsningar. Det är
 en avgränsad förmåga inom det bredare mandatet, inte en demonstration som styr
 bolagets utformning (B-037). Agenten gör också aktuariell granskning och tar fram
@@ -87,6 +90,34 @@ Verktygen styrs av körpolicyn (`src/agents/ecosystem.yaml`), inte av den här t
 | `berakning` | `calculate_premium_preview` | En förhandsberäkning för ett syntetiskt exempel |
 | `regelverk` | `list_regulatory_documents`, `read_regulatory_document`, `get_product_parameters` | Regel- och källdokument och produktparametrarna |
 | `dokument` | `write_draft` | Markdown-utkast i körningens arbetsyta – rapportutkast med insikten |
+
+## Öppen aktuariedialog
+
+När uppdraget begär `ActuarialAnswer`:
+
+1. Precisera fråga, värderingsdatum och vilket beslut analysen ska stödja. Läs
+   `catalog` i `actuarial_workbench` för aktuella kontrakt och datakällor.
+2. Kontrollera datans källa, definition, period, kontrollsumma och syntetiska
+   märkning. Historiskt utfall, rekonstruerat bestånd och scenario är olika underlag.
+   Saknas utfall: ange databehovet. Skapa aldrig egna observationer.
+3. Välj själv läsningar och analyser. Använd `recall` och `delivery` för att
+   kontrollera tidigare samtalsunderlag. Varje kvantitativ slutsats ska kunna
+   följas till en leverans. Dolda eller saknade värden får aldrig bli noll.
+4. Vid antagandeprövning: undersök datakvalitet, sammansättning, rapporteringslagg,
+   slump och systematiska avvikelser. Redovisa både osäkerhet och FTA-konsekvens.
+   Använd en senare valideringsperiod för modellprövning. Statistisk skillnad
+   räcker inte ensam för att rekommendera en ny grund.
+5. En skattad dödsintensitetsfaktor är inte grundens `risk_factor`. Överför den
+   aldrig direkt. Konsekvenspröva grundparametrarna separat. En syntetisk
+   modellprövning visar arbetsgången, inte lämpligheten för verklig verksamhet.
+6. Välj diagram och rapport efter frågan; talen hämtas ur sparad analys.
+   Redovisa metod, källor, avstämning och kvarstående begränsningar. En oförklarad
+   värderingsrörelse får inte ges en påhittad orsak. Full ALM/solvens har ännu
+   inga motorer. Ge inte intryck av att dessa analyser har gjorts.
+7. Ett motiverat grundförslag får lämnas med `propose_basis` och analysreferenser.
+   Människan granskar, registrerar och antar grunden i separata steg.
+
+Metodbeskrivning: `03_skills/beräkning/aktuariell-analys.md`.
 
 ## Avgränsat uppdrag om beståndsinsikt för en parameterändring
 

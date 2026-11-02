@@ -81,3 +81,49 @@ intervall utan information om kostnadsvarians. ALM och solvens behöver egna mot
 Webbprocessen är en lokal arbetare. Processavbrott kan lämna ett uppdrag som
 pågående; operatören avbryter det i dialogen och beställer ett nytt meddelande
 efter kontroll av leveranserna. Automatisk återstart eller schemalagd drift ingår inte.
+
+## Verifiering och införandestatus 2026-11-02
+
+Implementationen ligger på `codex/aktuarie-dialog-analys`. Den är ännu inte
+mergad till `main` och ingen skarp schemamigration har genomförts.
+De fyra nya tabellerna saknas ännu i Lakebase. Den befintliga tjänsten på
+port 8765 har inte startats om.
+
+- Helkörning genom `run_tests.py --all --run --postgres`: **1 677 godkända,
+  ett fel**. Felet var en gammal förväntan på menytexten ”Kommande arbetsvägar”.
+  Förväntan rättades till ”Kommande registervyer”; efter synk med senaste
+  `origin/main` passerade det provet tillsammans med aktuariens lokala prov,
+  katalogkontroller och skriptens CLI-kontroller: **59 godkända, 716 bortvalda**.
+- Efter slutlig instruktionstext och rättad PostgreSQL-testuppsättning kördes
+  dialog-, profil-, skill-, katalog- och menyproven igen: **86 godkända,
+  689 bortvalda**. Inga överhoppade prov i dessa urval. Ruff passerade för
+  ändrade Pythonfiler; befintliga lintfel utanför ändringen har inte rättats.
+- Ett utökat isolerat PostgreSQL-prov kördes därefter: **1 godkänt,
+  395 bortvalda**. Det verifierar tom migration och omkörning, samtidiga
+  beställningar, verklig begränsad databasroll, tillåtna läsningar och en
+  serverberäknad FTA. Rollen nekas individutdrag och nya interna tabeller.
+- Statistiken kontrolleras mot kända oberoende Poisson-intervall; scenarier
+  mot riktning och PV-avstämning; dödlighetsmodellens skattning mot ett
+  undanhållet år. Även källmanipulation, småcellsskydd, avbrott, idempotens,
+  dialogägarskap, inloggning/CSRF och godkännandekön har prov.
+- Riktig modell via ordinarie harness (`openai:gpt-6.1-sol`): katalog och grund,
+  överlevnadsanalys, diagram, rapport och validerat slutsvar **godkända**,
+  0,059077 USD. Modellvalet överstyrdes enbart för detta prov; bolagets
+  modellpolicy ändrades inte. Anthropic-försöket stoppades av otillräckligt
+  kontosaldo efter delresultat och räknas inte som godkänt.
+- Den riktiga modellens PDF renderades och alla tre sidor granskades med
+  DM Sans och vektordiagram. Ingen tom slutsida. Webbens dialog och leveranser
+  granskades visuellt med separat skriptad testmodell; sista inskickningen av
+  en följdfråga kunde inte utföras när datorverktygets automatiska granskning
+  stoppade anropet på grund av användningsgränsen. HTTP- och harnessprov för
+  följdfrågor passerade; det sista visuella momentet räknas inte som utfört.
+- Lakebase kontrollerades i en uttryckligen **skrivskyddad transaktion**:
+  torrkörd migration och scenario på befintliga 501 försäkrade, med känt
+  värderingsdatum, grund, kurva och utdragskontrollsumma. Analysen fungerade
+  utan nya tabeller. Ingen migration, observation eller värdering sparades.
+
+En separat lokal granskningsserver kan startas med kommandot ovan. Den använder
+demodata. Inför Lakebase-drift återstår backup, samordnad tillämpning av den
+förberedda migrationen och omstart med `--actuary-workspace`. Verkliga
+erfarenhetsanalyser kräver dessutom avstämda observationsleveranser via
+importkontraktet; sådana skapas inte av agenten.

@@ -28,7 +28,7 @@ Byggt på operatörens uppdrag 2026-11-02. Verktyg: `actuarial_workbench` i podd
 ## Tillgängliga analysfamiljer
 
 - Skrivskyddad FTA-provberäkning av dagens bestånd.
-- Scenarier på ett sparat utdrag: räntekurva, dödsintensitet, framtida
+- Scenarier på ett sparat eller nytt, kontrollsummerat utdrag: räntekurva, dödsintensitet, framtida
   dödlighetsförbättring, driftkostnad och kostnadsindexering.
 - Garantins och driftkostnadernas årliga kassaflöden, avstämda mot FTA.
 - Kohortens dödsrisk och överlevnad på en versionerad grund.

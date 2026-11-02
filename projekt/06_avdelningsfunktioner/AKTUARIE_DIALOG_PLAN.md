@@ -52,3 +52,13 @@ Historiska garantigrunder påverkas aldrig av erfarenhetsanalys.
   manipulationsprov, behörigheter, PostgreSQL och den faktiska webbvägen verifieras.
 - Saknat utfall ger databehov. Ett scenario eller en syntetisk observation
   presenteras aldrig som fastställd grund eller verifierad verklig erfarenhet.
+
+## Leveransläge 2026-11-02
+
+Byggt och verifierat på arbetsbranchen: dialog, instruktioner, analysgateway,
+datakontrakt och import, beräkningsmotorer, diagram, rapporter och grundförslag.
+Detaljer om provresultat och kvarstående visuell kontroll finns i
+[driftbeskrivningen](../../02_system/aktuarie_dialog.md#verifiering-och-införandestatus-2026-11-02).
+Riktig modell och skrivskyddad Lakebase-analys är provade. Merge till `main`,
+de nya tabellerna i Lakebase och driftsättning återstår. Saknade verksamhetsmotorer
+och observationsleveranser enligt ovan kvarstår som egna beroenden.
