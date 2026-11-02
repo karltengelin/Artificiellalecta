@@ -33,6 +33,9 @@ STEP_STATUS = {"pending": "Väntar", "running": "Körs", "completed": "Klart", "
                "rejected": "Avslaget", "skipped": "Hoppades över", "reconciliation_required": "Behöver avstämning"}
 ANSWER_STATUS = {"answered": "Besvarad", "partial": "Delvis besvarad", "unavailable": "Underlag saknas",
                  "needs_clarification": "Behöver förtydligas"}
+TOOL_STATUS = {"done": "Utfört", "error": "Fel", "denied": "Nekat", "pending_approval": "Väntar på godkännande",
+               "not_executed": "Inte utfört", "unknown": "Okänt utfall"}
+ACCESS_LEVEL = {"AGENT": "Direkt inom mandat", "APPROVAL": "Kräver godkännande", "HUMAN_ONLY": "Endast handläggare"}
 
 
 class Submissions:
@@ -161,6 +164,12 @@ def detail_page(request, flow_id, *, error=None, status_code=200):
         output = (flow.step("answer").result or {}).get("output") or {}
         answer = output.get("result")
         observations = (flow.step("render").result or {}).get("observations") or []
+        # An unavailable journal must not hide the stored report or its review controls.
+        trace, trace_error = None, False
+        try:
+            trace = c.trace(flow_id)
+        except Exception:
+            trace_error = True
         # Verify the very files displayed for review. A modified file disables all review controls.
         integrity_error = False
         if view.delivery_version is not None:
@@ -171,6 +180,8 @@ def detail_page(request, flow_id, *, error=None, status_code=200):
                 integrity_error = True
         return respond(request, "question.html", {"assignment": view, "flow": flow, "answer": answer,
                        "observations": observations, "integrity_error": integrity_error,
+                       "trace": trace, "trace_error": trace_error,
+                       "tool_status": TOOL_STATUS, "access_level": ACCESS_LEVEL,
                        "error": error, "busy": c.busy}, status_code=409 if integrity_error else status_code)
     except FlowError:
         raise HTTPException(404, "Uppdraget finns inte i denna miljö") from None

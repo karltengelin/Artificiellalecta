@@ -41,6 +41,11 @@ class _PaginatedReport(Report):
             current = pending.pop(0)
             available = self.y - 57
             _, height = current.wrap(CW, available)
+            if isinstance(current, Spacer) and height > available:
+                # Spacing may consume the remaining page, but must not create a page
+                # without content when it follows the final paragraph or table.
+                self.y = 57
+                continue
             if height <= available:
                 current.drawOn(self.c, M, self.y - height)
                 self.y -= height
@@ -58,7 +63,8 @@ class _PaginatedReport(Report):
                 raise ValueError("Rapportdelen kan inte delas på A4")
             else:
                 pending.insert(0, current)
-            self.new_page()
+            if pending:
+                self.new_page()
 
 
 def render_report(markdown: str, metadata: ReportMetadata, *, fonts: Fonts = DEFAULT_FONTS) -> bytes:
