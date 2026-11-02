@@ -12,7 +12,7 @@ faktiskt påverkar systemen och databaserna bakom: policys, förmåner, tillstå
 🟡 **Handläggar-UI v1 byggt och verifierat i Lakebase (Fas 4, 2026-10-12)**, lokalt och utan inloggning.
 Ärenden och handläggaragent för `salary_report` är byggda (F5-1–4, B-033).
 `cases` och agentrollens rättigheter infördes i Lakebase 2026-10-24. Kvar i
-F5-5–6: slutverifiering av agentförslag och hela ärendeflödet från 2026-11-01.
+F5-5–6: agentförslag och hela ärendeflödet verifierade i Lakebase 2026-11-02.
 Ärendedialog och självständig köhandläggning har lokalt stöd sedan 2026-10-31;
 tabellerna är införda i Lakebase efter backup och OK samma dag. Val av dagliga/automatiska fall återstår. Fler ärendetyper
 är fortsatt obygda. Den breda modelloberoende
@@ -46,7 +46,7 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
     i `src/agents/` (3b-1–3b-8, röktestet gick igenom hos båda leverantörerna), se `02_system/harness.md`.
 - **`cases`-tabellen** och ärendeoperationerna är byggda enligt
   [ARENDEN_BESLUTSFORSLAG.md](ARENDEN_BESLUTSFORSLAG.md), godkänt som B-033.
-  Tabellen och agentrollens läsrätt finns i Lakebase; slutverifiering enligt F5-5–6 återstår.
+  Tabellen och agentrollens läsrätt finns i Lakebase; ärendeflödet är verifierat där 2026-11-02 (F5-5–6).
 
 ## Befintlig grund i repot
 
@@ -86,7 +86,7 @@ Den närmaste fråge-/rapportkedjan i [projekt 10](../10_operatörscentral/PROJE
   - arbetsgivarens uppgifter och avslut
   - försäkringsbesked
   - interna id:n i adresserna
-- Slutverifiera agentförslag och hela ärendeflödet i F5-5–6 från 2026-11-01; nuvarande regelstatus får inte kringgås.
+- Agentförslag och hela ärendeflödet är slutverifierade i F5-5–6 (klart 2026-11-02, se ATT_GORA).
 - Verifiera hela verksamhetsflödet med ärendearbetaren från 2026-11-01 enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy.
 - Samordna modelloberoende bolagsdialog med [projekt 10](../10_operatörscentral/PROJEKTPLAN.md), OC-3, och försäkringsteamets område med OC-8 (B-036).
 

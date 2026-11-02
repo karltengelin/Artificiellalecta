@@ -7,7 +7,7 @@
 | **Funktionsområde** | Kundadministration & ärendehantering |
 | **Team** | Försäkring & kund (`forsakring`) – se `../agentekosystem.md` §3 (B-026) |
 | **Roll i teamet** | Ledande agent (orkestrerare) |
-| **Status** | 🟡 Byggd för ärendetypen `salary_report` (Fas 5 F5-1–4, B-033). `cases` och agentrollens rättigheter finns i Lakebase; slutverifiering av ärendeflödet återstår i F5-5–6 från 2026-11-01 |
+| **Status** | 🟡 Byggd för ärendetypen `salary_report` (Fas 5 F5-1–4, B-033). `cases` och agentrollens rättigheter finns i Lakebase; ärende → förslag → godkännande eller avslag → stängt är verifierat i Lakebase 2026-11-02 (F5-5–6). Självständig drift (F5-7) återstår |
 | **Skapad** | 2026-05-15 |
 
 ## Mandat
