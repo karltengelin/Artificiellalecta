@@ -44,6 +44,30 @@ Se [MASTER_CONTEXT §1](MASTER_CONTEXT.md#1-vision-och-syfte) och
 
 ## 🔴 Hög prioritet – grunden
 
+### Nästa bygguppdrag – avstämd månad från mottagen premie till förklarad FTA-förändring
+
+**Prioriterat av Karl 2026-11-02 för nästa arbetstillfälle.** Börja nästa gång med
+en sammanhängande, avstämd månad: mottagen nettopremie → ny historikbevarande
+garantidel och kapitalrörelse → utgående värdering → förklarad FTA-förändring.
+Uppdraget förenar relevanta delar av paket A/B och A7 i projekt 1/4/6, med
+kassaflödesgräns mot projekt 5. Återanvänd befintliga tjänster, värderingsmotor,
+agentdialog och grunder. Saknade journaler byggs som gemensamma verksamhetsunderlag.
+
+- **Acceptans:** ingående FTA + identifierade förändringar = utgående FTA,
+  avstämt på öret, med en spårbar källa för varje post. Underlagen ska ha period,
+  grundversion och kontrollsumma. Oförklarade differenser stoppar godkännandet.
+- **Första omfattning:** premier och nya garantidelar, tidsförlopp/förräntning,
+  ändrad räntekurva och övriga antagandeändringar. Kapital, garanti och FTA
+  hålls isär. Dubbletter får ingen dubbel ekonomisk effekt.
+- **Vid start:** avgränsa kontrakten för mottagen premie och kapital-/garantijournal,
+  avstäm ingående bestånd och välj stödda datum och gällande grunder. Kontrollera
+  kvarstående Lakebase-införande enligt [driftbeskrivningen](02_system/aktuarie_dialog.md).
+  Syntetiska underlag märks uttryckligt. Utbetalningar och dödsfall tillkommer
+  när respektive verksamhetsmotor finns.
+- **Nytta:** användbar aktuariell månadsuppföljning och gemensamt underlag för
+  kommande ALM och solvens. Full ALM/solvens har separata tillgångs-, ekonomi-
+  och riskberoenden och ingår inte i denna första leverans.
+
 ### Aktuellt operatörsuppdrag 2026-11-02 – aktuarien som verksamhetskollega
 
 På Karls uppdrag har [dialog och analysarbetsbänk](02_system/aktuarie_dialog.md) byggts och verifierats
