@@ -7,6 +7,12 @@
 > **Hör till:** projekt 6 (aktuariell värdering, FTA) med kopplingar till projekt 2, 10 och
 > compliance-teamet. Kompletterar [projektplanen](PROJEKTPLAN.md) och `harness.md` §9.2.
 
+**Operatörsuppdrag 2026-11-02:** [dialog och analys](AKTUARIE_DIALOG_PLAN.md)
+kompletterar A3 och delar av A7–A9. Agenten väljer verktyg utifrån ett samtal;
+statistisk analys byggs som skills på befintlig agent. Se [aktuell arbetsväg,
+datakontrakt och gränser](../../02_system/aktuarie_dialog.md). Detta är ingen ny
+beslutsloggspost och ändrar inga historiska garantigrunder.
+
 Dokumentet svarar på fyra frågor:
 
 1. Vad kan aktuarieteamet göra i dag? (§1)
@@ -486,9 +492,9 @@ Förslaget startar inget bygge och ändrar inte prioriteringen i ATT_GORA (OC-3a
 | **A4** | Antagandebibliotek som data (`valuation_bases`) med förslag och införande | A1 | ✅ Byggt och testat lokalt 2026-10-31: tabell, fem operationer, podden `antaganden` (läsning) och startgrunderna. Postgres-proven godkända mot `svc_test` (migrationen och rollen `agent_aktuarie`). Skapat i Lakebase 2026-10-31 efter backup och OK, och läsrätten verifierad med rollens anslutning. Agentens förslagsväg öppnas i A9 |
 | **A5** | Rekonstruerat startbestånd S-04 med `G_j` och `C` (svar Q4) | A1 | 🟡 Del 1 byggd 2026-10-31: beräkningsmotorn för dödlighet, annuitet och garantidelar (`actuarial_annuity.py`), med leveranskontrollens facit. Avkastningsserien `AVK-SIM-2026-01` (syntetisk varierande bana, operatörens val 2026-10-31) finns som ny familj i antagandebiblioteket, införd i Lakebase 2026-10-31 efter backup `backups/20261031T151410Z`. Del 2 byggd 2026-10-31: datautdraget med garantidelar och pensionskapital per försäkring (`valuation_extract.py`, `capital_rollforward.py`) och kontrollerna i kontraktet §5.3. Prövat skrivskyddat mot Lakebase per 2026-09-30: 492 försäkringar, 15 097 garantidelar, alla kontroller godkända. Kapitalavgift och skattebelastning per år är därefter flyttade från koden till `product_parameters`; uppgraderingen av tabellen är införd i Lakebase 2026-10-31 efter backup `backups/20261031T172901Z` och OK, med alla premier omräknade identiskt. Utdraget sparas sedan A6 med värderingskörningen (`valuation_extracts`, i Lakebase sedan 2026-10-31) |
 | **A6** | Värderingsmotor med kontrollfall, `valuation_runs`, `lock_valuation` | A4, A5 | 🟡 Byggd och testad lokalt 2026-10-31: FTA, villkorad återbäring och underskott per försäkring (`fta_valuation.py`, [skill](../../03_skills/beräkning/fta-vardering.md)) med kurvdiskontering och skatteavdrag, kontrollfallen K1–K10 som automatiska tester, tabellerna `valuation_extracts`, `valuation_runs` och `valuation_results`, operationerna `run_valuation` (systemsteg, APPROVAL), `list_valuation_runs` och `get_valuation_run` (AGENT, podden `aktuariell`) och `lock_valuation` (HUMAN_ONLY). Avvikelse från §4.2: `run_valuation` är `write` och monteras inte för agenten, eftersom den sparar en körning och läser individrader. Migrationen och rollens rättigheter provade mot `svc_test`. Provvärdering mot Lakebase per 2026-09-30 som scenario, skrivskyddad och med bara aggregat: alla kontroller godkända, 492 försäkringar, ΣC 42 022 578,75 kr, FTA 15 868 956,53 kr (därav driftkostnader 4 488 027,67 kr), VÅ 26 194 970,84 kr och U 41 348,62 kr för 15 försäkringar. VÅ − U = ΣC − FTA på öret. Tabellerna skapade i Lakebase 2026-10-31 efter backup `backups/20261031T173353Z` och OK, och läsrätten för `agent_aktuarie` verifierad med rollens anslutning. Kvar: den första sparade basvärderingen, som kräver gällande SIM-V (från 2026-12-31) och avkastning till och med värderingsmånaden |
-| **A7** | Förändringsanalys och scenariomotor; sidorna FTA-analys och Scenarier | A6 | |
+| **A7** | Förändringsanalys och scenariomotor | A6 | Delvis i dialogarbetsbänken 2026-11-02: scenarier och grundjämförelse. Full förändringsanalys per verksamhetshändelse kvarstår. Separata analysknappar krävs inte |
 | **A8** | Flödet `valuation_close`, avsättningsunderlag och rapportunderlag till compliance | A7, compliancekontrakt | |
-| **A9** | Kassaflödesprognos, erfarenhetsanalys, `assumption_review`, data scientist-agent | A6 | |
+| **A9** | Kassaflödesprognos, erfarenhetsanalys, `assumption_review`, data scientist-agent | A6 | Delvis i dialogarbetsbänken 2026-11-02: garantins/kostnadernas kassaflöden, utfallsanalys, begränsad dödlighetsmodellering, källbundna leveranser och grundförslag. Schemalagd översyn och separat specialistagent återstår; verkliga utfall måste levereras av dataproducenter |
 | **A10** | Simulerat RKK och ERS-underlag | FI-kalibrering, beslut | Senare |
 
 ---

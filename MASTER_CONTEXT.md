@@ -124,6 +124,16 @@ i standardpolicyn. De tre nya tabellerna infördes tomma i Lakebase 2026-10-31
 efter backup och operatörens OK; tidigare radantal är oförändrade.
 Se [plan och byggstatus](02_system/arendedialog_och_automation.md).
 
+**Aktuarien som verksamhetskollega (beställt 2026-11-02):** teamets ordinarie
+arbetsväg är dialog där operatören kan ge och precisera aktuariella uppdrag.
+Agenten upptäcker behöriga data och väljer registrerade analysverktyg; inga
+uppgiftsspecifika knappar krävs för varje analys. Dialog, källunderlag och
+leveranser lagras i vald databas och använder samma tjänstelager, harness och
+modellpolicy som övriga företaget. Tunga beräkningar är avgränsade systemsteg;
+agenten får bara skyddade aggregat. Människan fastställer grunder och värderingar.
+Se [byggplanen](projekt/06_avdelningsfunktioner/AKTUARIE_DIALOG_PLAN.md) och
+[arbetsväg och drift](02_system/aktuarie_dialog.md).
+
 ### 3.9 Gemensamt grafiskt designspråk – Digital klarhet
 
 Bolagets grafiska riktning är **Digital klarhet** (B-034): indigo, ljusa ytor,
@@ -172,7 +182,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 3 | Kundportal | `projekt/03_kundportal/` | Låtsas-hemsida: se pension, förmåner, pausa/skjuta upp utbetalning | 🔲 Ej påbörjat | Nämnd som senare fas i B-020 |
 | 4 | Produktregelverk & villkor | `projekt/04_produktregelverk/` | Tolka gällande regelverk till produktregler och försäkringsvillkor | 🟢 Dokumentunderlag klart och infört (B-031, gäller från 2026-11-01); kodbygge separat | `01_domän/`, `04_regulatoriskt/` |
 | 5 | Kapitalförvaltning | `projekt/05_kapitalförvaltning/` | Paper trading-portfölj + gränssnitt för att analysera innehav och styra allokering | 🟡 Fas 2a/2b: dokumentutkast; 2c: datamodell byggd/testad lokalt, ej i Lakebase. Antagande och handelsfunktion återstår | Fas 2, B-019, `05_styrdokument/` |
-| 6 | Avdelningsfunktioner | `projekt/06_avdelningsfunktioner/` | Ekonomi, aktuariell värdering, risk och rapportunderlag; samordning med administration och kapital | 🟡 Behov och första kontraktsarbete preciserade 2026-10-27; aktuarieteamets metod, harness och arbetsyta beslutade (B-042), värderingskontrakt A1 fastställt. S-04 och FTA-motor byggda; teamyta och mänsklig värderingsväg anslutna. Förändringsanalys, periodflöde och ekonomi återstår | SIM-underlag, processöversiktens V-10–12, paket A/B och fastställt värderingskontrakt |
+| 6 | Avdelningsfunktioner | `projekt/06_avdelningsfunktioner/` | Ekonomi, aktuariell värdering, risk och rapportunderlag; samordning med administration och kapital | 🟡 Behov och första kontraktsarbete preciserade 2026-10-27; aktuarieteamets metod, harness och arbetsyta beslutade (B-042), värderingskontrakt A1 fastställt. S-04 och FTA-motor byggda; teamyta och mänsklig värderingsväg anslutna. Dialog och analysarbetsbänk tillbyggda 2026-11-02 med scenarier, kassaflöden, erfarenhet, begränsad dödlighetsmodellering och diagram/rapporter. Full förändringsanalys, periodflöde och ekonomi återstår | SIM-underlag, processöversiktens V-10–12, paket A/B och fastställt värderingskontrakt |
 | 7 | Kundchattbot | `projekt/07_kundchattbot/` | Chattbot på kundwebben som svarar på regelverks-/villkorsfrågor om kundens försäkring | 🔲 Ej påbörjat | Bygger på 3 + 4 |
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🟡 Statisk ögonblicksbild uppdaterad 2026-10-25 mot main @ 5fd10ab: tio projekt, tre agentprofiler, 25 operationer och kvarstående verksamhetsbygge; inga livevärden | `projekt/08_företagsöversikt/foretagsoversikt.html` |
 | 9 | Processkartor | `projekt/09_processkartor/` | Processkartor över agenternas arbete: utlösare, mandat, verktyg, resultat och godkännanden; levererar till delprojekt 8 | 🟡 Plan upplagd | Första målflödet i `projekt/02_bi_insikter/DASHBOARD_DESIGN.md` |

@@ -102,6 +102,16 @@ class CaseAnswer(_Strict):
     limitations: list[str] = Field(max_length=8)
 
 
+class ActuarialAnswer(_Strict):
+    """Öppet aktuariellt uppdrag, med verifierbara analysreferenser."""
+
+    status: Literal["answered", "needs_information", "needs_human"]
+    summary: str = Field(min_length=1, max_length=12000)
+    questions: list[str] = Field(max_length=8)
+    limitations: list[str] = Field(max_length=12)
+    analysis_refs: list[str] = Field(max_length=15, description="Id:n som arbetsbänken gav eller läste i denna körning")
+
+
 class ProductReportSummary(_Strict):
     """Produktrapporten (A2, B-042): aktuarien sammanfattar bestånd och premier för ett år.
 
@@ -119,6 +129,7 @@ class ProductReportSummary(_Strict):
 
 
 RESULT_SCHEMAS: dict[str, type[_Strict]] = {
+    "ActuarialAnswer": ActuarialAnswer,
     "CaseAnswer": CaseAnswer,
     "InterpretationProposal": InterpretationProposal,
     "PortfolioImpactResult": PortfolioImpactResult,
@@ -160,6 +171,7 @@ def verify(
     yearly: dict[str, dict[int, dict]] = {SNAPSHOT: {}, PREMIUM_FLOWS: {}}  # år -> senaste lyckade läsning
     metrics_failed = False  # ett anrop som tjänstelagret avböjde, t.ex. en datakälla som inte kunde läsas
     read_case = False
+    analyses = {}
     for outcome in dispatches:
         for call in outcome.calls:
             if call.status != CallStatus.DONE:
@@ -167,6 +179,10 @@ def verify(
                 continue
             output = json.loads(call.result.content).get("output") or {}
             operation = operation_of.get(call.skill)
+            if operation == "actuarial_workbench":
+                delivery = output.get("payload", {})
+                if "id" in delivery and "content" in delivery:
+                    analyses[delivery["id"]] = delivery
             read_case |= operation == "get_case"
             if operation == READ_DOCUMENT:
                 doc = output["document"]
@@ -196,6 +212,20 @@ def verify(
         problems.append("tolkningen anger ingen läst källa")
     if isinstance(result, CaseAnswer) and not read_case:
         problems.append("ärendet har inte lästs med get_case i körningen")
+    if isinstance(result, ActuarialAnswer):
+        problems += [f"analysen {ref} har inte lästs eller skapats i körningen"
+                     for ref in result.analysis_refs if ref not in analyses]
+        cited = [analyses[ref]["content"] for ref in result.analysis_refs if ref in analyses]
+        if cited:
+            values, dates = _values_and_dates(cited)
+            values |= {Decimal(n) for n in (0, 1, 2, 10, 95, 100)}
+            problems += [f"talet {n} i svaret finns inte i analysunderlaget"
+                         for n in _unsupported([result.summary, *result.limitations], values, dates)]
+        else:
+            problems += [f"talet {n} saknar läst analysunderlag"
+                         for n in _unsupported([result.summary], {Decimal(0), Decimal(1)}, set())]
+        evidence["analyses"] = [{k: v for k, v in analyses[ref].items() if k != "content"}
+                                for ref in result.analysis_refs if ref in analyses]
     if isinstance(result, PortfolioImpactResult):
         if estimate is None:
             problems.append("ingen beräkning med estimate_parameter_change_impact i körningen")

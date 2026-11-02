@@ -67,7 +67,7 @@ class _PaginatedReport(Report):
                 self.new_page()
 
 
-def render_report(markdown: str, metadata: ReportMetadata, *, fonts: Fonts = DEFAULT_FONTS) -> bytes:
+def render_report(markdown: str, metadata: ReportMetadata, *, fonts: Fonts = DEFAULT_FONTS, charts=None) -> bytes:
     """Render the documented OC-3a subset. Same content, metadata and fonts give identical bytes.
 
     DM Sans must already be registered with register_dm_sans. An explicit fonts argument
@@ -91,6 +91,18 @@ def render_report(markdown: str, metadata: ReportMetadata, *, fonts: Fonts = DEF
         text = lines[i].strip()
         i += 1
         if not text:
+            continue
+        if text.startswith("!["):
+            reference = re.fullmatch(r"!\[[^\]]*\]\(chart:([a-z0-9]+)\)", text)
+            if reference is None or not charts or reference[1] not in charts:
+                raise ValueError("Diagrammet saknar ett kontrollerat vektorunderlag")
+            drawing = charts[reference[1]]
+            factor = CW/drawing.width
+            drawing.scale(factor, factor)
+            drawing.width *= factor
+            drawing.height *= factor
+            report.put(drawing)
+            report.put(Spacer(1, 12))
             continue
         if text.startswith("# ") and i == 1:
             if text[2:] != metadata.title:

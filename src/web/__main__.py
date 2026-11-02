@@ -49,8 +49,13 @@ def main() -> None:
 
         register_dm_sans(args.report_font_dir)
         service, agent, questions, reports = build_actuary_services(settings, ai=AIClient(), renderer=render_report)
+        from agents.actuarial_dialogue import ActuarialDialogue
+
+        dialogue = ActuarialDialogue(service, questions.engine.runtime.service, questions.engine.runtime.ai,
+                                     environment_id=settings.database, dataset_ref=settings.dataset_ref)
         app = create_app(service=service, settings=settings, case_agent=agent,
-                         question_console=questions, product_report_console=reports)
+                         question_console=questions, product_report_console=reports,
+                         actuarial_dialogue_console=dialogue)
     else:
         app = create_app(settings=settings)
     print(f"Handläggar-UI: http://{HOST}:{port}  ·  {settings.database_label}  ·  handläggare {settings.handler_id}", flush=True)

@@ -699,6 +699,24 @@ Ett segment per läge och födelsedecennium (`UNIQUE (run_id, state, cohort)`). 
 
 **Skrivs av** `run_valuation` (`APPROVAL`, PR-ITP1-028 och PR-ITP1-031; systemsteg eller människa) och `lock_valuation` (`HUMAN_ONLY`, granskningssumma och transaktionsbundet datumlås före radlås på körningen och datumets låsta körning; `tjänstelager.md` §9.8). **Läses av** `list_valuation_runs` och `get_valuation_run` (`AGENT`, podden `aktuariell`), som aldrig läser `valuation_extracts`. `agent_aktuarie` får `SELECT` på `valuation_runs` och `valuation_results`, men ingen rättighet på `valuation_extracts` (`tjänstelager.md` §9.8).
 
+## 9l. Aktuariedialog, erfarenhetsunderlag och analysleveranser
+
+Modeller: `src/models/actuarial_workspace.py`. Gemensamt schema för lokal SQLite
+ och Lakebase/Postgres. [Drift och kontrakt](aktuarie_dialog.md).
+
+| Tabell | Nyckel och innehåll | Kontroller |
+|---|---|---|
+| `actuarial_datasets` | Versions-id, typ, titel, källbundet JSON-underlag, SHA-256, skapare och datum | Typade observationsceller; ingen överskrivning genom tjänsten; import HUMAN_ONLY |
+| `actuarial_conversations` | Dialog-id, titel, operatör och datum | Dialogåtkomst binds till verifierad operatör |
+| `actuarial_turns` | Körnings-id, dialog-FK, beställningsnyckel, meddelande, status, revision, körreferens och resultat | Unik beställning per dialog; högst en köad/pågående körning per dialog; kontrollerade statusvärden |
+| `actuarial_analyses` | Leverans-id, dialog-FK, körreferens, typ, titel, kontrollerat innehåll och SHA-256 | Underlag, analys, diagram, rapport och förslagsjournal binds till dialogen; läsning kontrollerar innehållet |
+
+Tabellerna skrivs av den betrodda dialogadaptern/systemarbetaren. Agentens
+begränsade databasroll får inga nya rättigheter. Individutdragen är fortsatt
+stängda för agenten. Migration: `scripts/migrations/migrate_actuarial_workspace.py`,
+torrkörning som standard och backupkrav vid skarp körning. Erfarenhetsdata
+importeras separat, aldrig från fabricerade modellutfall.
+
 ## 10. Datakvalitet och valideringar
 
 **På applikationsnivå (Python/SQLAlchemy):**

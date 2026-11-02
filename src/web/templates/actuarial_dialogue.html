@@ -1,0 +1,38 @@
+{% extends "actuary_base.html" %}
+{% block title %}Samtal med aktuarien{% endblock %}
+{% block actuary_content %}
+<p class="oc-eyebrow">AKTUARIETEAMETS ARBETSPLATS</p><h1>Samtal med aktuarien</h1>
+<p class="actuary-intro">Ge ett uppdrag, undersök en fråga och arbeta vidare med resultatet tillsammans. Aktuarien hämtar underlag och väljer analysverktyg.</p>
+{% if operator_user %}
+<details class="panel"><summary>Tidigare samtal</summary><p><a href="/team/aktuarie/dialog">Börja ett nytt samtal</a></p>{% for c in conversations %}<p><a href="/team/aktuarie/dialog/{{ c.id }}">{{ c.title }}</a></p>{% else %}<p>Inga tidigare samtal i denna miljö.</p>{% endfor %}</details>
+{% if dialogue %}
+{% if dialogue.active %}<div hx-get="/team/aktuarie/dialog/{{ dialogue.id }}" hx-trigger="every 3s" hx-select=".actuary-body" hx-target=".actuary-body" hx-swap="outerHTML" aria-hidden="true"></div>{% endif %}
+<section class="dialogue-messages" aria-label="Samtal">
+{% for turn in dialogue.turns %}
+<article class="panel dialogue-human"><p class="oc-eyebrow">DU</p><p class="dialogue-text">{{ turn.instruction }}</p></article>
+<article class="panel"><p class="oc-eyebrow">AKTUARIEN · {{ dialogue.statuses[turn.status] }}</p>
+{% if turn.result.get('summary') %}<div class="dialogue-text">{{ turn.result.summary }}</div>{% endif %}
+{% set answer=turn.result.get('output',{}).get('result',{}) if turn.result.get('output') else {} %}
+{% for question in answer.get('questions',[]) %}<p><strong>För att komma vidare:</strong> {{ question }}</p>{% endfor %}
+{% if answer.get('limitations') %}<details><summary>Begränsningar</summary><ul>{% for limitation in answer.limitations %}<li>{{ limitation }}</li>{% endfor %}</ul></details>{% endif %}
+{% if turn.status in ['running','queued'] %}<p role="status">Uppdraget är sparat. Aktuarien arbetar med ditt meddelande.</p><p><a href="/team/aktuarie/dialog/{{ dialogue.id }}">Uppdatera samtalet</a></p>
+<form method="post" action="/team/aktuarie/dialog/{{ dialogue.id }}/avbryt/{{ turn.id }}" hx-boost="false"><input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><button class="secondary">Avbryt arbetet</button></form>{% endif %}
+<details><summary>Underlag och körspår</summary><p>{{ turn.run_id }}</p>{% if turn.result.get('cost_usd') is not none %}<p>{{ '%.4f' | format(turn.result.cost_usd) }} USD</p>{% endif %}
+{% for d in dialogue.deliveries if d.run_id == turn.run_id %}<p>{{ d.title }} · {{ d.checksum }}</p>{% endfor %}</details>
+</article>{% endfor %}</section>
+{% if dialogue.deliveries %}<section class="panel"><h2>Arbetsunderlag och leveranser</h2>
+{% for d in dialogue.deliveries %}{% set link='/team/aktuarie/dialog/' ~ dialogue.id ~ '/leverans/' ~ d.id %}
+{% if d.kind == 'chart' %}<figure><img src="{{ link }}/diagram.svg" alt="{{ d.title }}" class="dialogue-chart"><figcaption>{{ d.title }} · <a href="{{ link }}/diagram.svg">Hämta diagram</a></figcaption></figure>
+{% elif d.kind == 'report' %}<p><strong>{{ d.title }}</strong> <span class="pill">Utkast</span> · <a href="{{ link }}/rapport.pdf">PDF</a> · <a href="{{ link }}/rapport.md">Markdown</a></p>
+{% else %}<p><a href="{{ link }}/underlag.json">{{ d.title }}</a> · <span class="small muted">{{ d.id }}</span></p>{% endif %}
+{% endfor %}</section>{% endif %}
+{% endif %}
+{% if not dialogue or not dialogue.active %}<section class="panel"><h2>{{ 'Fortsätt samtalet' if dialogue else 'Vad vill du arbeta med?' }}</h2>
+<form method="post" action="/team/aktuarie/dialog/{{ conversation_id }}" hx-boost="false" class="actuary-form" data-question-start>
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="submission_key" value="{{ submission_key }}">
+<label for="actuarial-message">Ditt meddelande</label><textarea name="message" id="actuarial-message" rows="5" maxlength="6000" required placeholder="Till exempel: Undersök om våra dödlighetsantaganden fortfarande är rimliga. Visa underlag, osäkerhet och vad en ändring skulle betyda för FTA."></textarea>
+<p class="small muted">Aktuarien arbetar med behöriga underlag i vald miljö. Modellkörningen använder teamets ordinarie budget. Resultat och förslag kräver granskning.</p>
+<button type="submit">Skicka till aktuarien</button><p data-question-progress role="status" hidden>Meddelandet registreras. Aktuarien börjar arbeta.</p>
+</form></section>{% endif %}
+{% else %}<section class="panel"><p><a href="/logga-in">Logga in som operatör</a> för att samtala med aktuarien och läsa tidigare uppdrag.</p></section>{% endif %}
+{% endblock %}
