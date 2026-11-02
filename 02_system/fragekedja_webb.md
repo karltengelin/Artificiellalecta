@@ -85,6 +85,17 @@ kan hänvisa till det avslagna uppdraget. Avbrott och avstämning av
 `reconciliation_required` går genom samma adapter och sessionskontroll.
 Ingen automatisk omkörning införs i webbvyerna.
 
+Under svaret och rapporten finns *Så togs rapporten fram*, med den
+utfällbara vyn *Avancerat körspår*. Båda arbetsytorna använder samma mall
+och läser `QuestionConsole.trace(flow_id)`: agent, modellroll, svarande
+modeller, eventuell reservväg, modellsteg, registrerad kostnad, körtid,
+körpolicy och verktygsanrop i journalens ordning med typ, åtkomstnivå och
+utfall. Körningens utfall hålls isär från leveransens granskningsstatus.
+Saknad journal, läsfel och ofullständig journal visas uttryckligen;
+saknad förbrukning blir inte noll. Ett journalfel döljer inte den sparade
+rapporten eller dess granskningskontroller. Råjournal, promptar och
+verktygens indata/resultat skickas inte till webbläsaren.
+
 **Kvarstående integrationspunkt i harness:** `QuestionConsole` saknar i dag
 en publik motsvarighet till `FlowConsole.mark_interrupted`. Vyn hanterar
 `reconciliation_required` när harness har satt den statusen, men den nya
@@ -180,3 +191,46 @@ Resultat: **389 godkända**, 103,27 sekunder, inklusive klientprovet för HTMX:s
 textnoder. Ruff, JavaScript-syntax och `git diff --check` utan anmärkning.
 Postgres-prov var bortvalda, inte godkända. Ingen körning mot `svc_test` eller
 Lakebase ingick i denna webbkontroll. Delade statusfiler ändrades inte.
+
+## Spårvy och förnyad DM Sans-kontroll 2026-11-02
+
+Den avancerade spårvyn kontrollerades i centralen och aktuariens teamyta,
+på bred skärm (1280 × 900) och smal skärm (390 × 844). Samma körning,
+modeller och verktyg visades; smal layout ryms utan horisontell sidrullning.
+PDF.js läste samma tvåsidiga rapport i båda arbetsytorna. Saknad, skadad
+och oläsbar journal samt HTML-escaping och frånvaro av rå konversation
+kontrolleras genom HTTP-prov i `tests/test_web_questions.py`.
+
+Normalfall och delvis besvarad fråga skapades med en uttrycklig
+`FakeProvider`, demobeståndet och den ordinarie DM Sans-renderaren.
+Samtliga fyra A4-sidor granskades som PNG: tabell, sidfot, titel bara på
+förstasidan och *Så togs rapporten fram* sist, utan överlappning eller tom
+slutsida. Den separata gränskontrollen hittade och rättade att sista
+styckets mellanrum kunde skapa en innehållslös sida; två regressionsfall
+kontrollerar att nytt innehåll fortfarande får en ny sida.
+
+Detta är lokal webb- och layoutverifiering. Riktig modell, teamroll och
+slutgranskning mot Lakebase ingår i det gemensamma slutprovet efter Claudes
+körning. Befintliga sparade leveranser skrivs inte om. Delade statusdokument
+lämnas till samordningen enligt AGENTS.md §4.3.
+
+Verifierat mot hämtad `origin/main` på `9855fea`, med denna ändring:
+
+| Urval via `scripts/testing/run_tests.py` | Resultat |
+|---|---|
+| `--changed --base origin/main --run`, med det kända förteckningsprovet i `test_script_entrypoints.py` bortvalt | 374 godkända, 1 bortvalt, 159,40 sekunder |
+| `--suite reporting --run` | 96 godkända, 6,33 sekunder |
+| `--all --run`, utan extra bortval | 1 560 godkända, 2 fallerande, 98 bortvalda Postgres-prov, 283,28 sekunder |
+
+De två felen är `test_documentation_entrypoint_matches_generated_inventory`
+och `test_forteckningen_i_repot_stammer_med_koden_registret_och_regelstatusen`.
+Båda gäller den befintliga operationsförteckningen som fortfarande anger
+reglerna som kommande efter 2026-11-01. Omgenereringen ligger i Claudes
+parallella uppdrag och ingår inte här. Den fullständiga sviten är därmed
+inte godkänd. Ruff och `git diff --check` passerar. Ändringsplanen pekar inte
+ut berörda Postgres-prov; inga Postgres- eller Lakebase-körningar gjordes.
+
+Till den gemensamma statusuppdateringen: spårvyn och den förnyade lokala
+DM Sans-kontrollen är klara; titelrättningen är verifierad och den tomma
+slutsidan rättad. Den samordnade webb-/modellkontrollen mot Lakebase och
+operatörens godkännande av rapporten återstår.

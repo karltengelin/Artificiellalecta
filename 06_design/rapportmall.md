@@ -193,6 +193,8 @@ listpunkter och tabeller över sidor automatiskt. Tabellhuvudet upprepas;
 mycket långa celler kan delas. Den stora rapporttiteln och överrubriken visas
 bara på första sidan. Fortsättningssidor har kompakt sidhuvud; avsändare,
 uppdragsreferens, sidfot och sidnummer återanvänds på alla sidor.
+Avslutande mellanrum vid sidfoten skapar ingen egen innehållslös sida;
+nästa text eller tabell flyttas till nästa sida när den behöver utrymmet.
 En odelbar del som inte ryms på en tom sida ger fel.
 Tabellens fem kontraktskolumner har fasta proportioner, övriga lika bredd.
 
@@ -200,3 +202,12 @@ Webbvyer, uttrycklig anslutning och granskningsförlopp beskrivs i
 [OC-3a:s webbdrift](../02_system/fragekedja_webb.md). Visuell kontroll med
 syntetiskt P2-FRAGA-001-underlag gjordes i Helvetica på A4; ordinarie
 DM Sans-export kontrolleras också i det samordnade röktestet.
+
+**2026-11-02:** den omskrivna rapporten kontrollerad med de tre lokala
+statiska DM Sans-filerna. Normalfall och delvis besvarad fråga gav två
+innehållssidor vardera, med inbäddade typsnitt, titel bara på första sidan
+och *Så togs rapporten fram* sist. Samtliga fyra renderade A4-sidor granskade
+visuellt. En separat gränskontroll återskapade en tom slutsida från ett
+avslutande mellanrum; rättningen är skyddad av regressionsprov, även med
+efterföljande innehåll. Underlaget kom från en uttrycklig lokal testmodell
+genom `QuestionConsole`, inte från en riktig modell eller Lakebase.

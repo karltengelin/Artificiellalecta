@@ -47,6 +47,17 @@ def test_every_paragraph_survives_page_boundaries():
     assert all(content.count(marker.encode()) == 1 for marker in markers)
 
 
+@pytest.mark.parametrize("suffix", ["", "\n\nNEXT-PAGE-CONTENT"])
+def test_trailing_spacing_never_creates_an_empty_last_page(suffix):
+    # Two wrapped lines leave less than the final 8pt spacer at the footer.
+    paragraphs = ["Ord " * 24] * 2 + ["MARKER"] * 24
+    pages = streams(render("# Beståndsöversikt\n\n" + "\n\n".join(paragraphs) + suffix))
+    assert len(pages) == (2 if suffix else 1)
+    assert b"MARKER" in pages[0]
+    if suffix:
+        assert b"NEXT-PAGE-CONTENT" in pages[1]
+
+
 def test_continuation_pages_keep_header_and_footer_without_repeating_title():
     pages = streams(render("# Beståndsöversikt\n\n" + "\n\n".join(f"Rad {i}" for i in range(100))))
     assert len(pages) > 1
