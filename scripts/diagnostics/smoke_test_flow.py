@@ -119,7 +119,7 @@ def demo_database() -> Iterator[SimpleNamespace]:
 
 
 @contextmanager
-def svc_test_database() -> Iterator[SimpleNamespace]:
+def svc_test_database(teams: tuple[str, ...] = ("aktuarie", "compliance")) -> Iterator[SimpleNamespace]:
     """Eget schema i den isolerade testdatabasen, med teamens rättigheter på testrollerna."""
     from sqlalchemy import create_engine
 
@@ -133,7 +133,7 @@ def svc_test_database() -> Iterator[SimpleNamespace]:
     if url == os.environ.get("DATABASE_URL"):
         raise SystemExit("SERVICES_TEST_POSTGRES_URL är DATABASE_URL – röktestet körs aldrig mot beståndet")
     shared = os.environ.get("SERVICES_TEST_AGENT_POSTGRES_URL")
-    candidates = {team: os.environ.get(f"SERVICES_TEST_{team.upper()}_POSTGRES_URL") for team in ("aktuarie", "compliance")}
+    candidates = {team: os.environ.get(f"SERVICES_TEST_{team.upper()}_POSTGRES_URL") for team in teams}
     production = {os.environ.get(f"AGENT_{t.upper()}_DATABASE_URL") for t in ROLE_GRANTS} - {None}
     if production & ({shared, *candidates.values()} - {None}):
         raise SystemExit("En testrolls anslutning pekar på beståndet")

@@ -11,7 +11,7 @@ Varje agent tillhör ett team (B-026). Teamets ledande agent är dess orkestrera
 
 | Team | Agent | Roll i teamet | Funktionsområde | Status |
 |------|-------|---------------|-----------------|--------|
-| Försäkring & kund (`forsakring`) | [Handläggaragent](agenter/handlaggaragent.md) | Ledande (orkestrerare) | Kundadministration & ärendehantering | 🟡 Byggd för `salary_report` (F5-1–4); `cases`/roll finns i Lakebase, slutverifiering återstår i F5-5–6 från 2026-11-01 |
+| Försäkring & kund (`forsakring`) | [Handläggaragent](agenter/handlaggaragent.md) | Ledande (orkestrerare) | Kundadministration & ärendehantering | 🟡 Byggd för `salary_report` (F5-1–4); hela ärendeflödet verifierat i Lakebase 2026-11-02 (F5-5–6). Självständig drift (F5-7) och fler ärendetyper återstår |
 | Kommunikation (`kommunikation`) | [Kommunikationsagent](agenter/kommunikationsagent.md) | Ledande (orkestrerare) | Kund- & intressentkommunikation | 🔲 Ej påbörjad |
 | Kapitalförvaltning (`kapital`) | [Portföljförvaltningsagent](agenter/portfoljforvaltningsagent.md) | Ledande (orkestrerare) | Kapitalförvaltning | 🔲 Ej påbörjad |
 | Aktuarie & analys (`aktuarie`) | [Aktuarieagent](agenter/aktuarieagent.md) | Ledande (orkestrerare) | Aktuariell verksamhet | Dialog och analysarbetsbänk tillbyggda 2026-11-02: behöriga data, värderingsscenarier, kassaflöden, utfallsanalys, begränsad dödlighetsmodellering och källbundna diagram/rapporter. Full förändringsanalys, ALM och solvens har kvarstående beroenden; [drift](aktuarie_dialog.md) |
