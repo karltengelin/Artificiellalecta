@@ -258,3 +258,24 @@ Till den gemensamma statusuppdateringen: spårvyn och den förnyade lokala
 DM Sans-kontrollen är klara; titelrättningen är verifierad och den tomma
 slutsidan rättad. Den samordnade webb-/modellkontrollen mot Lakebase och
 operatörens godkännande av rapporten återstår.
+
+## Integrationskontroll 2026-11-02
+
+Inför mergen togs även Claudes Lakebase-körning och valbara loggmapp in
+från `main` på `51470e6`. Integrationscommitten `4049cfd` förenar den med
+Codex spårvy och sidbrytningsrättelse, utan konflikter.
+
+Den redan sparade Lakebase-rapportens Markdown (`FLOW-000001`, körning
+`run-be2f444dc49d`) exporterades lokalt med den nya renderaren. Både DM Sans
+och Helvetica gav två innehållssidor, jämfört med originalets tre sidor
+där den sista bara hade sidhuvud och sidfot. Texten på de två
+innehållssidorna bevarades, och båda DM Sans-sidorna granskades visuellt.
+Originalleveransen, dess kontrollsummor och databasens uppdrag ändrades
+inte. En ny beställning behövs för en ny sparad leverans med den rättade
+layouten. Ingen databas- eller modellkörning ingick i denna kontroll.
+
+Helkörningen via `scripts/testing/run_tests.py --all --run` på
+integrationscommitten gav **1 563 godkända, 98 bortvalda Postgres-prov**,
+inga fallerande eller överhoppade prov, 281,73 sekunder. Inga extra
+bortval gjordes. Ruff och `git diff --check` passerade. Enbart denna
+förklarande verifieringsanteckning tillkom efter den godkända körningen.
