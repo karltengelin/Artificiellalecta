@@ -7,7 +7,7 @@
 | **Funktionsområde** | Kundadministration & ärendehantering |
 | **Team** | Försäkring & kund (`forsakring`) – se `../agentekosystem.md` §3 (B-026) |
 | **Roll i teamet** | Ledande agent (orkestrerare) |
-| **Status** | 🟡 Byggd för ärendetypen `salary_report` (Fas 5 F5-1–4, B-033). `cases` och agentrollens rättigheter finns i Lakebase; ärende → förslag → godkännande eller avslag → stängt är verifierat i Lakebase 2026-11-02 (F5-5–6). Självständig drift (F5-7) återstår |
+| **Status** | 🟡 Byggd för ärendetypen `salary_report` (Fas 5 F5-1–4, B-033). `cases` och agentrollens rättigheter finns i Lakebase; ärende → förslag → godkännande eller avslag → stängt är verifierat i Lakebase 2026-11-02 (F5-5–6). Ärendefall för självständig drift valda i B-043 och verifierade i demo, `svc_test` och Lakebase 2026-11-02; aktivering av driften (F5-7) återstår |
 | **Skapad** | 2026-05-15 |
 
 ## Mandat
@@ -21,7 +21,7 @@ Ansvarar för löpande kundadministration samt handläggning av inkommande ären
 Mandatet ovan är målbilden. I dag stöds bara handläggning av inrapporterat löneunderlag
 (`salary_report`). Ärendedialog och självständig köhandläggning har lokalt stöd
 sedan 2026-10-31; tabellerna infördes samma dag i Lakebase efter backup och OK.
-Val av dagliga/automatiska fall återstår. Bredare intag, kundkommunikation och delegering från personärenden
+Enligt B-043 väljs arbetsgivarens nya rapporter och rättelser dagligen ut åt dig; varje registrering granskas av handläggaren. Bredare intag, kundkommunikation och delegering från personärenden
 återstår. Utgå alltid från det tilldelade ärendet och de verktyg
 som faktiskt finns i körningen; anta inte att en planerad förmåga är byggd.
 

@@ -7,7 +7,7 @@ import pytest
 import yaml
 from sqlalchemy import func, select
 
-from agents.case_policy import CasePolicy
+from agents.case_policy import DEFAULT_POLICY, CasePolicy
 from models import Case, CaseMessage, CaseWorkDay, OperationEventRecord, SalaryReport
 from services import OperationContext
 from services.errors import ApprovalError, ConflictError
@@ -332,3 +332,83 @@ def test_dagligt_urval_haller_dagstaket_och_gar_vidare_till_nya_arenden(insuranc
     assert env.workspace.enqueue_daily(now=now.replace(day=3)) == 1
     assert env.workspace.view(second, HUMAN)["works"][0]["submitted_by"] == "daily_worker"
     assert env.workspace.view(second, HUMAN)["messages"][0]["role"] == "system"
+
+
+def test_levererad_policy_foljer_b043():
+    policy, _ = CasePolicy.load()
+    rule = policy.case_types["salary_report"]
+    assert rule.review_required and rule.auto_close
+    assert (rule.max_jobs_per_day, rule.max_daily_cost_usd) == (20, 5.0)
+    schedule = rule.schedule
+    assert schedule.enabled and (schedule.timezone, schedule.hour, schedule.minute) == ("Europe/Stockholm", 7, 0)
+    assert schedule.max_cases == 5
+    assert schedule.kinds == ["new", "correction"] and schedule.sources == ["employer"]
+
+
+@pytest.mark.parametrize("change", [{"kinds": ["new", "new"]}, {"kinds": []}, {"sources": ["kund"]},
+                                    {"max_cases": 0}])
+def test_ogiltigt_urvalsfilter_stoppar_policyn(tmp_path, change):
+    data = yaml.safe_load(DEFAULT_POLICY.read_text(encoding="utf-8"))
+    data["case_types"]["salary_report"]["schedule"].update(change)
+    path = tmp_path / "policy.yaml"
+    path.write_text(yaml.safe_dump(data), encoding="utf-8")
+    with pytest.raises(ValueError):
+        CasePolicy.load(path)
+
+
+def test_urvalet_tar_arbetsgivarens_nya_och_rattelser_men_inte_manuella(insurance_db, tmp_path):
+    env = make_workspace(insurance_db.session_factory, tmp_path, scheduled=True)
+    new = create(env)
+    correction = create(env, source_reference="RATTELSE", details={
+        "pensionable_salary_sek": "82000", "kind": "correction", "corrects_version": 1, "source": "employer"})
+    manual = create(env, source_reference="MANUELLT", details={
+        "pensionable_salary_sek": "81000", "kind": "new", "corrects_version": None, "source": "manual"})
+    assert env.workspace.enqueue_daily(now=datetime(2026, 11, 2, 7, tzinfo=UTC)) == 2
+    assert env.workspace.view(new, HUMAN)["works"][0]["submitted_by"] == "daily_worker"
+    assert env.workspace.view(correction, HUMAN)["works"][0]["submitted_by"] == "daily_worker"
+    assert env.workspace.view(manual, HUMAN)["works"] == []
+
+
+def test_schemataket_lamnar_dagens_ovriga_forsok_till_handlaggaren(insurance_db, tmp_path):
+    env = make_workspace(insurance_db.session_factory, tmp_path, scheduled=True)
+    data = yaml.safe_load(env.policy_path.read_text())
+    data["case_types"]["salary_report"]["schedule"]["max_cases"] = 1
+    env.policy_path.write_text(yaml.safe_dump(data))
+    first = create(env)
+    second = create(env, source_reference="ANDRA")
+    third = create(env, source_reference="TREDJE")
+    now = datetime(2026, 11, 2, 7, tzinfo=UTC)
+    assert env.workspace.enqueue_daily(now=now) == 1
+    ident = env.workspace.view(first, HUMAN)["works"][0]["id"]
+    env.fake.queue(read_case(first), answer("needs_human"))
+    env.workspace.process(ident, now=now)
+    assert env.workspace.enqueue_daily(now=now) == 0  # schemats andel är förbrukad, inte dagens försök
+    manual = env.workspace.submit(third, "Undersök underlaget", actor=HUMAN, key="egen")
+    env.fake.queue(read_case(third), answer())
+    assert env.workspace.process(manual, now=now) and work(env, manual).status == "completed"
+    assert env.workspace.enqueue_daily(now=now.replace(day=3)) == 1
+    assert env.workspace.view(second, HUMAN)["works"][0]["submitted_by"] == "daily_worker"
+
+
+def test_uppfoljningen_visar_senaste_uppdraget_i_oppna_arenden(env):
+    waiting = create(env)
+    human = create(env, source_reference="HANDLAGGARE")
+    done = create(env, source_reference="KLART")
+    ident = submit(env, waiting, mode="handle")
+    env.fake.queue(read_case(waiting), proposal())
+    env.workspace.process(ident)
+    ident = env.workspace.submit(human, "Undersök", actor=HUMAN, key="h")
+    env.fake.queue(read_case(human), answer("needs_human"))
+    env.workspace.process(ident)
+    ident = env.workspace.submit(done, "Undersök", actor=HUMAN, key="d")
+    env.fake.queue(read_case(done), answer("needs_human"))
+    env.workspace.process(ident)
+    assert env.workspace.follow_up() == {waiting: "waiting_approval", human: "needs_human",
+                                         done: "needs_human"}
+    later = env.workspace.submit(done, "Undersök igen", actor=HUMAN, key="d2")
+    env.fake.queue(read_case(done, "again"), answer())
+    env.workspace.process(later)
+    assert done not in env.workspace.follow_up()  # ett senare klart uppdrag ersätter det gamla
+    env.trusted.execute("close_case", OperationContext(actor=HUMAN, reason="Handlagt"),
+                        {"case_number": human, "outcome": "no_action", "closing_note": "Inget att göra"})
+    assert env.workspace.follow_up() == {waiting: "waiting_approval"}

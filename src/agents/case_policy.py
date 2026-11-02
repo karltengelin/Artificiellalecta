@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 DEFAULT_POLICY = Path(__file__).with_name("case_policy.yaml")
 
@@ -21,6 +22,17 @@ class DailySchedule(Strict):
     timezone: str = "Europe/Stockholm"
     hour: int = Field(default=7, ge=0, le=23)
     minute: int = Field(default=0, ge=0, le=59)
+    # B-043: schemats andel av dagens försök och urvalsfilter. Saknat fält = inget extra villkor.
+    max_cases: int | None = Field(default=None, ge=1, le=1000)
+    kinds: list[Literal["new", "correction"]] | None = Field(default=None, min_length=1)
+    sources: list[Literal["employer", "manual"]] | None = Field(default=None, min_length=1)
+
+    @field_validator("kinds", "sources")
+    @classmethod
+    def _unique(cls, value):
+        if value is not None and len(set(value)) != len(value):
+            raise ValueError("Urvalsfiltret har dubbletter")
+        return value
 
 
 class CaseTypePolicy(Strict):

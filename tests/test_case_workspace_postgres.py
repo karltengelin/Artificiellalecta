@@ -72,3 +72,25 @@ def test_schemat_aterkoar_inte_samma_underlag(tmp_path):
         now = datetime(2026, 11, 2, 7, tzinfo=UTC)
         assert env.workspace.enqueue_daily(now=now) == 1
         assert env.workspace.enqueue_daily(now=now) == 0
+
+
+def test_urvalsfilter_schematak_och_uppfoljning_i_postgres(tmp_path):
+    with isolated_schema() as db:
+        Base.metadata.create_all(db.engine)
+        seed_insurance(db.session_factory)
+        env = make_workspace(db.session_factory, tmp_path, scheduled=True)
+        first = create(env)
+        correction = create(env, source_reference="RATTELSE", details={
+            "pensionable_salary_sek": "82000", "kind": "correction", "corrects_version": 1, "source": "employer"})
+        create(env, source_reference="MANUELLT", details={
+            "pensionable_salary_sek": "81000", "kind": "new", "corrects_version": None, "source": "manual"})
+        for extra in range(4):
+            create(env, source_reference=f"EXTRA-{extra}")
+        now = datetime(2026, 11, 2, 7, tzinfo=UTC)
+        assert env.workspace.enqueue_daily(now=now) == 5  # schemats andel, manuellt underlag utanför
+        assert env.workspace.enqueue_daily(now=now) == 0
+        ident = next(w["id"] for w in env.workspace.view(first, HUMAN)["works"])
+        env.fake.queue(read_case(first), proposal())
+        assert env.workspace.process(ident, now=now)
+        assert env.workspace.follow_up() == {first: "waiting_approval"}
+        assert env.workspace.view(correction, HUMAN)["works"][0]["submitted_by"] == "daily_worker"
