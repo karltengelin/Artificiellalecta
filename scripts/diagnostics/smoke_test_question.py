@@ -29,7 +29,9 @@ men den visuella kontrollen med DM Sans återstår.
 
 Utan --run görs inga modellanrop. Kostnaden begränsas av aktuarieteamets tak i ecosystem.yaml
 (1,00 USD per körning, en körning per fråga). Nycklar läses ur .env och skrivs aldrig ut.
-Körjournalerna hamnar i logs/agent_runs/, leveranserna i logs/deliveries/rooktest_<tid>/.
+Körjournalerna hamnar i logs/agent_runs/, leveranserna i logs/deliveries/rooktest_<tid>/. Mot Lakebase
+syns uppdragen i webbens listor; ange då `--logs-dir` till webbens loggmapp, så kan rapporten och
+spåret öppnas igen därifrån.
 
 Användning (från repo-roten, i .venv):
     python scripts/diagnostics/smoke_test_question.py                         # plan, ingen kostnad
@@ -37,7 +39,7 @@ Användning (från repo-roten, i .venv):
     python scripts/diagnostics/smoke_test_question.py --run --db svc_test --provider openai
     python scripts/diagnostics/smoke_test_question.py --run --avvikelser
     python scripts/diagnostics/smoke_test_question.py --db lakebase           # förkontroll, bara läsning
-    python scripts/diagnostics/smoke_test_question.py --run --db lakebase     # efter backup och OK
+    python scripts/diagnostics/smoke_test_question.py --run --db lakebase --logs-dir C:/Claude/Artificiellalecta/logs
 """
 
 from __future__ import annotations
@@ -182,7 +184,7 @@ def lakebase_facit(db, months: list[date], report: Report | None = None) -> dict
 # --- flödet --------------------------------------------------------------------------------------
 
 
-def build_console(db, ai, render, deliveries_dir: Path, dataset: str):
+def build_console(db, ai, render, deliveries_dir: Path, dataset: str, journal_dir: Path | None = None):
     from agents.flows.questions import QuestionConsole
     from services import ServiceLayer
 
@@ -191,7 +193,7 @@ def build_console(db, ai, render, deliveries_dir: Path, dataset: str):
                            validation_session_factory=db.factory, agent_role=f"agent_{TEAM}")
     return QuestionConsole.build(db.factory, trusted=trusted, actuary_service=actuary, ai=ai, renderer=render,
                                  environment_id="rooktest", dataset_ref=f"rooktest:{dataset}",
-                                 deliveries_dir=deliveries_dir)
+                                 deliveries_dir=deliveries_dir, journal_dir=journal_dir)
 
 
 #: Ord i slutsatsen som avslöjar teknik: verktygs-, funktions-, kolumn- och statusnamn
@@ -326,6 +328,8 @@ def main() -> int:
     parser.add_argument("--avvikelser", action="store_true", help="Ställ även frågan utanför stödet och styrningsprovet")
     parser.add_argument("--report-font-dir", type=Path,
                         help="Mapp med de statiska DM Sans-filerna (rapportmall.md); utan den används Helvetica")
+    parser.add_argument("--logs-dir", type=Path,
+                        help="Loggmapp för leveranser och körjournaler, t.ex. webbens; annars repots logs/")
     args = parser.parse_args()
 
     from ai import AIClient, MissingKeyError
@@ -358,12 +362,15 @@ def main() -> int:
         return 0
 
     report = Report()
-    deliveries = REPO_ROOT / "logs" / "deliveries" / f"rooktest_{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
+    if args.logs_dir:
+        deliveries, journal = args.logs_dir / "deliveries", args.logs_dir / "agent_runs"
+    else:
+        deliveries, journal = REPO_ROOT / "logs" / "deliveries" / f"rooktest_{datetime.now(UTC):%Y%m%dT%H%M%SZ}", None
     databases = {"demo": demo_database, "svc_test": svc_test_database, "lakebase": lakebase_database}
     with databases[args.db]() as db:
         print(f"Databas: {db.label}; aktuarien: {'begränsad roll' if TEAM in db.team_factories else 'simulerad'}")
         facit = lakebase_facit(db, [NORMAL, ZERO], report) if args.db == "lakebase" else DEMO_FACIT
-        console = build_console(db, ai, render, deliveries, args.db)
+        console = build_console(db, ai, render, deliveries, args.db, journal)
         pdfs = main_scenario(console, report, facit)
         if args.avvikelser:
             deviation_scenarios(console, report)
