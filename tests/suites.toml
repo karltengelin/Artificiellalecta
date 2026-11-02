@@ -41,7 +41,7 @@ dependents = ["reporting"]
 [suites.risk]
 description = "Reserv, FTA, ALM och finansieringskontroller; beräkningsmotorn, datautdraget S-04 och FTA-värderingen med kontrollfallen finns"
 status = "partial"
-tests = ["tests/test_actuarial_annuity.py", "tests/test_capital_rollforward.py", "tests/test_valuation_extract.py", "tests/test_fta_valuation.py", "tests/test_valuation_runs.py"]
+tests = ["tests/test_actuarial_workspace.py", "tests/test_actuarial_annuity.py", "tests/test_capital_rollforward.py", "tests/test_valuation_extract.py", "tests/test_fta_valuation.py", "tests/test_valuation_runs.py"]
 dependents = ["reporting"]
 
 [suites.reporting]
@@ -89,7 +89,7 @@ dependents = ["agents", "web", "tooling"]
 [suites.agents]
 description = "Harness, ärendekörningar, behörigheter och gateways"
 status = "active"
-tests = ["tests/test_case_workspace.py", "tests/test_agents_case_runs.py", "tests/test_agents_delegation.py", "tests/test_agents_questions.py", "tests/test_agents_demo.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_listing.py", "tests/test_agents_loop.py", "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py", "tests/test_agents_postgres_role.py", "tests/test_agents_skills.py", "tests/test_agents_teams.py"]
+tests = ["tests/test_actuarial_workspace.py", "tests/test_case_workspace.py", "tests/test_agents_case_runs.py", "tests/test_agents_delegation.py", "tests/test_agents_questions.py", "tests/test_agents_demo.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_listing.py", "tests/test_agents_loop.py", "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py", "tests/test_agents_postgres_role.py", "tests/test_agents_skills.py", "tests/test_agents_teams.py"]
 dependents = ["orchestration", "web", "tooling"]
 
 [suites.ai]
@@ -101,13 +101,13 @@ dependents = ["agents", "services", "web", "tooling"]
 [suites.web]
 description = "HTTP, formulär och handläggarflöden"
 status = "active"
-tests = ["tests/test_web_valuations.py", "tests/test_web_case_workspace.py", "tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_flows.py", "tests/test_web_operator.py", "tests/test_design_web_css.py"]
+tests = ["tests/test_actuarial_workspace.py", "tests/test_web_valuations.py", "tests/test_web_case_workspace.py", "tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_flows.py", "tests/test_web_operator.py", "tests/test_design_web_css.py"]
 dependents = ["tooling"]
 
 [suites.data]
 description = "Datamodeller, backup och migrationer"
 status = "active"
-tests = ["tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_flows.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
+tests = ["tests/test_actuarial_workspace.py", "tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_flows.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
 dependents = []
 
 [suites.design]
@@ -125,6 +125,7 @@ dependents = []
 # Filselektorer gäller alla testfall i filen; ::funktion gäller också parametriseringar.
 [markers]
 postgres = [
+  "tests/test_actuarial_workspace.py::test_actuarial_migration_and_concurrent_submission_postgres",
   "tests/test_case_workspace_postgres.py",
   "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py",
   "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py",
@@ -288,3 +289,11 @@ postgres = ["tests/test_agents_postgres_aktuarie.py", "tests/test_valuation_runs
 [[rules]]
 paths = ["src/utils/demo_data.py"]
 postgres = ["tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py"]
+
+[[rules]]
+paths = ["src/agents/actuarial*.py", "src/analytics/actuarial_experience.py", "src/services/operations/actuarial_analysis.py", "src/web/routes/actuarial_dialogue.py", "src/reporting/analysis_chart.py"]
+suites = ["risk", "agents", "web", "reporting"]
+
+[[rules]]
+paths = ["src/models/actuarial_workspace.py", "src/utils/migration_actuarial_workspace.py", "scripts/migrations/migrate_actuarial_workspace.py", "src/agents/actuarial*.py"]
+postgres = ["tests/test_actuarial_workspace.py::test_actuarial_migration_and_concurrent_submission_postgres"]

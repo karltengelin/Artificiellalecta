@@ -940,3 +940,19 @@ Externa primärkällor är länkade vid respektive jämförelse i §12 och läst
 **Leveranskontroll 2026-10-12:** YAML-exemplet lästes med kontroll av dubbla nycklar, podd-/team-/agentsamband och gränser. Operationsmappningarna och genererade ToolSpec-scheman kontrollerades mot bascommitten; den exempelprofilen ger sex verktyg 12 oktober och sju 2 november, inklusive de två uttryckligen föreslagna dokumentverktygen. Löneindata validerades mot `SalaryReportInput`, JSON/JSONL lästes och Pythonexemplet syntaxkontrollerades. Premiemotorn bekräftade 4 708,13 kr. De tre Mermaid-diagrammen granskades som text. **35 befintliga tester passerade** i `test_services_access.py`, `test_ai_boundaries.py` och `test_ai_schema.py`, utan nätverk/databas. Pytest använde en separat temporär katalog under worktreens gitignorerade `logs/`. Detta verifierar designens underlag och exempel; den framtida harnessens negativa tester och aktiva guardrails är ännu inte byggda eller körda.
 
 **Avstämningsuppdatering 2026-10-12:** tjänstelagrets försäkringsgräns, första arbetsuppgiften, områdenas verkställighetsansvar och konkreta startgränser är införda i designen enligt operatörens återkoppling. YAML-/JSON-/JSONL-exemplen och Pythonexemplets syntax kontrollerades på nytt; kostnadsgränserna överensstämmer mellan profil, journalexempel och text. Operationsscheman och verktygsantalet sex/sju är oförändrade. Endast detta dokument ändrades.
+
+## Aktuariedialogens domänarbetsbänk, 2026-11-02
+
+`actuarial_workbench` i podden `analys` är en gateway med uttryckligt urval i
+aktuariedialogens RunRequest. Den visas inte för äldre avgränsade uppdrag.
+Katalogen innehåller typade JSON-kontrakt för behöriga läsningar, analys och
+leveranser. Endast ett litet yttre schema behöver exponeras till modellen.
+
+Läsningar använder aktuell effektiv agentprofil och aktuariens begränsade roll.
+Beräkningar är fasta systemsteg genom tjänstelagret, som B-042:s värderingsmotor;
+de ger endast skyddade aggregat. Ingen SQL, Python, filväg, nätadress eller
+mänsklig identitet kan väljas av modellen. Aktiva uppdrag och leveransreferenser
+binds till dialog/körning i databasen. Resultatschemat `ActuarialAnswer`
+kontrollerar analysreferenser och numeriskt underlag. Grundförslag behåller
+APPROVAL; antagande och fastställande är fortsatt HUMAN_ONLY.
+Se [drift, data och gränser](aktuarie_dialog.md).

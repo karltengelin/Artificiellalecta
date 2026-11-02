@@ -4,6 +4,12 @@ Re-exporterar `Base` samt alla modeller så att t.ex. `Base.metadata.create_all`
 ser samtliga tabeller. Lägg in nya modeller här när de skapas.
 """
 
+from .actuarial_workspace import (
+    ActuarialAnalysis,
+    ActuarialConversation,
+    ActuarialDataset,
+    ActuarialTurn,
+)
 from .approval_request import ApprovalRequestRecord
 from .base import Base
 from .base_amount import BaseAmount
@@ -26,6 +32,7 @@ from .valuation_basis import ValuationBasis
 from .valuation_run import ValuationExtractRecord, ValuationResult, ValuationRun
 
 __all__ = [
+    "ActuarialAnalysis", "ActuarialConversation", "ActuarialDataset", "ActuarialTurn",
     "ApprovalRequestRecord",
     "Base",
     "BaseAmount",

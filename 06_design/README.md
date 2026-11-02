@@ -29,3 +29,8 @@ Designgrunden är dokumenterad och tillämpad i handläggar-UI:t, som är piloty
 `02_system/handläggar-ui.md` §2. Återanvändbara mallar för A4-rapport och
 16:9-presentation finns. Införande i övriga ytor, övriga dokumentmallar samt de
 gemensamma genereringsskillsen återstår enligt backloggen.
+
+Aktuariedialogen använder sedan tillbyggnaden 2026-11-02 en gemensam,
+dataförankrad diagramskill i `src/reporting/analysis_chart.py`: linje-/stapeldiagram
+med möjliga osäkerhetsintervall och vektorexport till SVG/PDF. Samma tokenfil och
+rapportmotor används. Övriga malltyper och bredare införande är separata byggen.

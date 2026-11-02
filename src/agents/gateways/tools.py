@@ -30,6 +30,7 @@ class GatewayContext:
     run_id: str
     regulatory: RegulatoryGateway
     drafts: DraftGateway
+    actuarial: Any = None
 
 
 @dataclass(frozen=True)
@@ -38,9 +39,11 @@ class Gateways:
 
     regulatory: RegulatoryGateway = field(default_factory=RegulatoryGateway)
     drafts: DraftGateway = field(default_factory=DraftGateway)
+    actuarial: Any = None
 
     def context(self, team: str, run_id: str) -> GatewayContext:
-        return GatewayContext(team=team, run_id=run_id, regulatory=self.regulatory, drafts=self.drafts)
+        return GatewayContext(team=team, run_id=run_id, regulatory=self.regulatory, drafts=self.drafts,
+                              actuarial=self.actuarial)
 
 
 @dataclass(frozen=True)
@@ -61,9 +64,32 @@ class GatewayTool:
         return self.call(ctx, self.input_model.model_validate(arguments))
 
 
+def _actuarial_call(ctx, data):
+    from agents.gateways.common import GatewayError
+    from services.errors import ServiceError
+
+    if ctx.actuarial is None:
+        raise GatewayError("unavailable", "Aktuariens arbetsbänk är bara ansluten i teamets dialog")
+    try:
+        return ctx.actuarial.invoke(ctx.team, ctx.run_id, data)
+    except (ValueError, ServiceError) as exc:
+        raise GatewayError("invalid", str(exc)[:1200]) from exc
+
+
+from agents.actuarial_workbench import WorkbenchInput
+
 GATEWAY_TOOLS = {
     tool.name: tool
     for tool in (
+        GatewayTool(
+            name="actuarial_workbench", pod="analys", side_effect="write", pii=False,
+            description="Aktuariens data- och analysarbetsbänk. Börja med action=catalog, name='', arguments_json='{}'. "
+                        "Katalogen anger exakta kontrakt för läsning, analyser, diagram och rapporter. "
+                        "Välj själv verktyg utifrån uppdraget. recall listar tidigare leveranser; delivery läser {'id':...}. "
+                        "All data är källbunden; inga egna observerade tal, SQL eller kod accepteras. "
+                        "Analyser och leveranser är utkast; arbetsbänken fastställer inga grunder eller värderingar.",
+            input_model=WorkbenchInput, call=_actuarial_call,
+        ),
         GatewayTool(
             name="list_regulatory_documents",
             pod="regelverk",
