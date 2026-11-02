@@ -122,7 +122,7 @@ python scripts/agents/run_case_worker.py --db demo --serve
 Driften enligt B-043 är `--once` från Windows Schemaläggaren vardagar 07.05,
 med *kör så snart som möjligt efter missad start*, *starta inte en ny instans*
 och utdata till `logs/case_worker.log`. Uppgiften skapas av operatören eller
-med operatörens OK, efter Lakebase-verifieringen. Varje varv skriver en
+med operatörens OK; Lakebase-verifieringen är gjord 2026-11-02. Varje varv skriver en
 tidsstämplad rad med antal uppdrag som väntar på godkännande, behöver
 handläggare eller kräver avstämning; ett fel ger slutkod 1. `/arenden?status=uppfoljning`
 (*Att följa upp*) listar samma öppna ärenden. Operatören kontrollerar dagligen
@@ -240,6 +240,37 @@ Det misslyckade Anthropic-försöket gick till `needs_human` utan omförsök.
 Resultat: demo 33 av 33 (0,040 USD), `svc_test` med begränsad testroll 33 av 33
 (0,040 USD). Ändringsstyrt urval med `--postgres`: 1 672 godkända prov.
 
+### Verifierat i Lakebase 2026-11-02 (F5-7 steg 3)
+
+Efter backup `C:/Claude/Artificiellalecta/backups/20261102T195723Z` (22 tabeller,
+17 344 rader), operatörens OK och bekräftelse att ingen annan agent körde mot
+databasen. Förkontrollen visade inga öppna löneärenden och inga aktiva uppdrag.
+Röktestet `smoke_test_case_schedule.py --db lakebase` kördes med den levererade
+policyn, `claude-sonnet-5` och den riktiga rollen `agent_forsakring`, bara på
+märkta ärenden för Vera Verifiering (AL-000499), rapportmånad 2026-10:
+
+- **Första körningen (`--avslag`):** CASE-000004 (rättelse till 41 500 kr) valdes
+  av schemat och CASE-000005 (manuellt underlag) valdes inte. Agentens förslag
+  saknade ärendets källreferens, så röktestet godkände det inte. Handläggaren
+  `rooktest` avslog förslaget, nästa varv lämnade uppdraget till handläggare och
+  ärendet stängdes som avslaget. CASE-000006 (42 000 kr) valdes, avslogs, visades
+  i uppföljningen och stängdes. 18 av 20 kontroller; de två felen gäller
+  CASE-000004 (0,092 USD).
+- **Andra körningen:** CASE-000007 (41 500 kr) valdes, förslaget motsvarade ärendet
+  exakt, godkändes och stängdes av nästa varv som godkänt (`case_worker`).
+  CASE-000008 (manuellt) valdes inte och stängdes. 13 av 13 kontroller (0,046 USD).
+
+Tillbakaläst mot backupen: `cases` 3→8, `case_work` 3→6, `case_messages` 9→18,
+`approval_requests` 3→6, `operation_events` 134→191 och `salary_reports` 3→4
+(Veras v4, 41 500 kr). Övriga 16 tabeller är oförändrade, bland annat 501
+försäkrade och 15 097 premietransaktioner; inga premier skapades. Inga öppna
+ärenden, aktiva uppdrag eller väntande förslag finns kvar. Dagens reservationsbok
+står på 6 försök och 3,00 USD. Körjournalerna ligger i huvudkatalogens `logs/`.
+
+**Iakttagelse:** att ett förslag kan avvika från ärendet i ett enskilt fält
+(här källreferensen) visar varför granskningen behövs. Betrodd kod hade också
+stoppat förslaget i den automatiska vägen (`guard_case_proposal`).
+
 ## Verifiering och kvarstående delar
 
 Lokala förloppsprov omfattar sparad dialog, fria läsuppdrag, kund-/ärendegräns,
@@ -280,8 +311,8 @@ Detta är första byggda ärendeförmågan, inte hela den färdiga organisatione
 - Flera mänskliga roller/teammedlemskap, centralens generella teamsamtal och
   fler ärendetyper ingår i fortsättningen.
 - Automatisk slutbehandling är inte aktiverad (B-043 val C). Det dagliga
-  urvalet är påslaget i policyn men körs inte i Lakebase förrän verifieringen
-  där är gjord och uppgiften i Schemaläggaren skapats.
+  urvalet är påslaget i policyn och verifierat i Lakebase, men körs inte där
+  förrän uppgiften i Windows Schemaläggaren skapats.
 
 **Förslag till senare beslutspost, utan nummer:** (driftvalen är beslutade i B-043)
 inför ärendebunden dialog
