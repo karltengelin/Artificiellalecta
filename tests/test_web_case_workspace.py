@@ -116,3 +116,16 @@ def test_komplettering_andrar_inte_underlaget_utan_versionskontroll(desk):
     assert post(desk, f"/arenden/{number}/komplettera", csrf, expected_digest="0" * 64, **data).status_code == 409
     assert post(desk, f"/arenden/{number}/komplettera", csrf, expected_digest=digest, **data).status_code == 200
     assert post(desk, f"/arenden/{number}/komplettera", csrf, expected_digest=digest, **data).status_code == 409
+
+
+def test_listan_visar_arenden_att_folja_upp(desk):
+    waiting = create(desk)
+    quiet = create(desk, source_reference="UTAN-UPPDRAG")
+    ident = desk.workspace.submit(waiting, "Undersök", actor=HUMAN, key="uppfoljning")
+    desk.fake.queue(read_case(waiting), answer("needs_human"))
+    desk.workspace.process(ident)
+    page = desk.client.get("/arenden?status=uppfoljning")
+    assert page.status_code == 200
+    assert waiting in page.text and quiet not in page.text
+    assert "Behöver handläggare" in page.text and "Att följa upp" in page.text
+    assert quiet in desk.client.get("/arenden").text

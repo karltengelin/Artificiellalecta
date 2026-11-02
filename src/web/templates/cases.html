@@ -5,7 +5,7 @@
   <div class="panel__head">
     <h1>Ärenden</h1>
     <nav class="filter" aria-label="Urval">
-      {% for key, text in [("aktiva", "Aktiva"), ("stangda", "Stängda"), ("alla", "Alla")] %}
+      {% for key, text in [("aktiva", "Aktiva"), ("uppfoljning", "Att följa upp"), ("stangda", "Stängda"), ("alla", "Alla")] %}
       <a href="/arenden?status={{ key }}" {% if filter == key %}aria-current="page" class="is-current"{% endif %}>{{ text }}</a>
       {% endfor %}
       <a class="button" href="/arenden/ny">Nytt ärende</a>
@@ -13,9 +13,12 @@
   </div>
   <p class="muted small">Ett ärende är handläggaragentens arbetsenhet och mandat: agenten når bara ärendets försäkrade,
     arbetsgivare och period, och kan inte skapa, ändra eller stänga ärenden (B-033).</p>
+  {% if follow_up is not none %}
+  <p class="muted small">Öppna ärenden där agentens senaste uppdrag väntar på godkännande, handläggare eller avstämning.</p>
+  {% endif %}
   {% if cases.cases %}
   <table class="table">
-    <thead><tr><th>Ärende</th><th>Typ</th><th>Försäkrad</th><th>Månad</th><th>Mottaget</th><th>Status</th><th>Handläggare</th></tr></thead>
+    <thead><tr><th>Ärende</th><th>Typ</th><th>Försäkrad</th><th>Månad</th><th>Mottaget</th><th>Status</th>{% if follow_up is not none %}<th>Uppdrag</th>{% endif %}<th>Handläggare</th></tr></thead>
     <tbody>
       {% for c in cases.cases %}
       <tr>
@@ -25,6 +28,7 @@
         <td>{{ c.period_month | month }}</td>
         <td>{{ c.received_date | iso_date }}</td>
         <td><span class="pill pill--case-{{ c.status }}">{{ c.status | label('case_status') }}</span>{% if c.outcome %} · {{ c.outcome | label('case_outcome') }}{% endif %}</td>
+        {% if follow_up is not none %}<td>{{ work_labels[follow_up[c.case_number]] }}</td>{% endif %}
         <td>{{ c.assigned_to or "–" }}</td>
       </tr>
       {% endfor %}
