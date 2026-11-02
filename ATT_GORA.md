@@ -46,7 +46,7 @@ Se [MASTER_CONTEXT §1](MASTER_CONTEXT.md#1-vision-och-syfte) och
 
 ### Aktuellt operatörsuppdrag 2026-11-02 – aktuarien som verksamhetskollega
 
-På Karls uppdrag byggs [dialog och analysarbetsbänk](02_system/aktuarie_dialog.md)
+På Karls uppdrag har [dialog och analysarbetsbänk](02_system/aktuarie_dialog.md) byggts och verifierats
 utifrån företagsvisionen. Aktuarien väljer data, scenarier, erfarenhetsanalys,
 dödlighetsmodellering, diagram och rapport utifrån samtalet. Återanvänder A3–A6,
 tjänstelagret, harness och Digital klarhet. Inga separata analysknappar eller

@@ -84,8 +84,8 @@ efter kontroll av leveranserna. Automatisk återstart eller schemalagd drift ing
 
 ## Verifiering och införandestatus 2026-11-02
 
-Implementationen ligger på `codex/aktuarie-dialog-analys`. Den är ännu inte
-mergad till `main` och ingen skarp schemamigration har genomförts.
+Implementationen levereras från `codex/aktuarie-dialog-analys`. Operatören har
+godkänt integration till `main`. Ingen skarp schemamigration har genomförts.
 De fyra nya tabellerna saknas ännu i Lakebase. Den befintliga tjänsten på
 port 8765 har inte startats om.
 
@@ -98,6 +98,9 @@ port 8765 har inte startats om.
   dialog-, profil-, skill-, katalog- och menyproven igen: **86 godkända,
   689 bortvalda**. Inga överhoppade prov i dessa urval. Ruff passerade för
   ändrade Pythonfiler; befintliga lintfel utanför ändringen har inte rättats.
+- Inför den godkända integrationen kördes hela lokala sviten på slutligt
+  kodläge: **1 581 godkända, 99 PostgreSQL-prov bortvalda, inga fel**
+  (`run_tests.py --all --run`). PostgreSQL-verifieringen redovisas separat här.
 - Ett utökat isolerat PostgreSQL-prov kördes därefter: **1 godkänt,
   395 bortvalda**. Det verifierar tom migration och omkörning, samtidiga
   beställningar, verklig begränsad databasroll, tillåtna läsningar och en

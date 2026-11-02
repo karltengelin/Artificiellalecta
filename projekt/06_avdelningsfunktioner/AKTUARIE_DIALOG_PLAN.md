@@ -55,10 +55,10 @@ Historiska garantigrunder påverkas aldrig av erfarenhetsanalys.
 
 ## Leveransläge 2026-11-02
 
-Byggt och verifierat på arbetsbranchen: dialog, instruktioner, analysgateway,
+Byggt och verifierat: dialog, instruktioner, analysgateway,
 datakontrakt och import, beräkningsmotorer, diagram, rapporter och grundförslag.
 Detaljer om provresultat och kvarstående visuell kontroll finns i
 [driftbeskrivningen](../../02_system/aktuarie_dialog.md#verifiering-och-införandestatus-2026-11-02).
-Riktig modell och skrivskyddad Lakebase-analys är provade. Merge till `main`,
-de nya tabellerna i Lakebase och driftsättning återstår. Saknade verksamhetsmotorer
+Riktig modell och skrivskyddad Lakebase-analys är provade. Operatören har godkänt
+integration till `main`. De nya tabellerna i Lakebase och driftsättning återstår. Saknade verksamhetsmotorer
 och observationsleveranser enligt ovan kvarstår som egna beroenden.
