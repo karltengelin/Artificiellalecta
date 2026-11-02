@@ -45,6 +45,7 @@
   {% else %}<p>Ingen kontrollerad rapport att visa.</p>{% endif %}
   </section>
 </div>
+{% include "partials/question_trace.html" %}
 {% if operator_user %}
 {% if assignment.status == 'waiting_gate' and not integrity_error %}
 <section class="panel"><h2>Granska leveransen</h2><p>Beslutet gäller svaret och rapportversionen som visas ovan. Ett avslag avslutar uppdraget.</p>

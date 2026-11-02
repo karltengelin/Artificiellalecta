@@ -1,0 +1,40 @@
+<section class="panel question-trace" aria-labelledby="question-trace-title">
+  <h2 id="question-trace-title">Så togs rapporten fram</h2>
+  <details>
+    <summary>Avancerat körspår</summary>
+    {% if trace_error %}
+      <p role="status">Körspåret kunde inte läsas. Rapporten och uppdragets status visas ovan.</p>
+    {% elif trace %}
+      <p>Sammanfattning ur körjournalen. Verktygsanrop visas i journalens ordning.</p>
+      {% if not trace.complete %}<p class="alert alert--info" role="status">Journalen är ofullständig. Uppgifterna nedan kan sakna modellförsök, verktygsutfall och slutlig förbrukning.</p>{% endif %}
+      <dl class="question-trace__facts">
+        <dt>Körning</dt><dd>{{ trace.run_id }}</dd>
+        <dt>Team / agent</dt><dd>{{ trace.team or 'Okänt team' }} / {{ trace.agent or 'Okänd agent' }}</dd>
+        <dt>Körningens utfall</dt><dd>{{ trace.status | label('run_status') if trace.status else 'Slutstatus saknas' }}. Leveransens granskning visas i uppdraget.</dd>
+        <dt>Modellroll</dt><dd>{{ trace.model_role or 'Okänd' }}</dd>
+        <dt>Modeller som svarade</dt><dd>{% if trace.models %}<ul class="plain">{% for model in trace.models %}<li>{{ model }}</li>{% endfor %}</ul>{% else %}Inget modellsvar registrerat{% endif %}</dd>
+        <dt>Reservmodell</dt><dd>{% if trace.fallback_from %}Reservvägen användes efter försök med <ul class="plain">{% for model in trace.fallback_from %}<li>{{ model }}</li>{% endfor %}</ul>{% else %}Inget modellbyte registrerat{% endif %}</dd>
+        <dt>Modellsteg</dt><dd>{{ trace.steps if trace.steps is not none else 'Okänt antal' }}</dd>
+        <dt>Registrerad kostnad</dt><dd>{% if trace.cost_usd is not none %}{{ '%.4f' | format(trace.cost_usd) }} USD{% else %}Okänd{% endif %}</dd>
+        <dt>Körtid</dt><dd>{% if trace.elapsed_seconds is not none %}{{ '%.1f' | format(trace.elapsed_seconds) }} sekunder{% else %}Okänd{% endif %}</dd>
+        <dt>Körpolicy i journalen</dt><dd>{{ trace.policy_id or 'Saknas i journalen' }}</dd>
+        <dt>Uppdragets körbild</dt><dd>{{ flow.input.policy_ref }}</dd>
+      </dl>
+      <h3>Verktygsanrop</h3>
+      {% if trace.tools %}<ol class="question-trace__tools">
+        {% for tool in trace.tools %}<li>
+          <p><strong>{{ tool.skill }}</strong> · {{ tool_status.get(tool.status, 'Okänt utfall') }}</p>
+          <dl class="question-trace__facts">
+            <dt>Operation</dt><dd>{{ tool.operation or 'Inte registrerad' }}</dd>
+            <dt>Typ</dt><dd>{{ tool.kind | label('operation_kind') if tool.kind else 'Okänd' }}</dd>
+            <dt>Åtkomstnivå</dt><dd>{{ access_level.get(tool.level, 'Okänd') }}</dd>
+          </dl>
+        </li>{% endfor %}
+      </ol>{% else %}<p>Inga verktygsanrop registrerade.</p>{% endif %}
+    {% elif assignment.run_id %}
+      <p>Körjournalen saknas för {{ assignment.run_id }}. Modell, verktygsanrop och förbrukning kan inte visas.</p>
+    {% else %}
+      <p>Ingen agentkörning har registrerats för uppdraget ännu.</p>
+    {% endif %}
+  </details>
+</section>

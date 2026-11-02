@@ -119,6 +119,63 @@ def test_normal_case_same_assignment_both_surfaces_pdf_and_verified_actor(questi
     assert q.client.get(BASE).context["items"] == q.client.get(TEAM).context["items"]
 
 
+def test_trace_uses_same_journal_on_both_surfaces_and_escapes_text(questions):
+    q = questions
+    page = start(q)
+    view = page.context["assignment"]
+    path = q.tmp / "runs" / f"{view.run_id}.jsonl"
+    events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    started = next(event for event in events if event["type"] == "run_started")
+    started["agent"] = '<script>alert("agent")</script>'
+    started["raw_messages"] = "PRIVATE-CONVERSATION-MARKER"
+    path.write_text("\n".join(json.dumps(event) for event in events) + "\n", encoding="utf-8")
+    traces = []
+    for base in (BASE, TEAM, "/team/aktuarie"):
+        detail = q.client.get(f"{base}/{view.flow_id}")
+        assert detail.status_code == 200 and detail.headers["cache-control"] == "no-store"
+        trace = detail.context["trace"]
+        traces.append(trace)
+        assert trace.complete and trace.models == ("test:questions",)
+        assert trace.tools[0].skill == "get_company_metrics"
+        assert "Avancerat körspår" in detail.text and "Direkt inom mandat" in detail.text
+        assert "0.0000 USD" in detail.text and "Utfört" in detail.text
+        assert '&lt;script&gt;' in detail.text and '<script>alert(' not in detail.text
+        assert "PRIVATE-CONVERSATION-MARKER" not in detail.text
+    assert traces[0] == traces[1] == traces[2]
+
+
+@pytest.mark.parametrize("journal", ["missing", "incomplete", "unreadable"])
+def test_trace_gaps_do_not_hide_report_or_review_and_do_not_invent_usage(questions, monkeypatch, journal):
+    q = questions
+    page = start(q)
+    view = page.context["assignment"]
+    path = q.tmp / "runs" / f"{view.run_id}.jsonl"
+    if journal == "missing":
+        path.unlink()
+    elif journal == "incomplete":
+        events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        events = [event for event in events if event["type"] != "run_ended"]
+        path.write_text("\n".join(json.dumps(event) for event in events) + '\n{"broken":', encoding="utf-8")
+    else:
+        def unreadable(_):
+            raise OSError("PRIVATE-DATABASE-ERROR")
+        monkeypatch.setattr(q.c, "trace", unreadable)
+    for base in (BASE, TEAM):
+        detail = q.client.get(f"{base}/{view.flow_id}")
+        assert detail.status_code == 200
+        assert "Godkänn leveransen" in detail.text and "data-pdf-preview" in detail.text
+        if journal == "missing":
+            assert "Körjournalen saknas" in detail.text and detail.context["trace"] is None
+        elif journal == "incomplete":
+            assert "Journalen är ofullständig" in detail.text
+            assert not detail.context["trace"].complete
+            assert "Slutstatus saknas" in detail.text and "Okänt antal" in detail.text
+            assert "<dt>Registrerad kostnad</dt><dd>Okänd</dd>" in detail.text
+        else:
+            assert "Körspåret kunde inte läsas" in detail.text and detail.context["trace_error"]
+        assert "PRIVATE-DATABASE-ERROR" not in detail.text
+
+
 def test_preview_assets_are_served_locally_with_browser_module_mime_type(questions):
     client = questions.client
     for name in ("pdf-preview.mjs", "pdfjs-6.4.299.min.mjs", "pdfjs-worker-6.4.299.min.mjs"):

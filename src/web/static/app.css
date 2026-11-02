@@ -281,6 +281,17 @@ pre.draft { white-space: pre-wrap; background: var(--color-background); border-r
 .question-pdf__page canvas { display: block; margin: 0 auto; background: var(--color-surface); box-shadow: 0 1px 6px var(--color-border); }
 .question-pdf__page canvas[hidden] { display: none; }
 .question-observation { border-top: 1px solid var(--color-border); padding-top: 1rem; margin-top: 1rem; }
+.question-trace { overflow-wrap: anywhere; }
+.question-trace summary { padding: var(--space-2) 0; }
+.question-trace__facts { display: grid; grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr); gap: var(--space-2) var(--space-4); }
+.question-trace__facts dt { color: var(--color-text-muted); }
+.question-trace__facts dd { margin: 0; }
+.question-trace__tools { padding-left: 1.5rem; }
+.question-trace__tools > li { border-top: 1px solid var(--color-border); padding: var(--space-2) 0; }
+@media (max-width: 600px) {
+  .question-trace__facts { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+  .question-trace__facts dd { margin-bottom: var(--space-3); }
+}
 .oc-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.5rem; padding-left: 1.5rem; }
 [data-question-start] select, [data-question-start] textarea { display: block; margin: .4rem 0 1rem; width: min(100%, 38rem); }
 @media (max-width: 1000px) { .question-review { grid-template-columns: 1fr; } }
