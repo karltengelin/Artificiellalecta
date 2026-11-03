@@ -35,7 +35,7 @@ den tidigare begränsningen i Anthropics samlade strikta verktygsgrammatik.
   Källreferens, definition, syntetisk märkning och kontrollsumma är obligatoriska.
   En rättelse får ett nytt id. Importskriptet validerar utan DB-anslutning som standard.
 - Grundförslag går genom befintliga `propose_valuation_basis` som agentförslag
-  med APPROVAL. Därefter kan människan registrera och anta grunden i separata steg.
+  med APPROVAL (B-045). Därefter kan människan registrera och anta grunden i separata steg.
 - SVG-diagram och Markdown-rapporter lagras med kontrollsummor i databasen.
   Diagrammens tal kommer bara ur sparad analys. PDF använder befintlig rapportmotor
   och registrerade DM Sans-filer. Underlagen kan hämtas som JSON.

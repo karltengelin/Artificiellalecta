@@ -8,6 +8,45 @@
 
 ## Beslut
 
+### B-045 | 2026-11-03 | Aktuarieagentens grundförslag via arbetsbänken
+
+**Beslut:** Operatören godkände förslaget i chatten 2026-11-03: ”Ja, logga den”. Posten
+skrevs först som B-044 på en separat branch och fick nummer B-045 vid integrationen 2026-11-07,
+eftersom B-044 redan användes på `main`.
+
+1. **Förslagsväg.** Aktuarieagenten får lägga förslag till ny grund eller kurva
+   (`propose_valuation_basis`, `APPROVAL`) genom dialogarbetsbänkens `propose_basis` i podden
+   `analys`. Förslaget kräver ett beräknat analysunderlag och bär analysens referenser och
+   kontrollsummor.
+2. **Inget eget verktyg.** Operationen monteras inte i podden `antaganden`, som förblir bara
+   läsning. Arbetsbänken anropar operationen i betrodd kod med aktuarieagenten som aktör, så
+   tjänstelagret prövar agentens nivå och lägger förslaget i godkännandekön.
+3. **Inga nya rättigheter.** `agent_aktuarie` behåller bara `SELECT` på `valuation_bases` och får
+   inga rättigheter på godkännandekön.
+4. **Människan beslutar.** Ett godkänt förslag gäller inte. Antagande och avslag
+   (`adopt_valuation_basis`, `reject_valuation_basis`) förblir `HUMAN_ONLY` med giltighetsdag och
+   beslutsreferens.
+
+**Motivering:** Förslagsvägen byggdes med dialogarbetsbänken 2026-11-02 utan ett eget beslut,
+medan dokumentationen sade att den skulle öppnas först med antagandeöversynen (A9). Beslutet gör
+rättigheten spårbar. Risken är låg: ett förslag ändrar ingen gällande grund, två mänskliga steg
+krävs innan något gäller, och kravet på analysunderlag håller förslagen bundna till beräkningar i
+betrodd kod.
+
+**Övervägda alternativ:** Att stänga arbetsbänkens förslagsväg till A9 och låta människan
+registrera agentens utkast. Att montera `propose_valuation_basis` som eget verktyg i podden
+`antaganden`, vilket skulle tillåta förslag utan analysunderlag.
+
+**Konsekvenser:**
+- `02_system/tjänstelager.md` §9.7, åtkomstregistret, poddkonfigurationen, operationsmodulen,
+  aktuarieteamets plan och ATT_GORA beskriver förslagsvägen (rättade 2026-11-03).
+- Den schemalagda antagandeöversynen och data scientist-agenten i A9 påverkas inte.
+
+**Preciserar:** B-042 (A4 och A9) och B-028 (godkännandekön). Tidigarelägger den del av A9 som
+gäller agentens förslagsväg.
+
+---
+
 ### B-044 | 2026-11-03 | Ett rättningsvarv vid underkänt slutsvar
 
 **Beslut:** Operatören godkände i chatten 2026-11-03 alternativ A och B i förslaget om tal i
