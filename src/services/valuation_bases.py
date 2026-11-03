@@ -12,8 +12,6 @@ branschvärden; kurvan är syntetisk.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from datetime import date
 from decimal import Decimal
 from typing import Any, Literal
@@ -24,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from models import ValuationBasis
 from models.valuation_basis import BASIS_FAMILIES
+from utils.checksums import checksum
 
 
 class _Strict(BaseModel):
@@ -151,11 +150,6 @@ def normalize(purpose: str, assumptions: dict[str, Any]) -> dict[str, Any]:
         return SCHEMAS[purpose].model_validate(assumptions).model_dump(mode="json")
     except ValidationError as exc:
         raise BasisError(f"Antagandena stämmer inte med schemat för {purpose}: {exc}") from exc
-
-
-def checksum(assumptions: dict[str, Any]) -> str:
-    text = json.dumps(assumptions, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def verify_checksum(row: ValuationBasis) -> None:

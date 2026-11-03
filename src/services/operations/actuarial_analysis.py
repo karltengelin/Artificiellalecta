@@ -155,12 +155,20 @@ class SavedQuery(Strict):
         return self
 
 
-class ScenarioQuery(SavedQuery):
+class ScenarioEffects(Strict):
     rate_shift_bp: float = Field(default=0, ge=-300, le=300)
     mortality_intensity_factor: float = Field(default=1, ge=.25, le=4)
     improvement_per_year: float | None = Field(default=None, ge=0, le=.04)
     expense_factor: float = Field(default=1, ge=0, le=5)
     expense_indexation: float | None = Field(default=None, ge=0, le=.1)
+
+
+class ScenarioQuery(SavedQuery, ScenarioEffects):
+    pass
+
+
+class MonthChangeQuery(ScenarioEffects):
+    journal_id: str = Field(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$")
 
 
 class ExperienceQuery(Strict):
@@ -188,6 +196,7 @@ class CompareQuery(Strict):
 
 
 ANALYSES = {
+    "monthly_fta_change": (MonthChangeQuery, "Förklara en avstämd syntetisk premie-/garantimånad med strikt nollrest"),
     "valuation": (ValuationQuery, "Skrivskyddad FTA-provberäkning på aktuellt bestånd, alltid scenario"),
     "scenario": (ScenarioQuery, "Räkna om sparat utdrag med ändrad ränta, dödlighet eller kostnad"),
     "cashflows": (SavedQuery, "Projicera garantins och kostnadernas kassaflöden på ett sparat utdrag"),
@@ -199,7 +208,7 @@ ANALYSES = {
 
 
 class AnalysisInput(Strict):
-    analysis: Literal["valuation", "scenario", "cashflows", "experience", "fit_mortality", "mortality_curve", "compare_valuations"]
+    analysis: Literal["valuation", "scenario", "cashflows", "experience", "fit_mortality", "mortality_curve", "compare_valuations", "monthly_fta_change"]
     parameters_json: str = Field(max_length=10000)
 
 
@@ -330,7 +339,14 @@ def perform_analysis(ctx: OperationContext, data: AnalysisInput) -> JsonResult:
     session = ctx.require_session()
     q = ANALYSES[data.analysis][0].model_validate_json(data.parameters_json)
     sources, limitations = [], []
-    if data.analysis == "valuation":
+    if data.analysis == "monthly_fta_change":
+        from services.operations.premium_month import analyse_month
+
+        payload, hidden = analyse_month(session, q)
+        sources = payload["sources"]
+        limitations = ["Syntetiskt månadsförsök med rekonstruerat S-04-IB; inga basvärderingar, tillgångar, ALM eller solvens.",
+                       "Ändrade grunder här är scenarier och ändrar inte intjänade garantidelar."]
+    elif data.analysis == "valuation":
         c = compute_valuation(session, q.valuation_date, "scenario", basis_code=q.basis_code, curve_code=q.curve_code)
         payload = {"rows": [{"label": "Scenario", **_amounts(c.totals)}], "policies": c.totals.policies,
                    "checks_passed": c.checks_passed,
@@ -411,10 +427,11 @@ def perform_analysis(ctx: OperationContext, data: AnalysisInput) -> JsonResult:
 
     root = Path(__file__).resolve().parents[2]
     files = (root / "analytics/actuarial_experience.py", Path(__file__), root / "skills/calculation/actuarial_annuity.py",
-             root / "skills/calculation/fta_valuation.py")
+             root / "skills/calculation/fta_valuation.py", root / "services/premium_month_analysis.py",
+             root / "services/operations/premium_month.py", root / "skills/calculation/premium_origin_ledger.py")
     code_hash = hashlib.sha256(b"".join(p.read_bytes().replace(b"\r\n", b"\n") for p in files)).hexdigest()
     payload = {**payload, "analysis": data.analysis, "sources": sources, "code_checksum": code_hash,
                "parameters": q.model_dump(mode="json"),
                "limitations": [*payload.get("limitations", []), *limitations],
-               "scenario_only": data.analysis in {"valuation", "scenario"}}
+               "scenario_only": data.analysis in {"valuation", "scenario", "monthly_fta_change"}}
     return JsonResult(payload=payload)

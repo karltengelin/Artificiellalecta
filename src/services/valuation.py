@@ -37,6 +37,7 @@ from services.valuation_extract import (
     ExtractError,
     ValuationExtract,
     build_extract,
+    extract_checksum,
     month_end,
 )
 from skills.calculation import fta_valuation as fv
@@ -53,7 +54,8 @@ CODE_FILES = (
 SOURCE_NOTE = {
     "reconstructed_s04": "Rekonstruerat startbestånd S-04 (B-042 val L): garantidelar och kapital räknade ur "
                          "premiehistoriken. Ersätts när paket B finns och får inte lämnas som FI-underlag utan märkningen.",
-    "ledger": "Bokförda värden",
+    "ledger": "Journalförda underlag; ursprungets rekonstruerade och syntetiska märkning följer journalmanifestet. "
+              "Ingen tillgångssida eller huvudbok intygas av märkningen.",
 }
 QUANTITIES = {
     "capital_sek": "C: pensionskapital (retrospektivt), inte garanterat",
@@ -167,7 +169,8 @@ def policy_inputs(extract: ValuationExtract) -> list[fv.PolicyInput]:
 
 
 def compute_valuation(session: Session, valuation_date: date, purpose: Purpose = "base", *,
-                      basis_code: str | None = None, curve_code: str | None = None) -> Computation:
+                      basis_code: str | None = None, curve_code: str | None = None,
+                      extract: ValuationExtract | None = None) -> Computation:
     """Bygger utdraget och värderar beståndet. Sparar ingenting."""
     if valuation_date != month_end(valuation_date):
         raise ValuationError("Värderingsdatumet ska vara ett månadsslut")
@@ -177,10 +180,14 @@ def compute_valuation(session: Session, valuation_date: date, purpose: Purpose =
     curve = _basis(session, basis.assumptions["curve_family"], valuation_date, purpose, curve_code)
     s_y, tax_label = _tax(session, valuation_date, basis.assumptions["tax"])
     try:
-        extract = build_extract(session, valuation_date)
+        if extract is None:
+            extract = build_extract(session, valuation_date)
+        elif (purpose != "scenario" or extract.valuation_date != valuation_date
+              or extract.checksum != extract_checksum(extract) or extract.not_calculated):
+            raise ExtractError("Journalutdraget ska vara ett fullständigt, innehållskontrollerat scenario")
     except ExtractError as exc:
         raise ValuationError(f"Datautdraget kan inte byggas: {exc}") from exc
-    if not extract.approved:
+    if not extract.approved or not all(c.passed for c in extract.checks):
         failed = ", ".join(c.name for c in extract.checks if not c.passed)
         raise ValuationError(f"Datautdraget är underkänt ({failed}) – värderingen stoppas (§5.3)")
 

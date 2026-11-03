@@ -40,6 +40,10 @@ Byggt på operatörens uppdrag 2026-11-02. Verktyg: `actuarial_workbench` i podd
 - Värderingsjämförelse med isolerad grundeffekt. Resterande förändring är
   uttryckligen ej separerad; full förändringsanalys per verksamhetshändelse
   kräver premie-, utbetalnings-, dödsfalls- och planjournalerna.
+- `monthly_fta_change`: en avgränsad full förklaring för det syntetiska
+  premie-/garantiförsöket i [P6-MANAD-001](../../02_system/avstamd_fta_manad.md).
+  Kräver stängd, avstämd journal; strikt nollrest. Utbetalningar, dödsfall
+  och planändringar stöds inte i detta försök. Inga nya agenttabellrättigheter.
 
 ## Databehov och gränser
 

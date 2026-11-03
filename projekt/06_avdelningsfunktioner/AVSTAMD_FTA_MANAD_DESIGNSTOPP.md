@@ -1,7 +1,9 @@
 # Designstopp – avstämd månad från mottagen premie till förklarad FTA
 
 > **ID:** P6-MANAD-001 | **Version:** 0.1 | **Datum:** 2026-11-03
-> **Status:** förslag för Karls godkännande före kod. Inga nya beslut är loggade.
+> **Status:** D1–D6 godkända av Karl i chatten 2026-11-03: ”jag godkänner”.
+> Byggstart enligt §10 är godkänd. Separat OK krävs fortfarande enligt §9 för Lakebase.
+> Ingen ny post har förts in i beslutsloggen.
 > **Uppdrag:** [ATT_GORA, nästa bygguppdrag](../../ATT_GORA.md#nästa-bygguppdrag--avstämd-månad-från-mottagen-premie-till-förklarad-fta-förändring), prioriterat 2026-11-02.
 > **Utgångspunkt:** `origin/main` vid `b22804b`, arbetsbranch `codex/avstamd-fta-manad`.
 
@@ -27,7 +29,8 @@ observerat novemberutfall. Godkännandet av analysleveransen är skilt från
 | D5: grunder för försöket | Ny, oföränderlig AVK-version med bevarad historik och föreslaget novembervärde +0,20 %. Grundfall med oförändrad FI-SIM/SIM-V, separata scenariovarianter ränta +50 bp och driftkostnad +10 % |
 | D6: nästa byggsteg | Ordningen i §10, med separat OK för varje Lakebase-ingrepp enligt §9 |
 
-Valen är beslutsförslag, inte redan antagna produktregler eller grunder.
+Valen är godkänd bygginriktning. Registrering och antagande av nya grunder görs
+fortfarande genom ordinarie tjänster; godkännandet skriver inga data till Lakebase.
 
 ## 2. Omfattning, ansvar och befintliga delar
 
@@ -498,7 +501,8 @@ bortvalda och överhoppade prov. Projekt 5 förblir pausat genom hela ordningen.
 
 ## 11. Öppna frågor och föreslagna beslut
 
-Karl behöver ta ställning till D1–D6 i §1. Särskilt:
+Frågorna nedan ställdes vid designstoppet. Karl godkände D1–D6 i §1 utan
+ändringar i chatten 2026-11-03. De bevaras som beslutsunderlag:
 
 - Är en syntetisk novemberanalys med två scenariovärderingar rätt första acceptans,
   med decemberbas som separat nästa mål? En låst månadsbas skulle kräva nytt A1-beslut.

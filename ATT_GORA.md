@@ -53,15 +53,19 @@ Uppdraget förenar relevanta delar av paket A/B och A7 i projekt 1/4/6, med
 kassaflödesgräns mot projekt 5. Återanvänd befintliga tjänster, värderingsmotor,
 agentdialog och grunder. Saknade journaler byggs som gemensamma verksamhetsunderlag.
 
-**Designstopp 2026-11-03, inväntar Karls godkännande före kod:**
+**Designstopp 2026-11-03, D1–D6 godkända av Karl i chatten samma dag:**
 [P6-MANAD-001](projekt/06_avdelningsfunktioner/AVSTAMD_FTA_MANAD_DESIGNSTOPP.md)
 avgränsar mottagen nettopremie, kapital-/garantijournal och A7:s förklaringskedja.
 Oktober-IB är kontrollerat skrivskyddat mot Lakebase. Förslaget är en märkt
 syntetisk novembermånad med två scenariovärderingar, en förlängd AVK-version
 och strikt noll oförklarat; SIM-V:s giltighet från 2026-12-31 och A1:s
-kvartalsbas består. Separat införande av aktuariedialogens fyra saknade
-Lakebase-tabeller föreslås efter uttryckligt OK. Ingen kod, backup, migration
-eller skrivning mot Lakebase har utförts. Projekt 5 förblir pausat.
+kvartalsbas består. **Lokalt byggt 2026-11-03:** frysta underlag, tjänsteoperationer,
+ursprungsjournal, A6-adapter och full premie-/garantiförklaring, arbetsbänksanalysen
+`monthly_fta_change` samt hashbunden granskning i befintlig flödesmotor.
+[Drift och införandestatus](02_system/avstamd_fta_manad.md).
+PostgreSQL-verifiering och samordnat införande återstår efter separat OK.
+Aktuariedialogens fyra tabeller och de tre nya journaltabellerna saknas i Lakebase;
+ingen backup, migration eller dataskrivning har gjorts där. Projekt 5 förblir pausat.
 
 - **Acceptans:** ingående FTA + identifierade förändringar = utgående FTA,
   avstämt på öret, med en spårbar källa för varje post. Underlagen ska ha period,
