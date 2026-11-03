@@ -121,8 +121,8 @@ python scripts/agents/run_case_worker.py --db demo --serve
 `--serve` är en långlivad lokal process, inte en installerad Windows-tjänst.
 Driften enligt B-043 är `--once` från Windows Schemaläggaren vardagar 07.05,
 med *kör så snart som möjligt efter missad start*, *starta inte en ny instans*
-och utdata till `logs/case_worker.log`. Uppgiften skapas av operatören eller
-med operatörens OK; Lakebase-verifieringen är gjord 2026-11-02. Varje varv skriver en
+och utdata till `logs/case_worker.log`. Uppgiften `Artificiellalecta-arendearbetare`
+skapades av operatören 2026-11-03. Den kör `cmd.exe /c` med huvudkatalogens `.venv\Scripts\python.exe -X utf8`, bara när operatören är inloggad och med tidsgränsen 1 timme. Lakebase-verifieringen är gjord 2026-11-02. Varje varv skriver en
 tidsstämplad rad med antal uppdrag som väntar på godkännande, behöver
 handläggare eller kräver avstämning; ett fel ger slutkod 1. `/arenden?status=uppfoljning`
 (*Att följa upp*) listar samma öppna ärenden. Operatören kontrollerar dagligen
@@ -315,8 +315,8 @@ Detta är första byggda ärendeförmågan, inte hela den färdiga organisatione
 - Flera mänskliga roller/teammedlemskap, centralens generella teamsamtal och
   fler ärendetyper ingår i fortsättningen.
 - Automatisk slutbehandling är inte aktiverad (B-043 val C). Det dagliga
-  urvalet är påslaget i policyn och verifierat i Lakebase, men körs inte där
-  förrän uppgiften i Windows Schemaläggaren skapats.
+  urvalet är påslaget i policyn och verifierat i Lakebase. Det körs där
+  vardagar 07.05 från 2026-11-04; uppgiften i Windows Schemaläggaren skapades 2026-11-03.
 
 **Förslag till senare beslutspost, utan nummer:** (driftvalen är beslutade i B-043)
 inför ärendebunden dialog

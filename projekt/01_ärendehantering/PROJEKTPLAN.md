@@ -14,7 +14,7 @@ faktiskt påverkar systemen och databaserna bakom: policys, förmåner, tillstå
 `cases` och agentrollens rättigheter infördes i Lakebase 2026-10-24. Kvar i
 F5-5–6: agentförslag och hela ärendeflödet verifierade i Lakebase 2026-11-02.
 Ärendedialog och självständig köhandläggning har lokalt stöd sedan 2026-10-31;
-tabellerna är införda i Lakebase efter backup och OK samma dag. Ärendefallen är valda i B-043 och policyn verifierad i demo, `svc_test` och Lakebase 2026-11-02; aktivering av driften i Windows Schemaläggaren återstår. Fler ärendetyper
+tabellerna är införda i Lakebase efter backup och OK samma dag. Ärendefallen är valda i B-043 och policyn verifierad i demo, `svc_test` och Lakebase 2026-11-02; uppgiften i Windows Schemaläggaren skapades 2026-11-03 och kör första gången 2026-11-04. Fler ärendetyper
 är fortsatt obygda. Den breda modelloberoende
 bolagsdialogen planeras i projekt 10; den är ingen separat Claude-chatt i detta projekt.
 
@@ -88,7 +88,7 @@ Den närmaste fråge-/rapportkedjan i [projekt 10](../10_operatörscentral/PROJE
   - försäkringsbesked
   - interna id:n i adresserna
 - Agentförslag och hela ärendeflödet är slutverifierade i F5-5–6 (klart 2026-11-02, se ATT_GORA).
-- Verifiera hela verksamhetsflödet med ärendearbetaren från 2026-11-01 enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy. Designstopp 2026-11-02: [beslutsunderlaget](SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md) godkänt som B-043. Policyn `case-work-v2` verifierad i demo, `svc_test` och Lakebase samma dag och mergad till main; kvar är uppgiften i Windows Schemaläggaren.
+- Verifiera hela verksamhetsflödet med ärendearbetaren från 2026-11-01 enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy. Designstopp 2026-11-02: [beslutsunderlaget](SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md) godkänt som B-043. Policyn `case-work-v2` verifierad i demo, `svc_test` och Lakebase samma dag och mergad till main; uppgiften i Windows Schemaläggaren skapades 2026-11-03, och kvar är kontrollen efter första körningen 2026-11-04.
 - Samordna modelloberoende bolagsdialog med [projekt 10](../10_operatörscentral/PROJEKTPLAN.md), OC-3, och försäkringsteamets område med OC-8 (B-036).
 
 ## Öppna designfrågor
