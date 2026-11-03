@@ -85,9 +85,8 @@ efter kontroll av leveranserna. Automatisk återstart eller schemalagd drift ing
 ## Verifiering och införandestatus 2026-11-02
 
 Implementationen levereras från `codex/aktuarie-dialog-analys`. Operatören har
-godkänt integration till `main`. Ingen skarp schemamigration har genomförts.
-De fyra nya tabellerna saknas ännu i Lakebase. Den befintliga tjänsten på
-port 8765 har inte startats om.
+godkänt integration till `main`. Den 2026-11-02 var ingen skarp schemamigration
+genomförd; se införandet 2026-11-03 nedan.
 
 - Helkörning genom `run_tests.py --all --run --postgres`: **1 677 godkända,
   ett fel**. Felet var en gammal förväntan på menytexten ”Kommande arbetsvägar”.
@@ -126,12 +125,26 @@ port 8765 har inte startats om.
   utan nya tabeller. Ingen migration, observation eller värdering sparades.
 
 En separat lokal granskningsserver kan startas med kommandot ovan. Den använder
-demodata. Inför Lakebase-drift återstår backup, samordnad tillämpning av den
-förberedda migrationen och omstart med `--actuary-workspace`. Verkliga
-erfarenhetsanalyser kräver dessutom avstämda observationsleveranser via
+demodata. Verkliga erfarenhetsanalyser kräver avstämda observationsleveranser via
 importkontraktet; sådana skapas inte av agenten.
 
 **Tillägg 2026-11-03:** arbetsbänken kan också välja `monthly_fta_change` för
 en stängd, avstämd syntetisk månadsjournal. [Kontrakt, lokal körning och gränser](avstamd_fta_manad.md).
 Den är skild från `compare_valuations`, som fortsatt är en delanalys. Inga
 Lakebase-tabeller, grunder, data eller agenträttigheter har införts genom tillägget.
+
+## Införande i Lakebase 2026-11-03
+
+Operatören godkände införandet och bekräftade att ingen annan agent körde mot
+Lakebase (AGENTS.md §4.5). Backup togs först till `backups/20261103T203424Z`.
+`migrate_actuarial_workspace.py --apply --backup …` skapade de fyra tabellerna
+tomma. Alla 22 befintliga tabellers radantal var oförändrade, bland annat 501
+försäkrade, 499 försäkringar och 15 097 premietransaktioner. En efterföljande
+torrkörning rapporterade att tabellerna finns.
+
+Webben startas mot Lakebase med `--actuary-workspace`. Skrivbordsgenvägen gör inte
+det; den startar grundläget utan aktuariedialog. `--report-font-dir` behövs bara
+om DM Sans inte ligger i `tmp/pdfs/fonts`. Dialogsidan efter migrationen och en
+första riktig dialogkörning mot Lakebase är inte verifierade i detta steg.
+Lakebase har ännu inga sparade värderingar (`valuation_runs` och
+`valuation_extracts` är tomma).

@@ -8,6 +8,41 @@
 
 ## Beslut
 
+### B-044 | 2026-11-03 | Ett rättningsvarv vid underkänt slutsvar
+
+**Beslut:** Operatören godkände i chatten 2026-11-03 alternativ A och B i förslaget om tal i
+aktuariens svar ("Bygg A och B") och därefter beslutsposten ("Ja, skriv in B-044").
+
+1. **Rättningsvarv (B).** Ett slutsvar enligt resultatschema som inte stämmer med körningen går
+   inte längre direkt till människan. Det gäller oläst källa, oskrivet utkast, saknad beräkning
+   och obelagt tal. Modellen får harnessens skäl och ett enda nytt försök inom körningens tak
+   (`MAX_RESULT_CORRECTIONS = 1`). Det nya svaret prövas lika strikt. Underkänns det, eller är
+   taken nådda, blir körningen `needs_human` med skälen. Avvisningen journalförs som
+   `result_rejected` med maskerade skäl.
+2. **Talregeln i instruktionen (A).** Aktuariens arbetsinstruktion säger att varje tal i svaret
+   måste stå i en leverans som `analysis_refs` pekar på. Egna summor, andelar, skillnader,
+   medelvärden och årtal utanför underlaget godtas inte.
+
+**Motivering:** Den första riktiga frågan i aktuariedialogen mot Lakebase gav ett korrekt
+underlag, men slutsvaret underkändes eftersom agenten själv hade lagt ihop två celler (452) och
+nämnt två årtal. Operatören fick inget svar för 0,25 USD. Agenten kände inte till regeln, och ett
+underkänt slutsvar fick ingen rättning, till skillnad från vanliga verktygsfel (harness.md §6.4).
+
+**Övervägda alternativ:** Att låta kontrollen godta alla summor och kvoter av tal i underlaget
+avfärdades. Med tillräckligt många tal går nästan vilket tal som helst att skriva som en sådan
+summa, och kontrollen skulle i praktiken stängas av. Härledda tal som deterministiska leveranser i
+arbetsbänken (alternativ C) behålls som ett möjligt senare byggsteg.
+
+**Konsekvenser:**
+- Gäller alla agenter med resultatschema: aktuariedialogen, beståndsöversikten, produktrapporten,
+  compliance och beståndsinsikten. Ett rättningsvarv kostar ungefär ett extra modellanrop.
+- `harness.md` §6.4, aktuariens instruktion och frågekedjans beslutsunderlag är uppdaterade.
+  Ingen ändring i Lakebase.
+
+**Preciserar:** B-041 (val F, inga obelagda tal) och B-042. Kontrollen i sig är oförändrad.
+
+---
+
 ### B-043 | 2026-11-02 | Självständiga ärendekörningar för löneunderlag (F5-7)
 
 **Beslut:** Operatören godkände valen A–E i

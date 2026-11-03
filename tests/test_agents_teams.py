@@ -37,7 +37,7 @@ from agents import (
     run_agent,
     run_assignment,
 )
-from agents.ecosystem import DEFAULT_ECOSYSTEM_PATH
+from agents.ecosystem import DEFAULT_ECOSYSTEM_PATH, Limits
 from agents.gateways import DraftGateway, GatewayError, RegulatoryGateway
 from ai import AIClient, AIConfig, ToolCall
 from ai.providers.fake import FakeProvider, text_result, tool_call_result
@@ -362,11 +362,16 @@ class TestTolkning:
         ({"source_handles": []}, "ingen läst källa"),
     ])
     def test_resultat_som_inte_stammer_lamnas_till_manniskan(self, eco, skills, service, gateways, overrides, problem):
-        fake = FakeProvider([*COMPLIANCE_SCRIPT, text_result(interpretation(**overrides))])
+        wrong = text_result(interpretation(**overrides))
+        fake = FakeProvider([*COMPLIANCE_SCRIPT, wrong, wrong])
         outcome = run_assignment(ai_client(fake), eco, skills, service, request_for_interpretation(SOURCE),
                                  gateways=gateways, run_id="run-1", journal=journal("compliance", "compliance_agent"))
         assert outcome.result.status == RunStatus.NEEDS_HUMAN and outcome.result.output is None
         assert any(problem in u for u in outcome.result.uncertainties)
+        # Ett enda rättningsvarv med harness skäl, sedan tar människan över
+        assert len(fake.requests) == len(COMPLIANCE_SCRIPT) + 2
+        correction = fake.requests[-1].messages[-1].text
+        assert "Harness underkände slutsvaret" in correction and problem in correction
 
     def test_svar_utanfor_schemat_godtas_inte(self, eco, skills, service, gateways):
         fake = FakeProvider([text_result("Premieåldern höjs till 67 år.")])
@@ -382,6 +387,33 @@ class TestTolkning:
                                  journal=journal("compliance", "compliance_agent"))
         assert outcome.result.status == RunStatus.FAILED and outcome.result.output is None
         assert "utdatataket" in outcome.result.summary
+
+
+class TestRattningsvarv:
+    """Ett underkänt slutsvar får skälen och ett enda nytt försök (harness.md §6.4)."""
+
+    def test_rattat_svar_godtas_och_avvisningen_journalfors(self, eco, skills, service, gateways):
+        wrong = text_result(interpretation(source_handles=["PR-ITP1-013"]))
+        fake = FakeProvider([*COMPLIANCE_SCRIPT, wrong, text_result(interpretation())])
+        log = journal("compliance", "compliance_agent")
+        outcome = run_assignment(ai_client(fake), eco, skills, service, request_for_interpretation(SOURCE),
+                                 gateways=gateways, run_id="run-1", journal=log)
+        assert outcome.result.status == RunStatus.COMPLETED, outcome.result.uncertainties
+        assert outcome.result.output["evidence"]["sources"][0]["handle"] == SOURCE
+        correction = fake.requests[-1].messages[-1]
+        assert correction.role == "user" and "källan PR-ITP1-013 är inte läst" in correction.text
+        (rejected,) = [e for e in log.events if e["type"] == "result_rejected"]
+        assert rejected["correction"] == 1 and "PR-ITP1-013" in rejected["problems"][0]
+
+    def test_inget_rattningsvarv_nar_stegtaket_ar_nått(self, eco, skills, service, gateways):
+        wrong = text_result(interpretation(source_handles=["PR-ITP1-013"]))
+        fake = FakeProvider([*COMPLIANCE_SCRIPT, wrong, text_result(interpretation())])
+        request = request_for_interpretation(SOURCE, limits=Limits(max_steps=len(COMPLIANCE_SCRIPT) + 1))
+        outcome = run_assignment(ai_client(fake), eco, skills, service, request, gateways=gateways,
+                                 run_id="run-1", journal=journal("compliance", "compliance_agent"))
+        assert outcome.result.status == RunStatus.NEEDS_HUMAN
+        assert any("PR-ITP1-013" in u for u in outcome.result.uncertainties)
+        assert len(fake.requests) == len(COMPLIANCE_SCRIPT) + 1
 
 
 class TestBestandsinsikt:
@@ -420,7 +452,7 @@ class TestBestandsinsikt:
         assert "estimate_parameter_change_impact" in {t.name for t in fake.requests[0].tools}
 
     def test_utan_beräkning_ingen_insikt(self, eco, skills, service, gateways):
-        fake = FakeProvider([text_result(impact(draft_names=[]))])
+        fake = FakeProvider([text_result(impact(draft_names=[]))] * 2)
         outcome = run_assignment(ai_client(fake), eco, skills, service, request_for_impact(MANDATE),
                                  parameter_change=MANDATE, gateways=gateways, run_id="run-2",
                                  journal=journal("aktuarie", "actuary_agent"))
