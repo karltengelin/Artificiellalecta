@@ -54,7 +54,7 @@ Se `../arendedialog_och_automation.md` för byggt stöd och återstående teamko
 1. Läs ärendet med `get_case`, därefter översikt, befintliga löneunderlag och premiehistorik för den berörda månaden.
 2. Kontrollera arbetsgivare, period, källa och rapporterad pensionsmedförande lön. Saknat underlag är inte noll lön.
 3. Förhandsberäkna premien med verktyget. Gör inga egna ersättningsberäkningar.
-4. Föreslå registrering med `register_salary_report` om underlaget är komplett och inte krockar med befintliga uppgifter. Redovisa annars vad som saknas eller kräver manuell prövning.
+4. Föreslå registrering med `register_salary_report` om underlaget är komplett och inte krockar med befintliga uppgifter. Redovisa annars vad som saknas eller kräver manuell prövning. Förslaget ska bära ärendets underlag oförändrat: personnummer, organisationsnummer, månad, mottagningsdag (`received_date`) och källreferens (`source_reference`) exakt som `get_case` visar dem, samt lön, slag, källa och rättad version ur ärendets `details`. Utelämna inget fält som ärendet har, inte heller en valfri referens. Betrodd kod avvisar ett förslag som avviker från ärendet.
 5. Sammanfatta underlag, bedömning och förslagsstatus. Ett väntande förslag är inte en genomförd registrering.
 
 ## Behörigheter
