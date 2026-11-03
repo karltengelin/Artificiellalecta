@@ -147,7 +147,7 @@ Resultatschemat `company_answer` följer samma mönster som beståndsinsikten i
 till det faktiska verktygsresultatet från körningen. Harness kontrollerar innan svaret godtas:
 
 - **Observationen kommer från verktyget.** Den kommer från ett lyckat `get_company_metrics`-anrop i körningen med den beställda månaden, och läsdatum och tillstånd följer med oförändrade.
-- **Inga obelagda tal i texten.** Siffror i slutsatsen ska motsvara en observation, perioden eller ett datum. Ett obelagt tal ger `needs_human` med skälet. Sedan 2026-11-03 får modellen först skälen och ett rättningsvarv (`harness.md` §6.4); kontrollen av det nya svaret är oförändrad.
+- **Inga obelagda tal i texten.** Siffror i slutsatsen ska motsvara en observation, perioden eller ett datum. Ett obelagt tal ger `needs_human` med skälet. Sedan 2026-11-03 får modellen först skälen och ett rättningsvarv (B-044, `harness.md` §6.4); kontrollen av det nya svaret är oförändrad.
 - **Inga ersättningsvärden.** Ett dolt eller misslyckat mått får inte ersättas med en uppskattning. Svaret blir då `partial` eller `unavailable`.
 
 Rapportens tabell med värden byggs av betrodd kod ur observationen, inte ur modellens text.
