@@ -270,6 +270,10 @@ står på 6 försök och 3,00 USD. Körjournalerna ligger i huvudkatalogens `log
 **Iakttagelse:** att ett förslag kan avvika från ärendet i ett enskilt fält
 (här källreferensen) visar varför granskningen behövs. Betrodd kod hade också
 stoppat förslaget i den automatiska vägen (`guard_case_proposal`).
+*2026-11-03:* handläggaragentens instruktion kräver nu att förslaget bär ärendets
+underlag oförändrat, även mottagningsdag och källreferens. Röktesten för flödet och
+schemat i demo och `svc_test` med `claude-sonnet-5`: 28 av 28 respektive 33 av 33 i
+båda miljöerna, och alla åtta förslagen motsvarade ärendet exakt.
 
 ## Verifiering och kvarstående delar
 
