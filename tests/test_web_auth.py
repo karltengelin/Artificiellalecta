@@ -1,9 +1,11 @@
 """OC-3a H–I: verifierad operatör, sessionslivslängd, CSRF och försöksgräns."""
 
 import logging
+import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -290,3 +292,16 @@ def test_password_script_refuses_input_without_a_terminal(tmp_path, monkeypatch)
     with pytest.raises(SystemExit) as exc:
         provision_operator.main()
     assert exc.value.code == 2 and not path.exists()
+
+
+def test_login_links_leave_boosted_navigation():
+    # htmx-navigering byter inte sidans referrer-policy. En boostad väg till inloggningen
+    # behåller no-referrer, och nästa formulär skickas då med Origin: null.
+    templates = Path(__file__).resolve().parents[1] / "src" / "web" / "templates"
+    boosted = [
+        f"{path.relative_to(templates)}: {link}"
+        for path in templates.rglob("*.html") if path.name != "login.html"
+        for link in re.findall(r'<a [^>]*href="/logga-in"[^>]*>', path.read_text(encoding="utf-8"))
+        if 'hx-boost="false"' not in link
+    ]
+    assert not boosted
