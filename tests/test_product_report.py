@@ -184,12 +184,12 @@ class TestFlodet:
         assert [v.flow_id for v in c.list()] == [view.flow_id]
 
     def test_obelagt_tal_stoppar_sammanfattningen(self, demo, service, tmp_path):
-        c = console(demo, tmp_path, responses(service, conclusion="Premierna ökade med 17 procent."))
+        c = console(demo, tmp_path, responses(service, conclusion="Premierna ökade med 17 procent.") * 2)
         view = c.start(2025, "", KARL)
         assert view.status == "failed" and view.delivery_version is None
 
     def test_utan_lasning_godtas_ingen_sammanfattning(self, demo, service, tmp_path):
-        c = console(demo, tmp_path, [text_result(summary(service, conclusion="Produkten fungerar."))])
+        c = console(demo, tmp_path, [text_result(summary(service, conclusion="Produkten fungerar."))] * 2)
         assert c.start(2025, "", KARL).status == "failed"
 
     def test_sammanfattning_for_annat_ar(self, demo, service, tmp_path):

@@ -24,8 +24,10 @@ En körning:
      Är rotbudgeten slut görs inga fler modellanrop. Ett barn som väntar, behöver människa
      eller kräver avstämning avslutar föräldern med samma status.
   8. Med ett resultatschema i uppdraget (3c-T) tvingar AI-lagret slutsvaret till schemat,
-     och harness prövar det mot körningen (agents.results): lästa källor, skrivna utkast och
-     beräkningen. Håller det inte blir körningen `needs_human` med skälen.
+     och harness prövar det mot körningen (agents.results): lästa källor, skrivna utkast,
+     beräkningen och talen i texten. Håller det inte får modellen skälen och ett enda
+     rättningsvarv (harness.md §6.4), om taken medger det. Det nya svaret prövas lika strikt; håller
+     det inte heller blir körningen `needs_human` med skälen.
 
 Varje steg journalförs (agents.journal, 3b-6) – utan råa personuppgifter. Går journalen
 inte att skriva görs inget modellanrop eller verktygsanrop efter det.
@@ -57,6 +59,9 @@ from services import ServiceLayer
 
 #: Högst så många rättningar av samma felklass i en körning (harness.md §6.4).
 MAX_CORRECTIONS_PER_ERROR = 2
+
+#: Högst så många rättningar av ett underkänt slutsvar i en körning (harness.md §6.4).
+MAX_RESULT_CORRECTIONS = 1
 
 #: Tjänstelagrets stopp som modellen inte ska försöka runda – människan tar över.
 NEEDS_HUMAN_ERRORS = frozenset({"BlockedError", "AccessDeniedError", "MissingReasonError"})
@@ -228,6 +233,7 @@ def run_agent(
     history: list[Message] = [first]
     dispatches: list[DispatchOutcome] = []
     corrections: dict[str, int] = {}
+    result_corrections = 0
 
     # Journalen måste kunna skrivas innan något modellanrop görs
     observe(
@@ -344,10 +350,36 @@ def run_agent(
             try:
                 output = verify(response.parsed, profile, dispatches)
             except ResultError as exc:
-                return finish(RunStatus.NEEDS_HUMAN, "Resultatet stämmer inte med körningen – handläggaren tar över.",
-                              uncertainties=exc.problems)
+                exhausted = budget.exhausted() or (delegator.exhausted() if delegator else None)
+                if result_corrections >= MAX_RESULT_CORRECTIONS or exhausted:
+                    return finish(RunStatus.NEEDS_HUMAN,
+                                  "Resultatet stämmer inte med körningen – handläggaren tar över.",
+                                  uncertainties=exc.problems)
+                result_corrections += 1
+                try:
+                    observe("result_rejected", correction=result_corrections,
+                            problems=[mask(p) for p in exc.problems])
+                except JournalError as journal_exc:
+                    return finish(RunStatus.FAILED, "Körjournalen kunde inte sparas – inget nytt modellanrop gjordes.",
+                                  uncertainties=(str(journal_exc),))
+                history.append(Message.user(_result_correction(exc.problems)))
+                continue
             return finish(RunStatus.COMPLETED, summary_of(response.parsed), output=output)
         return _final(response, finish)
+
+
+def _result_correction(problems: tuple[str, ...]) -> str:
+    """Harness skäl till modellen. Skälen kommer ur kontrollen, inte ur verktygssvar eller underlag."""
+    reasons = "\n".join(f"- {p}" for p in problems)
+    return (
+        "Harness underkände slutsvaret eftersom det inte stämmer med körningen:\n"
+        f"{reasons}\n\n"
+        "Lämna ett nytt slutsvar enligt samma schema. Varje tal i texten måste stå i ett underlag som "
+        "lästs eller skapats i den här körningen; räkna inte fram egna summor, andelar eller årtal. "
+        "Beskriv i ord det underlaget inte innehåller, eller hämta det med verktygen. Ange bara källor, "
+        "utkast och analyser från den här körningen. Det här är den enda rättningen; håller svaret inte "
+        "heller nu tar en människa över."
+    )
 
 
 _LIMIT_OF = {"steps": "max_steps", "tool_calls": "max_tool_calls", "cost_usd": "max_cost_usd",

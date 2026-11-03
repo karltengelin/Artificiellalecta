@@ -166,14 +166,14 @@ class TestHelaKedjan:
 
 class TestTalOchUnderlag:
     def test_obelagt_tal_stoppar_svaret(self, demo, tmp_path):
-        c = console(demo, tmp_path, read_then(conclusion="36 registrerade försäkrade."))
+        c = console(demo, tmp_path, read_then(conclusion="36 registrerade försäkrade.") * 2)
         view = c.start(NOVEMBER, "", KARL)
         assert view.status == "failed" and view.delivery_version is None
         assert "36" in json.dumps(c.flow(view.flow_id).step("answer").result)
 
     def test_dolt_matt_ger_delsvar_utan_tal(self, insurance_db, tmp_path):
         """Ett försäkrat: bestånd och belopp döljs. Fullständigt svar godtas inte; delsvaret visar orsaken."""
-        full = console(insurance_db.session_factory, tmp_path / "a", read_then(conclusion="Underlaget är litet."))
+        full = console(insurance_db.session_factory, tmp_path / "a", read_then(conclusion="Underlaget är litet.") * 2)
         assert full.start(NOVEMBER, "", KARL).status == "failed"
         partial = console(insurance_db.session_factory, tmp_path / "b",
                           read_then(status="partial", conclusion="Måtten döljs eftersom underlaget är litet."))
