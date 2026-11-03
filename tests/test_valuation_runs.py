@@ -178,7 +178,13 @@ class TestKorning:
 
     def test_underkant_utdrag_stoppar_vardering(self, service, demo):
         with demo() as s:
-            s.execute(delete(PolicyState).where(PolicyState.id == s.scalar(select(PolicyState.id).limit(1))))
+            # Ett godtyckligt UUID kan välja ett gammalt läge som inte gäller Q3.
+            current_id = s.scalar(select(PolicyState.id).where(
+                PolicyState.valid_from <= Q3,
+                PolicyState.valid_to.is_(None) | (PolicyState.valid_to >= Q3),
+            ).order_by(PolicyState.id).limit(1))
+            assert current_id is not None
+            s.execute(delete(PolicyState).where(PolicyState.id == current_id))
             s.commit()
         with pytest.raises(BlockedError, match="underkänt"):
             run(service)

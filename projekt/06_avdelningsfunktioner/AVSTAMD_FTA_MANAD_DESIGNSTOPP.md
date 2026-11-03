@@ -2,7 +2,9 @@
 
 > **ID:** P6-MANAD-001 | **Version:** 0.1 | **Datum:** 2026-11-03
 > **Status:** D1–D6 godkända av Karl i chatten 2026-11-03: ”jag godkänner”.
-> Byggstart enligt §10 är godkänd. Separat OK krävs fortfarande enligt §9 för Lakebase.
+> Byggstart enligt §10 är godkänd. Karl granskade månadsrapporten och godkände merge
+> samt samordnat Lakebase-införande separat i chatten 2026-11-03.
+> Aktuell [bygg- och införandestatus](../../02_system/avstamd_fta_manad.md) redovisas separat från designförslaget nedan.
 > Ingen ny post har förts in i beslutsloggen.
 > **Uppdrag:** [ATT_GORA, nästa bygguppdrag](../../ATT_GORA.md#nästa-bygguppdrag--avstämd-månad-från-mottagen-premie-till-förklarad-fta-förändring), prioriterat 2026-11-02.
 > **Utgångspunkt:** `origin/main` vid `b22804b`, arbetsbranch `codex/avstamd-fta-manad`.
@@ -446,6 +448,15 @@ källa och hash. Tills dess äger aktuarien syntetisk AVK enligt B-042. Den
 syntetiska banan är inte förvaltarens resultat eller en beräknad tillgångssida.
 
 ## 9. Lakebase – separat införande efter OK
+
+**Uppdatering 2026-11-03:** dialogens fyra tabeller infördes av Claude efter
+separat godkännande och backup `backups/20261103T203424Z`; senaste main och en
+ny skrivskyddad förkontroll bekräftar införandet. Karl har därefter godkänt
+merge och samordnat införande för månadsleveransen. Införandet avser de tre
+tomma journaltabellerna och den befintliga arbetsbänken; det granskade syntetiska
+månadsförsöket och AVK-förlängningen ligger lokalt. Planen och den ursprungliga
+kontrollbilden nedan bevaras som designunderlag. Det föreslagna tidsfönstret
+ersätts för detta pass av Karls uttryckliga OK till kvällens införande.
 
 Den skrivskyddade kontrollen bekräftade att `actuarial_datasets`,
 `actuarial_conversations`, `actuarial_turns` och `actuarial_analyses` fortfarande

@@ -65,9 +65,10 @@ ursprungsjournal, A6-adapter och full premie-/garantiförklaring, arbetsbänksan
 [Drift och införandestatus](02_system/avstamd_fta_manad.md).
 PostgreSQL-verifiering godkänd 2026-11-03 efter separat OK: 101 godkända prov i
 isolerade `svc_test`, 1 608 lokala prov bortvalda, inga fel eller överhoppade prov.
-Samordnat införande återstår efter separat OK. Aktuariedialogens fyra tabeller
-och de tre nya journaltabellerna saknas i beståndsdatabasen i Lakebase;
-ingen backup, migration eller dataskrivning har gjorts mot beståndet. Projekt 5 förblir pausat.
+Karl granskade månadsrapporten och godkände merge och samordnat införande i
+chatten 2026-11-03. Dialogens fyra tabeller är redan införda separat samma dag;
+de tre nya journaltabellerna återstår i beståndsdatabasen i Lakebase.
+Den syntetiska månaden är godkänd lokalt. Projekt 5 förblir pausat.
 
 - **Acceptans:** ingående FTA + identifierade förändringar = utgående FTA,
   avstämt på öret, med en spårbar källa för varje post. Underlagen ska ha period,

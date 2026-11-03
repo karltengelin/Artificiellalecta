@@ -150,14 +150,21 @@ standard, förutsättningskontroll, stopp vid partiellt schema och kontroll av
 övriga radantal. `--apply` kräver verifierbar backupreferens. Inga grunder,
 premier, journalposter eller agenträttigheter införs av migrationen.
 
-Dialogens fyra tabeller saknas också fortfarande i Lakebase. De har sin redan
-förberedda migration och eget införandefönster enligt designstoppet §9.
+Dialogens fyra tabeller infördes separat 2026-11-03 efter backup
+`backups/20261103T203424Z`. Senaste main och skrivskyddad schemakontroll
+bekräftar att deras kolumner, nycklar, index och villkor stämmer.
 Godkännandet av D1–D6 är inte ett OK till backup, migration,
 andra Lakebase-skrivningar eller omstart av den gemensamma webben.
 Karl godkände separat PostgreSQL-proven i `svc_test` i chatten 2026-11-03
 och bekräftade att ingen annan körde mot databasen. Godkännandet omfattar
 provets egna testscheman, inklusive skapande, rättighetsprov och borttagning;
 det omfattar inte införande i beståndsdatabasen eller merge till main.
+
+Karl granskade därefter månadsrapporten och godkände uttryckligen merge och
+samordnat Lakebase-införande i chatten 2026-11-03. Införandet omfattar backup,
+de tre tomma journaltabellerna, webbomstart med befintlig arbetsbänk och ett
+märkt dialogprov. Den syntetiska novemberjournalen och AVK-förlängningen ligger
+kvar lokalt; inga syntetiska mottagningar införs i beståndsdatabasen i detta pass.
 
 ## Verifiering och kvarstående arbete
 
@@ -193,9 +200,11 @@ IB-FTA         premie       tariff→FTA     tid          oberoende UB-FTA
 ```
 
 Oanalyserat är 0,000000 SEK. Räntekurva +50 bp, driftkostnad +10 % och
-kombinationen gav också nollrest. Utgående C är 42 176 267,71 kr. Den lokala
-rapporten har status `review_required`; inget faktiskt analysgodkännande eller
-baslås har registrerats för leveransen. Rapport och fulla källreferenser finns
+kombinationen gav också nollrest. Utgående C är 42 176 267,71 kr. Karl granskade
+månadsrapporten och godkände den i chatten 2026-11-03. Godkännandet har
+registrerats genom tjänstelagret i den lokala databasen som `approved_analysis`,
+med oförändrad granskningshash. Inget baslås har registrerats.
+Rapport och fulla källreferenser finns
 under ignorerade `tmp/premium_month/november-2026-release.report.md` respektive
 `.json`. Granskningshash:
 `2bb86253731d465de23e2d3fd0ff0da4ecadc4f3f7233ab5a00283d90891aeb6`.
