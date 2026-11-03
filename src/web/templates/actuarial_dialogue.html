@@ -34,5 +34,5 @@
 <p class="small muted">Aktuarien arbetar med behöriga underlag i vald miljö. Modellkörningen använder teamets ordinarie budget. Resultat och förslag kräver granskning.</p>
 <button type="submit">Skicka till aktuarien</button><p data-question-progress role="status" hidden>Meddelandet registreras. Aktuarien börjar arbeta.</p>
 </form></section>{% endif %}
-{% else %}<section class="panel"><p><a href="/logga-in">Logga in som operatör</a> för att samtala med aktuarien och läsa tidigare uppdrag.</p></section>{% endif %}
+{% else %}<section class="panel"><p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att samtala med aktuarien och läsa tidigare uppdrag.</p></section>{% endif %}
 {% endblock %}
