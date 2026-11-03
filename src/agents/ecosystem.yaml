@@ -103,7 +103,8 @@ pods:
       get_premium_flows: {service_operation: get_premium_flows}
 
   # Antagandebiblioteket i tjänstelagret (A4, B-042): grunder och kurvor, bara läsning. Förslag
-  # (propose_valuation_basis) monteras med antagandeöversynen (A9) när rollen får lägga förslag i kön.
+  # (propose_valuation_basis) monteras inte här; aktuarien föreslår via arbetsbänkens propose_basis
+  # (podden analys), som ger APPROVAL i tjänstelagret (tjänstelager.md §9.7).
   antaganden:
     owner_team: aktuarie
     mountable_by: [aktuarie]
