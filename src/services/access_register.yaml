@@ -43,8 +43,9 @@ operations:
   get_portfolio_snapshot: AGENT       # bestånd per läge och födelsedecennium, småcellsskydd, inga personuppgifter (A2, B-042)
   get_premium_flows: AGENT            # betalmarkerade premier per månad under ett år, småcellsskydd (A2, B-042)
 
-  # Antagandebiblioteket (A4, B-042). Förslaget kräver godkänd PR-ITP1-031 (golvet) och monteras för
-  # aktuarien först med antagandeöversynen (A9); antagande och avslag gör bara en människa.
+  # Antagandebiblioteket (A4, B-042). Förslaget kräver godkänd PR-ITP1-031 (golvet). Aktuarien föreslår
+  # via arbetsbänkens propose_basis, inte som eget verktyg (tjänstelager.md §9.7); antagande och avslag
+  # gör bara en människa.
   list_valuation_bases: AGENT          # grunder och kurvor med status, giltighet och kontrollsumma
   get_valuation_basis: AGENT           # en grund med alla antaganden; ändrat innehåll stoppar läsningen
   propose_valuation_basis: APPROVAL    # ny grund som förslag, gäller inte förrän den antas
