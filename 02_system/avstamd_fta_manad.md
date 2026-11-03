@@ -2,7 +2,7 @@
 
 **Beställt:** 2026-11-02. **Design:** [P6-MANAD-001](../projekt/06_avdelningsfunktioner/AVSTAMD_FTA_MANAD_DESIGNSTOPP.md),
 D1–D6 godkända av Karl i chatten 2026-11-03. Ingen ny beslutsloggspost.
-**Införandestatus:** lokal implementation; PostgreSQL-verifiering och Lakebase-införande återstår.
+**Införandestatus:** lokalt byggt och verifierat även mot PostgreSQL; införande i beståndsdatabasen återstår.
 
 ## Vad leveransen gör
 
@@ -152,8 +152,12 @@ premier, journalposter eller agenträttigheter införs av migrationen.
 
 Dialogens fyra tabeller saknas också fortfarande i Lakebase. De har sin redan
 förberedda migration och eget införandefönster enligt designstoppet §9.
-Godkännandet av D1–D6 är inte ett OK till backup, migration, `svc_test`-skrivprov,
+Godkännandet av D1–D6 är inte ett OK till backup, migration,
 andra Lakebase-skrivningar eller omstart av den gemensamma webben.
+Karl godkände separat PostgreSQL-proven i `svc_test` i chatten 2026-11-03
+och bekräftade att ingen annan körde mot databasen. Godkännandet omfattar
+provets egna testscheman, inklusive skapande, rättighetsprov och borttagning;
+det omfattar inte införande i beståndsdatabasen eller merge till main.
 
 ## Verifiering och kvarstående arbete
 
@@ -168,6 +172,16 @@ Efter att main `93bad9e` förts in i arbetsbranchen kördes hela den lokala svit
 på det sammanslagna kodläget: **1 608 godkända, 101 PostgreSQL-prov bortvalda**,
 inga fel eller överhoppade prov. Main-tilläggen rör F5-7:s driftstatus,
 förslagstext och inloggningslänken; de är bevarade. Inget har mergats till main.
+
+**2026-11-03, separat godkänd PostgreSQL-verifiering:**
+`run_tests.py --changed --base 93bad9e --run --postgres`, med
+`PYTEST_ADDOPTS='-m postgres -p no:cacheprovider --basetemp=tmp/pytest-month-pg-approved --tb=short'`,
+gav **101 godkända, 1 608 lokala prov bortvalda**, inga fel eller överhoppade prov
+(19 min 26 s). Den redan godkända lokala sviten kördes alltså inte om.
+Före körningen kontrollerades att samtliga konfigurerade testanslutningar pekade
+på `svc_test` och att tjänsternas testanslutning skilde sig från beståndets.
+Proven skapade och tog bort egna isolerade testscheman. Beståndsdatabasen
+användes inte för skrivning, backup eller migration.
 
 Det frysta Lakebase-utdraget kördes enbart i en ny lokal SQLite-databas:
 492 försäkringar och 12 syntetiska betalningar, totalt 24 300,00 kr.
@@ -196,9 +210,12 @@ för de utgående kapitalspåren. Körverktyget skapade inga projekt-5-tabeller.
 godkännandekö, atomisk rollback vid loggfel, FTA-steg och separata scenarier,
 småcellsskydd, ändrade underlag och flödesmotorns mänskliga grind.
 Postgres-provet omfattar tom/idempotent migration och samtidiga mottagningar
-mot eget schema i `svc_test`; det körs först efter samordnat OK.
+mot eget schema i `svc_test`, samt verifiering att aktuariens begränsade roll
+saknar direkt läsrätt på de tre nya tabellerna. Det passerade i den samordnade
+körningen ovan, tillsammans med befintliga migrations-, behörighets- och
+samtidighetsprov för tjänsterna, dialogen och A6.
 
-Efter lokal verifiering återstår PostgreSQL-kontroll, eventuell integration
+Efter lokal och PostgreSQL-verifiering återstår eventuell integration
 till main efter separat OK och först därefter samordnat Lakebase-införande.
 Riktig fakturering/intagskanal, fler månader och verksamhetsfall, A8:s fulla
 boksluts-/FI-kedja samt decemberbasen är fortsatt egna steg med sina beroenden.

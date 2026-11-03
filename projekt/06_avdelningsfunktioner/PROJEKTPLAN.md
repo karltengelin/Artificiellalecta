@@ -25,8 +25,9 @@ med tabellerna införda i Lakebase. Dialog och analysarbetsbänk byggdes och ver
 källbundna diagram/rapporter. Grundjämförelsen förklarar delar av förändringen;
 full förändringsanalys för alla verksamhetsfall och boksluts-/rapporteringskedjan
 återstår (A7–A8). En [avgränsad syntetisk premie-/garantimånad](../../02_system/avstamd_fta_manad.md)
-är lokalt byggd 2026-11-03 efter godkända D1–D6 i P6-MANAD-001; PostgreSQL-verifiering
-och Lakebase-införande återstår. [Dialogens drift och verifiering](../../02_system/aktuarie_dialog.md).
+är lokalt byggd 2026-11-03 efter godkända D1–D6 i P6-MANAD-001 och verifierad mot
+PostgreSQL samma dag efter separat OK (101 godkända prov i isolerade `svc_test`).
+Införande i beståndsdatabasen i Lakebase återstår. [Dialogens drift och verifiering](../../02_system/aktuarie_dialog.md).
 Människans [värderingsväg](../../02_system/aktuarie_varderingar.md) är ansluten
 med lista, körning, granskning och granskningsbundet fastställande.
 ALM och solvens behöver tillgångs-, ekonomi- och riskunderlag som ännu saknas.

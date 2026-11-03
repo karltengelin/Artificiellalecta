@@ -140,7 +140,8 @@ Se [byggplanen](projekt/06_avdelningsfunktioner/AKTUARIE_DIALOG_PLAN.md) och
 premie-/garantiförsök är lokalt byggt med tjänsteoperationer, ursprungsjournal,
 A6-värdering och full förklaringsbrygga via befintlig arbetsbänk. Strikt nollrest;
 scenarier låses aldrig som bas. [Bygg- och införandestatus](02_system/avstamd_fta_manad.md).
-PostgreSQL-verifiering och införande i Lakebase återstår; projekt 5 är pausat.
+PostgreSQL-verifiering godkänd i isolerade `svc_test` 2026-11-03 efter separat OK;
+införande i beståndsdatabasen i Lakebase återstår. Projekt 5 är pausat.
 
 ### 3.9 Gemensamt grafiskt designspråk – Digital klarhet
 
