@@ -214,7 +214,8 @@ def test_dialogue_persistence_idempotency_scope_and_cancel(web, tmp_path):
 
 def test_real_harness_selects_analysis_and_fabricated_reference_is_rejected(web, tmp_path):
     ai, fake = client([tool("catalog"), tool("analyze", "mortality_curve", {
-        "basis_code": "SIM-R-2026-01", "birth_year": 1960}, ident="tool-2"), answer(refs=("fabricated",))])
+        "basis_code": "SIM-R-2026-01", "birth_year": 1960}, ident="tool-2"), answer(refs=("fabricated",)),
+        answer(refs=("fabricated",))])
     dialog = ActuarialDialogue(web.service, web.service, ai, journal_dir=tmp_path)
     ident = uuid4().hex
     turn = dialog.submit(ident, "Visa dödlighetskurvan", actor=HUMAN, key=uuid4().hex)
@@ -232,12 +233,22 @@ def test_real_harness_selects_analysis_and_fabricated_reference_is_rejected(web,
 
 
 def test_quantitative_claim_without_any_tool_is_not_a_completed_delivery(web, tmp_path):
-    ai, _ = client([answer("FTA är 1234567 kronor.")])
+    ai, _ = client([answer("FTA är 1234567 kronor.")] * 2)
     dialog = ActuarialDialogue(web.service, web.service, ai, journal_dir=tmp_path)
     ident = uuid4().hex
     turn = dialog.submit(ident, "Vad är vår FTA?", actor=HUMAN, key=uuid4().hex)
     dialog.process(turn)
     assert dialog.view(ident, HUMAN)["turns"][0]["status"] == "needs_human"
+
+
+def test_rejected_number_gets_one_correction_round(web, tmp_path):
+    ai, fake = client([answer("Beståndet har 452 försäkringar."), answer()])
+    dialog = ActuarialDialogue(web.service, web.service, ai, journal_dir=tmp_path)
+    ident = uuid4().hex
+    turn = dialog.submit(ident, "Hur stort är beståndet?", actor=HUMAN, key=uuid4().hex)
+    dialog.process(turn)
+    assert dialog.view(ident, HUMAN)["turns"][0]["status"] == "completed"
+    assert "talet 452" in fake.requests[-1].messages[-1].text
 
 
 def test_web_dialogue_authenticated_submission_and_followup(web, tmp_path):

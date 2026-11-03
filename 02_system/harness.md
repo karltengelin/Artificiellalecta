@@ -485,6 +485,7 @@ Dagens AI-lager kan göra SDK-omförsök och leverantörsbyte inom ett `complete
 | Leverantörens 429/timeout/5xx | AI-lagrets befintliga begränsade reservkedja | Ingen ytterligare obegränsad harness-retry |
 | Autentiserings-/konfigurationsfel eller slut på reservkedja | `failed` med sanerat fel och felsökningsreferens | Operatören behöver rätta orsaken |
 | `refusal`, avklippt/ogiltigt slutresultat | `needs_human` eller `failed`; ingen publicering som färdig | Högst avgränsad rättning, aldrig säkerhetsfilterjakt |
+| Slutsvar enligt schemat som inte stämmer med körningen (`ResultError`: oläst källa, oskrivet utkast, saknad beräkning, obelagt tal) | Händelsen `result_rejected` med maskerade skäl; skälen skickas till modellen som nytt användarmeddelande | Ett rättningsvarv inom återstående tak (`MAX_RESULT_CORRECTIONS = 1`). Det nya svaret prövas lika strikt; underkänns det, eller är taken nådda, blir det `needs_human` med skälen |
 | Steg-, kostnads- eller tidstak | `limit_reached` med redan utförda/väntande handlingar | Inga nya verktyg eller modellanrop |
 | Journal/återstartspunkt kan inte sparas | Stoppa före nästa handling | Avstämning mot tjänstelagrets spår krävs |
 | Timeout/krasch efter möjlig skrivning | `reconciliation_required` | Ingen automatisk återspelning |

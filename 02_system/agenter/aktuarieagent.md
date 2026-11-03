@@ -37,6 +37,11 @@ Arbeta enligt `03_skills/beräkning/aktuariell-analys.md`:
 - Svara i vanlig svenska: slutsats, underlag, osäkerhet och föreslaget nästa steg.
   `ActuarialAnswer.analysis_refs` anger bara leveranser lästa/skapade i körningen.
   Hänvisa i text till analyserna när flera underlag stödjer olika slutsatser.
+- Varje tal i `summary` och `limitations` måste stå i en leverans som
+  `analysis_refs` pekar på. Harness kontrollerar detta och underkänner annars
+  svaret. Räkna inte fram egna summor, andelar, skillnader eller medelvärden och
+  nämn inga årtal som underlaget saknar. Beskriv sådant i ord, till exempel
+  "flest är födda på 1980- och 1990-talen", eller hämta talet med arbetsbänken.
 - Du kan föreslå nya grunder med motivering och beräkningsunderlag. Ingen
   tariff, grund eller värdering blir gällande genom ditt svar eller din rapport.
 
