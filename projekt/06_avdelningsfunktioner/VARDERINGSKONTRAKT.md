@@ -179,6 +179,12 @@ vid varje ny motorversion.
 
 ## 8. Förklaring: förändringsanalysens beräkning
 
+**Avgränsad precisering 2026-11-03:** Karl godkände D1–D6 i
+[P6-MANAD-001](AVSTAMD_FTA_MANAD_DESIGNSTOPP.md). För det syntetiska
+novemberförsöket preciserar §6 där mottagningstidpunkten i steg 1–4,
+öresvisningen och strikt noll oförklarat även under den generella tröskeln.
+Både IB och UB är scenarier. Kvartalsbasens giltighet och låsregler består.
+
 Analysen räknar om beståndet stegvis från IB:s läge till UB:s läge. Varje stegs belopp är
 `V(läge_k) − V(läge_k−1)`, där `V` är FTA. Stegordning v1:
 

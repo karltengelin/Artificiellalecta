@@ -24,6 +24,7 @@ from .policy_benefit import PolicyBenefit
 from .policy_state import PolicyState
 from .portfolio import Portfolio
 from .portfolio_holding import PortfolioHolding
+from .premium_journal import PremiumMonthClose, PremiumMonthJournal, PremiumReceipt
 from .premium_transaction import PremiumTransaction
 from .product_parameter import ProductParameter
 from .salary_report import SalaryReport
@@ -52,6 +53,7 @@ __all__ = [
     "Portfolio",
     "PortfolioHolding",
     "PremiumTransaction",
+    "PremiumMonthClose", "PremiumMonthJournal", "PremiumReceipt",
     "ProductParameter",
     "SalaryReport",
     "Trade",

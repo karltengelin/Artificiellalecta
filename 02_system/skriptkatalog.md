@@ -1,5 +1,12 @@
 # Kodbas och skriptkatalog
 
+**Tillägg 2026-11-03, P6-MANAD-001:**
+`scripts/analysis/prepare_premium_month.py` läser Lakebase skrivskyddat och
+fryser ett granskat S-04-paket lokalt. `scripts/analysis/run_premium_month.py`
+validerar eller kör det enbart i en isolerad SQLite-fil under `tmp/premium_month/`.
+`scripts/migrations/migrate_premium_journal.py` förbereder tre tomma journaltabeller;
+körning mot Lakebase kräver separat OK och backup. [Kontrakt och körordning](avstamd_fta_manad.md).
+
 ## En kodbas, flera ingångar
 
 Bolagets återanvändbara Pythonkod finns i `src/`. Körverktygen i `scripts/` anropar

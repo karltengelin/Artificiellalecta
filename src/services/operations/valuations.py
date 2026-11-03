@@ -237,6 +237,8 @@ def _stored_extract(session, computation: Computation, actor: str) -> ValuationE
 
 def save_computation(session, computation: Computation, actor: str, note: str) -> ValuationRun:
     """Sparar en beräknad körning som utkast med nästa version för datum och ändamål."""
+    if session.bind.dialect.name == "postgresql":
+        session.execute(select(func.pg_advisory_xact_lock(6043, computation.valuation_date.toordinal())))
     extract = _stored_extract(session, computation, actor)
     version = (session.scalar(select(func.max(ValuationRun.version)).where(
         ValuationRun.valuation_date == computation.valuation_date,

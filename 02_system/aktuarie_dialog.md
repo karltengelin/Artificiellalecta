@@ -128,6 +128,11 @@ En separat lokal granskningsserver kan startas med kommandot ovan. Den använder
 demodata. Verkliga erfarenhetsanalyser kräver avstämda observationsleveranser via
 importkontraktet; sådana skapas inte av agenten.
 
+**Tillägg 2026-11-03:** arbetsbänken kan också välja `monthly_fta_change` för
+en stängd, avstämd syntetisk månadsjournal. [Kontrakt, lokal körning och gränser](avstamd_fta_manad.md).
+Den är skild från `compare_valuations`, som fortsatt är en delanalys. Inga
+Lakebase-tabeller, grunder, data eller agenträttigheter har införts genom tillägget.
+
 ## Införande i Lakebase 2026-11-03
 
 Operatören godkände införandet och bekräftade att ingen annan agent körde mot

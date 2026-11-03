@@ -514,6 +514,12 @@ Se [villkor och spårbarhet](arendedialog_och_automation.md#granskningspolicy-oc
 
 ## 11. Hänvisningar
 
+**Tillägg 2026-11-03:** [avstämd syntetisk FTA-månad](avstamd_fta_manad.md)
+har fem tjänsteoperationer för fryst underlag, mottagning, stängning, läsning
+och mänsklig analysgranskning. APPROVAL gäller mottagningen; ingen ny
+handläggaragentmontering. A6 och arbetsbänken återanvänds. Tabellerna är inte
+införda i Lakebase; separat samordnat OK krävs före databasskrivning.
+
 - **B-017** – människa som fullständig operatör (samma operationer och samma spår för människor och agenter)
 - **B-020** – handläggar-UI före kundportal, backend för två klienter
 - **B-022** – försäkringsmodellen (försäkring → förmåner → lägen, premier per förmån)

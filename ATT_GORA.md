@@ -53,6 +53,23 @@ Uppdraget förenar relevanta delar av paket A/B och A7 i projekt 1/4/6, med
 kassaflödesgräns mot projekt 5. Återanvänd befintliga tjänster, värderingsmotor,
 agentdialog och grunder. Saknade journaler byggs som gemensamma verksamhetsunderlag.
 
+**Designstopp 2026-11-03, D1–D6 godkända av Karl i chatten samma dag:**
+[P6-MANAD-001](projekt/06_avdelningsfunktioner/AVSTAMD_FTA_MANAD_DESIGNSTOPP.md)
+avgränsar mottagen nettopremie, kapital-/garantijournal och A7:s förklaringskedja.
+Oktober-IB är kontrollerat skrivskyddat mot Lakebase. Förslaget är en märkt
+syntetisk novembermånad med två scenariovärderingar, en förlängd AVK-version
+och strikt noll oförklarat; SIM-V:s giltighet från 2026-12-31 och A1:s
+kvartalsbas består. **Lokalt byggt 2026-11-03:** frysta underlag, tjänsteoperationer,
+ursprungsjournal, A6-adapter och full premie-/garantiförklaring, arbetsbänksanalysen
+`monthly_fta_change` samt hashbunden granskning i befintlig flödesmotor.
+[Drift och införandestatus](02_system/avstamd_fta_manad.md).
+PostgreSQL-verifiering godkänd 2026-11-03 efter separat OK: 101 godkända prov i
+isolerade `svc_test`, 1 608 lokala prov bortvalda, inga fel eller överhoppade prov.
+Karl granskade månadsrapporten och godkände merge och samordnat införande i
+chatten 2026-11-03. Dialogens fyra tabeller är redan införda separat samma dag;
+de tre nya journaltabellerna återstår i beståndsdatabasen i Lakebase.
+Den syntetiska månaden är godkänd lokalt. Projekt 5 förblir pausat.
+
 - **Acceptans:** ingående FTA + identifierade förändringar = utgående FTA,
   avstämt på öret, med en spårbar källa för varje post. Underlagen ska ha period,
   grundversion och kontrollsumma. Oförklarade differenser stoppar godkännandet.

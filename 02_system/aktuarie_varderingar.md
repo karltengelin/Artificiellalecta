@@ -94,6 +94,12 @@ inte ut individutdrag eller dess fullständiga kapitaljournal i webbgränssnitte
 
 ## Verifiering
 
+**Journaladapter 2026-11-03:** A6 kan nu ta ett fullständigt, innehållskontrollerat
+journalutdrag för scenario genom betrodd kod. Samma FTA-motor, basregler och
+baslås består. [Den avgränsade syntetiska månadsanalysen](avstamd_fta_manad.md)
+har eget analysgodkännande; den fastställer ingen basvärdering. A6:s versionsnummer
+vid sparande serialiseras nu per datum även mellan journal och webb i Postgres.
+
 Testverktyget är `scripts/testing/run_tests.py`. Webbproven använder verkliga
 operationer och isolerad SQLite med uttryckliga testgrunder från 2026-03-31
 för lyckade baskörningar. Separata prov behåller startregistrets riktiga

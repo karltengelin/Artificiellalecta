@@ -18,7 +18,12 @@ from sqlalchemy import select
 
 from agents.gateways.common import GatewayError
 from agents.gateways.drafts import _check_content
-from models import ActuarialAnalysis, ActuarialDataset, ActuarialTurn
+from models import (
+    ActuarialAnalysis,
+    ActuarialDataset,
+    ActuarialTurn,
+    PremiumMonthJournal,
+)
 from reporting.analysis_chart import render_analysis_chart
 from services import Actor, OperationContext, default_registry
 from services import valuation_bases as vb
@@ -32,6 +37,7 @@ from services.operations.actuarial_analysis import (
 READS = ("get_company_metrics", "get_portfolio_snapshot", "get_premium_flows", "get_product_parameters",
          "list_valuation_bases", "get_valuation_basis", "list_valuation_runs", "get_valuation_run")
 TITLES = {"valuation": "Provvärdering av beståndet", "scenario": "Värderingsscenario",
+          "monthly_fta_change": "Avstämd FTA-månad",
           "cashflows": "Framtida kassaflöden", "experience": "Utfall mot antagande",
           "fit_mortality": "Prövning av dödlighetsmodell", "mortality_curve": "Dödlighet och överlevnad",
           "compare_valuations": "Jämförelse av värderingar",
@@ -138,6 +144,15 @@ class Workbench:
                                  "checksum_ok": valid,
                                  "source_ref": d.content.get("source_ref") if valid else None,
                                  "synthetic": d.content.get("synthetic") if valid else None})
+            # Samma betrodda katalogväg som observationsregistren. Inga nya agenträttigheter.
+            from sqlalchemy import inspect
+
+            months = []
+            if inspect(session.connection()).has_table(PremiumMonthJournal.__tablename__):
+                for m in session.scalars(select(PremiumMonthJournal).order_by(PremiumMonthJournal.created_at.desc()).limit(100)):
+                    valid = vb.checksum(m.content) == m.checksum
+                    months.append({"journal_id": m.id, "checksum": m.checksum, "checksum_ok": valid,
+                                   "synthetic": True, "period_end": m.content["inputs"]["period_end"] if valid else None})
         return {"reads": [{"name": name, "description": default_registry.get(name).description,
                            "input_schema": default_registry.get(name).input_model.model_json_schema()} for name in sorted(allowed_reads)],
                 "analyses": [{"name": name, "description": desc, "input_schema": model.model_json_schema()}
@@ -145,14 +160,14 @@ class Workbench:
                 "chart_schema": ChartInput.model_json_schema(), "report_schema": ReportInput.model_json_schema(),
                 "basis_proposal_schema": BasisProposalInput.model_json_schema(),
                 "basis_content_schema": default_registry.get("propose_valuation_basis").input_model.model_json_schema(),
-                "datasets": datasets, "dataset_import_schema": DatasetInput.model_json_schema(),
+                "datasets": datasets, "premium_months": months, "dataset_import_schema": DatasetInput.model_json_schema(),
                 "observation_schemas": {k: v.model_json_schema() for k, v in ROW_MODELS.items()},
                 "data_needs": ["Dödlighet: avstämd exponering i personår och dödsfall per år/ålder.",
                                "Kostnader: utfall, exponering och källbunden förväntansgrund.",
                                "Beteende: valberättigade, händelser och referenssannolikhet.",
                                "Externa referensdata importeras och versionsmärks; inget nätinnehåll hämtas av modellen."],
                 "limitations": ["Ingen tillgångssida för ALM eller full solvensmotor.",
-                                 "Förändringsjämförelsen är en delanalys; ej separerade rörelser redovisas.",
+                                 "compare_valuations är delanalys; monthly_fta_change kräver en avstämd mottagningsjournal.",
                                  "Inga individuppgifter, fria databasfrågor eller fri kodexekvering.",
                                  "Fastställande av värdering och antagande av grund kräver mänskligt beslut."]}
 

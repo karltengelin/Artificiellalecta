@@ -16,6 +16,11 @@
 # En rad för en operation som inte finns ger fel vid start (fångar stavfel).
 
 operations:
+  open_premium_month: HUMAN_ONLY       # granskat fryst syntetiskt försöksunderlag (P6-MANAD-001)
+  receive_premium_payment: APPROVAL    # idempotent mottagning; inte monterad för handläggaragenten
+  close_premium_month: HUMAN_ONLY      # betrodd månadsavräkning och A6-brygga
+  get_premium_month: HUMAN_ONLY        # månadsstatus; agenten använder avgränsad analysgateway
+  approve_premium_month: HUMAN_ONLY    # mänsklig analysgranskning, aldrig baslås
   register_actuarial_dataset: HUMAN_ONLY  # observerat utfall; människa/betrodd dataproducent
   perform_actuarial_analysis: HUMAN_ONLY  # avgränsad systemarbetare lämnar bara skyddade aggregat
   amend_salary_case: HUMAN_ONLY
