@@ -714,8 +714,10 @@ Modeller: `src/models/actuarial_workspace.py`. Gemensamt schema för lokal SQLit
 Tabellerna skrivs av den betrodda dialogadaptern/systemarbetaren. Agentens
 begränsade databasroll får inga nya rättigheter. Individutdragen är fortsatt
 stängda för agenten. Migration: `scripts/migrations/migrate_actuarial_workspace.py`,
-torrkörning som standard och backupkrav vid skarp körning. Erfarenhetsdata
-importeras separat, aldrig från fabricerade modellutfall.
+torrkörning som standard och backupkrav vid skarp körning. Införd i Lakebase
+2026-11-03 efter backup `backups/20261103T203424Z` och operatörens OK: fyra tomma
+tabeller, radantalen i övriga 22 tabeller oförändrade och en andra körning gjorde
+ingenting. Erfarenhetsdata importeras separat, aldrig från fabricerade modellutfall.
 
 ## 10. Datakvalitet och valideringar
 
