@@ -164,6 +164,11 @@ inga fel eller överhoppade prov. Ett riktat urval efter kontrollsummeflytten ga
 diff, testkatalog och dokumentlänkar är kontrollerade. Två äldre lintanmärkningar
 i orörda rader i `valuation_bases.py` (RUF007/C408) har lämnats utanför uppdraget.
 
+Efter att main `93bad9e` förts in i arbetsbranchen kördes hela den lokala sviten
+på det sammanslagna kodläget: **1 608 godkända, 101 PostgreSQL-prov bortvalda**,
+inga fel eller överhoppade prov. Main-tilläggen rör F5-7:s driftstatus,
+förslagstext och inloggningslänken; de är bevarade. Inget har mergats till main.
+
 Det frysta Lakebase-utdraget kördes enbart i en ny lokal SQLite-databas:
 492 försäkringar och 12 syntetiska betalningar, totalt 24 300,00 kr.
 Premiehistoriken i ursprungskällan ändrades inte. Grundfallet blev:
@@ -180,6 +185,11 @@ baslås har registrerats för leveransen. Rapport och fulla källreferenser finn
 under ignorerade `tmp/premium_month/november-2026-release.report.md` respektive
 `.json`. Granskningshash:
 `2bb86253731d465de23e2d3fd0ff0da4ecadc4f3f7233ab5a00283d90891aeb6`.
+
+En separat skrivskyddad kontroll av den lokala SQLite-filen verifierade alla
+45 303 kapitalposters och de 12 nya garantidelarnas egna SHA-256-summor,
+oförändrat innehåll för samtliga 15 097 historiska garantidelar och exakt summa
+för de utgående kapitalspåren. Körverktyget skapade inga projekt-5-tabeller.
 
 `tests/test_premium_month.py` provar frysta källor, beloppsallokering,
 återleverans, historisk rekonstruktion, PR-020:s oberoende kronfacit,
