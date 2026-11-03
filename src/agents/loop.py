@@ -26,7 +26,7 @@ En körning:
   8. Med ett resultatschema i uppdraget (3c-T) tvingar AI-lagret slutsvaret till schemat,
      och harness prövar det mot körningen (agents.results): lästa källor, skrivna utkast,
      beräkningen och talen i texten. Håller det inte får modellen skälen och ett enda
-     rättningsvarv (harness.md §6.4), om taken medger det. Det nya svaret prövas lika strikt; håller
+     rättningsvarv (harness.md §6.4, B-044), om taken medger det. Det nya svaret prövas lika strikt; håller
      det inte heller blir körningen `needs_human` med skälen.
 
 Varje steg journalförs (agents.journal, 3b-6) – utan råa personuppgifter. Går journalen
@@ -60,7 +60,7 @@ from services import ServiceLayer
 #: Högst så många rättningar av samma felklass i en körning (harness.md §6.4).
 MAX_CORRECTIONS_PER_ERROR = 2
 
-#: Högst så många rättningar av ett underkänt slutsvar i en körning (harness.md §6.4).
+#: Högst så många rättningar av ett underkänt slutsvar i en körning (harness.md §6.4, B-044).
 MAX_RESULT_CORRECTIONS = 1
 
 #: Tjänstelagrets stopp som modellen inte ska försöka runda – människan tar över.
