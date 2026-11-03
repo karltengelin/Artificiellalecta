@@ -4,7 +4,8 @@ Läsning (`list_valuation_bases`, `get_valuation_basis`) är AGENT och monterad 
 `antaganden`. Förslag (`propose_valuation_basis`) är APPROVAL i registret. Operationen monteras inte
 som eget verktyg; aktuarieagenten föreslår via arbetsbänkens `propose_basis`, som anropar den i
 betrodd kod med agenten som aktör, så att förslaget hamnar i godkännandekön. Antagande och avslag
-(`adopt_valuation_basis`, `reject_valuation_basis`) görs bara av människa; antagandet kräver beslutsreferens (styrelsebeslut eller B-nummer).
+(`adopt_valuation_basis`, `reject_valuation_basis`) görs bara av människa;
+antagandet kräver beslutsreferens (styrelsebeslut eller B-nummer).
 
 Innehållet i en grund ändras aldrig: ett förslag skapar en ny rad, och antagandet sätter bara
 status, giltighet och beslut. När en grund antas avslutas den gällande grunden i samma familj
