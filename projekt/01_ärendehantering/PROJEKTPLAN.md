@@ -88,7 +88,7 @@ Den närmaste fråge-/rapportkedjan i [projekt 10](../10_operatörscentral/PROJE
   - försäkringsbesked
   - interna id:n i adresserna
 - Agentförslag och hela ärendeflödet är slutverifierade i F5-5–6 (klart 2026-11-02, se ATT_GORA).
-- Verifiera hela verksamhetsflödet med ärendearbetaren från 2026-11-01 enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy. Designstopp 2026-11-02: [beslutsunderlaget](SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md) godkänt som B-043. Policyn `case-work-v2` verifierad i demo, `svc_test` och Lakebase samma dag; kvar är merge till main och uppgiften i Windows Schemaläggaren.
+- Verifiera hela verksamhetsflödet med ärendearbetaren från 2026-11-01 enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy. Designstopp 2026-11-02: [beslutsunderlaget](SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md) godkänt som B-043. Policyn `case-work-v2` verifierad i demo, `svc_test` och Lakebase samma dag och mergad till main; kvar är uppgiften i Windows Schemaläggaren.
 - Samordna modelloberoende bolagsdialog med [projekt 10](../10_operatörscentral/PROJEKTPLAN.md), OC-3, och försäkringsteamets område med OC-8 (B-036).
 
 ## Öppna designfrågor

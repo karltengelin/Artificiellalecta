@@ -1,7 +1,8 @@
 """Hela arbetsuppgifter, beslut, återhämtning och nekanden – inga riktiga modeller."""
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 import yaml
@@ -377,7 +378,9 @@ def test_schemataket_lamnar_dagens_ovriga_forsok_till_handlaggaren(insurance_db,
     first = create(env)
     second = create(env, source_reference="ANDRA")
     third = create(env, source_reference="TREDJE")
-    now = datetime(2026, 11, 2, 7, tzinfo=UTC)
+    # Schemats andel räknas mot uppdragens verkliga created_at, så provet följer dagens datum.
+    today = datetime.now(ZoneInfo("Europe/Stockholm")).date()
+    now = datetime(today.year, today.month, today.day, 8, tzinfo=ZoneInfo("Europe/Stockholm"))
     assert env.workspace.enqueue_daily(now=now) == 1
     ident = env.workspace.view(first, HUMAN)["works"][0]["id"]
     env.fake.queue(read_case(first), answer("needs_human"))
@@ -386,7 +389,7 @@ def test_schemataket_lamnar_dagens_ovriga_forsok_till_handlaggaren(insurance_db,
     manual = env.workspace.submit(third, "Undersök underlaget", actor=HUMAN, key="egen")
     env.fake.queue(read_case(third), answer())
     assert env.workspace.process(manual, now=now) and work(env, manual).status == "completed"
-    assert env.workspace.enqueue_daily(now=now.replace(day=3)) == 1
+    assert env.workspace.enqueue_daily(now=now + timedelta(days=1)) == 1
     assert env.workspace.view(second, HUMAN)["works"][0]["submitted_by"] == "daily_worker"
 
 
