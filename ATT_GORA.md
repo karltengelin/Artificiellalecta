@@ -66,9 +66,12 @@ ursprungsjournal, A6-adapter och full premie-/garantiförklaring, arbetsbänksan
 PostgreSQL-verifiering godkänd 2026-11-03 efter separat OK: 101 godkända prov i
 isolerade `svc_test`, 1 608 lokala prov bortvalda, inga fel eller överhoppade prov.
 Karl granskade månadsrapporten och godkände merge och samordnat införande i
-chatten 2026-11-03. Dialogens fyra tabeller är redan införda separat samma dag;
-de tre nya journaltabellerna återstår i beståndsdatabasen i Lakebase.
-Den syntetiska månaden är godkänd lokalt. Projekt 5 förblir pausat.
+chatten 2026-11-03. **Mergat till main (`eef4bd6`) och infört samma dag:** tre
+tomma journaltabeller efter verifierad backup; dialogens fyra tabeller var redan införda.
+Webben kör med aktuariearbetsbänken. Rollkontroll och dialogprov med lokal
+testmodell passerade. Extern modellverifiering väntar på särskilt OK till
+dataöverföringen. Den syntetiska månaden är godkänd lokalt; journalen och den
+förlängda AVK-versionen är inte inlagda i Lakebase. Projekt 5 förblir pausat.
 
 - **Acceptans:** ingående FTA + identifierade förändringar = utgående FTA,
   avstämt på öret, med en spårbar källa för varje post. Underlagen ska ha period,

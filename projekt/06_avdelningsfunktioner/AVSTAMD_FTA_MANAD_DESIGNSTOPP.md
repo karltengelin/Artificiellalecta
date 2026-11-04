@@ -456,7 +456,10 @@ merge och samordnat införande för månadsleveransen. Införandet avser de tre
 tomma journaltabellerna och den befintliga arbetsbänken; det granskade syntetiska
 månadsförsöket och AVK-förlängningen ligger lokalt. Planen och den ursprungliga
 kontrollbilden nedan bevaras som designunderlag. Det föreslagna tidsfönstret
-ersätts för detta pass av Karls uttryckliga OK till kvällens införande.
+ersattes för detta pass av Karls uttryckliga OK till kvällens införande.
+Journaltabellerna infördes tomma samma kväll; arbetsbänk, schema och åtkomst
+verifierades. Det lokalt skriptade dialogprovet passerade. Extern modellverifiering
+väntar på särskilt OK till dataöverföringen; se införanderapporten.
 
 Den skrivskyddade kontrollen bekräftade att `actuarial_datasets`,
 `actuarial_conversations`, `actuarial_turns` och `actuarial_analyses` fortfarande

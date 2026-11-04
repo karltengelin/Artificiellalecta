@@ -2,7 +2,9 @@
 
 **Beställt:** 2026-11-02. **Design:** [P6-MANAD-001](../projekt/06_avdelningsfunktioner/AVSTAMD_FTA_MANAD_DESIGNSTOPP.md),
 D1–D6 godkända av Karl i chatten 2026-11-03. Ingen ny beslutsloggspost.
-**Införandestatus:** lokalt byggt och verifierat även mot PostgreSQL; införande i beståndsdatabasen återstår.
+**Införandestatus:** mergat till main; tre journaltabeller införda tomma i Lakebase
+2026-11-03 och arbetsbänken aktiverad. Månadsförsöket är godkänt lokalt.
+Rapporten uppdaterad 2026-11-04. Externt modellanrop i införandeprovet väntar på särskilt OK.
 
 ## Vad leveransen gör
 
@@ -132,7 +134,7 @@ genom samma tjänstelager. Verktyget godkänner aldrig sin egen analys automatis
 
 ## Tabeller och Lakebase-gräns
 
-Tre tabeller i `src/models/premium_journal.py`, alla **ej införda i Lakebase**:
+Tre tabeller i `src/models/premium_journal.py`, **införda tomma i Lakebase 2026-11-03**:
 
 | Tabell | Innehåll och integritet |
 |---|---|
@@ -144,8 +146,8 @@ Samtidiga mottagningar serialiseras på journalens radlås; unika nycklar ger
 dessutom databasskydd. A6:s sparande serialiserar versionsnummer per datum med
 ett transaktionsbundet advisory-lås i Postgres, gemensamt för webben och journalen.
 
-`scripts/migrations/migrate_premium_journal.py` är förberett men inte kört mot
-Lakebase. Det skapar endast de tre tomma tabellerna, med torrkörning som
+`scripts/migrations/migrate_premium_journal.py` kördes mot Lakebase 2026-11-03
+efter separat OK och verifierad backup. Det skapar endast de tre tomma tabellerna, med torrkörning som
 standard, förutsättningskontroll, stopp vid partiellt schema och kontroll av
 övriga radantal. `--apply` kräver verifierbar backupreferens. Inga grunder,
 premier, journalposter eller agenträttigheter införs av migrationen.
@@ -178,7 +180,7 @@ i orörda rader i `valuation_bases.py` (RUF007/C408) har lämnats utanför uppdr
 Efter att main `93bad9e` förts in i arbetsbranchen kördes hela den lokala sviten
 på det sammanslagna kodläget: **1 608 godkända, 101 PostgreSQL-prov bortvalda**,
 inga fel eller överhoppade prov. Main-tilläggen rör F5-7:s driftstatus,
-förslagstext och inloggningslänken; de är bevarade. Inget har mergats till main.
+förslagstext och inloggningslänken; de är bevarade. Detta föregick integrationen nedan.
 
 **2026-11-03, separat godkänd PostgreSQL-verifiering:**
 `run_tests.py --changed --base 93bad9e --run --postgres`, med
@@ -189,6 +191,26 @@ Före körningen kontrollerades att samtliga konfigurerade testanslutningar peka
 på `svc_test` och att tjänsternas testanslutning skilde sig från beståndets.
 Proven skapade och tog bort egna isolerade testscheman. Beståndsdatabasen
 användes inte för skrivning, backup eller migration.
+
+**Inför integration mot main `e6f81f8`:** synken tog också med B-044:s
+rättningsvarv och dokumentationen om dialogens tidigare schemainförande.
+`run_tests.py --all --run --postgres` gav **1 711 godkända och ett fel**.
+Felet låg i `test_underkant_utdrag_stoppar_vardering`: ett ospecificerat UUID-urval
+kunde radera ett historiskt läge som inte gällde värderingsdagen. Provet väljer
+nu ett läge som gäller dagen. Beräkningsspärren ändrades inte. Rättningen finns i
+`23493e8` (`test: stabilisera utdragskontroll inför FTA-införande`) och passerar Ruff.
+
+Efter rättningen verifierades kodläget med två kompletterande urval genom
+`run_tests.py` och `PYTEST_ADDOPTS`:
+
+| Körning | Godkända | Bortvalda | Omfattning |
+|---|---:|---:|---|
+| `--all --run --postgres`, `-k "not postgres or test_valuation_runs"` | 1 598 | 114 | Lokala prov samt testfilens tre PostgreSQL-prov; namnfiltreringen tog även bort lokala prov med `postgres` i namnet |
+| `--all --run`, `-k "postgres and not test_valuation_runs"` | 16 | 1 696 | De återstående lokala proven; PostgreSQL-markören var bortvald |
+
+Tillsammans täcker urvalen **alla 1 611 lokala prov och de tre berörda
+PostgreSQL-proven**. Övriga 98 PostgreSQL-prov passerade i helkörningen och deras
+kod var oförändrad. Inga fel eller överhoppade prov i omkörningarna.
 
 Det frysta Lakebase-utdraget kördes enbart i en ny lokal SQLite-databas:
 492 försäkringar och 12 syntetiska betalningar, totalt 24 300,00 kr.
@@ -224,8 +246,64 @@ saknar direkt läsrätt på de tre nya tabellerna. Det passerade i den samordnad
 körningen ovan, tillsammans med befintliga migrations-, behörighets- och
 samtidighetsprov för tjänsterna, dialogen och A6.
 
-Efter lokal och PostgreSQL-verifiering återstår eventuell integration
-till main efter separat OK och först därefter samordnat Lakebase-införande.
+## Införande i Lakebase 2026-11-03
+
+Merge och push till main genomfördes som `eef4bd6`
+(`merge: avstämd syntetisk FTA-månad`) efter verifieringen ovan. Den tidigare
+dialogmigrationen bevarades; inga av dess fyra tabeller återskapades.
+
+- **Backup:** `C:/Claude/Artificiellalecta/backups/20261103T212124Z`,
+  26 tabeller och 17 442 rader. Alla JSONL-filer validerades, radantalen stämde
+  mot beståndet och filerna fick SHA-256-kontrollsummor. Manifestets SHA-256 är
+  `fb2be1f2fee70512c57ebfb52adffc47d80ff8e09920df7304f7fbbc904793e3`.
+- **Samordning:** skrivskyddade kontroller före backup och tillämpning visade
+  inga andra aktiva transaktioner eller köade/pågående handläggar-, dialog- eller
+  flödeskörningar. Beståndets radantal och frysta grunder kontrollerades igen
+  före skrivning. Införandet skedde på kvällen, utanför arbetarens 07.05-körning.
+- **Migration:** torrkörning granskades före `--apply --backup …`. Bara
+  `premium_month_journals`, `premium_receipts` och `premium_month_closes` skapades,
+  med index och villkor. Alla 26 befintliga tabellers radantal var oförändrade.
+  De tre nya tabellerna var tomma. En ny torrkörning gav `already_applied`.
+- **Schema och åtkomst:** kolumner, nullbarhet, datatyper, index, unika villkor,
+  kontrollvillkor och främmande nycklar verifierades för samtliga sju dialog-/
+  journaltabeller. Aktuariens verkliga roll saknar direkt kolumnläsning och
+  skrivrätt till dessa sju tabeller samt `valuation_extracts`; SELECT-proven
+  nekades med PostgreSQL-felkod `42501`. Inga nya rättigheter gavs.
+- **Webb:** port 8765 startades om från main med
+  `scripts/web/start_ui.py --db lakebase --port 8765 --actuary-workspace`.
+  `/`, `/team/aktuarie` och `/team/aktuarie/dialog` gav HTTP 200.
+  Förnyad HTTP-kontroll 2026-11-04 gav samma svar.
+  OpenAPI är avsiktligt avstängt och används inte som hälsokontroll.
+  Startloggar finns i huvudkatalogens `logs/fta_month_web_20261103T214810Z.*.log`.
+  Skrivbordsgenvägen startar fortfarande grundläget; vid ny manuell serverstart
+  behövs flaggan ovan för aktuariedialogen.
+- **Dialogprov utan extern modell:** ett uttryckligt syntetiskt uppdrag kördes
+  genom ordinarie harness och tjänster med lokal `FakeProvider`, verklig
+  begränsad databasroll och tom AI-nyckelmiljö. Analys, diagram, rapport,
+  följdfråga och återöppning passerade. Båda turerna fick `completed`.
+  Dialogen är `5d73367e2197411c90e87ad2f5236ea5`. Antalen ändrades endast för
+  `actuarial_conversations` 2→3, `actuarial_turns` 2→4 och `actuarial_analyses` 4→8.
+  Övriga tabeller var oförändrade, inklusive 501 försäkrade, 499 försäkringar,
+  15 097 premier, sju grunder och tre tomma journaltabeller.
+
+Det riktiga modellanropet avvisades **före körning** av automatisk
+godkännandegranskning: införandegodkännandet ansågs inte uttryckligen omfatta
+överföring av databasunderlag till en extern modellleverantör. Därför gjordes
+ingen extern modellkörning i detta införandeprov. Ett förberett prov med
+ordinarie modellpolicy väntar på Karls särskilda OK till att syntetiska
+grunddata och skyddade aggregat kan skickas till modellleverantören. Det lokalt
+skriptade provet ovan är inte en verifiering av den riktiga modellen.
+
+Verifieringsunderlagen finns under ignorerade `tmp/premium_month/`: `verified-backup.json`,
+`journal-migration-applied.json`, `lakebase-after-schema.log`,
+`lakebase-dialogue-local-smoke.json` och testloggarna `integration-tests.log`,
+`integration-fixed-tests.log` samt `integration-local-complement.log`.
+
+## Kvarstående arbete
+
+Extern modellverifiering med separat OK enligt ovan återstår. Den granskade
+syntetiska novemberjournalen och AVK-versionen är fortsatt lokala; inga
+syntetiska mottagningar, nya grunder eller sparade värderingar infördes i Lakebase.
 Riktig fakturering/intagskanal, fler månader och verksamhetsfall, A8:s fulla
 boksluts-/FI-kedja samt decemberbasen är fortsatt egna steg med sina beroenden.
 

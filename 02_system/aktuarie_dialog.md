@@ -130,8 +130,9 @@ importkontraktet; sådana skapas inte av agenten.
 
 **Tillägg 2026-11-03:** arbetsbänken kan också välja `monthly_fta_change` för
 en stängd, avstämd syntetisk månadsjournal. [Kontrakt, lokal körning och gränser](avstamd_fta_manad.md).
-Den är skild från `compare_valuations`, som fortsatt är en delanalys. Inga
-Lakebase-tabeller, grunder, data eller agenträttigheter har införts genom tillägget.
+Den är skild från `compare_valuations`, som fortsatt är en delanalys. Månadsjournalens
+tre tabeller infördes tomma senare samma dag enligt införanderapporten nedan;
+syntetiska mottagningar, nya grunder och agenträttigheter infördes inte.
 
 ## Införande i Lakebase 2026-11-03
 
@@ -148,3 +149,22 @@ om DM Sans inte ligger i `tmp/pdfs/fonts`. Dialogsidan efter migrationen och en
 första riktig dialogkörning mot Lakebase är inte verifierade i detta steg.
 Lakebase har ännu inga sparade värderingar (`valuation_runs` och
 `valuation_extracts` är tomma).
+
+### Kompletterande införandeprov 2026-11-03
+
+Efter merge `eef4bd6` startades webben på port 8765 om med `--actuary-workspace`.
+De lokala HTTP-rutterna för startsida, teamyta och dialog gav 200. Ett märkt
+dialogprov mot Lakebase med **lokal FakeProvider**, ordinarie harness och verklig
+begränsad aktuarieroll verifierade analys, diagram, rapport, följdfråga och
+återöppning. Båda turerna slutfördes. Inga underlag skickades till extern modell.
+Tabell- och kolumnrättigheter kontrollerades utan nya rättigheter.
+
+Dialogen `5d73367e2197411c90e87ad2f5236ea5` skapade ett samtal, två turer och fyra
+leveranser. Övriga radantal var oförändrade. De tre nya månadsjournaltabellerna
+är införda tomma; syntetiskt månadsunderlag och AVK-förlängning ligger lokalt.
+Se [införanderapporten](avstamd_fta_manad.md#införande-i-lakebase-2026-11-03).
+
+Automatisk godkännandegranskning avvisade röktestet med riktig modell eftersom
+databasunderlag då kan överföras till extern modellleverantör. Det provet är
+inte kört och väntar på Karls uttryckliga OK till överföringen. Det lokalt
+skriptade provet räknas inte som verifiering av riktig modell eller visuell webbgranskning.

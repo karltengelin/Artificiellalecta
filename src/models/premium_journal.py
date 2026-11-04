@@ -1,4 +1,4 @@
-"""Syntetiskt mottagnings-/journalförsök P6-MANAD-001. Ej infört i Lakebase.
+"""Syntetiskt mottagnings-/journalförsök P6-MANAD-001.
 
 Oföränderliga källpaket, mottagningskvitton och månadsleverans. Inga referenser
 till kapitalförvaltning eller utökade agenträttigheter. Individunderlag stannar

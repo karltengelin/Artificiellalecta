@@ -27,7 +27,10 @@ full förändringsanalys för alla verksamhetsfall och boksluts-/rapporteringske
 återstår (A7–A8). En [avgränsad syntetisk premie-/garantimånad](../../02_system/avstamd_fta_manad.md)
 är lokalt byggd 2026-11-03 efter godkända D1–D6 i P6-MANAD-001 och verifierad mot
 PostgreSQL samma dag efter separat OK (101 godkända prov i isolerade `svc_test`).
-Införande i beståndsdatabasen i Lakebase återstår. [Dialogens drift och verifiering](../../02_system/aktuarie_dialog.md).
+Journaltabellerna infördes tomma i Lakebase samma dag och arbetsbänken aktiverades.
+Månadsförsöket är godkänt lokalt. Rollkontroll och dialogprov med lokal testmodell
+passerade; extern modellverifiering väntar på särskilt OK till dataöverföringen.
+[Dialogens drift och verifiering](../../02_system/aktuarie_dialog.md).
 Människans [värderingsväg](../../02_system/aktuarie_varderingar.md) är ansluten
 med lista, körning, granskning och granskningsbundet fastställande.
 ALM och solvens behöver tillgångs-, ekonomi- och riskunderlag som ännu saknas.

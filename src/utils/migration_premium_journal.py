@@ -1,4 +1,4 @@
-"""Riktad tom migration av P6-MANAD-001:s tre journaltabeller. Ej körd i Lakebase."""
+"""Riktad tom migration av P6-MANAD-001:s tre journaltabeller."""
 
 from sqlalchemy import inspect
 from sqlalchemy.schema import CreateIndex, CreateTable
