@@ -29,7 +29,9 @@ full förändringsanalys för alla verksamhetsfall och boksluts-/rapporteringske
 PostgreSQL samma dag efter separat OK (101 godkända prov i isolerade `svc_test`).
 Journaltabellerna infördes tomma i Lakebase samma dag och arbetsbänken aktiverades.
 Månadsförsöket är godkänt lokalt. Rollkontroll och dialogprov med lokal testmodell
-passerade; extern modellverifiering väntar på särskilt OK till dataöverföringen.
+passerade. Modellprov mot Lakebase godkänt 2026-11-04 efter särskilt OK till
+dataöverföringen: `claude-opus-5`, 0,516194 USD; analys, diagram, rapport,
+följdfråga och återöppning. Ingen ändring av bestånd eller premier.
 [Dialogens drift och verifiering](../../02_system/aktuarie_dialog.md).
 Människans [värderingsväg](../../02_system/aktuarie_varderingar.md) är ansluten
 med lista, körning, granskning och granskningsbundet fastställande.

@@ -164,7 +164,21 @@ leveranser. Övriga radantal var oförändrade. De tre nya månadsjournaltabelle
 är införda tomma; syntetiskt månadsunderlag och AVK-förlängning ligger lokalt.
 Se [införanderapporten](avstamd_fta_manad.md#införande-i-lakebase-2026-11-03).
 
-Automatisk godkännandegranskning avvisade röktestet med riktig modell eftersom
-databasunderlag då kan överföras till extern modellleverantör. Det provet är
-inte kört och väntar på Karls uttryckliga OK till överföringen. Det lokalt
-skriptade provet räknas inte som verifiering av riktig modell eller visuell webbgranskning.
+Automatisk godkännandegranskning avvisade först röktestet med riktig modell
+eftersom databasunderlag då kan överföras till extern modellleverantör. Karl
+godkände det avgränsade provet och överföringen separat 2026-11-04.
+
+### Modellprov i Lakebase 2026-11-04
+
+Provet passerade med `anthropic:claude-opus-5`, ordinarie harness/tjänster och
+verklig begränsad aktuarieroll: syntetisk grundläsning, modellöverlevnad,
+diagram, rapport, följdfråga och återöppning. Båda turerna fick `completed`.
+11 modellanrop kostade totalt 0,516194 USD. Ett ogiltigt verktygsanrop
+stoppades och korrigerades inom körningen.
+
+Dialogen `b6e276ff34334646bbd6c69dbe06d139` skapade ett samtal, två turer och fem
+leveranser. Övriga tabellers radantal var oförändrade; inga mottagningar,
+grunder eller värderingar infördes. Åtkomstskyddet till de åtta interna
+tabellerna verifierades igen. Se [fullständigt resultat](avstamd_fta_manad.md#modellprov-mot-lakebase-2026-11-04).
+Den syntetiska novemberjournalen är fortsatt lokal. Visuell webbgranskning
+ingick inte i detta modellprov.

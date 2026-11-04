@@ -4,7 +4,7 @@
 D1–D6 godkända av Karl i chatten 2026-11-03. Ingen ny beslutsloggspost.
 **Införandestatus:** mergat till main; tre journaltabeller införda tomma i Lakebase
 2026-11-03 och arbetsbänken aktiverad. Månadsförsöket är godkänt lokalt.
-Rapporten uppdaterad 2026-11-04. Externt modellanrop i införandeprovet väntar på särskilt OK.
+Rapporten uppdaterad 2026-11-04. Modellprovet mot Lakebase är godkänt efter särskilt OK till dataöverföringen.
 
 ## Vad leveransen gör
 
@@ -288,21 +288,55 @@ dialogmigrationen bevarades; inga av dess fyra tabeller återskapades.
 
 Det riktiga modellanropet avvisades **före körning** av automatisk
 godkännandegranskning: införandegodkännandet ansågs inte uttryckligen omfatta
-överföring av databasunderlag till en extern modellleverantör. Därför gjordes
-ingen extern modellkörning i detta införandeprov. Ett förberett prov med
-ordinarie modellpolicy väntar på Karls särskilda OK till att syntetiska
-grunddata och skyddade aggregat kan skickas till modellleverantören. Det lokalt
-skriptade provet ovan är inte en verifiering av den riktiga modellen.
+överföring av databasunderlag till en extern modellleverantör. Ingen extern
+modellkörning gjordes då. Karl gav därefter uttryckligt OK till det avgränsade
+provet och överföringen 2026-11-04. Resultatet redovisas nedan; det lokalt
+skriptade provet ovan räknas separat.
 
 Verifieringsunderlagen finns under ignorerade `tmp/premium_month/`: `verified-backup.json`,
 `journal-migration-applied.json`, `lakebase-after-schema.log`,
 `lakebase-dialogue-local-smoke.json` och testloggarna `integration-tests.log`,
 `integration-fixed-tests.log` samt `integration-local-complement.log`.
 
+## Modellprov mot Lakebase 2026-11-04
+
+Efter Karls särskilda OK kördes det förberedda syntetiska införandeprovet med
+ordinarie modellpolicy, **`anthropic:claude-opus-5`**, verklig begränsad
+aktuarieroll och samma harness/tjänster som arbetsbänken. En ny skrivskyddad
+förkontroll visade ledigt körfönster, korrekta scheman och oförändrade frysta
+grunder. Webben svarade med HTTP 200. Ingen migration, backup eller omstart
+behövdes i detta pass; körningen gjordes på kvällen, utanför 07.05.
+
+- **Uppdrag:** läs syntetiska grunden SIM-R-2026-01, beräkna modellöverlevnad
+  för födda 1960 i åldrarna 50–110 och skapa diagram samt Markdown-rapport.
+  Följdfrågan återvände till leveranserna. Återöppning verifierades också genom
+  dialogens leveransgränssnitt mot samtliga sparade kontrollsummor.
+- **Resultat:** båda turerna fick `completed`. Fem leveranser sparades:
+  två dataunderlag, en analys, ett diagram och en rapport. Ett ogiltigt
+  verktygsanrop stoppades av kontraktskontrollen och korrigerades inom samma
+  körning; ingen applikationskod ändrades. Provet gällde dialogens grund-/
+  analys-/leveransväg, inte körning av den lokala novemberjournalen i Lakebase.
+- **Kostnad:** 11 modellanrop, 0,341408 + 0,174786 = **0,516194 USD**.
+  Modell och summa är verifierade mot körjournalerna.
+- **Åtkomst:** rollens nekade läs- och skrivrätt till de åtta interna
+  tabellerna verifierades igen. Inga nya rättigheter gavs.
+- **Avstämning:** endast `actuarial_conversations` 3→4,
+  `actuarial_turns` 4→6 och `actuarial_analyses` 8→13 ändrades.
+  Alla övriga tabellers radantal var oförändrade, bland annat 501 försäkrade,
+  499 försäkringar, 15 097 premier och sju grunder. Journaltabellerna är fortsatt
+  tomma. Inga syntetiska mottagningar, nya grunder eller värderingar infördes.
+
+Dialog: `b6e276ff34334646bbd6c69dbe06d139`.
+Rapport: `88db99560ed34b1c818057675ddbbd53`, SHA-256
+`9d558556c9013ec6ac1f117ddb366ddc74dc9cc753aecfc550ec7818dc02268d`.
+Underlag finns i `tmp/premium_month/lakebase-dialogue-smoke.json`,
+`lakebase-real-preflight-20261104.json` och `lakebase-dialogue-journal/`.
+Detta är ett genomfört prov med riktig modell. Visuell webbgranskning ingick inte.
+
 ## Kvarstående arbete
 
-Extern modellverifiering med separat OK enligt ovan återstår. Den granskade
-syntetiska novemberjournalen och AVK-versionen är fortsatt lokala; inga
+Införandets modellprov är slutfört. Den granskade syntetiska novemberjournalen
+och AVK-versionen är fortsatt lokala; inga
 syntetiska mottagningar, nya grunder eller sparade värderingar infördes i Lakebase.
 Riktig fakturering/intagskanal, fler månader och verksamhetsfall, A8:s fulla
 boksluts-/FI-kedja samt decemberbasen är fortsatt egna steg med sina beroenden.

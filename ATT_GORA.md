@@ -69,8 +69,9 @@ Karl granskade månadsrapporten och godkände merge och samordnat införande i
 chatten 2026-11-03. **Mergat till main (`eef4bd6`) och infört samma dag:** tre
 tomma journaltabeller efter verifierad backup; dialogens fyra tabeller var redan införda.
 Webben kör med aktuariearbetsbänken. Rollkontroll och dialogprov med lokal
-testmodell passerade. Extern modellverifiering väntar på särskilt OK till
-dataöverföringen. Den syntetiska månaden är godkänd lokalt; journalen och den
+testmodell passerade. **Modellprov godkänt 2026-11-04** efter särskilt OK till
+dataöverföringen: `claude-opus-5`, analys/diagram/rapport, följdfråga och återöppning,
+0,516194 USD; bestånd och premier oförändrade. Den syntetiska månaden är godkänd lokalt; journalen och den
 förlängda AVK-versionen är inte inlagda i Lakebase. Projekt 5 förblir pausat.
 
 - **Acceptans:** ingående FTA + identifierade förändringar = utgående FTA,

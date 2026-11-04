@@ -458,8 +458,9 @@ månadsförsöket och AVK-förlängningen ligger lokalt. Planen och den ursprung
 kontrollbilden nedan bevaras som designunderlag. Det föreslagna tidsfönstret
 ersattes för detta pass av Karls uttryckliga OK till kvällens införande.
 Journaltabellerna infördes tomma samma kväll; arbetsbänk, schema och åtkomst
-verifierades. Det lokalt skriptade dialogprovet passerade. Extern modellverifiering
-väntar på särskilt OK till dataöverföringen; se införanderapporten.
+verifierades. Det lokalt skriptade dialogprovet passerade. Efter särskilt OK till
+dataöverföringen passerade även modellprovet 2026-11-04 med `claude-opus-5`;
+se införanderapporten. Den syntetiska månaden är fortsatt lokal.
 
 Den skrivskyddade kontrollen bekräftade att `actuarial_datasets`,
 `actuarial_conversations`, `actuarial_turns` och `actuarial_analyses` fortfarande
