@@ -45,9 +45,11 @@ agenter hör hemma i centralen respektive i teamens egna områden.
   Behövs en lista eller en sökning byggs den som läsoperation med en rad i `access_register.yaml`.
   Flödena (`/floden`) hör till harness och inte till tjänstelagret. De nås genom adaptern
   `agents.flows.console.FlowConsole`, som följer samma gräns.
-  [Utvecklingsytan i demo](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u1-i-demo)
+  [Utvecklingsytan i demo](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u2-i-demo)
   nås från centralen. Den använder `services.change_requests.ChangeRequests` och
-  kräver verifierad operatör för registrering, lista och detalj.
+  kräver verifierad operatör för board, registrering, detalj och manuella ändringar
+  av egna ärenden. En skrivskyddad serveradapter läser GitHubs tekniska status
+  när en lästoken är konfigurerad.
 - **Bara lokalt; v1-handläggningen kräver ingen inloggning.**
   - Servern binds till `127.0.0.1`, och Host-huvudet måste vara `127.0.0.1` eller `localhost`
     (skydd mot DNS-rebinding).

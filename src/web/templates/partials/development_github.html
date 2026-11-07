@@ -1,0 +1,16 @@
+{% macro github_summary(url, status) %}
+{% set parts = url.rsplit('/', 2) %}
+<p class="change-github">
+  <a href="{{ url }}" rel="noreferrer">GitHub · {{ 'Pull request' if parts[1] == 'pull' else 'Issue' }} #{{ parts[2] }}</a>
+  {% if status.label %}<span class="pill">{{ status.label }}</span>{% endif %}
+</p>
+{% if status.stale %}<p class="change-github__notice">Föråldrad GitHub-status</p>{% endif %}
+{% if status.error %}
+<p class="change-github__notice">{{ status.error }}</p>
+{% elif not status.label %}
+<p class="muted">Status hämtas när du öppnar ärendet.</p>
+{% endif %}
+{% if status.checked_at %}
+<p class="muted change-github__time">Senast hämtad <time datetime="{{ status.checked_at.isoformat() }}">{{ status.checked_at.strftime('%Y-%m-%d %H:%M') }} UTC</time></p>
+{% endif %}
+{% endmacro %}

@@ -27,6 +27,7 @@ from services import ServiceLayer
 from services.change_requests import ChangeRequests
 from web.agent import CaseAgent
 from web.config import WebSettings
+from web.development_github import GitHubReader
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.operator_auth import OperatorAuth
 from web.presenters import ErrorView
@@ -87,6 +88,9 @@ def create_app(
     app.state.change_requests = (
         ChangeRequests(service._session_factory) if settings.database == "demo" and service._session_factory else None
     )
+    app.state.development_github = GitHubReader(
+        settings.development_github_repository, settings.development_github_token,
+    ) if app.state.change_requests is not None else None
     app.state.case_agent = case_agent
     app.state.case_workspace = case_workspace_console or (
         CaseWorkspace.build(service, case_agent) if case_agent is not None and service._session_factory else None
