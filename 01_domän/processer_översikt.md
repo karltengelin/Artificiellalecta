@@ -117,7 +117,7 @@ projektflyttar. Gemensamt ansvar och exakta schema-/API-kontrakt stäms av vid d
 ### A. Premie- och betalningsflöde
 
 *2026-11-07:* avgränsat i [designstoppet P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md),
-som väntar på Karls val.
+godkänt av Karl samma dag.
 
 **Samordningsförslag:** projekt 1 för administration, projekt 4:s godkända regler,
 projekt 6 för ekonomiskt underlag; gränssnitt mot projekt 5 för kassaflöden.

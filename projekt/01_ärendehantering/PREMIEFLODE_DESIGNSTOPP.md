@@ -1,15 +1,16 @@
 # Designstopp – paket A: från löneunderlag till mottagen nettopremie
 
 > **ID:** P1-PREMIE-001 | **Version:** 0.1 | **Datum:** 2026-11-07
-> **Status:** Förslag. Väntar på Karls val PA1–PA10 i §1. Ingen kod, migration
-> eller Lakebase-ändring ingår i detta dokument, och ingen beslutsloggspost är skriven.
+> **Status:** PA1–PA10 godkända enligt rekommendationerna av Karl i chatten
+> 2026-11-07: ”Ja, godkänn alla”. Byggstart enligt §12 är därmed godkänd, med separat
+> OK före varje Lakebase-ingrepp (§11). Ingen beslutsloggspost är skriven ännu.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).
 > Karl gav uppdraget i chatten 2026-11-07.
 > **Utgångspunkt:** `main` vid `e1e5dc8`, arbetsbranch `claude/paket-a-designstopp`.
 
-## 1. Förslag att godkänna
+## 1. Godkända val
 
 Bygg bolagets ordinarie premieflöde, ett led i taget:
 
@@ -23,7 +24,7 @@ Kapitalet och garantidelarna skapas alltså av den befintliga månadsjournalen, 
 motor. Arbetsgivare och bank är simulerade motparter, men deras filer går genom
 samma intag och kontroller som riktiga filer skulle göra.
 
-| Val för Karl | Rekommendation |
+| Val | Godkänt 2026-11-07 |
 |---|---|
 | **PA1: startperiod och historikgap** | Första operativa premieperiod blir **2026-10**. Juli–september 2026 saknar underlag och redovisas som en märkt startlucka. Ingen kontroll av saknade rapporter görs före 2026-10. Luckan kan senare köras som sen rapportering genom samma flöde (§10) |
 | **PA2: intag av löneunderlag** | En fil per arbetsgivare och period valideras i betrodd kod. Handläggaren godkänner filens giltiga rader i ett hashbundet steg. Avvikande rader blir ärenden som F5-7:s arbetare och handläggaren tar hand om |
@@ -36,7 +37,7 @@ samma intag och kontroller som riktiga filer skulle göra.
 | **PA9: anställningar** | Första versionen behåller en anställning per person. Fall som kräver anställningshistorik blir ärenden. Tabellen `employments` byggs som eget senare steg inom V-01 |
 | **PA10: byggordning och Lakebase** | Ordningen i §12, med separat OK före varje Lakebase-ingrepp (backup, torrkörning, bekräftelse att ingen annan agent kör) |
 
-Valen är bygginriktning. De ändrar inga produktregler: PR-ITP1-013–019 är
+Valen är godkänd bygginriktning. De ändrar inga produktregler: PR-ITP1-013–019 är
 godkända sedan 2026-11-01 (B-031). Valen ger inte heller agenter nya befogenheter
 utöver dem som anges i §6.
 
@@ -423,5 +424,5 @@ och får inte byggas parallellt utan avstämning (AGENTS.md §4.2).
   (ATT_GORA, *Lönehistorik för aktuell lön*).
 - **Mått för mottagen nettopremie:** projekt 2 avgör namn och definition innan
   centralen visar delbetalningar.
-- **Beslutslogg:** om valen godkänns föreslår jag en post i BESLUTSLOGG. Den
-  skrivs först efter ditt OK.
+- **Beslutslogg:** en post föreslås för Karl efter godkännandet och skrivs först
+  efter hans OK.
