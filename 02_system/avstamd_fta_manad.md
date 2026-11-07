@@ -46,6 +46,17 @@ märkning. En annan transportfil är inte en ny bankhändelse. Samma original me
 ändrat innehåll ger konflikt. Bara händelser i det granskade källpaketet får
 verkställas i försöket, i fryst datum-/originalordning.
 
+**Källa från paket A (2026-11-07, B-046 steg 6):** `export_premium_month` bygger samma
+källpaket ur paket A:s fakturor och betalningsallokeringar i stället för syntetiska underlag.
+IB, grunder och parametrar är desamma (`premium_month_preparation.opening` och `assemble`).
+Varje debetfaktura för premieperiod 2026-10 med novemberbetalningar blir ett `InvoiceInput`.
+Varje bankhändelse och faktura blir ett `ReceiptInput` med summan av händelsens radallokeringar.
+Avstämningskontot och mottagningar efter månadsslutet följer inte med. Exporten prövar att
+journalens fördelning blir exakt paket A:s allokeringar i ören och skriver ingenting. Källkontraktet
+godtar nu ett tillägg på mottagen premie (`invoice_line_type = additional`) som egen premiepost
+bredvid originalet; ordinarie premie faktureras fortfarande en gång per förmån och period.
+Se [tjänstelager §9.13](tjänstelager.md).
+
 Källans premieperiod och mottagningsdagen är olika fält. Den syntetiska
 förberedelsen använder befintlig premiemotor med premieperiodens IBB och
 parametrar. Värdedatum är mottagningsmånadens slut. Ingen garanti före
@@ -338,7 +349,10 @@ Detta är ett genomfört prov med riktig modell. Visuell webbgranskning ingick i
 Införandets modellprov är slutfört. Den granskade syntetiska novemberjournalen
 och AVK-versionen är fortsatt lokala; inga
 syntetiska mottagningar, nya grunder eller sparade värderingar infördes i Lakebase.
-Riktig fakturering/intagskanal, fler månader och verksamhetsfall, A8:s fulla
+Paket A levererar sedan 2026-11-07 källpaketet ur fakturor och bankfiler (lokalt, ej i
+Lakebase före paket A steg 8). Journalens första försök tar bara emot ett IB utan ej beräknade
+försäkringar och utan planer som startar under journalmånaden, och bara november 2026.
+Fler månader och verksamhetsfall, A8:s fulla
 boksluts-/FI-kedja samt decemberbasen är fortsatt egna steg med sina beroenden.
 
 **Noterad dokumentdrift utanför uppdraget:** README:s äldre inledning säger

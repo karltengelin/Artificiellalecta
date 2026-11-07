@@ -17,6 +17,7 @@
 
 operations:
   open_premium_month: HUMAN_ONLY       # granskat fryst syntetiskt försöksunderlag (P6-MANAD-001)
+  export_premium_month: HUMAN_ONLY     # paket A:s mottagna premier som journalens källpaket; läsning med individrader (B-046)
   receive_premium_payment: APPROVAL    # idempotent mottagning; inte monterad för handläggaragenten
   close_premium_month: HUMAN_ONLY      # betrodd månadsavräkning och A6-brygga
   get_premium_month: HUMAN_ONLY        # månadsstatus; agenten använder avgränsad analysgateway

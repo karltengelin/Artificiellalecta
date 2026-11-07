@@ -602,6 +602,33 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 
 **Simulerade motparter (steg 5, PA8):** `simulation.counterparties` skapar arbetsgivarens löneunderlagsfil och bankens fil ur beståndet, med seed och uttryckliga avvikelser: saknad rad, nolla, okänd person, rättelse, delbetalning, sen betalning, fel referens, fel betalare, dubbelbetalning eller ingen betalning. Filerna har samma format och kontrollsumma som riktiga filer och lämnas till `import_salary_file` och `import_bank_file`. Simulatorn skriver aldrig i databasen. Filreferensen och märkningen bär version och seed, och facit hålls skilt från filen. Händelse-ID:t bär fakturans öppna belopp, så att samma fil igen blir samma händelse (fall 15) medan en senare restbetalning blir en ny. Hela kedjan provas med `scripts/diagnostics/smoke_test_premium_chain.py`.
 
+### 9.13 Överlämning till månadsjournalen (paket A steg 6, B-046) – vad som stöds och vad som blockeras
+
+Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.7 (PA6, PA7). Gränsen och formatet står i [P6-MANAD-001 §4.1](../projekt/06_avdelningsfunktioner/AVSTAMD_FTA_MANAD_DESIGNSTOPP.md#41-gräns-mot-paket-a). Kod: `src/services/premium_month_export.py` och `src/services/operations/premium_export.py`. Inga nya tabeller.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `export_premium_month` | `read` | Ja | `HUMAN_ONLY` | Gör premieperiodens mottagna premier till källpaketet (`MonthInputs`) för `open_premium_month` och `receive_premium_payment`. Prövar att journalen fördelar exakt som paket A. Skriver ingenting |
+
+Indata är `{period_month, scenario_id, expected_opening_checksum}`. Svaret innehåller `inputs_json`, paketets `checksum` och en sammanställning. Handläggaren granskar kontrollsumman och öppnar journalen med den, som för det syntetiska försöket ([avstamd_fta_manad.md](avstamd_fta_manad.md)). Agenter nekas även i operationen; ingen ny skrivoperation och ingen agentbefogenhet tillkommer.
+
+**Källpaketet:** samma IB per 2026-10-31, grunder och parametrar som det syntetiska försöket (`premium_month_preparation.opening` och `assemble`). Fakturor och kvitton kommer från paket A:s tabeller:
+- *Fakturor:* debetfakturor för premieperioden som har mottagna belopp i journalmånaden, som `InvoiceInput`. Raden heter `line-NNNN` som i matchningen. Premieunderlaget bär radtyp, fakturerade premierader och deras beräkningsgrund. En krediterad rad är ingen fordran och följer inte med; kredit och ny debet syns som den nya debetraden.
+- *Kvitton:* ett `ReceiptInput` per bankhändelse och faktura. Beloppet är summan av händelsens allokeringar på fakturans rader (PA6). Original-ID:t är bankhändelsens id och fakturanumret; källan är bankens händelse med dess innehållshash. Brutto = netto, externt avdrag = 0.
+- *Avstämningskontot följer inte med:* överskott, okänd referens och fel betalare står kvar i paket A utan kapital- eller garantieffekt. Sammanställningen visar journalmånadens saldo på periodens fakturor och utan faktura.
+- *Stoppunkt:* journalmånaden november 2026. Mottagningar efter månadsslutet hör till en senare journal och redovisas som utanför paketet.
+
+**Kontroll före export:** journalens `allocate_receipt` körs i journalens egen datum- och originalordning. Varje kvitto ska ge exakt paket A:s allokeringar i ören, annars stoppas exporten. Samma tabelläge ger samma paket och kontrollsumma. En ny export ger därför ingen ny effekt: journalen och kvittona återanvänds (fall 20).
+
+**Ändring i källkontraktet:** `MonthInputs` godtog bara en fakturarad per förmån och period. Ett tillägg på mottagen premie (`invoice_line_type = additional`) räknas nu som egen premiepost. Ordinarie premie och ny debet får fortfarande bara faktureras en gång per förmån och period.
+
+**Spärras:**
+- *Blockeras:* annan premieperiod än 2026-10, mottagning före november 2026 och allokering på en krediterad rad eller kreditfaktura. Exporten stoppas också när journalen skulle fördela annorlunda än paket A, till exempel när flera inbetalningar på samma faktura har fördelats i en annan ordning än mottagningsordningen.
+- *Utanför journalens första försök (P6-MANAD-001):* exporten stoppas om IB har ej beräknade försäkringar (påbörjat uttag) eller referensplaner som startar senast 2026-11-30. Den stoppas också om en fakturerad försäkring saknas i IB-populationen, till exempel en nyansluten utan tidigare mottagen premie.
+- *Konflikt i journalen:* samma `scenario_id` med ändrat innehåll. En senare export med nya mottagningar kräver ett nytt `scenario_id`.
+
+**Röktest:** `smoke_test_premium_chain.py` slutar i journalen: export, `open_premium_month`, mottagning i journalens ordning, jämförelse med paket A:s allokeringar och en andra export utan ny effekt. Demobeståndet byggs där med `born_from=1961`, utan David Dahl (pågående utbetalning) och kohortens födda 1959–1960 (planstart 2026-11), eftersom journalens första försök inte tar emot dem. Valet gäller bara röktestet.
+
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.

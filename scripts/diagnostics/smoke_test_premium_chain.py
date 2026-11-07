@@ -1,9 +1,11 @@
-"""Röktest av premiekedjan med simulerade motparter (paket A steg 5, B-046, P1-PREMIE-001 §9 och §12).
+"""Röktest av premiekedjan med simulerade motparter (paket A steg 5–6, B-046, P1-PREMIE-001 §9 och §12).
 
 Motpartssimulatorn skapar arbetsgivarnas löneunderlagsfiler och bankens filer ur beståndet.
 Skriptet agerar handläggare, märkt `rooktest`, och lämnar filerna till samma operationer som
 riktiga filer: intag och godkännande, fakturering, bankfil och matchning, förfallobevakning och
-avstämning. Inga modellanrop görs.
+avstämning. Kedjan slutar i månadsjournalen: periodens mottagna premier exporteras med
+`export_premium_month` och tas emot av `open_premium_month` och `receive_premium_payment`
+(steg 6, fall 20). Inga modellanrop görs.
 
 | `--db`     | Databas                                                                        |
 |------------|--------------------------------------------------------------------------------|
@@ -11,6 +13,11 @@ avstämning. Inga modellanrop görs.
 | `svc_test` | Demobeståndet i ett eget schema i SERVICES_TEST_POSTGRES_URL, tas bort efteråt |
 
 Lakebase ingår inte; där krävs de nya tabellerna först (steg 8).
+
+**Bestånd.** Demobeståndet byggs utan personer födda före 1961 (`born_from=1961`): David Dahl
+med pågående utbetalning och kohortens födda 1959–1960, vars referensplan startar 2026-11.
+Månadsjournalens första försök (P6-MANAD-001) tar bara emot ett IB där alla försäkringar
+beräknas och ingen plan startar under journalmånaden. Valet gäller bara detta röktest.
 
 **Affärsdatum.** Kedjan löper över drygt två månader: filen tas emot, fakturan förfaller,
 bevakningen påminner och eskalerar, och resten betalas sent. Röktestet sätter därför
@@ -23,6 +30,9 @@ Scenariot för premieperioden (standard 2026-10):
 |-------------------|--------------------------------------------|--------------------------------------------------------|
 | Demobolaget AB    | en saknad rad, en nolla, en okänd person   | delbetalar hälften, får påminnelse och eskalering, betalar resten sent |
 | Exempelverken AB  | utan avvikelser                            | betalar i tid men två gånger; det andra beloppet går till avstämningskontot |
+
+Månadsjournalen för november 2026 får båda arbetsgivarnas novemberbetalningar. Demobolagets
+sena restbetalning (januari) och Exempelverkens dubbelbetalning på avstämningskontot följer inte med.
 
 Kontrollerna skiljer **verksamhetskontroller** (kedjan ska stämma av för alla filer: ingen
 dubbel effekt, avstämningen går ihop, bara kedjans tabeller ändras) från **facit för
@@ -49,7 +59,13 @@ OPERATOR_ID = "rooktest"
 DEMOBOLAGET, EXEMPELVERKEN = "5560000001", "5560000002"
 #: Tabeller som kedjan får ändra; alla andra ska ha samma radantal efteråt
 CHANGING = {"salary_files", "salary_reports", "premium_transactions", "invoices", "invoice_lines", "bank_events",
-            "payment_allocations", "cases", "operation_events"}
+            "payment_allocations", "cases", "operation_events",
+            # Månadsjournalen (steg 6): journal, kvitton och IB-värderingen som scenarioutkast
+            "premium_month_journals", "premium_receipts", "valuation_runs", "valuation_results",
+            "valuation_extracts"}
+#: Månadsjournalens första försök tar bara emot ett IB utan påbörjade planer (P6-MANAD-001)
+BORN_FROM = 1961
+SCENARIO = "rooktest-paket-a-2026-10"
 
 
 @contextmanager
@@ -191,11 +207,107 @@ def run_chain(db, period: date, seed: int, utdata: Path | None, report: Report) 
                      f"inbetalt {receivables.bank_total_sek}, fördelat {receivables.allocated_sek}, "
                      f"avstämningskonto {receivables.suspense_sek}")
 
+    # 6. Överlämning till månadsjournalen (steg 6, fall 20)
+    hand_over(db, call, invoices, report)
+
     after = row_counts(db.factory)
     changed = {name for name in after if after[name] != before.get(name)}
     report.check("verksamhet", "bara kedjans tabeller har ändrats", changed <= CHANGING,
                  ", ".join(sorted(changed - CHANGING)) or ", ".join(f"{n} +{after[n] - before.get(n, 0)}"
                                                                      for n in sorted(changed)))
+
+
+def package_a_allocations(factory, until: date) -> dict[tuple[str, str, str], Decimal]:
+    """Paket A:s radallokeringar per (bankhändelse, faktura, rad) för mottagningar till och med `until`."""
+    from sqlalchemy import select
+
+    from models import BankEvent, Invoice, InvoiceLineRecord, PaymentAllocation
+
+    out: dict[tuple[str, str, str], Decimal] = {}
+    with factory() as session:
+        rows = session.execute(
+            select(PaymentAllocation.amount_sek, BankEvent.event_id, Invoice.invoice_number,
+                   InvoiceLineRecord.line_number)
+            .join(BankEvent, BankEvent.id == PaymentAllocation.bank_event_id)
+            .join(Invoice, Invoice.id == PaymentAllocation.invoice_id)
+            .join(InvoiceLineRecord, InvoiceLineRecord.id == PaymentAllocation.invoice_line_id)
+            .where(PaymentAllocation.kind == "invoice_line", BankEvent.received_date <= until)).all()
+    for amount, event_id, number, line_number in rows:
+        key = (event_id, number, f"line-{line_number:04d}")
+        out[key] = out.get(key, Decimal(0)) + amount
+    return out
+
+
+def journal_allocations(factory, journal_id: str) -> tuple[dict[tuple[str, str, str], Decimal], Decimal]:
+    """Journalens kvitton per (bankhändelse, faktura, rad) och journalens oallokerade belopp."""
+    from sqlalchemy import select
+
+    from models import PremiumReceipt
+
+    out: dict[tuple[str, str, str], Decimal] = {}
+    unallocated = Decimal(0)
+    with factory() as session:
+        for row in session.scalars(select(PremiumReceipt).where(PremiumReceipt.journal_id == journal_id)):
+            receipt = row.content["receipt"]
+            event_id = receipt["source"]["reference"].split(":", 1)[1]
+            unallocated += Decimal(row.content["unallocated_sek"])
+            for allocation in row.content["allocations"]:
+                key = (event_id, receipt["invoice_id"], allocation["line_id"])
+                out[key] = out.get(key, Decimal(0)) + Decimal(allocation["net_sek"])
+    return out, unallocated
+
+
+def hand_over(db, call, invoices: dict, report: Report) -> None:
+    """Steg 6: periodens mottagna premier till månadsjournalen, två gånger utan dubbel effekt."""
+    from services.premium_month_inputs import MonthInputs, receipt_key
+    from services.premium_month_preparation import OPENING_DATE, PERIOD_END
+    from services.valuation_extract import build_extract
+
+    print(f"\nÖverlämning till månadsjournalen för {PERIOD_END:%Y-%m}")
+    with db.factory() as session:
+        # Röktestet granskar IB själv; i drift anger handläggaren den granskade kontrollsumman
+        opening_checksum = build_extract(session, OPENING_DATE).checksum
+    request = {"period_month": "2026-10-01", "scenario_id": SCENARIO, "expected_opening_checksum": opening_checksum}
+
+    def receive(payload):
+        package = MonthInputs.model_validate_json(payload["inputs_json"])
+        opened = call("open_premium_month", {"inputs_json": payload["inputs_json"],
+                                             "reviewed_checksum": payload["checksum"]}).payload
+        ordered = sorted(package.receipts, key=lambda r: (r.received_date, receipt_key(SCENARIO, r)))
+        results = [call("receive_premium_payment", {"journal_id": SCENARIO, "receipt": r.model_dump(mode="json")})
+                   .payload for r in ordered]
+        return package, opened, results
+
+    first = call("export_premium_month", request).payload
+    summary = first["summary"]
+    print(f"  källpaket {first['checksum'][:12]}…: {summary['invoices']} fakturor, {summary['receipts']} kvitton, "
+          f"{summary['received_sek']} kr; utanför: avstämningskonto {summary['suspense_on_period_invoices_sek']} kr, "
+          f"efter månadsslutet {summary['after_month_end']['allocated_sek']} kr")
+    demo_inv, exempel_inv = invoices[DEMOBOLAGET], invoices[EXEMPELVERKEN]
+    half = (demo_inv.total_sek * Decimal("0.5")).quantize(Decimal("0.01"))
+    report.check("facit", "paketet har novemberbetalningarna men inte avstämningskontot eller januaribetalningen",
+                 (summary["receipts"], Decimal(summary["received_sek"]),
+                  Decimal(summary["suspense_on_period_invoices_sek"]),
+                  Decimal(summary["after_month_end"]["allocated_sek"]))
+                 == (2, half + exempel_inv.total_sek, exempel_inv.total_sek, demo_inv.total_sek - half),
+                 f"{summary['receipts']} kvitton, {summary['received_sek']} kr")
+
+    package, opened, results = receive(first)
+    report.check("verksamhet", "open_premium_month godtar källpaketet (fall 20)",
+                 opened["state"] == "open" and opened["expected_receipts"] == len(package.receipts),
+                 f"journal {SCENARIO}, {opened['expected_receipts']} väntade kvitton")
+    journal, unallocated = journal_allocations(db.factory, SCENARIO)
+    expected = package_a_allocations(db.factory, PERIOD_END)
+    report.check("verksamhet", "journalens kvitton motsvarar allokeringarna exakt i ören (fall 20)",
+                 journal == expected and unallocated == 0 and {r["reused"] for r in results} == {False},
+                 f"{len(journal)} radallokeringar, {sum(journal.values(), Decimal(0))} kr")
+
+    again = call("export_premium_month", request).payload
+    _, reopened, repeated = receive(again)
+    journal_again, _ = journal_allocations(db.factory, SCENARIO)
+    report.check("verksamhet", "samma export igen ger samma paket och ingen ny effekt i journalen",
+                 again["checksum"] == first["checksum"] and reopened["receipts"] == len(package.receipts)
+                 and {r["reused"] for r in repeated} == {True} and journal_again == journal)
 
 
 def main() -> int:
@@ -207,7 +319,8 @@ def main() -> int:
     parser.add_argument("--utdata", type=Path, help="Skriv de simulerade filerna och facit hit")
     args = parser.parse_args()
 
-    databases = {"demo": demo_database, "svc_test": lambda: svc_test_database(())}
+    databases = {"demo": lambda: demo_database(born_from=BORN_FROM),
+                 "svc_test": lambda: svc_test_database((), born_from=BORN_FROM)}
     report = Report()
     with databases[args.db]() as db:
         print(f"Databas: {db.label}; period {args.period:%Y-%m}, seed {args.seed}")
