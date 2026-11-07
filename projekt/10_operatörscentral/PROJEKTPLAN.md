@@ -74,7 +74,7 @@ ekonomiska motorer finns; saknade mått visas som **ej beräknat**.
 | OC-0: Avgränsning och kontrakt | Klar som design- och dokumentleverans 2026-10-26: [rekommendationerna A–X](../../02_system/operatörscentral_beslutsforslag.md) godkända genom B-038. Mått/händelser, eskaleringar, routing, autentisering och gemensamt policyregister för OC-5/3b-9 är preciserade; implementation sker i följande paket | Projekt 2, 6 och harness; Karl har godkänt designen |
 | OC-1: Läsbar ledningsöversikt | Lokalt byggd 2026-10-26: `/central` med bolagsläge, team, agentkostnader och måttunderlag. Läsadaptern ger granskade bestånds-/premieaggregat utan PII; ekonomiska motorer och leverans-/kvalitetsmått markeras som luckor. [Driftbeskrivning](../../02_system/operatörscentral_drift.md) | FastAPI/Jinja2/HTMX och B-038; integration och Lakebase-verifiering återstår |
 | OC-2: Agentekonomi och uppföljning | Smal lokal leverans 2026-10-26: manifest, idempotent metadataindex, kostnad per team/modell/hashat uppdrag, okänd kostnad, källtäckning och journalstatus. Full försöks-/prisavstämning, loggrotation och leverans-/kvalitetsproducenter återstår | AI-logg, harnessjournal och deklarerad käll-/miljöidentitet; delegeringsdata när 3c-1 finns |
-| OC-3: Gemensam frågeingång | Fråga routas till rätt teamledare med avgränsat mandat och budget. Svaret visar underlag, datum och ansvarigt team. Saknat underlag blir ett tydligt svar | Befintliga agentprofiler och behöriga analysverktyg; samordnade barnuppdrag kräver 3c-1 |
+| OC-3: Gemensam frågeingång | Första kedjan är OC-3a, en beståndsöversikt via aktuarieteamet. Planerad fortsättning är ett öppet samtal med en [bolagsorkestratör](#planerad-övergång-till-en-bolagsorkestratör) | Befintliga agentprofiler och behöriga analysverktyg; samordnade barnuppdrag kräver verifierad delegering |
 | OC-4: Ledningsunderlag | Prioriterade, sammanfattade frågor med alternativ, konsekvenser, ägare och beslutsspår. Rutinärenden stannar i specialistvyer. Eskaleringsvillkor granskas före aktivering | OC-1/2; definierade domängränser och rapportkontrakt |
 | OC-5: Modellpolicy och budget | Autentiserad Karl kan förhandsgranska och aktivera versionssatt policy för nya körningar: globalt val, rollmappning, teamundantag, reservpolicy och körbudget. Granskning visar berörda team och faktisk effekt | OC-0, AI-lagret och 3b-9; inga styrskrivningar före autentisering och ändringslogg |
 | OC-6: Ekonomisk fördjupning och acceptans | Konsolidering, FTA, kapital och likviditet ansluts när respektive modell är verifierad; period- och grundversioner går att följa. Sammanhängande VD-scenario godkänt | Projekt 2, 5 och 6; definierad konsoliderings-/fördelningsmodell |
@@ -94,10 +94,10 @@ operatörens godkända dokument- och prioriteringsarbete 2026-10-27.
 datakontraktet, operatörsinloggningen och harness-/tjänstedelen. Codex rendering och
 vyer är lokalt byggda 2026-10-28; se [webbdriften](../../02_system/fragekedja_webb.md).
 Röktesten med riktig modell i demo och `svc_test` och Codex webb- och PDF-kontroll med DM Sans
-är gjorda 2026-10-31; kolumnrätterna sattes i Lakebase samma dag efter backup och OK. Kvar, i
-ordning: spårvyn i uppdragsdetaljen, rättelse av rapportens tomma sista sida med en ny visuell
-kontroll och den gemensamma kontrollen i webben mot Lakebase. Hela kedjan kördes i Lakebase
-2026-11-02 efter backup och OK: 23 av 23 kontroller.
+är gjorda 2026-10-31. Kolumnrätterna sattes i Lakebase samma dag efter backup och OK.
+Spårvyn och sidbrytningsrättelsen integrerades 2026-11-02. Samma dag passerade hela
+kedjan 23 av 23 kontroller mot Lakebase. Operatören beställde `FLOW-000005` i webben
+mot Lakebase 2026-11-03. Vid statuskontrollen 2026-11-07 väntade rapporten på operatörens granskning.
 Se raden *Närmast* i ATT_GORA och [designstoppet](../../02_system/fragekedja_beslutsforslag.md) §11.**
 Detta avgränsar OC-3 och den del av OC-8 som behövs för ett första användbart
 arbetsförlopp, tillsammans med projekt 2 och gemensam dokumentgenerering.
@@ -178,6 +178,49 @@ dem bara genom adaptern `FlowConsole`. Den kan användas av vilket gränssnitt s
 helst, även ett kommandoradsverktyg eller Cowork (B-017). Den tidigare demomodellen
 är borttagen enligt B-037; inför integration krävs en verifierad, uttrycklig modell-
 och datakoppling. Att flytta UI-koden aktiverar inte den kopplingen.
+
+## Planerad övergång till en bolagsorkestratör
+
+Operatörens inriktning 2026-11-07 är att **Fråga bolaget** ska ta emot frågor,
+följdfrågor och uppdrag i fri dialog. Bolagsorkestratören fungerar som VD-assistent.
+Den svarar själv när godkänd bolagskunskap räcker, anlitar rätt teamledare när
+frågan kräver specialistarbete och samlar svar från flera team när uppdraget
+kräver det. Den kan använda gemensamma rapport- och presentationsskills när de
+är anslutna. För etablerade processer ska den kunna begära att flödesmotorn
+startar ett registrerat flöde. B-038 och B-041 beskriver den byggda, avgränsade
+frågeingången. Övergången ska utredas i en egen session.
+
+Orkestratören behöver en sökbar katalog med bolagets processer, ansvariga team,
+verifierade förmågor och registrerade flöden. Den hämtar detaljer vid behov enligt
+[harnessens verktygsprincip](../../02_system/harness.md#verktygsurval-efter-uppdragstyp).
+Betrodd kod binder operatör, miljö, uppdragsmandat och budget. Teamen arbetar med
+sina egna behörigheter och lämnar resultat med källreferenser. En flödesstart
+prövas mot det valda flödets startvillkor. Flödesmotorn äger steg, väntan och
+grindar, och domängodkännanden ligger kvar hos behörig beslutsfattare.
+
+### Arbetsgång för nästa session
+
+1. **Fastställ baslinjen.** Gå igenom `QuestionConsole`, flödet `company_question`
+   och [webbdriften](../../02_system/fragekedja_webb.md). Kontrollera vägarna för
+   beställning, uppdragsdetalj, granskning och nedladdning i central och teamyta.
+   Ta med sparade uppdrag och rapportversioner i regressionen.
+2. **Prova en separat samtalsingång.** Börja i demo med fria frågor om bolaget och
+   ett specialistuppdrag till aktuarien. Återanvänd `company_question` för den
+   befintliga beståndsöversikten och länka samtalet till det ordinarie uppdraget,
+   dess källor och leverans. Behåll direktbeställningen under provet. En fråga
+   utanför stödet ska ge ett tydligt besked eller en riktad följdfråga.
+3. **Utöka en förmåga i taget.** Pröva först en följdfråga och en presentation
+   som utkast från ett sparat, källbundet underlag. Pröva därefter samordning
+   mellan team och start av ett befintligt flöde var för sig. Verifiera för varje
+   steg att saknade eller otillåtna förmågor hanteras tydligt, att omförsök
+   undviker dubbletter och att godkännanden kan följas till rätt underlag.
+4. **Byt ordinarie ingång efter verifiering.** Kör berörda webb-, flödes-,
+   behörighets- och rapportprov via `scripts/testing/run_tests.py` och följ
+   [teststrategin](../../02_system/teststrategi.md) inför integration. Pröva att
+   gamla länkar, pågående granskningar och sparade rapporter går att öppna under
+   övergången. Aktivera den nya ingången först efter operatörens granskning.
+   Planera så att samtalsingången kan stängas av och direktbeställningen användas
+   igen medan redan skapade uppdrag är åtkomliga med sina ursprungliga referenser.
 
 ## Ansvar och samordning
 
