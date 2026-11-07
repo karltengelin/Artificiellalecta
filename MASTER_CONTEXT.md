@@ -347,6 +347,7 @@ Artificiellalecta/
 │   ├── services/                   ← Tjänstelagret (B-028): kontrakt, access_register.yaml, godkännande, händelselogg
 │   ├── web/                        ← Handläggar-UI:t (Fas 4): sidor, templates/, static/ – anropar bara tjänstelagret
 │   ├── analytics/                  ← Analyser och scenarier (delprojekt 2)
+│   ├── simulation/                 ← Simulerade motparter (B-046 PA8): läser beståndet, skriver bara filer
 │   ├── design/                     ← Gemensamma designvärden (digital_clarity.tokens.json) och webbens CSS-variabler ur dem
 │   └── utils/                      ← Gemensam kod
 │

@@ -565,7 +565,7 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 
 **Fakturan:** fakturadatum är dagen den skapas och förfallodagen 30 dagar senare, flyttad till nästa bankdag (fall 16). Fakturanumret är `INV-NNNNNN`. OCR-referensen har längdsiffra och kontrollsiffra enligt modulus 10. Kontrollsumman är SHA-256 över fakturans innehåll. Förmån och försäkring identifierar personen; personnumret står inte på fakturan. En faktura ändras aldrig. Öppet belopp är debetfakturans summa plus kreditfakturor mot den, minus mottagna belopp (§9.12).
 
-**Bevakningen** körs för dagens datum. Ärendet skapas av betrodd kod som `invoice_monitor`, med kanalen `system`, och ett ärende per faktura. Vid 30 dagars dröjsmål sätts `assigned_to = operator` och `escalated` i ärendets uppgifter (fall 17). Ingen påminnelseavgift, ingen ränta, ingen uppsägning och inget pensionsstopp; garantin ändras inte. Bevakningen startas manuellt i detta steg. Om den körs i ärendearbetarens `--once` eller ett eget systemsteg avgörs med motpartssimulatorn (steg 5).
+**Bevakningen** körs för dagens datum. Ärendet skapas av betrodd kod som `invoice_monitor`, med kanalen `system`, och ett ärende per faktura. Vid 30 dagars dröjsmål sätts `assigned_to = operator` och `escalated` i ärendets uppgifter (fall 17). Ingen påminnelseavgift, ingen ränta, ingen uppsägning och inget pensionsstopp; garantin ändras inte. Bevakningen startas manuellt. Röktestet för premiekedjan (steg 5) kör den för kedjans affärsdatum. Om den ska köras i ärendearbetarens `--once` eller som eget systemsteg är fortfarande öppet (designstoppet §13).
 
 **Spärras:**
 - *Blockeras:* premieperiod före 2026-10.
@@ -599,6 +599,8 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 **Spärras:**
 - *Blockeras:* fel kontrollsumma, samma händelse-ID två gånger i filen, mottagningsdag i framtiden, manuell fördelning utan oallokerat belopp eller till en faktura utan öppet belopp.
 - *Konflikt:* samma händelse med ändrat innehåll; idempotensnyckeln redan använd för en annan faktura.
+
+**Simulerade motparter (steg 5, PA8):** `simulation.counterparties` skapar arbetsgivarens löneunderlagsfil och bankens fil ur beståndet, med seed och uttryckliga avvikelser: saknad rad, nolla, okänd person, rättelse, delbetalning, sen betalning, fel referens, fel betalare, dubbelbetalning eller ingen betalning. Filerna har samma format och kontrollsumma som riktiga filer och lämnas till `import_salary_file` och `import_bank_file`. Simulatorn skriver aldrig i databasen. Filreferensen och märkningen bär version och seed, och facit hålls skilt från filen. Händelse-ID:t bär fakturans öppna belopp, så att samma fil igen blir samma händelse (fall 15) medan en senare restbetalning blir en ny. Hela kedjan provas med `scripts/diagnostics/smoke_test_premium_chain.py`.
 
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
