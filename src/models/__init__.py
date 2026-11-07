@@ -18,6 +18,7 @@ from .case_work import CaseMessage, CaseWork, CaseWorkDay
 from .employer import Employer
 from .flow import Flow, FlowGateDecision, FlowStep
 from .insured_person import InsuredPerson
+from .invoice import Invoice, InvoiceLineRecord
 from .operation_event import OperationEventRecord
 from .policy import Policy
 from .policy_benefit import PolicyBenefit
@@ -47,6 +48,8 @@ __all__ = [
     "FlowGateDecision",
     "FlowStep",
     "InsuredPerson",
+    "Invoice",
+    "InvoiceLineRecord",
     "OperationEventRecord",
     "Policy",
     "PolicyBenefit",

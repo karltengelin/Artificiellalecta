@@ -499,7 +499,7 @@ systemsteg återanvänder `run_valuation`; `valuation_close` är ännu inte bygg
 
 ### 9.9 Premieunderlag ur löneunderlag (paket A steg 1, B-046) – vad som stöds och vad som blockeras
 
-Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.3. Kod: `src/services/operations/premium_basis.py`. Ingen schemaändring: kopplingen till löneunderlaget står i `calculation_basis` tills fakturasteget lägger till kolumnerna (designstoppet §5).
+Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.3. Kod: `src/services/operations/premium_basis.py`. Ingen schemaändring: kopplingen till löneunderlaget står i `calculation_basis`. Kolumnerna i `premium_transactions` (designstoppet §5) läggs till först i Lakebase-steget (steg 8), eftersom koden på `main` annars inte kan läsa premierader i Lakebase före migrationen.
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
@@ -507,14 +507,14 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 
 **Beräkning:** premiemånadens IBB och produktparametrar, noll utanför åldersfönstret (PR-ITP1-001, -013). Mottagare är personens enda ålderspensionsförmån som inte har börjat betalas ut (PR-ITP1-015). `calculation_basis` bär löneunderlagets id, version, källa och källreferens, arbetsgivaren, PR-paketet och parameterversionerna. Noll premie sparas men markeras som inte fakturerbar. Raden är en kommande fordran, inte kapital.
 
-**Rättelse:** högre version av underlaget räknas om för samma månad. Differensen mot premieraden och dess länkade rättelser blir en ny `pending`-rad, märkt `unreceived_claim` eller `additional_premium`. Samma premie efter rättelsen ger ingen ny rad (`unchanged`). Hur rättelsen faktureras avgörs i fakturasteget.
+**Rättelse:** högre version av underlaget räknas om för samma månad. Differensen mot premieraden och dess länkade rättelser blir en ny `pending`-rad, märkt `unreceived_claim` eller `additional_premium`. Samma premie efter rättelsen ger ingen ny rad (`unchanged`). Hur rättelsen faktureras står i §9.11.
 
 **Spärras:**
 - *Blockeras:* premieperiod före 2026-10 (startluckan, PA1), avliden försäkrad, ingen eller flera möjliga mottagare, en månad vars premie inte bygger på registrerat löneunderlag, justeringar utan länk och en rättelse som skulle minska redan mottagen premie.
 - *Finns inte:* inget registrerat löneunderlag för månaden; en saknad rapport ger ingen premie (PR-ITP1-017).
 - *Konflikt:* premien bygger redan på den gällande versionen.
 
-Bankdagskalendern för fakturans förfallodag finns i `src/utils/bank_calendar.py` och används från fakturasteget.
+Bankdagskalendern för fakturans förfallodag finns i `src/utils/bank_calendar.py` och används av `create_invoice` (§9.11).
 
 ### 9.10 Löneunderlagsfil: intag, granskning och godkännande (paket A steg 2, B-046) – vad som stöds och vad som blockeras
 
@@ -546,6 +546,31 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 - *Samma fil igen* ger samma kvitto (`already_received`) och inga nya poster.
 
 Ingen faktura skapas i detta steg (steg 3). Ingen extern sändning till arbetsgivaren.
+
+### 9.11 Faktura och förfallobevakning (paket A steg 3, B-046) – vad som stöds och vad som blockeras
+
+Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.4–4.5. Kod: `src/services/operations/invoices.py`, OCR i `src/utils/ocr.py`, tabeller `invoices` och `invoice_lines` ([databasschema §8d](databasschema.md#8d-tabeller-invoices-och-invoice_lines--fakturor)).
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `create_invoice` | `write` | Nej | `HUMAN_ONLY` | Fakturerar arbetsgivarens öppna premieunderlag för en premieperiod: debetfaktura och vid behov kreditfakturor. Premieraderna får status `invoiced` |
+| `get_invoice` | `read` | Nej | `HUMAN_ONLY` | Fakturan med rader per förmån, OCR, förfallodag, kreditering och öppet belopp |
+| `list_invoices` | `read` | Nej | `HUMAN_ONLY` | Fakturor per arbetsgivare och period; `open_only` visar debetfakturor med öppet belopp |
+| `check_overdue_invoices` | `write` | Nej | `HUMAN_ONLY` | Daglig bevakning: ärende `payment_overdue` dagen efter förfallodagen, eskalerat till operatören efter 30 dagar |
+
+**Premiekedjan:** den ordinarie premieraden och dess länkade rättelser faktureras efter sitt läge:
+- *Inte fakturerad:* en ordinarie rad (`ordinary`) med kedjans belopp. Rättelser före faktureringen ingår (fall 8). Noll premie ger ingen rad och förblir `pending` (fall 3).
+- *Fakturerad men inte betald:* den fakturerade raden krediteras i sin helhet på en kreditfaktura mot ursprungsfakturan, och det rättade beloppet debiteras på nytt (`rebill`, fall 9). Rättat till noll ger bara krediten.
+- *Betald:* rättelsen uppåt blir en tilläggsrad (`additional`, fall 10). Rättelse nedåt av mottagen premie stoppas redan i premieunderlaget (fall 11).
+
+**Fakturan:** fakturadatum är dagen den skapas och förfallodagen 30 dagar senare, flyttad till nästa bankdag (fall 16). Fakturanumret är `INV-NNNNNN`. OCR-referensen har längdsiffra och kontrollsiffra enligt modulus 10. Kontrollsumman är SHA-256 över fakturans innehåll. Förmån och försäkring identifierar personen; personnumret står inte på fakturan. En faktura ändras aldrig. Öppet belopp är debetfakturans summa plus kreditfakturor mot den; mottagna belopp avräknas från steg 4.
+
+**Bevakningen** körs för dagens datum. Ärendet skapas av betrodd kod som `invoice_monitor`, med kanalen `system`, och ett ärende per faktura. Vid 30 dagars dröjsmål sätts `assigned_to = operator` och `escalated` i ärendets uppgifter (fall 17). Ingen påminnelseavgift, ingen ränta, ingen uppsägning och inget pensionsstopp; garantin ändras inte. Bevakningen startas manuellt i detta steg. Om den körs i ärendearbetarens `--once` eller ett eget systemsteg avgörs med motpartssimulatorn (steg 5).
+
+**Spärras:**
+- *Blockeras:* premieperiod före 2026-10.
+- *Faktureras inte:* negativt belopp före fakturering och rättelse nedåt av mottagen premie; de redovisas i `skipped`.
+- Delbetalning och mottagna belopp kommer i steg 4. Tills dess räknas en kedja som betald när premieraden har status `paid`.
 
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation

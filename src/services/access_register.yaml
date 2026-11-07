@@ -29,6 +29,8 @@ operations:
   get_premium_history: AGENT           # läsning, personuppgifter (loggas)
   get_salary_reports: AGENT            # läsning av löneunderlag, personuppgifter (loggas)
   get_salary_file: HUMAN_ONLY          # filens individrader; aggregat för agenter prövas vid behov (B-046)
+  get_invoice: HUMAN_ONLY              # fakturans rader per förmån; agentläsning prövas vid behov (B-046)
+  list_invoices: HUMAN_ONLY            # fakturor och öppna belopp per arbetsgivare (B-046)
   calculate_premium_preview: AGENT     # beräkning enligt PR-ITP1-001, sparar ingenting
   get_product_parameters: AGENT        # produktparametrarna med versioner (B-035), inga personuppgifter
   schedule_product_parameter_change: APPROVAL    # ny parameterversion från en framtida månad (B-035); agenten föreslår
@@ -70,6 +72,8 @@ operations:
   import_salary_file: HUMAN_ONLY      # löneunderlagsfil tas emot och valideras, registrerar inget (B-046)
   approve_salary_file: HUMAN_ONLY     # hashbundet godkännande: löneunderlag, premieunderlag och avvikelseärenden (B-046)
   reject_salary_file: HUMAN_ONLY      # avslag av fil med motivering och uppföljningsärende (B-046)
+  create_invoice: HUMAN_ONLY          # faktura, kredit och tillägg per arbetsgivare och premieperiod (B-046)
+  check_overdue_invoices: HUMAN_ONLY  # daglig bevakning: payment_overdue-ärenden och eskalering (B-046)
   correct_premium_transaction: HUMAN_ONLY  # rättelse med motpost; negativ ändring avgörs av människa (PR-ITP1-019, -031)
 
   # Stamdata och anslutning (Fas 4 S5). Gäller också golvet: write utan godkänd regel -> HUMAN_ONLY.
