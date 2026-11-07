@@ -75,6 +75,8 @@ avstämt underlag till kapital/garanti och ekonomi. Projekt 1 samordnar
 försäkringsoperationerna med projekt 4:s regler, [projekt 6:s ekonomikontrakt](../06_avdelningsfunktioner/PROJEKTPLAN.md)
 och kassaflödesgränsen mot projekt 5. Avgränsa kontrakt, ansvar och normal-/
 avvikelsefall före kod; ingen sådan implementation är startad genom dokumentuppdraget.
+*2026-11-07:* [designstoppet P1-PREMIE-001](PREMIEFLODE_DESIGNSTOPP.md) är godkänt
+med valen PA1–PA10 av Karl samma dag och loggat som B-046; byggordningen står i §12.
 
 Den närmaste fråge-/rapportkedjan i [projekt 10](../10_operatörscentral/PROJEKTPLAN.md)
 är ett separat avgränsat arbetsförlopp. Den utökar inte handläggaragentens
@@ -88,7 +90,7 @@ Den närmaste fråge-/rapportkedjan i [projekt 10](../10_operatörscentral/PROJE
   - försäkringsbesked
   - interna id:n i adresserna
 - Agentförslag och hela ärendeflödet är slutverifierade i F5-5–6 (klart 2026-11-02, se ATT_GORA).
-- Verifiera hela verksamhetsflödet med ärendearbetaren från 2026-11-01 enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy. Designstopp 2026-11-02: [beslutsunderlaget](SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md) godkänt som B-043. Policyn `case-work-v2` verifierad i demo, `svc_test` och Lakebase samma dag och mergad till main; uppgiften i Windows Schemaläggaren skapades 2026-11-03, och kvar är kontrollen efter första körningen 2026-11-04.
+- Verifiera hela verksamhetsflödet med ärendearbetaren från 2026-11-01 enligt [planen](../../02_system/arendedialog_och_automation.md); välj återkommande ärendefall och aktivera därefter F5-7:s schema/policy. Designstopp 2026-11-02: [beslutsunderlaget](SJALVSTANDIGA_ARENDEN_BESLUTSFORSLAG.md) godkänt som B-043. Policyn `case-work-v2` verifierad i demo, `svc_test` och Lakebase samma dag och mergad till main; uppgiften i Windows Schemaläggaren skapades 2026-11-03, och de första körningarna 2026-11-04 och 2026-11-07 gick utan fel med tom kö.
 - Samordna modelloberoende bolagsdialog med [projekt 10](../10_operatörscentral/PROJEKTPLAN.md), OC-3, och försäkringsteamets område med OC-8 (B-036).
 
 ## Öppna designfrågor
