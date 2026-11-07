@@ -76,7 +76,7 @@ försäkringsoperationerna med projekt 4:s regler, [projekt 6:s ekonomikontrakt]
 och kassaflödesgränsen mot projekt 5. Avgränsa kontrakt, ansvar och normal-/
 avvikelsefall före kod; ingen sådan implementation är startad genom dokumentuppdraget.
 *2026-11-07:* [designstoppet P1-PREMIE-001](PREMIEFLODE_DESIGNSTOPP.md) är godkänt
-med valen PA1–PA10 av Karl samma dag; byggordningen står i §12.
+med valen PA1–PA10 av Karl samma dag och loggat som B-046; byggordningen står i §12.
 
 Den närmaste fråge-/rapportkedjan i [projekt 10](../10_operatörscentral/PROJEKTPLAN.md)
 är ett separat avgränsat arbetsförlopp. Den utökar inte handläggaragentens

@@ -3,7 +3,7 @@
 > **ID:** P1-PREMIE-001 | **Version:** 0.1 | **Datum:** 2026-11-07
 > **Status:** PA1–PA10 godkända enligt rekommendationerna av Karl i chatten
 > 2026-11-07: ”Ja, godkänn alla”. Byggstart enligt §12 är därmed godkänd, med separat
-> OK före varje Lakebase-ingrepp (§11). Ingen beslutsloggspost är skriven ännu.
+> OK före varje Lakebase-ingrepp (§11). Loggat som **B-046** samma dag.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).
@@ -424,5 +424,4 @@ och får inte byggas parallellt utan avstämning (AGENTS.md §4.2).
   (ATT_GORA, *Lönehistorik för aktuell lön*).
 - **Mått för mottagen nettopremie:** projekt 2 avgör namn och definition innan
   centralen visar delbetalningar.
-- **Beslutslogg:** en post föreslås för Karl efter godkännandet och skrivs först
-  efter hans OK.
+- **Beslutslogg:** loggat som B-046 efter Karls OK 2026-11-07.

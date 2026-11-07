@@ -8,6 +8,54 @@
 
 ## Beslut
 
+### B-046 | 2026-11-07 | Paket A: premieflöde från löneunderlag till mottagen nettopremie
+
+**Beslut:** Operatören godkände designstoppet
+[P1-PREMIE-001](projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) med valen PA1–PA10
+enligt rekommendationerna i chatten 2026-11-07: ”Ja, godkänn alla”. Posten loggades efter
+operatörens OK samma dag: ”Ja, logga den”.
+
+1. **Start.** Första operativa premieperiod är 2026-10. Juli–september 2026 redovisas som
+   märkt startlucka utan konstruerade premier.
+2. **Intag.** Arbetsgivarens löneunderlagsfil valideras i betrodd kod och godkänns av
+   handläggaren i ett hashbundet steg. Avvikande och saknade rader blir ärenden.
+3. **Premie och faktura.** Premien beräknas en gång per person, arbetsgivare och månad och
+   sparas i `premium_transactions` med koppling till löneunderlaget. Varje arbetsgivare och
+   period får en faktura med OCR-referens och 30 dagars betaltid till nästa bankdag.
+   Rättelser görs med kredit och tillägg.
+4. **Mottagning.** Simulerade bankhändelser matchas på OCR och betalare och fördelas med
+   största bråkrest. Okänt och överskott hamnar på avstämningskonto. Allokeringarna är
+   sanningskällan, och `paid` sätts först vid full betalning.
+5. **Gräns.** Paket A slutar vid mottagningskvitto till befintlig månadsjournal
+   (P6-MANAD-001). Kapitaljournal, återtag och återbetalning hör till paket B. Projekt 5 är
+   fortsatt pausat.
+6. **Befogenheter.** Alla nya skrivande operationer är `HUMAN_ONLY` för agenter. Agenten
+   arbetar bara i uppkomna ärenden med befintliga verktyg. Avvikelseärenden skapas av betrodd
+   kod som systemaktör.
+7. **Motparter.** Arbetsgivar- och bankfiler kommer från en separat simulator som aldrig
+   skriver i affärstabellerna.
+
+**Motivering:** Bolaget kan registrera löneunderlag men inte fakturera eller ta emot premier.
+FTA-månaden räknar på syntetiska mottagningar och ärendearbetaren saknar intag. Flödet
+återanvänder premiemotorn, rättelselogiken, mottagningskontraktet och ärendehanteringen i
+stället för att bygga nya motorer.
+
+**Övervägda alternativ:** Att fylla juli–september med genererad historik, vilket skulle
+ändra den avstämda S-04. Att registrera filrader direkt utan granskning. Ett ärende per
+filrad. Att bygga den operativa kapitaljournalen nu.
+
+**Konsekvenser:**
+- Fem nya tabeller och två kolumner i `premium_transactions`, införda i Lakebase först efter
+  backup och operatörens OK.
+- Ny handläggarsida *Premier och betalningar*.
+- En systemväg för ärendeskapande granskas vid bygget.
+- Byggordningen står i designstoppet §12.
+
+**Preciserar:** B-028 (tjänstelagret), B-031 (PR-ITP1-013–019), B-033 och B-043 (ärenden och
+intag). Bygger vidare på P6-MANAD-001.
+
+---
+
 ### B-045 | 2026-11-03 | Aktuarieagentens grundförslag via arbetsbänken
 
 **Beslut:** Operatören godkände förslaget i chatten 2026-11-03: ”Ja, logga den”. Posten
