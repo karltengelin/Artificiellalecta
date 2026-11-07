@@ -25,6 +25,7 @@
         <dt>Månad</dt><dd>{{ case.period_month | month }}</dd>
         {% if case.case_type == "salary_file_deviation" %}<dt>Avvikelse</dt><dd><code>{{ d.get("reason") }}</code> · {{ d.get("message") }}{% if d.get("row") %} (rad {{ d.get("row") }} i <code>{{ d.get("file_reference") }}</code>){% endif %}</dd>
         {% set d = d.get("reported") or {} %}{% endif %}
+        {% if case.case_type == "payment_overdue" %}<dt>Faktura</dt><dd><code>{{ d.get("invoice_number") }}</code> · OCR <code>{{ d.get("ocr_reference") }}</code> · förföll {{ d.get("due_date") }} · {{ d.get("open_sek") | sek }} öppet · {{ d.get("days_overdue") }} dagar{% if d.get("escalated") %} · eskalerad {{ d.get("escalated_on") }}{% endif %}</dd>{% endif %}
         <dt>Lön</dt><dd>{{ d.get("pensionable_salary_sek") | sek }}</dd>
         <dt>Rapport</dt><dd>{% if d.get("kind") == "correction" %}Rättelse av version {{ d.get("corrects_version") }}{% else %}Ny rapport{% endif %} · {{ d.get("source") | label('salary_source') }}</dd>
         <dt>Mottaget</dt><dd>{{ case.received_date | iso_date }}{% if case.source_reference %} · referens <code>{{ case.source_reference }}</code>{% endif %}</dd>

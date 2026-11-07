@@ -10,6 +10,10 @@
 > Tabellen `salary_files` finns lokalt och migreras i steg 8. **Avvikelse från §4.2, godkänd av Karl i chatten 2026-11-07 (”Ja, godkänn och mergea”):** avvikelser
 > utan lön eller känd person (saknad rad, okänd person, avslagen fil m.fl.) blir den nya ärendetypen
 > `salary_file_deviation`, som bara handläggaren avgör. Rättelserelaterade avvikelser blir `salary_report` som i §4.2.
+> Steg 3 (faktura och förfall) byggt och testat lokalt 2026-11-07, se [tjänstelager §9.11](../../02_system/tjänstelager.md).
+> Tabellerna `invoices` och `invoice_lines` migreras i steg 8. **Avvikelse från §5, godkänd av Karl i chatten 2026-11-07 (”Ja, godkänn och mergea”):** inga nya
+> kolumner i `premium_transactions` ännu. Fakturaraden pekar på premieraden, och en ny kolumn i modellen skulle
+> göra läsningar mot Lakebase ogiltiga före migrationen. Kolumnen för löneunderlag avgörs i steg 8.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).

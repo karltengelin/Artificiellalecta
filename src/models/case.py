@@ -33,10 +33,12 @@ from .base import Base
 _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgresql")
 
 #: salary_file_deviation: avvikelse i löneunderlagsfil som handläggaren avgör (B-046, P1-PREMIE-001 §4.2)
-CASE_TYPES = ("salary_report", "salary_file_deviation")
+#: payment_overdue: obetald faktura efter förfallodagen, eskaleras efter 30 dagar (B-046, P1-PREMIE-001 §4.5)
+CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue")
 CASE_STATUSES = ("open", "in_progress", "waiting_approval", "waiting_info", "closed")
 CASE_OUTCOMES = ("approved", "rejected", "supplement_requested", "manual_review", "no_action")
-CASE_CHANNELS = ("manual", "employer_file", "customer_portal", "chatbot")
+#: system: betrodd bevakning som upptäcker ärendet själv, t.ex. förfallen faktura (B-046)
+CASE_CHANNELS = ("manual", "employer_file", "customer_portal", "chatbot", "system")
 #: Utfall som kräver en anteckning vid stängning (PR-ITP1-031: avslag och manuell prövning motiveras)
 OUTCOMES_REQUIRING_NOTE = ("rejected", "manual_review")
 

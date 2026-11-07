@@ -9,7 +9,7 @@ inte kapital. Noll premie sparas som underlag men ger ingen fakturarad.
 
 Rättat löneunderlag räknas om för just ursprungsmånaden. Skillnaden blir en länkad
 `adjustment`-rad (PR-ITP1-019 p.1), som ny fordran eller kredit. Hur rättelsen
-faktureras avgörs i fakturasteget (P1-PREMIE-001 §4.4).
+faktureras står i invoices.py (P1-PREMIE-001 §4.4).
 
 Stöds: premieperioder från 2026-10 (PA1), en ålderspensionsförmån som mottagare och
 ett registrerat löneunderlag hos personens arbetsgivare.
