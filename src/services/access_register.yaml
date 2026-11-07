@@ -65,6 +65,7 @@ operations:
   # till dess ger regelgolvet HUMAN_ONLY för agenter oavsett nivån här – se 02_system/tjänstelager_operationer.md.
   register_salary_report: APPROVAL       # löneunderlag per månad, ny rapport eller rättelse (PR-ITP1-014)
   set_policy_paid_up: APPROVAL           # avanmälan + fribrev, ej startad pension (PR-ITP1-013)
+  create_premium_from_salary_report: HUMAN_ONLY  # premieunderlag ur löneunderlag; nya skrivoperationer i paket A är HUMAN_ONLY (B-046)
   correct_premium_transaction: HUMAN_ONLY  # rättelse med motpost; negativ ändring avgörs av människa (PR-ITP1-019, -031)
 
   # Stamdata och anslutning (Fas 4 S5). Gäller också golvet: write utan godkänd regel -> HUMAN_ONLY.
