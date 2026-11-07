@@ -671,19 +671,24 @@ Poddarna här är en målbild att aktivera stegvis. Även en planerad podd kräv
 
 **Guardrails och godkännanden:** ingen direkt SQL eller godtycklig journalpost; verifierade källreferenser och perioder. Bokföringsändringar föreslås för mänsklig prövning i första profilen; betalning och avtalssignering kräver alltid uttryckligt godkännande. Regel-/avtalsosäkerhet eskaleras till compliance även från inköpsspecialisten.
 
-### 9.7 `utveckling` – avgränsat ändringsförslag och releaseunderlag
+### 9.7 `utveckling` – ändringsärenden, kodarbete och releaseunderlag
 
-**Mandat:** identifiera teknisk påverkan och förbereda testade ändringsförslag. Utvecklaragenten ansvarar även för datapipelineförslag; den får inte genom sitt utvecklingsmandat bli administratör över verksamhetens data eller sin egen säkerhetspolicy.
+**Planerat mandat.** Utvecklaragenten tar tilldelade ändringsärenden från
+planering och riskbedömning genom kodändring, tester, rättning och
+releaseunderlag. Ärenden kan initieras manuellt i utvecklingsytan eller komma
+från ett team, ett driftflöde eller en antagen regel. Se
+[projekt 11:s byggplan](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md).
 
-**Första uppgifter:** koppla godkänd PR-diff till berörd beräkning/operation och tester; leverera teknisk åtgärdslista och verifieringsunderlag. I flaggskeppet ska ett senare avgränsat kodverktyg kunna skapa patch i isolerad arbetsyta. Att den här utredningen innehåller ett kodexempel ger ingen sådan förmåga.
+**Körgräns.** Bolagets uppdrag och journal binder ändrings-ID, identitet,
+mandat, budget och testbevis. En separat kodmiljö får källkod och testdata
+och kör kodloopen på en egen branch. En mänsklig utvecklare ska kunna ta över
+samma ärende. Granskning, merge och införande verifieras av betrodd kod utanför
+kodmiljön. Godkännandet binds till den granskade kodversionen.
 
-**Poddar:** `regelverk`, `dokument`; senare föreslagen `utvecklingsarbete` för kontrollerad källkodsläsning, patch och testkörning. Den är en ny säkerhetsgräns och kan inte gömmas i den vanliga Markdown-podden. Generella shell-/filverktyg behövs inte för de andra sex teamen.
-
-**Befintligt som räcker:** inget agentverktyg för patch, tester eller release finns. `ServiceLayer.registry` ger operationsmetadata som kan kopplas till godkända produktregler i en kontrollerad katalog. Projektets vanliga utvecklingsverktyg är inte automatiskt monterade på verksamhetsagenten.
-
-**Saknas:** kod-/regelspårning, isolerad ändringsyta utan hemligheter eller produktionsanslutning, testadapter med granskade kommandon, release-/migrationskontrakt, teknisk aktiveringsmarkör och kvitto. Modellskapat kodarbete måste isoleras från tjänstelagrets process och credentials.
-
-**Guardrails och godkännanden:** agenten kan inte ändra aktiva åtkomstregister, policyfiler eller instruktioner genom en körning. Sådana ändringar lämnas som diff för mänsklig granskning. Tester körs i isolerad miljö, aldrig mot beståndet; migrationer kräver operatörens databaskoordinering enligt AGENTS.md §4.5. Driftsättning, main-merge och extern effekt kräver avsett mänskligt beslut och en låst releaseversion. Utveckling kan inte själv godkänna sitt förslag.
+**Byggstatus.** Teamet saknar en körbar profil och monterade kodverktyg.
+Projekt 11 prövar först granskat arbete. Ett senare autonomt läge avgränsas
+till förhandsgodkända ändringstyper i testmiljö enligt en separat policy.
+Merge till `main` följer AGENTS.md §4.6 och databasmigrationer följer §4.5.
 
 ## 10. Delegering och flöden: det Fas 3b behöver bära från start
 

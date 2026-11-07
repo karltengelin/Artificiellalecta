@@ -183,7 +183,7 @@ Se §4b för hur arbetet mot dessa områden struktureras i konkreta delprojekt.
 
 ## 4b. Delprojektöversikt (program) — B-024
 
-Arbetet mot visionen i §1 struktureras i tio namngivna delprojekt plus ett tvärgående arkitekturramverk. B-024 inrättade de åtta första; delprojekt 9 lades till 2026-10-11 och delprojekt 10 (operatörscentral på VD-nivå) planerades 2026-10-25 på operatörens begäran, utan nytt beslutsnummer. Varje delprojekt har en projektmapp i `projekt/` (se §7) med en `PROJEKTPLAN.md` som ger ett avgränsat uppdrag – tänkt att kunna ges till Codex eller en egen Claude Code-session utan att den behöver känna till hela repot.
+Arbetet mot visionen i §1 struktureras i elva namngivna delprojekt plus ett tvärgående arkitekturramverk. B-024 inrättade de åtta första. Delprojekt 9 lades till 2026-10-11, delprojekt 10 planerades 2026-10-25 och delprojekt 11 planerades 2026-11-07 på operatörens begäran. Varje delprojekt har en projektmapp i `projekt/` (se §7) med en `PROJEKTPLAN.md` som ger ett avgränsat uppdrag – tänkt att kunna ges till Codex eller en egen Claude Code-session utan att den behöver känna till hela repot.
 
 Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentation/kod in i projektmappen – den pekar bara till var den befintliga grunden ligger. Kod, när den byggs, läggs under det centrala `src/`-trädet (B-015) snarare än i egna per-projekt-src-mappar, för att inte bryta den enda importerbara paketroten.
 
@@ -199,6 +199,7 @@ Redan påbörjade delprojekt (1, 4, 5) flyttar **inte** redan byggd dokumentatio
 | 8 | Företagsöversikt | `projekt/08_företagsöversikt/` | Drillbar HTML-översikt åt dig som projektledare – hur bolaget hänger ihop, med skisser | 🟡 Statisk ögonblicksbild uppdaterad 2026-10-25 mot main @ 5fd10ab: tio projekt, tre agentprofiler, 25 operationer och kvarstående verksamhetsbygge; inga livevärden | `projekt/08_företagsöversikt/foretagsoversikt.html` |
 | 9 | Processkartor | `projekt/09_processkartor/` | Processkartor över agenternas arbete: utlösare, mandat, verktyg, resultat och godkännanden; levererar till delprojekt 8 | 🟡 Plan upplagd | Första målflödet i `projekt/02_bi_insikter/DASHBOARD_DESIGN.md` |
 | 10 | Operatörscentral | `projekt/10_operatörscentral/` | Karls VD-arbetsyta: bolagsläge, konsolidering när underlag finns, team/agentkostnader, datafrågor och inriktningsbeslut om modellpolicy och budget | 🟡 OC-0 godkänd (B-038); OC-1 och smal OC-2 lokalt byggda/testade 2026-10-26 på `/central`. Full logg-/BI-integration, Lakebase-verifiering och styrning återstår | Projekt 2:s BI-design, harness/AI-lager och specialistgränssnitt |
+| 11 | Utveckling och ändringshantering | [Projektplan](projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md) | Ändringsärenden för människor och agenter, isolerat kodarbete, egen utvecklingsyta och GitHub-koppling, från behov till verifierat införande | 🟡 Planerat 2026-11-07. Första leverans U1 omfattar manuell registrering och uppföljning | Git/GitHub, harness och flödesmotor, projekt 4:s produktregler och projekt 10:s operatörsyta |
 
 **Operatörscentral på VD-nivå:** projekt 10 samlar ledningsöverblick och styrning.
 Enskilda handläggarärenden och deras godkännanden stannar i specialiserade gränssnitt;
@@ -330,7 +331,8 @@ Artificiellalecta/
 │   ├── 07_kundchattbot/
 │   ├── 08_företagsöversikt/
 │   ├── 09_processkartor/
-│   └── 10_operatörscentral/         ← VD-plan, skiss och koppling till BI/harness
+│   ├── 10_operatörscentral/         ← VD-plan, skiss och koppling till BI/harness
+│   └── 11_utveckling_och_andringshantering/ ← utvecklaragent, ändringsärenden och GitHub
 │
 ├── src/                            ← All Python-kod
 │   ├── agents/                     ← Harness, körpolicy och gateways (regelverk, dokument)
