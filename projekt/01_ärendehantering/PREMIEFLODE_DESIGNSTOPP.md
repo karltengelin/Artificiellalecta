@@ -16,7 +16,8 @@
 > göra läsningar mot Lakebase ogiltiga före migrationen. Kolumnen för löneunderlag avgörs i steg 8.
 > Steg 4 (bank och matchning) byggt och testat lokalt 2026-11-07, se [tjänstelager §9.12](../../02_system/tjänstelager.md).
 > Tabellerna `bank_events` och `payment_allocations` migreras i steg 8. Ett `payment_unmatched`-ärende från en
-> okänd betalare saknar både försäkrad och arbetsgivare; CHECK-villkoret på `cases` tillåter det för typen.
+> okänd betalare saknar både försäkrad och arbetsgivare; CHECK-villkoret på `cases` tillåter det för typen
+> (ny ärendetyp och lättat CHECK-villkor godkända av Karl i chatten 2026-11-07, ”Godkänn och mergea”).
 > En delbetald premie som rättas går till manuell prövning i stället för kredit och ny debet.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
