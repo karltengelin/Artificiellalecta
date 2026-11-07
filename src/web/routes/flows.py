@@ -16,6 +16,8 @@ sessioner eller operationsmoduler. Kodändringsflöden kräver den ansvariga ope
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import FormData
@@ -24,6 +26,7 @@ from agents import HarnessError
 from agents.flows import FlowConflictError
 from agents.flows.console import FlowBusyError, FlowConsole
 from agents.flows.definitions.rule_change_code import FLOW_TYPE as CODE_FLOW_TYPE
+from agents.flows.definitions.rule_change_code import HANDOFF
 from agents.flows.definitions.rule_change_parameter import FLOW_TYPE as PARAMETER_FLOW_TYPE
 from agents.flows.engine import FlowView
 from services import Actor, ServiceError
@@ -31,6 +34,7 @@ from web.handler import check_csrf, handler_ctx, read, render, render_error, ser
 from web.operator_auth import current_session, operator_action, operator_actor
 from web.presenters import ErrorView, clean_text, describe_error
 from web.routes.auth import HEADERS
+from web.routes.development import STATUSES as DEVELOPMENT_STATUSES
 from web.routes.insured import redirect
 
 router = APIRouter()
@@ -240,7 +244,19 @@ def _flow_page(request: Request, flow_id: str, *, error: ErrorView | None = None
     except HarnessError as exc:
         return render(request, "error.html", {"error": ErrorView("not_found", "Hittades inte", str(exc), 404,
                                                                   nothing_changed=False)}, status_code=404)
-    _check_flow_access(request, flow)
+    operator = _check_flow_access(request, flow)
+    development_status = None
+    development_release = None
+    if flow.flow_type == CODE_FLOW_TYPE:
+        handoff = flow.step(HANDOFF)
+        linked_id = (handoff.result or {}).get("change_request_id")
+        if linked_id:
+            identifier = UUID(linked_id)
+            item = request.app.state.change_requests.get(operator, identifier)
+            if (item and item.origin and item.origin.channel == CODE_FLOW_TYPE
+                    and item.origin.reference == f"{flow_id}/{HANDOFF}"):
+                development_status = DEVELOPMENT_STATUSES[item.status]
+                development_release = request.app.state.change_releases.read(operator, identifier)
     approval = None
     step = next((s for s in flow.steps if s.approval_id), None)
     if step is not None:
@@ -252,6 +268,7 @@ def _flow_page(request: Request, flow_id: str, *, error: ErrorView | None = None
     response = render(request, "flow.html", {
         "flow": flow, "console": flows, "error": error, "message": message, "approval": approval,
         "code_change": flow.flow_type == CODE_FLOW_TYPE,
+        "development_status": development_status, "development_release": development_release,
         "current": flow.step(flow.current_step) if flow.current_step else None,
         "flow_status": FLOW_STATUS, "step_status": STEP_STATUS, "step_kinds": STEP_KINDS,
     }, status_code=error.status_code if error else 200, push_url=f"/floden/{flow_id}")

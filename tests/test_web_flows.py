@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import json
 import re
+import sqlite3
+from contextlib import closing
 from dataclasses import replace
 from datetime import date
 from uuid import UUID, uuid4
@@ -19,12 +21,14 @@ from argon2 import PasswordHasher
 from fastapi.testclient import TestClient
 from sqlalchemy import delete, update
 
+from agents.development import EditProposal, TestEvidence as CodingEvidence, run_development_case
 from agents.flows import console as flow_adapter
 from agents.flows.console import FlowConsole
 from agents.flows.definitions.rule_change_code import FLOW_TYPE as CODE_FLOW_TYPE, HANDOFF
 from agents.gateways import DraftGateway, RegulatoryGateway
 from ai.providers.fake import text_result
 from models import FlowGateDecision, FlowStep
+from scripts.demo.run_development_case import request_merge, stage_candidate
 from services import Actor, ProductRuleCatalog, ServiceLayer
 from services.change_requests import DEVELOPER, ChangeQueueRun
 from services.errors import AccessDeniedError
@@ -346,6 +350,59 @@ def test_u4_bestallningen_syns_i_flodet_boarden_och_den_behoriga_agentkon(code_a
         assert store.claim(run, request_id).agent_run_id == run.run_id
         assert client.get(detail_url).context["item"].status == "in_progress"
         assert f'href="{detail_url}"' in client.get(FLOW).text
+
+
+def test_u5_ursprungsflodet_visar_inforandebevis(code_app, tmp_path):
+    app = code_app()
+    store = app.state.change_requests
+    releases = app.state.change_releases
+    operator = Actor.human("karl")
+
+    class RuleCoder:
+        def propose(self, *_):
+            return EditProposal(path="correction.sql", before=":receipt_month", after=":origin_month",
+                                plan="Kontrollera övergången mot rättelsens ursprungsmånad.")
+
+    def verify(workspace):
+        source = (workspace / "correction.sql").read_text(encoding="utf-8")
+        with closing(sqlite3.connect(":memory:")) as db:
+            observed = [db.execute(source, {"receipt_month": "2027-03", "origin_month": origin}).fetchone()[0]
+                        for origin in ("2027-01", "2027-02")]
+        return CodingEvidence(passed=observed == [0, 1], summary="Kontroll före och efter giltighetsgränsen")
+
+    with code_client(app) as client:
+        page = code_post(client, adopt_code_rule(client), FLOW + "/kor")
+        case_id = UUID(page.context["flow"].step(HANDOFF).result["change_request_id"])
+        run = ChangeQueueRun(actor=DEVELOPER, run_id=uuid4(), requested_by=operator.id, allowed_requests={case_id})
+        result = run_development_case(store, run, case_id, coder=RuleCoder(), verify=verify,
+                                      files={"correction.sql": "SELECT :receipt_month >= '2027-02';\n"},
+                                      directory=tmp_path / "development")
+        assert result.head_commit and result.head_commit != result.base_commit
+        stage_candidate(releases.delivery, result)
+        detail_url = f"{BOARD}/{case_id}"
+        detail = client.get(detail_url)
+        token = detail.context["operator_csrf"]
+        assert result.head_commit in detail.text
+        approved = client.post(detail_url + "/inforande/approve", headers=ORIGIN, data={
+            "csrf_token": token, "review": hidden(detail, "review"),
+        })
+        assert approved.status_code == 303
+        request_merge(store, releases.delivery, operator, case_id)
+        assert client.get(FLOW).context["development_status"] == "Mergat"
+        approval = client.get(detail_url).context["release"].approval.id
+        for action, status in (("deploy", "Infört"), ("verify", "Verifierat")):
+            response = client.post(f"{detail_url}/inforande/{action}", headers=ORIGIN, data={
+                "csrf_token": token, "approval_id": approval,
+            })
+            assert response.status_code == 303
+            assert client.get(FLOW).context["development_status"] == status
+        outcome = client.get(FLOW)
+        view = outcome.context["development_release"]
+        assert outcome.context["flow"].status == "completed"
+        assert view.deployment.version == view.merge.version == view.check.version
+        assert view.check.passed and view.check.summary in outcome.text
+        assert f'href="{detail_url}#development-release"' in outcome.text
+        assert f'href="{FLOW}#steg-{HANDOFF}"' in client.get(detail_url).text
 
 
 def test_u4_omstart_efter_sparat_arende_bevarar_id_och_ansvar(code_app, monkeypatch):

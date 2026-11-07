@@ -66,6 +66,23 @@
 {% elif code_change and r.get("change_request_id") %}
   <p>Överlämnat till utveckling. <a href="/central/utveckling/{{ r.change_request_id }}">Öppna ändringsärendet</a>
     <code>{{ r.change_request_id }}</code>.</p>
+    {% if development_status %}
+    <p>Ändringsärendet · <strong>{{ development_status }}</strong>
+      {% if development_release.pending %} · kräver avstämning{% endif %}</p>
+      {% if development_release.merge %}
+      <dl class="kv">
+        <dt>Mergad version i demo</dt><dd><code>{{ development_release.merge.version }}</code></dd>
+        {% if development_release.deployment %}
+        <dt>Observerad version vid införande</dt><dd><code>{{ development_release.deployment.version }}</code>
+          i <code>{{ development_release.deployment.target }}</code></dd>
+        {% endif %}
+        {% if development_release.check %}
+        <dt>Kontrollresultat</dt><dd>{{ 'Godkänd' if development_release.check.passed else 'Underkänd' }} · {{ development_release.check.summary }}</dd>
+        {% endif %}
+      </dl>
+      <p><a href="/central/utveckling/{{ r.change_request_id }}#development-release">Visa införandebevis</a></p>
+      {% endif %}
+    {% endif %}
 {% elif s.key == "aktivering" and r %}
   <dl class="kv">
     <dt>Förslag</dt><dd><code>{{ r.operation }}</code> av <code>{{ r.proposed_by }}</code> i körningen <code>{{ r.run_id }}</code>

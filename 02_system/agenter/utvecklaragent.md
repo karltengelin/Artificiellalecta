@@ -7,7 +7,7 @@
 | **Funktionsområde** | IT & dataplattform |
 | **Team** | Utveckling & plattform (`utveckling`) – se `../agentekosystem.md` §3 (B-026) |
 | **Roll i teamet** | Ledande agent (orkestrerare) |
-| **Status** | 🟡 Ändringskö och avgränsad kodkörning verifierade med testdubblar i [U3](../../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u3-i-demo) |
+| **Status** | 🟡 Ändringskö, kodkörning och granskad mergebegäran verifierade med testdubblar i [U1–U5](../../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u5-i-demo) |
 | **Skapad** | 2026-05-15 |
 
 ## Mandat
@@ -46,6 +46,12 @@ Codex CLI-adaptern är verifierad med en processdubbel. Automatisk bevakning
 och villkoren för när kön ska starta en körning behandlas separat.
 
 ### Kod och införande
+
+I U5 kan den aktiva demokörningen begära merge inom sitt ärendemandat.
+Beslutet om version och testbevis fattas av den inloggade operatören.
+Betrodd kod kontrollerar pull request och prov, verkställer mot GitHub-dubbeln
+och stämmer av oklara utfall. Operatören inför och verifierar den mergade
+versionen mot målmiljöns testdubbel.
 
 Agenten arbetar med källkod och testdata på egen branch. Den kan committa och
 begära push, pull request och merge enligt ärendets mandat. Standard är att en

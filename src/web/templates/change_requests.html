@@ -22,6 +22,7 @@
         <h3><a href="{{ base }}/{{ item.id }}">{{ item.draft.title }}</a></h3>
         {% if item.draft.affected_system %}<p class="muted">{{ item.draft.affected_system }}</p>{% endif %}
         <p>Ansvarig · {{ item.assignee_id or 'Ingen tilldelad' }}{% if item.agent_run_id %} (agent){% endif %}</p>
+        {% if item.release_pending %}<p><span class="pill">Kräver avstämning</span></p>{% endif %}
         <p class="muted">Registrerat <time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%Y-%m-%d') }}</time></p>
         <p><a href="{{ base }}/{{ item.id }}#request-history">Historik och granskningsunderlag</a></p>
         {% if item.github_url %}{{ github_summary(item.github_url, github_statuses[item.id]) }}{% endif %}

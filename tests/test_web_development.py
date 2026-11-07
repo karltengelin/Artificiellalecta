@@ -25,10 +25,12 @@ from services.change_requests import (
     ChangeRequest,
     ChangeRequestDraft,
     ReviewReferences,
+    change_release_events,
     change_request_events,
     change_requests_table,
 )
 from services.errors import AccessDeniedError, ConflictError
+from services.development_demo import Candidate, Evidence, OutcomeUnknown, TargetState
 from web import development_github
 from web.app import create_app
 from web.config import WebSettings
@@ -77,6 +79,7 @@ def new_form(client, **fields):
 def test_fel_och_regel_anvander_samma_kontrakt_efter_omstart(settings):
     # Återskapa schemaformen hos en äldre demofil med befintligt bestånd.
     engine = demo_engine(settings.demo_path)
+    change_release_events.drop(engine)
     change_request_events.drop(engine)
     change_requests_table.drop(engine)
     engine.dispose()
@@ -537,3 +540,244 @@ def test_u3_overtagande_under_kodforsok_och_gammal_kornyckel(settings, tmp_path)
     with pytest.raises(ConflictError):
         store.handoff(scope, case_id, REVIEW)
     assert store.get(human, case_id).agent_run_id == next_run.run_id
+
+
+@pytest.fixture
+def release_case(settings):
+    app = create_app(settings=settings)
+    store = app.state.change_requests
+    releases = app.state.change_releases
+    operator = Actor.human("karl")
+    case_id = uuid4()
+    run = demo_scope(case_id)
+    store.create(operator, case_id, DRAFT)
+    store.claim(run, case_id)
+    store.handoff(run, case_id, REVIEW)
+    candidate = Candidate(pull_request=case_id, base="a" * 40, head="b" * 40, diff="+ändring",
+                          references=REVIEW, checks=(Evidence(name="kodprov", reference="provkörning 1",
+                                                             passed=True, summary="2 av 2"),))
+    releases.delivery.stage(candidate)
+    return app, releases, operator, case_id, run, candidate
+
+
+def approve_release(releases, operator, case_id):
+    bundle = releases.read(operator, case_id, preview=True).preview
+    assert releases.approve(operator, case_id, bundle.fingerprint)
+    return releases.read(operator, case_id).approval.id
+
+
+@pytest.mark.parametrize("change", ["head", "checks", "base"])
+def test_u5_andrat_underlag_kraver_nytt_beslut(release_case, change):
+    _, releases, operator, case_id, run, candidate = release_case
+    original = releases.read(operator, case_id, preview=True).preview
+    approval = approve_release(releases, operator, case_id)
+    replacement = {"head": "c" * 40, "base": "d" * 40,
+                   "checks": (candidate.checks[0].model_copy(update={"reference": "provkörning 2"}),)}
+    releases.delivery.stage(candidate.model_copy(update={change: replacement[change]}))
+    with pytest.raises(ConflictError, match="ändrats"):
+        releases.approve(operator, case_id, original.fingerprint)
+    with pytest.raises(ConflictError, match="nytt beslut"):
+        releases.advance("merge", run, case_id, approval)
+    assert releases.delivery.lookup_merge(f"merge/{case_id}/{approval}") is None
+    next_approval = approve_release(releases, operator, case_id)
+    assert next_approval != approval
+    with pytest.raises(ConflictError):
+        releases.advance("merge", run, case_id, approval)
+    assert releases.advance("merge", run, case_id, next_approval)
+
+
+@pytest.mark.parametrize("change", ["failed", "missing", "repository", "branch"])
+def test_u5_policy_stoppar_merge(release_case, change):
+    _, releases, operator, case_id, run, candidate = release_case
+    approval = approve_release(releases, operator, case_id)
+    updates = {
+        "failed": {"checks": (candidate.checks[0].model_copy(update={"passed": False}),)},
+        "missing": {"checks": ()},
+        "repository": {"repository": "extern/annat-repo"},
+        "branch": {"branch": "annan-branch"},
+    }
+    releases.delivery.stage(candidate.model_copy(update=updates[change]))
+    assert releases.read(operator, case_id, preview=True).preview is None
+    with pytest.raises(ConflictError, match="mergevillkor"):
+        releases.advance("merge", run, case_id, approval)
+    assert releases.delivery.lookup_merge(f"merge/{case_id}/{approval}") is None
+
+
+def test_u5_kraver_manskligt_beslut_och_aktivt_agentmandat(release_case):
+    app, releases, operator, case_id, run, _ = release_case
+    detail_url = f"{BASE}/{case_id}"
+    with client_for(app) as client:
+        assert post_action(client, detail_url, "inforande/approve", "utan-session", review="okänt").status_code == 401
+        login(client)
+        detail = client.get(detail_url)
+        assert post_action(client, detail_url, "inforande/approve", "fel-token",
+                           review=detail.context["release"].preview.fingerprint).status_code == 403
+    with pytest.raises(AccessDeniedError):
+        releases.approve(run.actor, case_id, "")
+    with pytest.raises(ConflictError, match="mänskligt beslut"):
+        releases.advance("merge", run, case_id, 1)
+    approval = approve_release(releases, operator, case_id)
+    assert approve_release(releases, operator, case_id) == approval
+    assert not releases.advance("merge", Actor.human("annan"), case_id, approval)
+    for denied in (demo_scope(case_id), demo_scope(), demo_scope(case_id, actor=Actor.agent("annan"))):
+        with pytest.raises(AccessDeniedError):
+            releases.advance("merge", denied, case_id, approval)
+    with pytest.raises(AccessDeniedError):
+        releases.advance("deploy", run, case_id, approval)
+    assert releases.requests.takeover(operator, case_id, run.run_id)
+    with pytest.raises(AccessDeniedError):
+        releases.advance("merge", run, case_id, approval)
+    assert releases.advance("merge", operator, case_id, approval)
+
+
+def test_u5_samtidiga_mergeanrop_ger_ett_kvitto(release_case, monkeypatch):
+    _, releases, operator, case_id, run, _ = release_case
+    approval = approve_release(releases, operator, case_id)
+    barrier = Barrier(2)
+    real_merge = releases.delivery.merge
+    calls = []
+
+    def merge(operation, candidate):
+        calls.append(operation)
+        return real_merge(operation, candidate)
+
+    def advance():
+        barrier.wait(timeout=5)
+        return releases.advance("merge", run, case_id, approval)
+
+    monkeypatch.setattr(releases.delivery, "merge", merge)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        jobs = [executor.submit(advance) for _ in range(2)]
+        assert all(job.result(timeout=10) for job in jobs)
+    assert calls == [releases.read(operator, case_id).merge.operation]
+    assert releases.requests.get(operator, case_id).status == "merged"
+
+
+@pytest.mark.parametrize("stage", ["merge", "deploy"])
+@pytest.mark.parametrize("applied", [False, True], ids=["before_effect", "after_effect"])
+def test_u5_avbrott_stams_av_efter_omstart(settings, release_case, stage, applied, monkeypatch):
+    _, releases, operator, case_id, run, _ = release_case
+    approval = approve_release(releases, operator, case_id)
+    if stage == "deploy":
+        assert releases.advance("merge", run, case_id, approval)
+    caller = run if stage == "merge" else operator
+    actual = getattr(releases.delivery, stage)
+
+    def interrupt(*args):
+        if applied:
+            actual(*args)
+        raise OutcomeUnknown("Simulerat avbrott.")
+
+    monkeypatch.setattr(releases.delivery, stage, interrupt)
+    with pytest.raises(OutcomeUnknown, match="avbrott"):
+        releases.advance(stage, caller, case_id, approval)
+    assert releases.read(operator, case_id).pending == f"{stage}_pending"
+    app = create_app(settings=settings)
+    resumed = app.state.change_releases
+
+    lookup_method = "lookup_merge" if stage == "merge" else "lookup_deployment"
+    lookup = getattr(resumed.delivery, lookup_method)
+    apply = getattr(resumed.delivery, stage)
+    calls = []
+
+    def read_outcome(*args):
+        calls.append("lookup")
+        return lookup(*args)
+
+    def retry(*args):
+        calls.append("retry")
+        return apply(*args)
+
+    monkeypatch.setattr(resumed.delivery, lookup_method, read_outcome)
+    monkeypatch.setattr(resumed.delivery, stage, retry)
+    assert resumed.advance(stage, caller, case_id, approval)
+    assert calls == (["lookup"] if applied else ["lookup", "retry"])
+    assert resumed.advance(stage, caller, case_id, approval)
+    assert resumed.read(operator, case_id).pending is None
+    assert resumed.requests.get(operator, case_id).status == ("merged" if stage == "merge" else "deployed")
+
+
+def test_u5_okand_avstamning_stoppar_nytt_forsok(release_case, monkeypatch):
+    _, releases, operator, case_id, run, candidate = release_case
+    approval = approve_release(releases, operator, case_id)
+    real_lookup = releases.delivery.lookup_merge
+    real_merge = releases.delivery.merge
+    calls = []
+
+    def interrupt(*args):
+        calls.append("anrop")
+        raise OutcomeUnknown("Ej bekräftat.")
+
+    monkeypatch.setattr(releases.delivery, "merge", interrupt)
+    with pytest.raises(OutcomeUnknown):
+        releases.advance("merge", run, case_id, approval)
+    monkeypatch.setattr(releases.delivery, "lookup_merge", interrupt)
+    with pytest.raises(OutcomeUnknown):
+        releases.advance("merge", run, case_id, approval)
+    assert calls == ["anrop", "anrop"]
+    assert releases.read(operator, case_id).pending == "merge_pending"
+    with pytest.raises(ConflictError):
+        approve_release(releases, operator, case_id)
+    releases.delivery.stage(candidate.model_copy(update={"head": "c" * 40}))
+    monkeypatch.setattr(releases.delivery, "lookup_merge", real_lookup)
+    with pytest.raises(ConflictError, match="Ingen merge hittades"):
+        releases.advance("merge", run, case_id, approval)
+    assert calls == ["anrop", "anrop"]
+    assert releases.read(operator, case_id).pending is None
+    monkeypatch.setattr(releases.delivery, "merge", real_merge)
+    assert releases.advance("merge", run, case_id, approve_release(releases, operator, case_id))
+
+
+def test_u5_merge_provar_underlaget_vid_sjalva_mutationen(release_case, monkeypatch):
+    _, releases, operator, case_id, run, candidate = release_case
+    approval = approve_release(releases, operator, case_id)
+    merge = releases.delivery.merge
+
+    def change_before_merge(operation, reviewed):
+        releases.delivery.stage(candidate.model_copy(update={"head": "d" * 40}))
+        return merge(operation, reviewed)
+
+    monkeypatch.setattr(releases.delivery, "merge", change_before_merge)
+    with pytest.raises(ConflictError, match="före merge"):
+        releases.advance("merge", run, case_id, approval)
+    assert releases.delivery.lookup_merge(f"merge/{case_id}/{approval}") is None
+    with pytest.raises(ConflictError, match="Ingen merge hittades"):
+        releases.advance("merge", run, case_id, approval)
+    assert releases.requests.get(operator, case_id).status == "waiting_review"
+
+
+def test_u5_inforande_och_verifiering_ar_skilda_utfall(release_case):
+    app, releases, operator, case_id, run, candidate = release_case
+    detail_url = f"{BASE}/{case_id}"
+    with client_for(app) as client:
+        login(client)
+        page = client.get(detail_url)
+        token = page.context["operator_csrf"]
+        assert candidate.head in page.text and candidate.diff in page.text and "provkörning 1" in page.text
+        assert post_action(client, detail_url, "inforande/approve", token,
+                           review=page.context["release"].preview.fingerprint).status_code == 303
+        approval = client.get(detail_url).context["release"].approval.id
+        assert post_action(client, detail_url, "inforande/deploy", token, approval_id=approval).status_code == 409
+        assert releases.advance("merge", run, case_id, approval)
+        page = client.get(detail_url)
+        merged = page.context["release"].merge
+        assert page.context["item"].status == "merged" and page.context["release"].deployment is None
+        assert merged.version in page.text and "Mergekvitto" in page.text
+        assert post_action(client, detail_url, "inforande/deploy", token, approval_id=approval).status_code == 303
+        page = client.get(detail_url)
+        assert page.context["item"].status == "deployed" and page.context["release"].check is None
+        deployment = page.context["release"].deployment
+        assert deployment.version == merged.version
+        assert "Observerad version vid införande" in page.text
+
+        for observed, status in ((TargetState(version="0" * 40, ready=True), "deployed"),
+                                 (TargetState(version=merged.version, ready=False), "deployed"),
+                                 (TargetState(version=merged.version, ready=True), "verified")):
+            with releases.delivery._transaction(write=True) as connection:
+                releases.delivery._put(connection, deployment.target, observed)
+            assert post_action(client, detail_url, "inforande/verify", token, approval_id=approval).status_code == 303
+            page = client.get(detail_url)
+            assert page.context["item"].status == status
+            assert ("Underkänd" in page.text) == (status == "deployed")
+        assert page.context["item"].status == "verified" and page.context["release"].check.version == merged.version
+        assert [item.id for item in client.get(BASE).context["columns"]["verified"]] == [case_id]

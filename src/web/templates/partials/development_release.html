@@ -1,0 +1,89 @@
+{% macro release_button(action, label) %}
+<form method="post" action="{{ base }}/{{ item.id }}/inforande/{{ action }}" class="form" hx-boost="false">
+  <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+  {% if action == 'approve' %}
+  <input type="hidden" name="review" value="{{ release.preview.fingerprint }}">
+  {% else %}
+  <input type="hidden" name="approval_id" value="{{ release.approval.id }}">
+  {% endif %}
+  <div class="form__actions"><button type="submit">{{ label }}</button></div>
+</form>
+{% endmacro %}
+<section id="development-release" aria-labelledby="release-heading">
+  <h2 id="release-heading">Granskad merge och införande i demo</h2>
+  <p class="muted">GitHub och målmiljön simuleras lokalt.</p>
+  {% if release.approval %}
+  <p>{{ release.approval.actor_id }} godkände
+    <code>{{ release.approval.bundle.candidate.head }}</code>
+    <time datetime="{{ release.approval.occurred_at }}">{{ release.approval.occurred_at[:16] | replace('T', ' ') }} UTC</time>.</p>
+  {% endif %}
+  {% if release.pending %}
+  <p role="status">Utfallet är ännu okänt. Avstämning hämtar kvittot före ett eventuellt nytt försök.</p>
+  {% if release.pending == 'merge_pending' %}
+  {{ release_button('merge', 'Stäm av merge') }}
+  {% else %}
+  {{ release_button('deploy', 'Stäm av införande') }}
+  {% endif %}
+  {% elif item.status == 'waiting_review' %}
+    {% if release.preview %}
+    {% set candidate = release.preview.candidate %}
+    <dl>
+      <dt>Pull request i demo</dt><dd>{{ candidate.repository }} · <code>{{ candidate.pull_request }}</code></dd>
+      <dt>Målbranch och bascommit</dt><dd>{{ candidate.branch }} · <code>{{ candidate.base }}</code></dd>
+      <dt>Kodversion</dt><dd><code>{{ candidate.head }}</code></dd>
+    </dl>
+    <details>
+      <summary>Visa diff</summary>
+      <pre class="change-request__text">{{ candidate.diff }}</pre>
+    </details>
+    <h3>Obligatoriska kontroller</h3>
+    <ul>
+      {% for check in candidate.checks %}
+      <li>{{ check.name }} · {{ check.summary }} <code>{{ check.reference }}</code></li>
+      {% endfor %}
+    </ul>
+      {% if release.approved %}
+      {{ release_button('merge', 'Merg:a godkänd version i demo') }}
+      {% else %}
+      {% if release.approval %}<p>Det aktuella underlaget kräver ett nytt beslut.</p>{% endif %}
+      {{ release_button('approve', 'Godkänn kodversion och testbevis för merge') }}
+      {% endif %}
+    {% else %}
+    <p>{{ release.preview_error or 'Ärendet väntar på en testad pull request från demokörningen.' }}</p>
+    {% endif %}
+  {% endif %}
+  {% if release.merge %}
+  <dl>
+    <dt>Mergekvitto</dt><dd><code>{{ release.merge.operation }}</code></dd>
+    <dt>Mergad version</dt><dd><code>{{ release.merge.version }}</code></dd>
+    <dt>Mergat vid</dt><dd><time datetime="{{ release.merge.merged_at.isoformat() }}">{{ release.merge.merged_at.strftime('%Y-%m-%d %H:%M') }} UTC</time></dd>
+  </dl>
+  <details>
+    <summary>Godkända testbevis för merge</summary>
+    <ul>
+      {% for check in release.approval.bundle.candidate.checks %}
+      <li>{{ check.name }} · {{ check.summary }} <code>{{ check.reference }}</code></li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+  {% if release.deployment %}
+  <dl>
+    <dt>Målmiljö</dt><dd><code>{{ release.deployment.target }}</code></dd>
+    <dt>Observerad version vid införande</dt><dd><code>{{ release.deployment.version }}</code></dd>
+    <dt>Infört vid</dt><dd><time datetime="{{ release.deployment.deployed_at.isoformat() }}">{{ release.deployment.deployed_at.strftime('%Y-%m-%d %H:%M') }} UTC</time></dd>
+  </dl>
+  {% endif %}
+  {% if release.check %}
+  <dl>
+    <dt>Kontroll i målmiljön</dt><dd>{{ 'Godkänd' if release.check.passed else 'Underkänd' }} · {{ release.check.summary }}</dd>
+    <dt>Observerad version vid kontroll</dt><dd><code>{{ release.check.version or 'Saknas' }}</code></dd>
+    <dt>Kontrollerat vid</dt><dd><time datetime="{{ release.check.checked_at.isoformat() }}">{{ release.check.checked_at.strftime('%Y-%m-%d %H:%M') }} UTC</time></dd>
+  </dl>
+  {% endif %}
+  {% if not release.pending and item.status == 'merged' %}
+  {{ release_button('deploy', 'Inför den mergade versionen i demo') }}
+  {% elif item.status == 'deployed' %}
+  {{ release_button('verify', 'Verifiera införandet i målmiljön') }}
+  {% endif %}
+</section>

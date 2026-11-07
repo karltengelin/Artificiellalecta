@@ -1,4 +1,4 @@
-"""Kör ett fiktivt U3-ärende med lokal kodardubbel och spara underlaget för boarden."""
+"""Kör ett fiktivt ändringsärende med lokala testdubblar för kod, GitHub och införande."""
 
 from __future__ import annotations
 
@@ -7,15 +7,18 @@ import sqlite3
 import sys
 from contextlib import closing
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from agents.development import CodingTask, EditProposal, TestEvidence, run_development_case  # noqa: E402
+from agents.development import CodingResult, CodingTask, EditProposal, TestEvidence, run_development_case  # noqa: E402
+from services.change_releases import ChangeReleases  # noqa: E402
 from services.change_requests import DEVELOPER, ChangeQueueRun, ChangeRequestDraft, ChangeRequests  # noqa: E402
 from services.contract import Actor  # noqa: E402
 from services.db import session_factory_for  # noqa: E402
+from services.development_demo import Candidate, DemoDelivery, Evidence, OutcomeUnknown  # noqa: E402
+from services.errors import ConflictError  # noqa: E402
 from web.config import WebSettings  # noqa: E402
 from web.database import demo_engine  # noqa: E402
 
@@ -57,22 +60,63 @@ class ScriptedCoder:
         )
 
 
+def stage_candidate(delivery: DemoDelivery, result: CodingResult) -> None:
+    """Betrodd demokod lämnar den faktiskt testade committen till GitHub-dubbeln."""
+    refs = result.review()
+    attempt = result.attempts[-1]
+    delivery.stage(Candidate(
+        pull_request=result.case_id, base=result.base_commit, head=result.head_commit,
+        diff=attempt.diff, references=refs,
+        checks=(Evidence(name="kodprov", reference=refs.test_ref, passed=attempt.tests.passed,
+                         summary=attempt.tests.summary),),
+    ))
+
+
+def request_merge(store: ChangeRequests, delivery: DemoDelivery, operator: Actor, case_id: UUID) -> None:
+    item = store.get(operator, case_id)
+    if item is None or item.agent_run_id is None:
+        raise ConflictError("Ärendet saknar en aktiv utvecklarkörning inom operatörens mandat.")
+    releases = ChangeReleases(store, delivery)
+    view = releases.read(operator, case_id)
+    if view.approval is None:
+        raise ConflictError("Granska och godkänn kodversionen på ärendet först.")
+    scope = ChangeQueueRun(actor=DEVELOPER, run_id=item.agent_run_id, requested_by=operator.id,
+                           allowed_requests={case_id})
+    releases.advance("merge", scope, case_id, view.approval.id)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--operator-id", default="karl", help="Det lokala operatörskontot som ska se ärendet.")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--prepare-release", action="store_true", help="Lämna testad kod till den lokala GitHub-dubbeln.")
+    mode.add_argument("--request-merge", type=UUID, metavar="ÄRENDE-ID",
+                      help="Låt ärendets utvecklaragent begära merge av den godkända demoversionen.")
     args = parser.parse_args()
     settings = WebSettings(operator_id=args.operator_id)
     engine = demo_engine(settings.demo_path)
     try:
         store = ChangeRequests(session_factory_for(engine))
+        operator = Actor.human(settings.operator_id)
+        delivery = DemoDelivery(settings.demo_path)
+        if args.request_merge:
+            try:
+                request_merge(store, delivery, operator, args.request_merge)
+            except (ConflictError, OutcomeUnknown) as exc:
+                print(exc, file=sys.stderr)
+                return 1
+            print(f"Mergat i demo · /central/utveckling/{args.request_merge}")
+            return 0
         case_id = uuid4()
-        store.create(Actor.human(settings.operator_id), case_id, DRAFT)
+        store.create(operator, case_id, DRAFT)
         scope = ChangeQueueRun(actor=DEVELOPER, run_id=uuid4(), requested_by=settings.operator_id,
                                allowed_requests={case_id})
         (queued,) = store.list_new(scope)
         result = run_development_case(store, scope, queued.id, coder=ScriptedCoder(),
                                       files={FILE: SOURCE}, verify=verify_quote)
-        item = store.get(Actor.human(settings.operator_id), case_id)
+        item = store.get(operator, case_id)
+        if args.prepare_release and item.status == "waiting_review":
+            stage_candidate(delivery, result)
         print(f"Ändringsärende /central/utveckling/{case_id}")
         print(f"Körning {scope.run_id} · {result.outcome} · {item.status}")
         return int(item.status != "waiting_review")

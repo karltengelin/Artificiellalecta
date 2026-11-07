@@ -7,7 +7,9 @@ from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
+from services.change_releases import STEPS
 from services.change_requests import STATUS_MOVES, ChangeRequestDraft, ChangeRequests, ReviewReferences
+from services.development_demo import OutcomeUnknown
 from services.errors import ConflictError
 from web.handler import render
 from web.operator_auth import operator_action, operator_actor
@@ -15,7 +17,8 @@ from web.routes.auth import HEADERS, auth_form
 
 BASE = "/central/utveckling"
 KINDS = {"defect": "Felanmälan", "rule_change": "Regeländring", "improvement": "Förbättring"}
-STATUSES = {"new": "Nytt", "in_progress": "Pågår", "waiting_review": "Väntar på granskning"}
+STATUSES = {"new": "Nytt", "in_progress": "Pågår", "waiting_review": "Väntar på granskning",
+            "merged": "Mergat", "deployed": "Infört", "verified": "Verifierat"}
 router = APIRouter(prefix=BASE)
 
 
@@ -104,9 +107,36 @@ def request_detail(request: Request, request_id: str):
     return respond(request, "change_request.html", {
         "item": item,
         "moves": STATUS_MOVES[item.status],
+        "release": request.app.state.change_releases.read(actor, item.id, preview=True),
         "github_repository": github.repository,
         "github_status": github.status(item.github_url, refresh=True) if item.github_url else None,
     })
+
+
+@router.post("/{request_id}/inforande/{action}")
+async def release_action(request: Request, request_id: str, action: str):
+    if action not in ("approve", *STEPS):
+        raise HTTPException(404)
+    form = await auth_form(request, {"csrf_token", "review" if action == "approve" else "approval_id"})
+    actor = operator_action(request, form)
+    workspace(request)
+    releases = request.app.state.change_releases
+    identifier = parse_request_id(request_id)
+    try:
+        if action == "approve":
+            found = await run_in_threadpool(releases.approve, actor, identifier, form.get("review", ""))
+        else:
+            approval = int(form.get("approval_id", ""))
+            found = await run_in_threadpool(releases.advance, action, actor, identifier, approval)
+    except ValueError:
+        raise HTTPException(422, "Öppna ärendet igen och kontrollera granskningsunderlaget.") from None
+    except ConflictError as exc:
+        raise HTTPException(409, str(exc)) from None
+    except OutcomeUnknown as exc:
+        raise HTTPException(503, str(exc)) from None
+    if not found:
+        raise missing_request()
+    return RedirectResponse(f"{BASE}/{identifier}#development-release", status_code=303, headers=HEADERS)
 
 
 def missing_request() -> HTTPException:
