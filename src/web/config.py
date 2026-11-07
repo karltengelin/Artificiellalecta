@@ -17,6 +17,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from web.development_github import DEFAULT_REPOSITORY, REPOSITORY_PATTERN
+
 try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover
@@ -55,6 +57,8 @@ class WebSettings:
     operator_dataset_id: str | None = None
     operator_id: str = "karl"
     operator_password_hash: str | None = field(default=None, repr=False)
+    development_github_repository: str = DEFAULT_REPOSITORY
+    development_github_token: str | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         if not _HANDLER_ID.match(self.handler_id):
@@ -69,6 +73,8 @@ class WebSettings:
             raise WebConfigError("OPERATOR_DATASET_ID ska vara en kort datasetreferens utan personuppgifter")
         if not _HANDLER_ID.fullmatch(self.operator_id):
             raise WebConfigError("Ogiltigt OPERATOR_ID – små bokstäver, siffror, _ . -, högst 100 tecken")
+        if not re.fullmatch(REPOSITORY_PATTERN, self.development_github_repository):
+            raise WebConfigError("DEVELOPMENT_GITHUB_REPOSITORY ska anges som ägare/repo")
         from web.operator_auth import validate_password_hash
 
         try:
@@ -100,4 +106,6 @@ class WebSettings:
             operator_dataset_id=os.environ.get("OPERATOR_DATASET_ID") or None,
             operator_id=os.environ.get("OPERATOR_ID", "karl").strip() or "karl",
             operator_password_hash=os.environ.get("OPERATOR_PASSWORD_HASH") or None,
+            development_github_repository=os.environ.get("DEVELOPMENT_GITHUB_REPOSITORY", DEFAULT_REPOSITORY).strip(),
+            development_github_token=(os.environ.get("DEVELOPMENT_GITHUB_TOKEN") or "").strip() or None,
         )

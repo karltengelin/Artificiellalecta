@@ -358,11 +358,33 @@ pre.draft { white-space: pre-wrap; background: var(--color-background); border-r
 .dialogue-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
 
 /* Manuella ändringsärenden */
-.change-requests td, .change-request { overflow-wrap: anywhere; }
+.change-board, .change-request { overflow-wrap: anywhere; }
 .change-request .panel__head > div { min-width: 0; }
 .change-request dt { font-weight: var(--font-weight-label); }
 .change-request dd { margin: 0 0 var(--space-2); }
 .change-request__text { white-space: pre-wrap; }
+.change-board, .change-request__work { display: grid; gap: var(--space-4); }
+.change-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.change-request__work { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: var(--space-5); }
+.change-board__column, .change-request__work > section {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.change-board__column h2 { font-size: 1rem; }
+.change-board__card {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3) 0;
+}
+.change-board__card h3 { margin: var(--space-1) 0; font-size: 1rem; }
+.change-board__card p, .change-github__time, .change-github__notice { margin: var(--space-1) 0; font-size: .875rem; }
+.change-github { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }
+.change-github__notice { color: var(--status-warning-text); font-weight: var(--font-weight-label); }
+.change-request__work input[type=url] { width: 100%; min-width: 0; }
+@media (max-width: 800px) {
+  .change-board, .change-request__work { grid-template-columns: minmax(0, 1fr); }
+}
 .dialogue-human { border-left: 4px solid var(--color-brand); }
 .dialogue-chart { display: block; width: 100%; height: auto; }
 .dialogue-messages { display: grid; gap: 1rem; }

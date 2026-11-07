@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/development_github.html" import github_summary %}
 {% block title %}{{ item.draft.title }}{% endblock %}
 {% block content %}
 {% set draft = item.draft %}
@@ -10,7 +11,68 @@
       <h1>{{ draft.title }}</h1>
       <p class="oc-ref">{{ item.id }}</p>
     </div>
-    <span class="pill">Nytt</span>
+  </div>
+  <div class="change-request__work">
+    <section aria-labelledby="company-status">
+      <h2 id="company-status">Bolagets ärendestatus</h2>
+      <p><span class="pill">{{ statuses[item.status] }}</span></p>
+      <p>Ansvarig · {{ item.assignee_id or 'Ingen tilldelad' }}{% if item.agent_run_id %} (agent){% endif %}</p>
+      {% if item.agent_run_id %}
+      <form method="post" action="{{ base }}/{{ item.id }}/ta-over" class="form" hx-boost="false">
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+        <input type="hidden" name="run_id" value="{{ item.agent_run_id }}">
+        <div class="form__actions"><button type="submit">Ta över ärendet</button></div>
+      </form>
+      {% else %}
+      <form method="post" action="{{ base }}/{{ item.id }}/status" class="form" hx-boost="false">
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+        <input type="hidden" name="previous" value="{{ item.status }}">
+        <div class="field">
+          <label for="request-status">Flytta till</label>
+          <select id="request-status" name="status" required>
+            <option value="">Välj steg</option>
+            {% for status in moves if status != 'waiting_review' %}<option value="{{ status }}">{{ statuses[status] }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form__actions"><button type="submit">Flytta ärendet</button></div>
+      </form>
+      {% if 'waiting_review' in moves %}
+      <form method="post" action="{{ base }}/{{ item.id }}/status" class="form" hx-boost="false">
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+        <input type="hidden" name="previous" value="{{ item.status }}">
+        <input type="hidden" name="status" value="waiting_review">
+        <div class="field">
+          <label for="code-ref">Referens till kodändring</label>
+          <input id="code-ref" name="code_ref" maxlength="300" required>
+        </div>
+        <div class="field">
+          <label for="test-ref">Referens till testbevis</label>
+          <input id="test-ref" name="test_ref" maxlength="300" required>
+        </div>
+        <div class="form__actions"><button type="submit">Lämna för granskning</button></div>
+      </form>
+      {% endif %}
+      {% endif %}
+    </section>
+    <section aria-labelledby="github-status">
+      <h2 id="github-status">Teknisk status från GitHub</h2>
+      {% if item.github_url %}
+      {{ github_summary(item.github_url, github_status) }}
+      {% else %}
+      <p class="muted">Ingen GitHub-länk sparad.</p>
+      {% endif %}
+      <form method="post" action="{{ base }}/{{ item.id }}/github" class="form" hx-boost="false">
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+        <input type="hidden" name="previous" value="{{ item.github_url or '' }}">
+        <div class="field">
+          <label for="github-url">GitHub-länk</label>
+          <input id="github-url" name="github_url" type="url" maxlength="300"
+                 value="{{ item.github_url or '' }}" aria-describedby="github-url-help">
+          <small id="github-url-help" class="field__help">Ange en direktlänk till ett issue eller en pull request i {{ github_repository }}. Töm fältet för att ta bort länken.</small>
+        </div>
+        <div class="form__actions"><button type="submit">Spara GitHub-länk</button></div>
+      </form>
+    </section>
   </div>
   <dl>
     <dt>Beställare</dt><dd>{{ item.requested_by }}</dd>
@@ -33,5 +95,42 @@
   </dl>
   {% if not (draft.source_refs or draft.decision_ref or draft.rule_version or draft.effective_on) %}<p class="muted">Underlag saknas.</p>{% endif %}
   {% endif %}
+  <section id="request-history">
+  {% if item.review %}
+  <h2>Granskningsunderlag</h2>
+  <dl>
+    <dt>Kodändring</dt><dd class="change-request__text">{{ item.review.code_ref }}</dd>
+    <dt>Testbevis</dt><dd class="change-request__text">{{ item.review.test_ref }}</dd>
+  </dl>
+  {% endif %}
+  <h2>Ärendehistorik</h2>
+  {% if item.history %}
+  <ul>
+    {% for event in item.history %}
+    <li>
+      <time datetime="{{ event.occurred_at.isoformat() }}">{{ event.occurred_at.strftime('%Y-%m-%d %H:%M') }} UTC</time>
+      · {{ event.actor_id }} ·
+      {% if event.action == 'status' %}
+      Flyttade från {{ statuses[event.previous] }} till {{ statuses[event.current] }}.
+      {% elif event.action == 'github' %}
+      GitHub-länk från {{ event.previous or 'ingen länk' }} till {{ event.current or 'ingen länk' }}.
+      {% elif event.action == 'agent_claim' %}
+      Tog ansvar som agent. Körning {{ event.previous }}.
+      {% elif event.action == 'human_claim' %}
+      Tog ansvar som operatör.
+      {% elif event.action == 'takeover' %}
+      Tog över från agentkörning {{ event.previous }}.
+      {% elif event.action == 'release' %}
+      Återförde ärendet till kön.
+      {% elif event.action == 'review' %}
+      Lämnade granskningsunderlag. Kodändring {{ event.previous }}. Testbevis {{ event.current }}.
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Inga händelser sedan registreringen.</p>
+  {% endif %}
+  </section>
 </section>
 {% endblock %}

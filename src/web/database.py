@@ -119,7 +119,7 @@ def demo_engine(path: Path) -> Engine:
         create_demo_database(engine)
     else:
         add_missing_tables(engine)
-    change_requests_table.create(engine, checkfirst=True)
+    change_requests_table.metadata.create_all(engine)
     return engine
 
 
