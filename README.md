@@ -12,9 +12,9 @@ Människor och AI ska arbeta genom gemensamma verksamhetstjänster och
 identifierbara underlag och resultat. Operatörscentralen ska knyta ihop teamens
 arbetsytor: initiera och följa uppdrag, hitta dokument, granska leveranser och
 fatta beslut. Den första kedjan från beståndsfråga till granskad, återfinnbar
-rapport (OC-3a, B-041) är byggd och körd mot Lakebase 2026-11-02, enligt
-[projekt 10](projekt/10_operatörscentral/PROJEKTPLAN.md). Den gemensamma
-kontrollen i webben mot Lakebase återstår; se [aktuell prioritering](ATT_GORA.md)
+rapport (OC-3a, B-041) är byggd och körd mot Lakebase, även beställd i webben,
+enligt [projekt 10](projekt/10_operatörscentral/PROJEKTPLAN.md). Operatörens
+granskning av webbeställningen återstår; se [aktuell prioritering](ATT_GORA.md)
 och [webbdriften](02_system/fragekedja_webb.md).
 
 **Detta är inte ett riktigt försäkringsbolag.** Inga riktiga kunder, ingen riktig data, inget riktigt kapital.
