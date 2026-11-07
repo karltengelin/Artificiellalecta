@@ -1,6 +1,6 @@
 # Projekt 11 – Utveckling och ändringshantering
 
-> Planeringsuppdrag från operatören 2026-11-07. Status **U1–U3 och U4:s regelöverlämning byggda i lokal demo**. Projektet
+> Planeringsuppdrag från operatören 2026-11-07. Status **U1–U5 byggda i lokal demo**. Projektet
 > omfattar utvecklaragenten, ändringsflödet, utvecklingsytan och GitHub-kopplingen.
 
 ## Syfte och första leverans
@@ -87,8 +87,8 @@ testbeviset. Äldre U2-ärenden kan visas med tidigare status utan U3-underlag.
   tillåten fil och kör fasta tester. Demon testar SQL-beräkningen i en
   separat minnesdatabas med begränsad frågekörning.
 - `logs/development_runs/<körnings-id>/result.json` innehåller bascommit,
-  plan, diff, testbevis och utfall. Den närliggande JSONL-filen är harnessens
-  körjournal. Referenserna på ärendet binder körnings-ID, bascommit, diff och
+  testad commit, plan, diff, testbevis och utfall. Den närliggande JSONL-filen är harnessens
+  körjournal. Referenserna på ärendet binder körnings-ID, bascommit, testad commit, diff och
   det godkända testutfallet med SHA-256. Den temporära kodkopian tas bort
   efter försöket. Betrodd kod sparar underlaget före överlämningen och
   kontrollerar ansvaret igen i överlämningstransaktionen.
@@ -137,6 +137,42 @@ Webbproven använder en fiktiv källa och en testmodell och provar hela vägen
 från inloggning till agentens anspråk. De provar också omstart efter att
 ärendet sparats, fel beställare, ändrat eller saknat underlag och den befintliga
 parametervägen. Kör dem via `python scripts/testing/run_tests.py --suite web --run`.
+
+## Prova U5 i demo
+
+1. Kör `python scripts/demo/run_development_case.py --operator-id karl --prepare-release`
+   från arbetskopian. Byt operatörs-ID om ditt lokala konto har ett annat namn.
+   Skriptet sparar den testade committen och förbereder en pull request i GitHub-dubbeln.
+2. Starta demowebben med `python scripts/web/start_ui.py --db demo` och logga in.
+   Öppna det utskrivna ärendet via **Utveckling**. Läs diffen och provresultaten under
+   **Granskad merge och införande i demo**. Välj **Godkänn kodversion och testbevis för merge**.
+3. Kör `python scripts/demo/run_development_case.py --operator-id karl --request-merge ÄRENDE-ID`.
+   Startaren använder mandatet från den aktiva utvecklarkörningen för ärendet.
+   Operatören kan också begära merge på ärendet, till exempel efter övertagande.
+4. När ärendet är **Mergat**, välj **Inför den mergade versionen i demo**.
+   När det är **Infört**, välj **Verifiera införandet i målmiljön**.
+   Ett godkänt hälsoprov med rätt observerad version ger **Verifierat**.
+   Ett länkat U4-flöde visar status och kvitton från samma ärende.
+
+Godkännandet binds till granskningsinlämningen, pull request, repo, målbranch,
+bascommit, granskad commit, diff och provbevis. Betrodd kod prövar samma underlag
+och det obligatoriska kodprovet vid merge. Kodaren har bara källsnapshot och
+testdata i sin arbetsyta. Merge- och införandevägen finns hos den betrodda startaren
+och demowebben. GitHubs skrivskyddade statusläsning i U2 är en separat väg.
+
+Beslut, försök och kvitton sparas i demotabellen `change_release_events`, som
+skapas vid start även för äldre demofiler. De två testdubblarnas kvitton och
+observerade versioner finns i `data/handlaggare_demo.delivery.db`. Om ett
+svar uteblir markeras ärendet för avstämning. Betrodd kod söker efter kvittot
+med samma försöksnyckel före ett nytt anrop. Om källan bekräftar att ingen
+merge utförts och underlaget har ändrats krävs ett nytt beslut.
+`--reset-demo` återställer båda demofilerna.
+
+U5-proven täcker ändrad kod och ändrade testbevis, nekade mandat, samtidiga
+anrop, avbrott före eller efter effekt samt kontroll av fel målversion.
+Ett prov går hela vägen från en fiktiv U4-regel till verifierat införande.
+Verkliga skrivanslutningar, mergepolicy och autonomt godkännande kräver
+separata beslut.
 
 ## En ingång till ändringsarbetet från flera håll
 
@@ -245,9 +281,9 @@ externa integrationer och behörigheter enligt AGENTS.md.
   kod kan lämnas till utveckling som ett ordinarie ärende i demo. Omförsök
   återfinner samma ärende. Andra ingångar, exempelvis Fråga bolaget, ansluts
   när de kan lämna behöriga beställningar.
-- [ ] **U5 – Granskad merge och verifierat införande.** Bind godkännande till
-  rätt commit och testbevis. Låt agenten genomföra tillåten merge, stäm av dess
-  utfall och återför införande- och verifieringskvittot till ärendet och flödet.
+- [x] **U5 – Granskad merge och verifierat införande.** Lokalt provad kedja
+  med mänskligt beslut, mandatstyrd mergebegäran och skilda kvitton för merge,
+  införande och verifiering. Bevisen visas på ärendet och från länkat U4-flöde.
 - [ ] **U6 – Avgränsad autonomi.** Prova förhandsgodkända ändringstyper i
   sandlådan efter verifiering av U5. Testa nekat mandat, ändrad diff efter
   granskning, dubbla anrop och okänt resultat efter avbrott.

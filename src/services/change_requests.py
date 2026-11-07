@@ -45,13 +45,26 @@ change_request_events = Table(
     Column("current", String(300)),
     Index("ix_change_request_events_request_action_id", "request_id", "action", "id"),
 )
+change_release_events = Table(
+    "change_release_events", change_requests_table.metadata,
+    Column("id", Integer, primary_key=True),
+    Column("request_id", ForeignKey("change_requests.id"), nullable=False, index=True),
+    Column("actor_id", String(100), nullable=False),
+    Column("occurred_at", String(32), nullable=False),
+    Column("action", String(24), nullable=False),
+    Column("payload", JSON, nullable=False),
+)
 
-ChangeStatus = Literal["new", "in_progress", "waiting_review"]
+ChangeStatus = Literal["new", "in_progress", "waiting_review", "merged", "deployed", "verified"]
 STATUS_MOVES: dict[ChangeStatus, tuple[ChangeStatus, ...]] = {
     "new": ("in_progress",),
     "in_progress": ("new", "waiting_review"),
     "waiting_review": ("in_progress",),
+    "merged": (),
+    "deployed": (),
+    "verified": (),
 }
+PENDING_RELEASE = ("merge_pending", "deploy_pending")
 DEVELOPER = Actor.agent("utvecklaragent", "utveckling")
 ASSIGNMENT_ACTIONS = ("agent_claim", "human_claim", "takeover", "release")
 
@@ -114,6 +127,7 @@ class ChangeRequest(BaseModel):
     assignee_id: str | None = None
     assignment: Literal["agent_claim", "human_claim", "takeover", "release"] | None = None
     agent_run_id: UUID | None = None
+    release_pending: bool = False
     history: tuple[ChangeRequestEvent, ...] = ()
 
     @property
@@ -125,7 +139,7 @@ class ChangeRequest(BaseModel):
 
     @property
     def review(self) -> ReviewReferences | None:
-        if self.status == "waiting_review" and self.history:
+        if self.status in ("waiting_review", "merged", "deployed", "verified"):
             event = next((event for event in self.history if event.action == "review"), None)
             if event is not None:
                 return ReviewReferences(code_ref=event.previous, test_ref=event.current)
@@ -278,6 +292,8 @@ class ChangeRequests:
                 return True
             if row["status"] != previous:
                 raise ConflictError("Ärendet har flyttats. Öppna ärendet igen och kontrollera status.")
+            if row["release_pending"]:
+                raise ConflictError("Stäm av det pågående införandesteget innan du ändrar granskningsunderlaget.")
             if status == "waiting_review":
                 if review is None:
                     raise ValueError("Ange referenser till kodändringen och testbeviset.")
@@ -372,10 +388,14 @@ class ChangeRequests:
         assignment_id = (select(events.c.id)
                          .where(events.c.request_id == table.c.id, events.c.action.in_(ASSIGNMENT_ACTIONS))
                          .order_by(events.c.id.desc()).limit(1).correlate(table).scalar_subquery())
+        releases = change_release_events
+        latest_release = (select(releases.c.action).where(releases.c.request_id == table.c.id)
+                          .order_by(releases.c.id.desc()).limit(1).scalar_subquery())
         return (select(table, github_url.label("github_url"), assignment.c.current.label("assignee_id"),
                        assignment.c.action.label("assignment"), assignment.c.previous.label("assignment_ref"),
                        case((assignment.c.action == "agent_claim", assignment.c.previous), else_=None)
-                       .label("agent_run_id"))
+                       .label("agent_run_id"), case((latest_release.in_(PENDING_RELEASE), True), else_=False)
+                       .label("release_pending"))
                 .select_from(table.outerjoin(assignment, assignment.c.id == assignment_id))
                 .where(table.c.requested_by == requested_by))
 

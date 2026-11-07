@@ -25,7 +25,9 @@ from agents.flows.product_reports import ProductReportConsole
 from agents.flows.questions import QuestionConsole
 from ai import AIClient
 from services import ServiceLayer
+from services.change_releases import ChangeReleases
 from services.change_requests import ChangeRequests
+from services.development_demo import DemoDelivery
 from web.agent import CaseAgent
 from web.config import WebConfigError, WebSettings
 from web.development_github import GitHubReader
@@ -102,6 +104,9 @@ def create_app(
     app = FastAPI(title="Artificiellalecta – handläggare", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
     app.state.change_requests = change_requests
+    app.state.change_releases = (
+        ChangeReleases(change_requests, DemoDelivery(settings.demo_path)) if change_requests is not None else None
+    )
     app.state.development_github = GitHubReader(
         settings.development_github_repository, settings.development_github_token,
     ) if app.state.change_requests is not None else None

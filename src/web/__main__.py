@@ -14,6 +14,7 @@ from pathlib import Path
 
 import uvicorn
 
+from services.development_demo import DemoDelivery
 from web.app import create_app
 from web.config import DATABASES, DEFAULT_PORTS, WebSettings
 
@@ -50,6 +51,7 @@ def main() -> None:
         if settings.database != "demo":
             parser.error("--reset-demo gäller bara demodatabasen")
         settings.demo_path.unlink(missing_ok=True)
+        DemoDelivery(settings.demo_path).path.unlink(missing_ok=True)
     if args.company_questions or args.actuary_workspace:
         from ai import AIClient
         from reporting import render_report

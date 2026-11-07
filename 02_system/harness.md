@@ -689,7 +689,12 @@ kodmiljön. Godkännandet binds till den granskade kodversionen.
 atomiskt anspråk, försökstak, tidsbudget och harnessens `FileJournal`.
 Den kodar via ett separat kontrakt och lämnar diff och verifierade testbevis
 till operatörens board. U4:s regeländringsflöde kan lämna en antagen regel
-som kräver kod till samma kö i demo. En ordinarie profil och köbevakning återstår.
+som kräver kod till samma kö i demo. I U5 får den aktiva utvecklarkörningen
+begära merge först när operatören har godkänt exakt kodversion och testbevis.
+Betrodd kod prövar beslutet och de obligatoriska kontrollerna. Testdubblarna
+ger skilda kvitton för merge, observerad målversion och verifiering. Vid
+okänt utfall hämtar startaren kvittot före ett nytt försök. En ordinarie
+profil och köbevakning återstår.
 Projekt 11 prövar först granskat arbete. Ett senare autonomt läge avgränsas
 till förhandsgodkända ändringstyper i testmiljö enligt en separat policy.
 Merge till `main` följer AGENTS.md §4.6 och databasmigrationer följer §4.5.

@@ -23,7 +23,7 @@
         <input type="hidden" name="run_id" value="{{ item.agent_run_id }}">
         <div class="form__actions"><button type="submit">Ta över ärendet</button></div>
       </form>
-      {% else %}
+      {% elif moves and not release.pending %}
       <form method="post" action="{{ base }}/{{ item.id }}/status" class="form" hx-boost="false">
         <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
         <input type="hidden" name="previous" value="{{ item.status }}">
@@ -112,6 +112,9 @@
     <dt>Kodändring</dt><dd class="change-request__text">{{ item.review.code_ref }}</dd>
     <dt>Testbevis</dt><dd class="change-request__text">{{ item.review.test_ref }}</dd>
   </dl>
+  {% endif %}
+  {% if item.status in ('waiting_review', 'merged', 'deployed', 'verified') %}
+  {% include "partials/development_release.html" %}
   {% endif %}
   <h2>Ärendehistorik</h2>
   {% if item.history %}

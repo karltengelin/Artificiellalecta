@@ -53,6 +53,9 @@ agenter hör hemma i centralen respektive i teamens egna områden.
   när en lästoken är konfigurerad.
   I demo kan operatören också [lämna en antagen regel till utveckling](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u4-i-demo).
   Flödet och boarden länkar till samma ändringsärende och använder operatörens inloggning.
+  Med [U5:s testdubblar](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u5-i-demo)
+  godkänner operatören exakt kodversion och testbevis på ärendet. Boarden visar
+  Mergat, Infört och Verifierat var för sig. Detaljen och ett eventuellt ursprungsflöde visar kvittona.
 - **Bara lokalt; v1-handläggningen kräver ingen inloggning.**
   - Servern binds till `127.0.0.1`, och Host-huvudet måste vara `127.0.0.1` eller `localhost`
     (skydd mot DNS-rebinding).

@@ -67,6 +67,7 @@ class CodingResult(BaseModel):
     run_id: UUID
     case_id: UUID
     base_commit: str | None = None
+    head_commit: str | None = None
     branch: str
     baseline: TestEvidence | None = None
     attempts: tuple[CodingAttempt, ...] = ()
@@ -76,7 +77,10 @@ class CodingResult(BaseModel):
         if self.outcome != "tests_passed":
             raise CodingError("Körningen saknar godkänt testbevis.")
         attempt = self.attempts[-1]
-        code_hash = digest({"base_commit": self.base_commit, "diff": attempt.diff})
+        code = {"base_commit": self.base_commit, "diff": attempt.diff}
+        if self.head_commit is not None:
+            code["head_commit"] = self.head_commit
+        code_hash = digest(code)
         test_hash = digest({"code_hash": code_hash, "tests": attempt.tests.model_dump()})
         return ReviewReferences(code_ref=f"{self.run_id}/diff sha256:{code_hash}",
                                 test_ref=f"{self.run_id}/tests sha256:{test_hash}")
@@ -156,7 +160,7 @@ def _run(store: ChangeRequests, scope: ChangeQueueRun, case_id: UUID, coder: Cod
         raise
     journal.append("development_claimed", case_id=str(case_id))
     attempts = []
-    base_commit = baseline = None
+    base_commit = head_commit = baseline = None
     outcome = "needs_human"
     try:
         with TemporaryDirectory(prefix="development-") as folder:
@@ -190,6 +194,10 @@ def _run(store: ChangeRequests, scope: ChangeQueueRun, case_id: UUID, coder: Cod
                                plan=text_ref(proposal.plan), diff_hash=digest(diff), tests_hash=digest(feedback.model_dump()))
                 _remaining(deadline)
                 if feedback.passed:
+                    _git(workspace, deadline, "add", "--", proposal.path)
+                    _git(workspace, deadline, "-c", "user.name=Demo", "-c", "user.email=demo@example.invalid",
+                         "commit", "--no-gpg-sign", "-m", "Testad fiktiv ändring")
+                    head_commit = _git(workspace, deadline, "rev-parse", "HEAD")
                     outcome = "tests_passed"
                     break
                 (workspace / proposal.path).write_text(files[proposal.path], encoding="utf-8", newline="\n")
@@ -204,6 +212,7 @@ def _run(store: ChangeRequests, scope: ChangeQueueRun, case_id: UUID, coder: Cod
         outcome = "blocked"
 
     result = CodingResult(run_id=scope.run_id, case_id=case_id, branch=branch, base_commit=base_commit,
+                          head_commit=head_commit,
                           baseline=baseline, attempts=tuple(attempts), outcome=outcome)
     artifact_dir = journal.path.with_suffix("")
     artifact_dir.mkdir()
