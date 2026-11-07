@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/development_github.html" import github_summary %}
 {% block title %}Utveckling{% endblock %}
 {% block content %}
 <section class="panel panel--standalone">
@@ -6,29 +7,28 @@
     <div>
       <p class="oc-eyebrow">ÄNDRINGSHANTERING · DEMO</p>
       <h1>Utveckling</h1>
-      <p class="muted">Här kan du registrera och följa dina ändringsärenden.</p>
+      <p class="muted">Öppna ett ärende för att flytta det eller hantera dess GitHub-länk.</p>
     </div>
     <a class="button" href="{{ base }}/ny">Nytt ändringsärende</a>
   </div>
-  {% if items %}
-  <div class="oc-table">
-    <table class="table change-requests">
-      <thead><tr><th scope="col">Ärende</th><th scope="col">Typ</th><th scope="col">Berört system</th><th scope="col">Status</th><th scope="col">Registrerat</th></tr></thead>
-      <tbody>
-        {% for item in items %}
-        <tr>
-          <td><a href="{{ base }}/{{ item.id }}">{{ item.draft.title }}</a></td>
-          <td>{{ kinds[item.draft.kind] }}</td>
-          <td>{{ item.draft.affected_system or '–' }}</td>
-          <td><span class="pill">Nytt</span></td>
-          <td><time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%Y-%m-%d') }}</time></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  {% if not items %}<p class="empty">Du har inga ändringsärenden ännu.</p>{% endif %}
+  <div class="change-board">
+    {% for status, cards in columns.items() %}
+    <section class="change-board__column" aria-labelledby="status-{{ status }}">
+      <h2 id="status-{{ status }}">{{ statuses[status] }} <span class="pill">{{ cards|length }}</span></h2>
+      {% for item in cards %}
+      <article class="change-board__card">
+        <p class="oc-eyebrow">{{ kinds[item.draft.kind] }}</p>
+        <h3><a href="{{ base }}/{{ item.id }}">{{ item.draft.title }}</a></h3>
+        {% if item.draft.affected_system %}<p class="muted">{{ item.draft.affected_system }}</p>{% endif %}
+        <p class="muted">Registrerat <time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%Y-%m-%d') }}</time></p>
+        {% if item.github_url %}{{ github_summary(item.github_url, github_statuses[item.id]) }}{% endif %}
+      </article>
+      {% else %}
+      <p class="muted">Inga ärenden i det här steget.</p>
+      {% endfor %}
+    </section>
+    {% endfor %}
   </div>
-  {% else %}
-  <p class="empty">Du har inga ändringsärenden ännu.</p>
-  {% endif %}
 </section>
 {% endblock %}

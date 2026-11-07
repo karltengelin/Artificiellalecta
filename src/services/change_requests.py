@@ -7,7 +7,17 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
-from sqlalchemy import JSON, Column, MetaData, String, Table, select
+from sqlalchemy import (
+    JSON,
+    Column,
+    ForeignKey,
+    Index,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    select,
+)
 from sqlalchemy.dialects.sqlite import insert
 
 from services.contract import Actor
@@ -23,6 +33,24 @@ change_requests_table = Table(
     Column("created_at", String(32), nullable=False),  # ISO 8601 i UTC
     Column("draft", JSON, nullable=False),
 )
+change_request_events = Table(
+    "change_request_events", change_requests_table.metadata,
+    Column("id", Integer, primary_key=True),
+    Column("request_id", ForeignKey("change_requests.id"), nullable=False),
+    Column("actor_id", String(100), nullable=False),
+    Column("occurred_at", String(32), nullable=False),
+    Column("action", String(12), nullable=False),
+    Column("previous", String(300)),
+    Column("current", String(300)),
+    Index("ix_change_request_events_request_action_id", "request_id", "action", "id"),
+)
+
+ChangeStatus = Literal["new", "in_progress", "waiting_review"]
+STATUS_MOVES: dict[ChangeStatus, tuple[ChangeStatus, ...]] = {
+    "new": ("in_progress",),
+    "in_progress": ("new", "waiting_review"),
+    "waiting_review": ("in_progress",),
+}
 
 
 ShortText = Annotated[str, StringConstraints(min_length=1, max_length=160)]
@@ -49,12 +77,22 @@ class ChangeRequestDraft(BaseModel):
         return date.fromisoformat(value) if isinstance(value, str) else value
 
 
+class ChangeRequestEvent(BaseModel):
+    actor_id: str
+    occurred_at: datetime
+    action: Literal["status", "github"]
+    previous: str | None
+    current: str | None
+
+
 class ChangeRequest(BaseModel):
     id: UUID
     requested_by: str
-    status: Literal["new"]
+    status: ChangeStatus
     created_at: datetime
     draft: ChangeRequestDraft
+    github_url: str | None = None
+    history: tuple[ChangeRequestEvent, ...] = ()
 
 
 class ChangeRequests:
@@ -82,14 +120,65 @@ class ChangeRequests:
             return [ChangeRequest.model_validate(row) for row in session.execute(statement).mappings()]
 
     def get(self, actor: Actor, request_id: UUID) -> ChangeRequest | None:
-        statement = self._owned(self._requester(actor)).where(change_requests_table.c.id == str(request_id))
         with self._session_factory() as session:
-            row = session.execute(statement).mappings().one_or_none()
-            return ChangeRequest.model_validate(row) if row is not None else None
+            row = self._find(session, self._requester(actor), request_id)
+            if row is None:
+                return None
+            events = change_request_events
+            history = session.execute(
+                select(events).where(events.c.request_id == str(request_id)).order_by(events.c.id.desc())
+            ).mappings()
+            return ChangeRequest.model_validate({**row, "history": tuple(history)})
+
+    def move(self, actor: Actor, request_id: UUID, previous: str, status: str) -> bool:
+        requested_by = self._requester(actor)
+        with self._session_factory() as session:
+            row = self._find(session, requested_by, request_id)
+            if row is None:
+                return False
+            if status not in STATUS_MOVES.get(previous, ()):
+                raise ValueError("Välj ett angränsande steg i ärendets arbetsflöde.")
+            if row["status"] == status:
+                return True
+            if row["status"] != previous:
+                raise ConflictError("Ärendet har flyttats. Öppna ärendet igen och kontrollera status.")
+            table = change_requests_table
+            session.execute(table.update().where(table.c.id == str(request_id)).values(status=status))
+            self._record(session, request_id, requested_by, "status", previous, status)
+            return True
+
+    def link(self, actor: Actor, request_id: UUID, previous: str | None, url: str | None) -> bool:
+        requested_by = self._requester(actor)
+        with self._session_factory() as session:
+            row = self._find(session, requested_by, request_id)
+            if row is None:
+                return False
+            if row["github_url"] == url:
+                return True
+            if row["github_url"] != previous:
+                raise ConflictError("GitHub-länken har ändrats. Öppna ärendet igen och kontrollera länken.")
+            self._record(session, request_id, requested_by, "github", previous, url)
+            return True
+
+    @staticmethod
+    def _record(session, request_id: UUID, actor_id: str, action: str, previous: str | None, current: str | None):
+        session.execute(change_request_events.insert().values(
+            request_id=str(request_id), actor_id=actor_id, occurred_at=datetime.now(UTC).isoformat(),
+            action=action, previous=previous, current=current,
+        ))
+
+    def _find(self, session, requested_by: str, request_id: UUID):
+        statement = self._owned(requested_by).where(change_requests_table.c.id == str(request_id))
+        return session.execute(statement).mappings().one_or_none()
 
     @staticmethod
     def _owned(requested_by: str):
-        return select(change_requests_table).where(change_requests_table.c.requested_by == requested_by)
+        table = change_requests_table
+        events = change_request_events
+        github_url = (select(events.c.current)
+                      .where(events.c.request_id == table.c.id, events.c.action == "github")
+                      .order_by(events.c.id.desc()).limit(1).scalar_subquery())
+        return select(table, github_url.label("github_url")).where(table.c.requested_by == requested_by)
 
     @staticmethod
     def _requester(actor: Actor) -> str:

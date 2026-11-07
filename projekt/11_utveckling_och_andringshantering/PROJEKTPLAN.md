@@ -1,6 +1,6 @@
 # Projekt 11 – Utveckling och ändringshantering
 
-> Planeringsuppdrag från operatören 2026-11-07. Status **U1 byggd i lokal demo**. Projektet
+> Planeringsuppdrag från operatören 2026-11-07. Status **U1 och U2 byggda i lokal demo**. Projektet
 > omfattar utvecklaragenten, ändringsflödet, utvecklingsytan och GitHub-kopplingen.
 
 ## Syfte och första leverans
@@ -21,14 +21,40 @@ Starta den befintliga webben från arbetsytan med `python scripts/web/start_ui.p
 Logga in med din [lokala operatörsinloggning](../../02_system/operator_inloggning.md)
 och välj **Utveckling** från **Centralen**. Registrera till exempel ett fel vid export
 och ett fiktivt regelärende med beslut, version och giltighetsdatum. Båda ärendena
-visas i samma lista. Öppna respektive titel för att se underlag och ärende-ID.
+visas under **Nytt**. Öppna respektive titel för att se underlag och ärende-ID.
 
 Ärenden sparas i `data/handlaggare_demo.db` och finns kvar efter omstart. Logga in
 igen efter omstart. `--reset-demo` raderar demofilen och därmed även ärendena.
 Typ, titel och behov krävs vid registrering. Beställaren hämtas från sessionen
 och är den enda som kan öppna ärendet. Samma registrering kan skickas om med
-oförändrade uppgifter och ger då samma ID. Den enda statusen i U1 är **Nytt**.
-Redigering, tilldelning, GitHub och överlämning från andra flöden hör till senare steg.
+oförändrade uppgifter och ger då samma ID.
+
+## Prova U2 i demo
+
+Öppna ett eget ärende och välj **Pågår** under **Bolagets ärendestatus**.
+Klicka på **Flytta ärendet**. Kortet visas nu i motsvarande kolumn på boarden.
+Du kan flytta ett steg framåt eller bakåt mellan **Nytt**, **Pågår** och
+**Väntar på granskning**. Under **Teknisk status från GitHub** kan du spara
+en direktlänk till ett issue eller en pull request i det konfigurerade repot.
+Töm fältet och spara för att ta bort länken. Ärendehistoriken visar vem som
+flyttade ärendet eller ändrade länken, tidpunkten och värdena före och efter.
+
+Läsning av GitHub-status aktiveras med `DEVELOPMENT_GITHUB_TOKEN` i lokal
+`.env`. Operatören skapar en token begränsad till valt repo med läsrätt till
+*Issues* och *Pull requests*. Ange vid behov repot som `ägare/repo` i
+`DEVELOPMENT_GITHUB_REPOSITORY` och starta om webben. Standard är
+`karltengelin/Artificiellalecta`. Länkar kan sparas även utan token. Servern
+skickar endast repo, typ och nummer i uppslagets sökväg.
+[GitHubs issue-API](https://docs.github.com/en/rest/issues/issues#get-an-issue) ·
+[GitHubs PR-API](https://docs.github.com/en/rest/pulls/pulls#get-a-pull-request)
+
+Detaljsidan hämtar GitHub-status när den öppnas. Boarden visar senast hämtad
+status och tidpunkt. Efter en minut markeras uppgiften som föråldrad tills
+detaljsidan hämtat en ny. Vid fel visas ett besked, och en tidigare status
+visas som föråldrad. GitHub-statusen lagras i serverns minne och hämtas på
+nytt efter omstart. Länk, bolagets status och historik är varaktiga. I äldre
+demofiler skapar webbstarten den lokala tabellen `change_request_events`
+för flyttar och länkbyten. Tidigare ärenden ligger kvar i `change_requests`.
 
 ## En ingång till ändringsarbetet från flera håll
 
@@ -125,9 +151,10 @@ externa integrationer och behörigheter enligt AGENTS.md.
   lagring och autentiserad manuell registrering med lista och detalj i demo.
   Webbproven täcker vanligt fel och regelärende i samma kontrakt, validering,
   nekad åtkomst, omförsök och återöppning efter omstart.
-- [ ] **U2 – Board och GitHub i utvecklingsytan.** Gruppera kort efter bolagets
-  arbetsstatus och visa länkade issues och PR-status med skrivskyddad adapter.
-  Prova med lokala testdubblar före skarp läsanslutning.
+- [x] **U2 – Board och GitHub i utvecklingsytan.** Board med tre statuskolumner,
+  manuella flyttar och skrivskyddad status för länkat issue eller pull request.
+  Verifierat i lokal demo med testdubblar. Skarp läsanslutning provas efter
+  operatörens konfiguration.
 - [ ] **U3 – Utvecklaragent och mänskligt övertagande.** Kör ett ärende i en
   isolerad kodmiljö med en första adapter till [Codex](https://learn.chatgpt.com/docs/non-interactive-mode)
   eller [Claude Code](https://code.claude.com/docs/en/headless). Använd ett gemensamt

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/development_github.html" import github_summary %}
 {% block title %}{{ item.draft.title }}{% endblock %}
 {% block content %}
 {% set draft = item.draft %}
@@ -10,7 +11,43 @@
       <h1>{{ draft.title }}</h1>
       <p class="oc-ref">{{ item.id }}</p>
     </div>
-    <span class="pill">Nytt</span>
+  </div>
+  <div class="change-request__work">
+    <section aria-labelledby="company-status">
+      <h2 id="company-status">Bolagets ärendestatus</h2>
+      <p><span class="pill">{{ statuses[item.status] }}</span></p>
+      <form method="post" action="{{ base }}/{{ item.id }}/status" class="form" hx-boost="false">
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+        <input type="hidden" name="previous" value="{{ item.status }}">
+        <div class="field">
+          <label for="request-status">Flytta till</label>
+          <select id="request-status" name="status" required>
+            <option value="">Välj steg</option>
+            {% for status in moves %}<option value="{{ status }}">{{ statuses[status] }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form__actions"><button type="submit">Flytta ärendet</button></div>
+      </form>
+    </section>
+    <section aria-labelledby="github-status">
+      <h2 id="github-status">Teknisk status från GitHub</h2>
+      {% if item.github_url %}
+      {{ github_summary(item.github_url, github_status) }}
+      {% else %}
+      <p class="muted">Ingen GitHub-länk sparad.</p>
+      {% endif %}
+      <form method="post" action="{{ base }}/{{ item.id }}/github" class="form" hx-boost="false">
+        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+        <input type="hidden" name="previous" value="{{ item.github_url or '' }}">
+        <div class="field">
+          <label for="github-url">GitHub-länk</label>
+          <input id="github-url" name="github_url" type="url" maxlength="300"
+                 value="{{ item.github_url or '' }}" aria-describedby="github-url-help">
+          <small id="github-url-help" class="field__help">Ange en direktlänk till ett issue eller en pull request i {{ github_repository }}. Töm fältet för att ta bort länken.</small>
+        </div>
+        <div class="form__actions"><button type="submit">Spara GitHub-länk</button></div>
+      </form>
+    </section>
   </div>
   <dl>
     <dt>Beställare</dt><dd>{{ item.requested_by }}</dd>
@@ -32,6 +69,24 @@
     {% if draft.effective_on %}<dt>Gäller från</dt><dd><time datetime="{{ draft.effective_on }}">{{ draft.effective_on }}</time></dd>{% endif %}
   </dl>
   {% if not (draft.source_refs or draft.decision_ref or draft.rule_version or draft.effective_on) %}<p class="muted">Underlag saknas.</p>{% endif %}
+  {% endif %}
+  <h2>Ärendehistorik</h2>
+  {% if item.history %}
+  <ul>
+    {% for event in item.history %}
+    <li>
+      <time datetime="{{ event.occurred_at.isoformat() }}">{{ event.occurred_at.strftime('%Y-%m-%d %H:%M') }} UTC</time>
+      · {{ event.actor_id }} ·
+      {% if event.action == 'status' %}
+      Flyttade från {{ statuses[event.previous] }} till {{ statuses[event.current] }}.
+      {% else %}
+      GitHub-länk från {{ event.previous or 'ingen länk' }} till {{ event.current or 'ingen länk' }}.
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Inga flyttar eller länkändringar sedan registreringen.</p>
   {% endif %}
 </section>
 {% endblock %}
