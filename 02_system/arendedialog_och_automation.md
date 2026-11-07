@@ -317,6 +317,8 @@ Detta är första byggda ärendeförmågan, inte hela den färdiga organisatione
 - Automatisk slutbehandling är inte aktiverad (B-043 val C). Det dagliga
   urvalet är påslaget i policyn och verifierat i Lakebase. Det körs där
   vardagar 07.05 från 2026-11-04; uppgiften i Windows Schemaläggaren skapades 2026-11-03.
+  Den körs bara när operatören är inloggad, och en missad start körs vid nästa
+  inloggning. Körningarna 2026-11-04 och 2026-11-07 gick utan fel med tom kö.
 
 **Förslag till senare beslutspost, utan nummer:** (driftvalen är beslutade i B-043)
 inför ärendebunden dialog
