@@ -6,7 +6,7 @@
   <div class="panel__head">
     <h1>Flöden</h1>
   </div>
-  <p class="muted small">Ett flöde för en regelverksändring hela vägen till produktion: compliance tolkar källan, aktuarien tar fram
+  <p class="muted small">I parameterflödet tolkar compliance källan, aktuarien tar fram
     beståndsinsikten, du beslutar i grindarna och för in regeltexten, och parameterändringen aktiveras genom
     <a href="/godkannanden">godkännandekön</a> och verifieras av systemet (B-035). Definitionen bestämmer ordningen – modellen gör det aldrig.</p>
   {% include "partials/error_box.html" %}
@@ -15,12 +15,26 @@
   <form method="post" action="/floden" class="decide__form flowstart"
         hx-confirm="Starta ett nytt flöde för källan? Inget körs förrän du klickar Kör nästa steg.">
     {{ csrf() }}
-    <label for="f-source">Källa i regelverksgatewayen</label>
+    <label for="f-source">Källa för en parameterändring</label>
     <select id="f-source" name="source_handle" required>
       {% for d in sources %}<option value="{{ d.handle }}">{{ d.handle }} – {{ d.title }}{% if d.fictional %} (fiktiv){% endif %}</option>{% endfor %}
     </select>
     <button type="submit"{% if not sources %} disabled{% endif %}>Starta flöde</button>
   </form>
+  {% if code_available and operator_user %}
+  <form method="post" action="/floden" class="decide__form flowstart">
+    <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+    <input type="hidden" name="flow_type" value="{{ code_flow_type }}">
+    <label for="f-code-source">Källa för en regel som kräver ny kod</label>
+    <select id="f-code-source" name="source_handle" required>
+      <option value="">Välj bevakningsunderlag</option>
+      {% for d in sources %}<option value="{{ d.handle }}">{{ d.handle }} – {{ d.title }}{% if d.fictional %} (fiktiv){% endif %}</option>{% endfor %}
+    </select>
+    <button type="submit"{% if not sources %} disabled{% endif %}>Starta kodändringsflöde</button>
+  </form>
+  {% elif code_available %}
+  <p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att hantera en regeländring som kräver ny kod.</p>
+  {% endif %}
   <p class="muted small">Modell: {{ console.model_label }}. Databas: {% if console.simulated_role %}samma anslutning som UI:t, agentrollen <span class="pill pill--pending">simulerad</span>{% else %}agentrollerna{% endif %}.</p>
   {% endif %}
 
@@ -31,7 +45,7 @@
     <tbody>
       {% for f in flows %}
       <tr>
-        <td><a href="/floden/{{ f.flow_id }}">{{ f.flow_id }}</a></td>
+        <td><a href="/floden/{{ f.flow_id }}">{{ f.flow_id }}</a>{% if f.flow_type == code_flow_type %} · Kodändring{% endif %}</td>
         <td><code>{{ f.input.get("source_handle") }}</code></td>
         <td><span class="pill pill--flow-{{ f.status }}">{{ flow_status.get(f.status, f.status) }}</span></td>
         <td>{% if f.current_step %}{{ f.step(f.current_step).title }}{% else %}–{% endif %}</td>

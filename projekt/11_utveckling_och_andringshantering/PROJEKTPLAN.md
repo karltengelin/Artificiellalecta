@@ -1,6 +1,6 @@
 # Projekt 11 – Utveckling och ändringshantering
 
-> Planeringsuppdrag från operatören 2026-11-07. Status **U1–U3 byggda i lokal demo**. Projektet
+> Planeringsuppdrag från operatören 2026-11-07. Status **U1–U3 och U4:s regelöverlämning byggda i lokal demo**. Projektet
 > omfattar utvecklaragenten, ändringsflödet, utvecklingsytan och GitHub-kopplingen.
 
 ## Syfte och första leverans
@@ -103,6 +103,40 @@ svarskontrakt. Adaptern följer OpenAI Docs för schemavaliderad utdata från
 `codex exec` och använder skrivskyddat läge. En körning med riktig modell
 kräver operatörens godkännande och en separat miljö med endast syntetiskt
 underlag och egna behörigheter. [OpenAI Docs](https://learn.chatgpt.com/docs/non-interactive-mode)
+
+## Prova U4 i demo
+
+Starta webben med `python scripts/web/start_ui.py --db demo --rule-change-flows`.
+Startvalet kräver en [lokal operatörsinloggning](../../02_system/operator_inloggning.md)
+och ansluter teamens konfigurerade AI-klient med simulerade databasroller.
+Logga in och öppna **Försäkringsteamets arbetsyta → Flöden**. Välj
+**Starta kodändringsflöde** med det bevakningsunderlag som ska tolkas.
+För en ändring av en befintlig parameter använder du **Starta flöde**
+och den vanliga parametervägen.
+
+Kör compliance-tolkningen. Granska källan och tolkningen under **Anta regeln
+för utveckling**. Välj berörd regel och ange ny regelversion, giltighetsdag,
+berört system, varför ny kod behövs och vilken effekt som ska kunna prövas.
+Grinden binder tolkningen och dess verifierade källreferens. Ett förslag
+som innehåller en parameterändring hanteras i parameterflödet.
+
+Välj **Lämna till utveckling**. Flödet visar kvittot med ärendets ID och en
+länk till detaljen. Ärendet ligger under **Nytt** på utvecklingsboarden
+för samma operatör och länkar tillbaka till överlämningssteget. En
+utvecklarkörning kan ta ärendet med U3:s uttryckliga ärendemandat.
+
+Betrodd kod skickar `ChangeRequestOrder` med ett stabilt ursprung
+(`rule_change_code` och flödes-ID/stegnyckel) till `ChangeRequests.submit_order`.
+Ursprunget och ärendet sparas i samma demotransaktion i U1–U3:s befintliga
+tabeller. Om kvittot uteblir efter att ärendet sparats kan operatören välja
+**Kör om steget** vid avstämningen. Samma underlag ger samma ärende och bevarar
+dess ansvar och status. Andra behöriga ingångar kan använda samma kontrakt
+med en egen kanal och referens efter sin egen kontroll av mandat och underlag.
+
+Webbproven använder en fiktiv källa och en testmodell och provar hela vägen
+från inloggning till agentens anspråk. De provar också omstart efter att
+ärendet sparats, fel beställare, ändrat eller saknat underlag och den befintliga
+parametervägen. Kör dem via `python scripts/testing/run_tests.py --suite web --run`.
 
 ## En ingång till ändringsarbetet från flera håll
 
@@ -207,9 +241,10 @@ externa integrationer och behörigheter enligt AGENTS.md.
   med en första Codex CLI-adapter och testdubbel. Mandatstyrt urval, samtidiga
   anspråk, rättning efter testfel, granskningsbevis på boarden och mänskligt
   övertagande är provade. Modellkörning med externa behörigheter återstår.
-- [ ] **U4 – Överlämning från bolaget.** Anslut ett uttryckligt steg för en regel
-  som kräver kod. Lägg till andra beställarvägar som Fråga bolaget när respektive
-  ingång kan lämna behöriga uppdrag. Vid omförsök skapas samma ändringsärende.
+- [x] **U4 – Första överlämningen från bolaget.** En antagen regel som kräver ny
+  kod kan lämnas till utveckling som ett ordinarie ärende i demo. Omförsök
+  återfinner samma ärende. Andra ingångar, exempelvis Fråga bolaget, ansluts
+  när de kan lämna behöriga beställningar.
 - [ ] **U5 – Granskad merge och verifierat införande.** Bind godkännande till
   rätt commit och testbevis. Låt agenten genomföra tillåten merge, stäm av dess
   utfall och återför införande- och verifieringskvittot till ärendet och flödet.

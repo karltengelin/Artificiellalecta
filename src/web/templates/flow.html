@@ -1,7 +1,10 @@
 {% extends "base.html" %}
-{% from "partials/forms.html" import csrf with context %}
+{% from "partials/forms.html" import csrf as handler_csrf with context %}
 {% block title %}{{ flow.flow_id }}{% endblock %}
 
+{% macro csrf() %}
+  {% if code_change %}<input type="hidden" name="csrf_token" value="{{ operator_csrf }}">{% else %}{{ handler_csrf() }}{% endif %}
+{% endmacro %}
 {% macro version() %}<input type="hidden" name="version" value="{{ flow.version }}">{% endmacro %}
 
 {% macro cost(s) %}{% set run = (s.result or {}).get("run") %}{% if run %}{{ "%.4f" | format(run.cost_usd or 0) }} USD{% else %}–{% endif %}{% endmacro %}
@@ -20,12 +23,12 @@
   {% if out.schema == "InterpretationProposal" %}
     <dt>Tolkning</dt><dd>{{ res.summary }}</dd>
     <dt>Berörda regler</dt><dd>{% for rule in res.affected_rules %}<code>{{ rule }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</dd>
-    <dt>Parameterändringar</dt><dd>
+    <dt>Parameterändringar</dt><dd>{% if res.parameter_changes %}
       <table class="table table--compact">
         <thead><tr><th>Parameter</th><th>Nu</th><th>Nytt</th><th>Från</th><th>Regel</th></tr></thead>
         <tbody>{% for c in res.parameter_changes %}<tr><td><code>{{ c.key }}</code></td><td>{{ c.current_value }}</td><td><strong>{{ c.new_value }}</strong></td><td>{{ c.valid_from }}</td><td><code>{{ c.rule_id }}</code></td></tr>
           <tr><td colspan="5" class="small muted">{{ c.rationale }}</td></tr>{% endfor %}</tbody>
-      </table></dd>
+      </table>{% else %}Inga föreslagna.{% endif %}</dd>
     <dt>Kundpåverkan</dt><dd>{{ res.customer_impact }}</dd>
     {% if res.uncertainties %}<dt>Osäkerheter</dt><dd><ul class="plain">{% for u in res.uncertainties %}<li>{{ u }}</li>{% endfor %}</ul></dd>{% endif %}
   {% elif out.schema == "PortfolioImpactResult" %}
@@ -51,10 +54,18 @@
   <dl class="kv">
     <dt>Beslut</dt><dd>{{ "Godkänt" if r.decision == "approved" else "Avslaget" }} av <code>{{ s.completed_by }}</code>{% if r.note %}: {{ r.note }}{% endif %}</dd>
     {% if r.get("details") %}<dt>Antaget</dt><dd>Regelversion {{ r.details.rule_version }} från {{ r.details.valid_from }}{% if r.details.decision_number %} · beslut {{ r.details.decision_number }}{% endif %}</dd>{% endif %}
+    {% if code_change and r.get("details") %}
+    <dt>Berörd regel och system</dt><dd>{{ r.details.rule_id }} · {{ r.details.affected_system }}</dd>
+    <dt>Varför ny kod krävs</dt><dd>{{ r.details.code_reason }}</dd>
+    <dt>Förväntad effekt och kontrollfall</dt><dd>{{ r.details.expected_effect }}</dd>
+    {% endif %}
     <dt>Bundet underlag</dt><dd><code class="small">{{ r.bound_hash[:16] }}…</code></dd>
   </dl>
 {% elif s.kind == "manual" and r %}
   <dl class="kv"><dt>Commit</dt><dd><code>{{ r.commit }}</code>{% if r.note %} · {{ r.note }}{% endif %}</dd></dl>
+{% elif code_change and r.get("change_request_id") %}
+  <p>Överlämnat till utveckling. <a href="/central/utveckling/{{ r.change_request_id }}">Öppna ändringsärendet</a>
+    <code>{{ r.change_request_id }}</code>.</p>
 {% elif s.key == "aktivering" and r %}
   <dl class="kv">
     <dt>Förslag</dt><dd><code>{{ r.operation }}</code> av <code>{{ r.proposed_by }}</code> i körningen <code>{{ r.run_id }}</code>
@@ -83,7 +94,7 @@
 {% block content %}
 <section class="panel panel--standalone">
   <div class="panel__head">
-    <h1>{{ flow.flow_id }} <span class="muted">· Regeländring till produktparameter</span></h1>
+    <h1>{{ flow.flow_id }} <span class="muted">· {{ "Regeländring som kräver kod" if code_change else "Regeländring till produktparameter" }}</span></h1>
     <span class="pill pill--flow-{{ flow.status }}">{{ flow_status.get(flow.status, flow.status) }}</span>
   </div>
   {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
@@ -104,13 +115,13 @@
     {% if flow.status == "running" %}
       <form method="post" action="/floden/{{ flow.flow_id }}/kor"{% if current.kind == "agent" %} hx-confirm="Kör {{ current.title | lower }} med {{ current.team }}-teamet nu? Körningen går synkront."{% endif %}>
         {{ csrf() }}{{ version() }}
-        <p class="small">{% if current.kind == "agent" %}Agentsteget körs genom harness med teamet <code>{{ current.team }}</code>.{% elif current.key == "aktivering" %}Motorn lägger parameterändringen i godkännandekön under compliance-agentens identitet, länkad till tolkningens körning. Inget ändras förrän du godkänner förslaget.{% else %}Systemet stämmer av beslutet mot de lagrade parameterversionerna före och efter giltighetsdagen.{% endif %}</p>
-        <button type="submit">Kör nästa steg</button>
+        <p class="small">{% if current.kind == "agent" %}Agentsteget körs genom harness med teamet <code>{{ current.team }}</code>.{% elif code_change %}Flödets antagna regel och underlag blir ett ändringsärende under Nytt på utvecklingsboarden.{% elif current.key == "aktivering" %}Motorn lägger parameterändringen i godkännandekön under compliance-agentens identitet, länkad till tolkningens körning. Inget ändras förrän du godkänner förslaget.{% else %}Systemet stämmer av beslutet mot de lagrade parameterversionerna före och efter giltighetsdagen.{% endif %}</p>
+        <button type="submit">{{ "Lämna till utveckling" if code_change and current.kind == "system" else "Kör nästa steg" }}</button>
       </form>
     {% elif flow.status == "waiting_gate" %}
       {% set tolkning = flow.step("tolkning").result %}
       <p class="small">Beslutet binder underlaget som visas här (steg {{ current.key }} binder
-        {% if current.key == "g1" %}tolkningen{% else %}tolkningen och insikten{% endif %}, hash <code>{{ (flow.gate_hashes[current.key] or "")[:16] }}…</code>).
+        {% if code_change or current.key == "g1" %}tolkningen{% else %}tolkningen och insikten{% endif %}, hash <code>{{ (flow.gate_hashes[current.key] or "")[:16] }}…</code>).
         Ändras underlaget efter beslutet stannar flödet.</p>
       <div class="decide">
         <form method="post" action="/floden/{{ flow.flow_id }}/grind" class="decide__form"
@@ -118,7 +129,26 @@
           {{ csrf() }}{{ version() }}
           <input type="hidden" name="seen_hash" value="{{ flow.gate_hashes[current.key] }}">
           <input type="hidden" name="decision" value="approved">
-          {% if current.key == "g2" %}
+          {% if code_change %}
+          <input type="hidden" name="has_details" value="1">
+          <label for="f-rule_id">Berörd produktregel</label>
+          <select id="f-rule_id" name="rule_id" required>
+            <option value="">Välj regel ur tolkningen</option>
+            {% for rule in tolkning.output.result.affected_rules %}<option value="{{ rule }}">{{ rule }}</option>{% endfor %}
+          </select>
+          <label for="f-rule_version">Regelns nya version</label>
+          <input id="f-rule_version" name="rule_version" required pattern="\d+\.\d+" placeholder="1.1">
+          <label for="f-valid_from">Giltig från</label>
+          <input id="f-valid_from" name="valid_from" type="date" required>
+          <label for="f-decision_number">B-nummer (valfritt)</label>
+          <input id="f-decision_number" name="decision_number" pattern="B-\d{3}">
+          <label for="f-affected_system">Berört system</label>
+          <input id="f-affected_system" name="affected_system" maxlength="160" required>
+          <label for="f-code_reason">Varför krävs ny kod?</label>
+          <textarea id="f-code_reason" name="code_reason" maxlength="1200" required></textarea>
+          <label for="f-expected_effect">Förväntad effekt och hur den ska prövas</label>
+          <textarea id="f-expected_effect" name="expected_effect" maxlength="1200" required></textarea>
+          {% elif current.key == "g2" %}
           {% set change = tolkning.output.result.parameter_changes[0] %}
           <input type="hidden" name="has_details" value="1">
           <label for="f-rule_version">Regelns nya version ({{ change.rule_id }})</label>
@@ -163,7 +193,7 @@
       </form>
     {% elif flow.status == "reconciliation_required" %}
       <p class="small">Steget avbröts och utfallet är okänt: <em>{{ current.error }}</em>. Kontrollera
-        {% if current.run_id %}<a href="/floden/{{ flow.flow_id }}/steg/{{ current.key }}/journal">körjournalen</a> och {% endif %}<a href="/godkannanden?status=alla">kön</a>, och avgör sedan.</p>
+        {% if current.run_id %}<a href="/floden/{{ flow.flow_id }}/steg/{{ current.key }}/journal">körjournalen</a> och {% endif %}{% if code_change %}<a href="/central/utveckling">utvecklingsboarden</a>{% else %}<a href="/godkannanden?status=alla">kön</a>{% endif %}, och avgör sedan.</p>
       <form method="post" action="/floden/{{ flow.flow_id }}/avstam" class="decide__form">
         {{ csrf() }}{{ version() }}
         <label for="f-reconcile-note">Vad har du kontrollerat?</label>

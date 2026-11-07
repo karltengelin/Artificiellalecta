@@ -688,7 +688,8 @@ kodmiljön. Godkännandet binds till den granskade kodversionen.
 **Byggstatus.** U3 har en uttryckligt startad demokörning med ärendemandat,
 atomiskt anspråk, försökstak, tidsbudget och harnessens `FileJournal`.
 Den kodar via ett separat kontrakt och lämnar diff och verifierade testbevis
-till operatörens board. En ordinarie profil och köbevakning återstår.
+till operatörens board. U4:s regeländringsflöde kan lämna en antagen regel
+som kräver kod till samma kö i demo. En ordinarie profil och köbevakning återstår.
 Projekt 11 prövar först granskat arbete. Ett senare autonomt läge avgränsas
 till förhandsgodkända ändringstyper i testmiljö enligt en separat policy.
 Merge till `main` följer AGENTS.md §4.6 och databasmigrationer följer §4.5.

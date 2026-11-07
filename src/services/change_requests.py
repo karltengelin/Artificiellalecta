@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 from typing import Annotated, Literal
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
 from sqlalchemy import (
@@ -80,10 +80,26 @@ class ChangeRequestDraft(BaseModel):
         return date.fromisoformat(value) if isinstance(value, str) else value
 
 
+class ChangeRequestOrigin(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    channel: Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]{0,59}$")]
+    reference: ShortText
+
+
+class ChangeRequestOrder(ChangeRequestDraft):
+    """Komplett beställning från en betrodd ingång som har kontrollerat underlag och mandat."""
+
+    origin: ChangeRequestOrigin
+    motivation: Notes
+    affected_system: ShortText
+    acceptance: Notes
+
+
 class ChangeRequestEvent(BaseModel):
     actor_id: str
     occurred_at: datetime
-    action: Literal["status", "github", "agent_claim", "human_claim", "takeover", "release", "review"]
+    action: Literal["status", "github", "agent_claim", "human_claim", "takeover", "release", "review", "ordered"]
     previous: str | None
     current: str | None
 
@@ -99,6 +115,13 @@ class ChangeRequest(BaseModel):
     assignment: Literal["agent_claim", "human_claim", "takeover", "release"] | None = None
     agent_run_id: UUID | None = None
     history: tuple[ChangeRequestEvent, ...] = ()
+
+    @property
+    def origin(self) -> ChangeRequestOrigin | None:
+        for event in self.history:
+            if event.action == "ordered":
+                return ChangeRequestOrigin(channel=event.previous, reference=event.current)
+        return None
 
     @property
     def review(self) -> ReviewReferences | None:
@@ -135,17 +158,44 @@ class ChangeRequests:
         self._session_factory = session_factory
 
     def create(self, actor: Actor, request_id: UUID, draft: ChangeRequestDraft) -> ChangeRequest:
+        return self._create(actor, request_id, draft.model_dump(mode="json"))
+
+    def submit_order(self, actor: Actor, order: ChangeRequestOrder) -> ChangeRequest:
+        """Registrera beställningen under den ansvariga operatörens identitet.
+
+        Kanalen äger sin stabila referens och kontrollerar vem som får beställa.
+        Omförsök med samma ursprung och underlag behåller ärendets status och ansvar.
+        """
+        origin = order.origin
+        request_id = uuid5(NAMESPACE_URL, f"artificiellalecta/change-requests/{origin.channel}/{origin.reference}")
+        return self._create(actor, request_id, order.model_dump(mode="json", exclude={"origin"}), origin)
+
+    def _create(self, actor: Actor, request_id: UUID, draft: dict,
+                origin: ChangeRequestOrigin | None = None) -> ChangeRequest:
         requested_by = self._requester(actor)
         values = {
             "id": str(request_id), "requested_by": requested_by, "status": "new",
-            "created_at": datetime.now(UTC).isoformat(), "draft": draft.model_dump(mode="json"),
+            "created_at": datetime.now(UTC).isoformat(), "draft": draft,
         }
         table = change_requests_table
         with self._session_factory() as session:
-            session.execute(insert(table).values(values).on_conflict_do_nothing(index_elements=[table.c.id]))
+            inserted = session.execute(insert(table).values(values).on_conflict_do_nothing(index_elements=[table.c.id]))
             row = session.execute(self._owned(requested_by).where(table.c.id == str(request_id))).mappings().one_or_none()
-            if row is None or row["draft"] != values["draft"]:
+            if row is None or row["draft"] != draft:
+                if origin is not None:
+                    raise ConflictError("Beställningens ursprung är redan bundet till ett annat underlag eller en annan beställare.")
                 raise ConflictError("Registreringen har redan använts. Öppna ett nytt formulär.")
+            if origin is not None:
+                if inserted.rowcount:
+                    self._record(session, request_id, requested_by, "ordered", origin.channel, origin.reference)
+                else:
+                    events = change_request_events
+                    saved = session.scalar(select(events.c.id).where(
+                        events.c.request_id == str(request_id), events.c.action == "ordered",
+                        events.c.previous == origin.channel, events.c.current == origin.reference,
+                    ))
+                    if saved is None:
+                        raise ConflictError("Det befintliga ärendet saknar beställningens ursprung.")
             return ChangeRequest.model_validate(row)
 
     def list(self, actor: Actor) -> list[ChangeRequest]:

@@ -76,6 +76,16 @@
   </div>
   <dl>
     <dt>Beställare</dt><dd>{{ item.requested_by }}</dd>
+    {% set origin = item.origin %}
+    {% if origin %}
+    <dt>Beställt från</dt>
+    {% if origin.channel == "rule_change_code" %}
+      {% set flow_id, separator, step_key = origin.reference.partition("/") %}
+      <dd><a href="/floden/{{ flow_id }}#steg-{{ step_key }}">{{ flow_id }} · Lämna till utveckling</a></dd>
+    {% else %}
+      <dd>{{ origin.channel }} · {{ origin.reference }}</dd>
+    {% endif %}
+    {% endif %}
     <dt>Berört system</dt><dd>{{ draft.affected_system or 'Ej angivet' }}</dd>
     <dt>Registrerat</dt><dd><time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</time></dd>
   </dl>
@@ -124,6 +134,8 @@
       Återförde ärendet till kön.
       {% elif event.action == 'review' %}
       Lämnade granskningsunderlag. Kodändring {{ event.previous }}. Testbevis {{ event.current }}.
+      {% elif event.action == 'ordered' %}
+      Beställde ändringsärendet från {{ event.current }}.
       {% endif %}
     </li>
     {% endfor %}
