@@ -4,6 +4,8 @@
 > **Status:** PA1–PA10 godkända enligt rekommendationerna av Karl i chatten
 > 2026-11-07: ”Ja, godkänn alla”. Byggstart enligt §12 är därmed godkänd, med separat
 > OK före varje Lakebase-ingrepp (§11). Loggat som **B-046** samma dag.
+> **Byggstatus:** steg 1 (bankdagskalender och premieunderlag ur löneunderlag) byggt och
+> testat lokalt 2026-11-07, se [tjänstelager §9.9](../../02_system/tjänstelager.md). Ingen schemaändring och inget i Lakebase.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).

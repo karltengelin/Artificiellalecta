@@ -497,6 +497,25 @@ systemsteg återanvänder `run_valuation`; `valuation_close` är ännu inte bygg
 - *Blockeras:* ett datum som inte är ett månadsslut, en basvärdering som inte är per kvartalsslut eller saknar gällande grund eller kurva, ett underkänt datautdrag (§5.3), saknad skattesats eller ett s_y under grundens golv, och ändrade grunder. Låset blockeras för scenarier, för körningar som inte är utkast, för underkända kontroller och när utdragets eller grundernas kontrollsummor inte stämmer.
 - *Ogiltig indata:* en basvärdering med uttryckligt angiven grund eller kurva.
 
+### 9.9 Premieunderlag ur löneunderlag (paket A steg 1, B-046) – vad som stöds och vad som blockeras
+
+Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.3. Kod: `src/services/operations/premium_basis.py`. Ingen schemaändring: kopplingen till löneunderlaget står i `calculation_basis` tills fakturasteget lägger till kolumnerna (designstoppet §5).
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `create_premium_from_salary_report` | `write` | Ja | `HUMAN_ONLY` | Beräknar ordinarie premie ur den gällande versionen av löneunderlaget för person, arbetsgivare och månad och sparar en `premium`-rad med status `pending`. Rättat underlag ger en länkad `adjustment`-rad med differensen |
+
+**Beräkning:** premiemånadens IBB och produktparametrar, noll utanför åldersfönstret (PR-ITP1-001, -013). Mottagare är personens enda ålderspensionsförmån som inte har börjat betalas ut (PR-ITP1-015). `calculation_basis` bär löneunderlagets id, version, källa och källreferens, arbetsgivaren, PR-paketet och parameterversionerna. Noll premie sparas men markeras som inte fakturerbar. Raden är en kommande fordran, inte kapital.
+
+**Rättelse:** högre version av underlaget räknas om för samma månad. Differensen mot premieraden och dess länkade rättelser blir en ny `pending`-rad, märkt `unreceived_claim` eller `additional_premium`. Samma premie efter rättelsen ger ingen ny rad (`unchanged`). Hur rättelsen faktureras avgörs i fakturasteget.
+
+**Spärras:**
+- *Blockeras:* premieperiod före 2026-10 (startluckan, PA1), avliden försäkrad, ingen eller flera möjliga mottagare, en månad vars premie inte bygger på registrerat löneunderlag, justeringar utan länk och en rättelse som skulle minska redan mottagen premie.
+- *Finns inte:* inget registrerat löneunderlag för månaden; en saknad rapport ger ingen premie (PR-ITP1-017).
+- *Konflikt:* premien bygger redan på den gällande versionen.
+
+Bankdagskalendern för fakturans förfallodag finns i `src/utils/bank_calendar.py` och används från fakturasteget.
+
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.

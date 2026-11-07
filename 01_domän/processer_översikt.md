@@ -65,7 +65,7 @@ mandat utan avgränsad leverans. Kolumnen *Nästa leverans* beskriver kvarståen
 | ID | Förmåga och nuläge | Planläge före denna kartläggning | Nästa leverans och koppling |
 |---|---|---|---|
 | V-01 | Nyanställning och begränsat anställningsslut/fribrev är byggda | Konkret planerat i Fas 4 | Anställningshistorik för återanställning, arbetsgivarbyte, samtidiga anställningar och slutlön; projekt 1 |
-| V-02 | Löneunderlag och premieförhandsberäkning finns; registrering skapar ingen premie | Konkret backlogpunkt i Fas 1f | Ordinarie premie ur underlag, kompletteringsinstruktioner, fördelning och fakturor; paket A |
+| V-02 | Löneunderlag och premieförhandsberäkning finns; registrering skapar ingen premie. Premieunderlag ur registrerat löneunderlag byggt lokalt 2026-11-07 (B-046 steg 1) | Konkret backlogpunkt i Fas 1f | Ordinarie premie ur underlag, kompletteringsinstruktioner, fördelning och fakturor; paket A |
 | V-03 | Premietabellen har betalstatus, men inget komplett mottagningsflöde | Specificerat, PR-015–019 | Bankhändelser, matchning, delbetalning, oklara belopp och spårbar tilldelning till kapital/garanti; paket A |
 | V-04 | Uttags-/pensionsmotorn saknas; lägesfält är inte en motor | Specificerat, PR-002–009 och 024–025; nämnt i projekt 3 | Uttagsdelar, planer, start, uppskov, paus/återstart, förlängning, belopps- och garantiomräkning; paket B |
 | V-05 | Kapitalet i översikten är summan av betalda premietransaktioner | Specificerat, PR-008–011 och 020–023/028 | Kapitaljournal, historiska garantidelar, avkastning, avgift, skattebelastning, arvsvinst och separat bolagsstöd; paket B |
