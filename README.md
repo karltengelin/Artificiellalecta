@@ -11,10 +11,11 @@ Se [visionen och avgränsningen av demonstrationer](MASTER_CONTEXT.md#1-vision-o
 Människor och AI ska arbeta genom gemensamma verksamhetstjänster och
 identifierbara underlag och resultat. Operatörscentralen ska knyta ihop teamens
 arbetsytor: initiera och följa uppdrag, hitta dokument, granska leveranser och
-fatta beslut. Närmast prioriteras förberedelsen av en avgränsad kedja från
-beståndsfråga till återfinnbar rapport, enligt [projekt 10](projekt/10_operatörscentral/PROJEKTPLAN.md)
-och [aktuell prioritering](ATT_GORA.md). Dokument- och prioriteringsarbetet är
-godkänt 2026-10-27; fråge-/rapportkedjan är ännu inte implementerad.
+fatta beslut. Den första kedjan från beståndsfråga till granskad, återfinnbar
+rapport (OC-3a, B-041) är byggd och körd mot Lakebase, även beställd i webben,
+enligt [projekt 10](projekt/10_operatörscentral/PROJEKTPLAN.md). Operatörens
+granskning av webbeställningen återstår; se [aktuell prioritering](ATT_GORA.md)
+och [webbdriften](02_system/fragekedja_webb.md).
 
 **Detta är inte ett riktigt försäkringsbolag.** Inga riktiga kunder, ingen riktig data, inget riktigt kapital.
 
@@ -100,5 +101,6 @@ Ingen modell-/budgetstyrning eller driftsatt Databricks-integration ingår.
 som lokal grund enligt godkända OC-3a val H–I (2026-10-27): Argon2id,
 serverlagrad session, sessionsbundet formulärskydd och utloggning. Operatören
 sätter själv lösenfrasen med `python scripts/web/set_operator_password.py`.
-Uppdragsvy och rapportkedja är separata byggdelar; den befintliga handläggningen
-och dess flöden kräver fortsatt inte denna session.
+Inloggningen krävs för att beställa och granska uppdrag i *Fråga bolaget* i
+centralen och aktuariens teamyta; den befintliga handläggningen och dess flöden
+kräver fortsatt inte denna session.

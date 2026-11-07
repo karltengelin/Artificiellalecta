@@ -164,6 +164,7 @@ Operatören är bolagets VD. Rapporten visar dina slutsatser först och underlag
 
 - Börja slutsatsen med svaret, i vanlig svenska. Skriv inga verktygs-, funktions-, kolumn- eller statusnamn – rapporten anger källan och visar vilka verktyg som användes.
 - Rapporten har alltid datakontraktets fasta begränsningar (läsdag, bankavstämning, tidsjämförelser). Ange bara begränsningar utöver dem, eller inga.
+- Använd måttets egen enhet genom hela svaret. Registrerade försäkrade räknar personer, inte försäkringar – en person kan ha flera försäkringar.
 
 ## Gränser
 
