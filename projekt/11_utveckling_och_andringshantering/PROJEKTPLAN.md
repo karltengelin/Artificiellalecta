@@ -1,6 +1,6 @@
 # Projekt 11 – Utveckling och ändringshantering
 
-> Planeringsuppdrag från operatören 2026-11-07. Status **planerat**. Projektet
+> Planeringsuppdrag från operatören 2026-11-07. Status **U1 byggd i lokal demo**. Projektet
 > omfattar utvecklaragenten, ändringsflödet, utvecklingsytan och GitHub-kopplingen.
 
 ## Syfte och första leverans
@@ -14,6 +14,21 @@ felrättningar och antagna regler som kräver ny logik.
 Första byggleveransen är ett lokalt, varaktigt ändringsärende med autentiserad
 manuell registrering, en läsbar utvecklingsvy och en detaljsida i befintlig webb.
 Det är grunden för senare tilldelning, agentkörning och GitHub-status på samma kort.
+
+## Prova U1 i demo
+
+Starta den befintliga webben från arbetsytan med `python scripts/web/start_ui.py --db demo`.
+Logga in med din [lokala operatörsinloggning](../../02_system/operator_inloggning.md)
+och välj **Utveckling** från **Centralen**. Registrera till exempel ett fel vid export
+och ett fiktivt regelärende med beslut, version och giltighetsdatum. Båda ärendena
+visas i samma lista. Öppna respektive titel för att se underlag och ärende-ID.
+
+Ärenden sparas i `data/handlaggare_demo.db` och finns kvar efter omstart. Logga in
+igen efter omstart. `--reset-demo` raderar demofilen och därmed även ärendena.
+Typ, titel och behov krävs vid registrering. Beställaren hämtas från sessionen
+och är den enda som kan öppna ärendet. Samma registrering kan skickas om med
+oförändrade uppgifter och ger då samma ID. Den enda statusen i U1 är **Nytt**.
+Redigering, tilldelning, GitHub och överlämning från andra flöden hör till senare steg.
 
 ## En ingång till ändringsarbetet från flera håll
 
@@ -106,10 +121,10 @@ externa integrationer och behörigheter enligt AGENTS.md.
 
 ## Backlog och byggordning
 
-- [ ] **U1 – Skapa och följ egna ändringsärenden.** Bygg lokalt ärendekontrakt,
-  lagring och autentiserad manuell registrering med lista och detalj i webben.
-  Pröva både ett vanligt fel och ett regelrelaterat ärende i samma kontrakt,
-  samt validering, nekad åtkomst och att sparade ärenden kan öppnas igen.
+- [x] **U1 – Skapa och följ egna ändringsärenden.** Lokalt ärendekontrakt,
+  lagring och autentiserad manuell registrering med lista och detalj i demo.
+  Webbproven täcker vanligt fel och regelärende i samma kontrakt, validering,
+  nekad åtkomst, omförsök och återöppning efter omstart.
 - [ ] **U2 – Board och GitHub i utvecklingsytan.** Gruppera kort efter bolagets
   arbetsstatus och visa länkade issues och PR-status med skrivskyddad adapter.
   Prova med lokala testdubblar före skarp läsanslutning.

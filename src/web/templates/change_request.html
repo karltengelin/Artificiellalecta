@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ item.draft.title }}{% endblock %}
+{% block content %}
+{% set draft = item.draft %}
+<p><a href="{{ base }}">← Mina ändringsärenden</a></p>
+<section class="panel panel--standalone change-request">
+  <div class="panel__head">
+    <div>
+      <p class="oc-eyebrow">{{ kinds[draft.kind] }}</p>
+      <h1>{{ draft.title }}</h1>
+      <p class="oc-ref">{{ item.id }}</p>
+    </div>
+    <span class="pill">Nytt</span>
+  </div>
+  <dl>
+    <dt>Beställare</dt><dd>{{ item.requested_by }}</dd>
+    <dt>Berört system</dt><dd>{{ draft.affected_system or 'Ej angivet' }}</dd>
+    <dt>Registrerat</dt><dd><time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</time></dd>
+  </dl>
+  <h2>Behov</h2>
+  <p class="change-request__text">{{ draft.need }}</p>
+  <h2>Motivering</h2>
+  <p class="change-request__text">{{ draft.motivation or 'Ej angiven' }}</p>
+  <h2>Så ska resultatet prövas</h2>
+  <p class="change-request__text">{{ draft.acceptance or 'Ej angivet' }}</p>
+  {% if draft.kind == 'rule_change' or draft.source_refs or draft.decision_ref or draft.rule_version or draft.effective_on %}
+  <h2>Underlag</h2>
+  <dl>
+    {% if draft.source_refs %}<dt>Källreferenser</dt><dd class="change-request__text">{{ draft.source_refs }}</dd>{% endif %}
+    {% if draft.decision_ref %}<dt>Beslutsreferens</dt><dd>{{ draft.decision_ref }}</dd>{% endif %}
+    {% if draft.rule_version %}<dt>Regelversion</dt><dd>{{ draft.rule_version }}</dd>{% endif %}
+    {% if draft.effective_on %}<dt>Gäller från</dt><dd><time datetime="{{ draft.effective_on }}">{{ draft.effective_on }}</time></dd>{% endif %}
+  </dl>
+  {% if not (draft.source_refs or draft.decision_ref or draft.rule_version or draft.effective_on) %}<p class="muted">Underlag saknas.</p>{% endif %}
+  {% endif %}
+</section>
+{% endblock %}

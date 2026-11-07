@@ -36,16 +36,17 @@ def set_session_cookie(request: Request, response, token: str) -> None:
                         secure=True, httponly=True, samesite="strict")
 
 
-async def auth_form(request: Request, allowed: set[str]) -> dict[str, str]:
+async def auth_form(request: Request, allowed: set[str], *, max_bytes: int = 16384) -> dict[str, str]:
     if request.headers.get("content-type", "").split(";", 1)[0].strip() != "application/x-www-form-urlencoded":
-        raise HTTPException(415, "Använd inloggningsformuläret")
+        raise HTTPException(415, "Använd webbformuläret")
     body = bytearray()
     async for chunk in request.stream():
         body.extend(chunk)
-        if len(body) > 16384:
+        if len(body) > max_bytes:
             raise HTTPException(413, "Formuläret är för stort")
     try:
-        fields = parse_qs(body.decode("utf-8"), keep_blank_values=True, max_num_fields=8, strict_parsing=True)
+        fields = parse_qs(body.decode("utf-8"), keep_blank_values=True, max_num_fields=len(allowed),
+                          strict_parsing=True, errors="strict")
         if fields.keys() - allowed or any(len(values) != 1 for values in fields.values()):
             raise ValueError
     except (UnicodeError, ValueError):

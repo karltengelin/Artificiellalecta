@@ -1,8 +1,7 @@
 """Databasval för handläggar-UI:t – bygger tjänstelagret mot rätt databas.
 
-Den enda modulen i `web` som rör SQLAlchemy, och bara för att skapa motorn.
-All läsning och skrivning går sedan genom `ServiceLayer` (en transaktion per
-anrop, händelselogg och godkännandekö i databasen).
+Den enda modulen i `web` som rör SQLAlchemy. Försäkringsärenden går sedan genom
+`ServiceLayer` och manuella ändringsärenden genom `ChangeRequests`.
 
 | Val        | Databas                                                     | Tabeller                              |
 |------------|-------------------------------------------------------------|---------------------------------------|
@@ -21,6 +20,7 @@ from sqlalchemy.engine import Engine
 
 from agents.flows.console import FlowConsole
 from services import ServiceLayer
+from services.change_requests import change_requests_table
 from services.db import session_factory_for
 from web.agent import CaseAgent
 from web.config import WebConfigError, WebSettings
@@ -119,6 +119,7 @@ def demo_engine(path: Path) -> Engine:
         create_demo_database(engine)
     else:
         add_missing_tables(engine)
+    change_requests_table.create(engine, checkfirst=True)
     return engine
 
 

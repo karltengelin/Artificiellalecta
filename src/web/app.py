@@ -24,6 +24,7 @@ from agents.flows.console import FlowConsole
 from agents.flows.product_reports import ProductReportConsole
 from agents.flows.questions import QuestionConsole
 from services import ServiceLayer
+from services.change_requests import ChangeRequests
 from web.agent import CaseAgent
 from web.config import WebSettings
 from web.handler import STATIC_DIR, new_csrf_token, render
@@ -37,6 +38,7 @@ from web.routes import (
     case_workspace,
     cases,
     changes,
+    development,
     enrollment,
     environments,
     flows,
@@ -82,6 +84,9 @@ def create_app(
 
     app = FastAPI(title="Artificiellalecta – handläggare", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
+    app.state.change_requests = (
+        ChangeRequests(service._session_factory) if settings.database == "demo" and service._session_factory else None
+    )
     app.state.case_agent = case_agent
     app.state.case_workspace = case_workspace_console or (
         CaseWorkspace.build(service, case_agent) if case_agent is not None and service._session_factory else None
@@ -109,6 +114,7 @@ def create_app(
     app.include_router(flows.router)
     app.include_router(environments.router)
     app.include_router(operator.router)
+    app.include_router(development.router)
     app.include_router(actuary.router)
     app.include_router(actuarial_dialogue.router)
     app.include_router(actuary_valuations.router)
@@ -134,6 +140,8 @@ def create_app(
         if exc.status_code == 404 and detail == "Not Found":
             detail = "Adressen finns inte i handläggar-UI:t."
         error = ErrorView("error", title, detail, exc.status_code, nothing_changed=False)
+        if request.url.path.startswith(development.BASE):
+            return development.respond(request, "error.html", {"error": error}, status_code=exc.status_code)
         response = render(request, "error.html", {"error": error}, status_code=exc.status_code)
         if request.url.path.startswith(("/central/fragor", "/team/aktuarie")):
             response.headers.update(questions.HEADERS)
@@ -141,6 +149,10 @@ def create_app(
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception):
+        if request.url.path.startswith(development.BASE):
+            error = ErrorView("error", "Utvecklingsytan är tillfälligt otillgänglig",
+                              "Kontrollera ärendelistan innan du registrerar ärendet igen.", 503, nothing_changed=False)
+            return development.respond(request, "error.html", {"error": error}, status_code=503)
         if request.url.path.startswith(("/arenden", "/godkannanden")):
             error = ErrorView("error", "Arbetsytan kunde inte läsas",
                               "Kontrollera anslutning och uppdragens status innan du försöker igen.",
