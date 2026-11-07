@@ -22,6 +22,7 @@ from services.operations import (  # noqa: F401
     product_parameters,
     product_report_data,
     salary,
+    salary_files,
     valuation_bases,
     valuations,
 )

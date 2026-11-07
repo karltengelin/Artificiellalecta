@@ -28,6 +28,7 @@ operations:
   list_insured_persons: HUMAN_ONLY    # handläggarens beståndslista över personer (loggas); ingen bred agentåtkomst
   get_premium_history: AGENT           # läsning, personuppgifter (loggas)
   get_salary_reports: AGENT            # läsning av löneunderlag, personuppgifter (loggas)
+  get_salary_file: HUMAN_ONLY          # filens individrader; aggregat för agenter prövas vid behov (B-046)
   calculate_premium_preview: AGENT     # beräkning enligt PR-ITP1-001, sparar ingenting
   get_product_parameters: AGENT        # produktparametrarna med versioner (B-035), inga personuppgifter
   schedule_product_parameter_change: APPROVAL    # ny parameterversion från en framtida månad (B-035); agenten föreslår
@@ -66,6 +67,9 @@ operations:
   register_salary_report: APPROVAL       # löneunderlag per månad, ny rapport eller rättelse (PR-ITP1-014)
   set_policy_paid_up: APPROVAL           # avanmälan + fribrev, ej startad pension (PR-ITP1-013)
   create_premium_from_salary_report: HUMAN_ONLY  # premieunderlag ur löneunderlag; nya skrivoperationer i paket A är HUMAN_ONLY (B-046)
+  import_salary_file: HUMAN_ONLY      # löneunderlagsfil tas emot och valideras, registrerar inget (B-046)
+  approve_salary_file: HUMAN_ONLY     # hashbundet godkännande: löneunderlag, premieunderlag och avvikelseärenden (B-046)
+  reject_salary_file: HUMAN_ONLY      # avslag av fil med motivering och uppföljningsärende (B-046)
   correct_premium_transaction: HUMAN_ONLY  # rättelse med motpost; negativ ändring avgörs av människa (PR-ITP1-019, -031)
 
   # Stamdata och anslutning (Fas 4 S5). Gäller också golvet: write utan godkänd regel -> HUMAN_ONLY.

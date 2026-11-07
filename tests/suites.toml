@@ -11,7 +11,7 @@ dependents = ["agents", "web", "tooling"]
 [suites.premiums]
 description = "Löneunderlag, premie och produktparametrar; fakturakedjan återstår"
 status = "partial"
-tests = ["tests/test_premium_month.py", "tests/test_calculate_itp1_premium.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_services_write_ops.py", "tests/test_bank_calendar.py", "tests/test_premium_basis.py"]
+tests = ["tests/test_premium_month.py", "tests/test_calculate_itp1_premium.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_services_write_ops.py", "tests/test_bank_calendar.py", "tests/test_premium_basis.py", "tests/test_salary_files.py"]
 dependents = ["services", "agents", "web", "insights", "data", "tooling"]
 
 [suites.pensions]
@@ -154,7 +154,7 @@ paths = [
 full = true
 
 [[rules]]
-paths = ["src/skills/calculation/**", "src/utils/bank_calendar.py", "src/services/parameters.py", "src/services/operations/premium_basis.py", "src/services/operations/premiums.py", "src/services/operations/salary.py", "src/services/operations/corrections.py", "src/services/operations/product_parameters.py"]
+paths = ["src/skills/calculation/**", "src/utils/bank_calendar.py", "src/services/parameters.py", "src/services/operations/premium_basis.py", "src/services/operations/salary_files.py", "src/models/salary_file.py", "src/services/operations/premiums.py", "src/services/operations/salary.py", "src/services/operations/corrections.py", "src/services/operations/product_parameters.py"]
 suites = ["premiums"]
 
 [[rules]]
