@@ -105,6 +105,10 @@ Detaljerad konstruktion och ansvar behöver fastställas innan respektive del by
 | S-05 | Isolerad körning, paus och återställning | Scenario-/köridentitet genom affärshändelser, kontrollerad körmiljö, återställbar startpunkt och fortsatt körning efter mänskligt beslut. Backup finns; isolering och återställning för hela scenariot behöver utformas |
 | S-06 | Facit och utvärdering | Oberoende förväntade utfall, ekonomiska avstämningar, rättighets-/tidsfristkontroller och mått på agentarbete, kvalitet och kostnad. Separera förutsägbara affärsresultat från varierande modellformuleringar |
 
+*2026-11-07:* den första avgränsade delen av S-02 och S-03 är byggd i paket A steg 5 (B-046): motpartssimulatorn i
+`src/simulation/` skapar arbetsgivarens löneunderlagsfil och bankens fil med seed, uttryckliga avvikelser och facit
+skilt från filerna. Kunder, rapportmottagare och en gemensam klocka (S-01) ingår inte.
+
 Generatorn och motparterna får inte skriva facit direkt i affärstabellerna för att få
 simuleringen att lyckas. Affärshändelser behandlas genom samma operationer och godkännanden
 som motsvarande manuella arbete. Märkta startdata laddas separat och stäms av före körningen.

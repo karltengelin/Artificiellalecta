@@ -19,6 +19,10 @@
 > okänd betalare saknar både försäkrad och arbetsgivare; CHECK-villkoret på `cases` tillåter det för typen
 > (ny ärendetyp och lättat CHECK-villkor godkända av Karl i chatten 2026-11-07, ”Godkänn och mergea”).
 > En delbetald premie som rättas går till manuell prövning i stället för kredit och ny debet.
+> Steg 5 (motpartssimulatorn) byggt 2026-11-07 i `src/simulation/`, se [tjänstelager §9.12](../../02_system/tjänstelager.md).
+> Hela kedjan körd i demo med `smoke_test_premium_chain.py`, 19 av 19 kontroller; i `svc_test` återstår körningen
+> eftersom testdatabasens endpoint var avstängd. Röktestet sätter operationernas dagsfunktion till kedjans
+> affärsdatum, eftersom ingen gemensam simuleringsklocka (S-01) finns. Bevakningens körsätt är fortfarande öppet (§13).
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).
