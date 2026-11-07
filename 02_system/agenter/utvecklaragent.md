@@ -57,9 +57,12 @@ Agenten arbetar med källkod och testdata på egen branch. Den kan committa och
 begära push, pull request och merge enligt ärendets mandat. Standard är att en
 utsedd granskare godkänner den exakta versionen före införande. Merge till
 `main` kräver operatörens uttryckliga godkännande enligt AGENTS.md §4.6.
-Ett senare autonomt läge prövas först för förhandsgodkända ändringstyper i en
-isolerad testmiljö. Produktionsbehörigheter och releasekontroller hanteras
-utanför agentens kodmiljö.
+U6 provar autonomt kodgodkännande för en förhandsgodkänd syntetisk
+offertändring genom en separat lokal startare. Betrodd kod prövar faktiskt
+Git-underlag och provbevis före den simulerade mergen. Granskat läge är
+standard i utvecklingsytan och ny pensionslogik kräver mänsklig granskning.
+Produktionsbehörigheter och releasekontroller hanteras utanför agentens
+kodmiljö. [Sandlådepolicy och körning](../../projekt/11_utveckling_och_andringshantering/U6_SANDLADEPOLICY.md)
 
 ### Agentinteraktioner
 - Kan be compliance eller aktuarien precisera förväntad effekt och testfall.

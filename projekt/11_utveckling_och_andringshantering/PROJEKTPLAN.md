@@ -1,6 +1,6 @@
 # Projekt 11 – Utveckling och ändringshantering
 
-> Planeringsuppdrag från operatören 2026-11-07. Status **U1–U5 byggda i lokal demo**. Projektet
+> Planeringsuppdrag från operatören 2026-11-07. Status **U1–U6 byggda för lokal demo**. Projektet
 > omfattar utvecklaragenten, ändringsflödet, utvecklingsytan och GitHub-kopplingen.
 
 ## Syfte och första leverans
@@ -171,8 +171,9 @@ merge utförts och underlaget har ändrats krävs ett nytt beslut.
 U5-proven täcker ändrad kod och ändrade testbevis, nekade mandat, samtidiga
 anrop, avbrott före eller efter effekt samt kontroll av fel målversion.
 Ett prov går hela vägen från en fiktiv U4-regel till verifierat införande.
-Verkliga skrivanslutningar, mergepolicy och autonomt godkännande kräver
-separata beslut.
+Verkliga skrivanslutningar och ändrad mergepolicy kräver separata beslut.
+Operatörens val av autonomt godkännande i U6 gäller det avgränsade
+[sandlådeprovet](U6_SANDLADEPOLICY.md).
 
 ## En ingång till ändringsarbetet från flera håll
 
@@ -229,9 +230,9 @@ referenser per händelse så att operatören kan följa hela kedjan.
   kodversionen före införande. Om en merge aktiverar koden ligger grinden före
   mergen. Källbeslut, godkänd kodversion och verifierat införande är separata
   spår. Ändringar av styrpolicy och produktionsanslutningar kräver egna mandat.
-- **Autonomt läge är ett senare, uttryckligt val.** Pröva först utan manuellt
-  godkännande per ändring i en isolerad testmiljö för i förväg godkända
-  ändringstyper. Betrodd policy prövar den faktiska diffen, miljön och
+- **Autonomt läge kräver uttryckligt val.** I U6 provar operatören
+  en förhandsgodkänd offertändring i en isolerad testmiljö.
+  Betrodd policy prövar den faktiska diffen, miljön och
   obligatoriska testresultat. Kodaren kan begära åtgärden, men styr inte policyn
   som avgör om den tillåts. Ny pensionslogik omfattas av oberoende godkännande
   före införande. En ändring av repots mergepolicy är ett separat beslut.
@@ -284,9 +285,9 @@ externa integrationer och behörigheter enligt AGENTS.md.
 - [x] **U5 – Granskad merge och verifierat införande.** Lokalt provad kedja
   med mänskligt beslut, mandatstyrd mergebegäran och skilda kvitton för merge,
   införande och verifiering. Bevisen visas på ärendet och från länkat U4-flöde.
-- [ ] **U6 – Avgränsad autonomi.** Prova förhandsgodkända ändringstyper i
-  sandlådan efter verifiering av U5. Testa nekat mandat, ändrad diff efter
-  granskning, dubbla anrop och okänt resultat efter avbrott.
+- [x] **U6 – Avgränsad autonomi.** Den valda policyn gäller ett lokalt
+  offertprov med egen Git-kopia och separata testdubblar. Granskat läge
+  är standard. [Sandlådepolicy, körning och lokala prov](U6_SANDLADEPOLICY.md).
 
 Bygg i ordning från U1. Projekt 4 äger regel och förväntad verksamhetseffekt,
 berört domänteam äger fackgranskningen och projekt 10 ger åtkomst från centralen.
