@@ -27,7 +27,7 @@
 > `export_premium_month` (läsning, `HUMAN_ONLY`) gör periodens mottagna premier till källpaketet för
 > `open_premium_month`; journalens kvitton motsvarar allokeringarna exakt i ören (fall 20). Inga nya tabeller.
 > Röktestet slutar i journalen, 23 av 23 kontroller i demo och `svc_test`. `run_tests.py --changed --run --postgres`
-> mot main `36a8d59`: 1 860 godkända prov, inga fel eller överhoppade. **Avvikelser att godkänna:** ett
+> mot main `36a8d59`: 1 860 godkända prov, inga fel eller överhoppade. **Avvikelser, godkända av Karl i chatten 2026-11-07 (”Approve and merge”):** ett
 > tillägg på mottagen premie räknas som egen premiepost i `MonthInputs`; ett kvitto per bankhändelse och faktura
 > med allokeringarnas belopp, så att avstämningskontot inte följer med (Karls instruktion); röktestets demobestånd
 > utelämnar personer födda före 1961 (`born_from=1961`, Karls val i chatten 2026-11-07), eftersom journalens första
