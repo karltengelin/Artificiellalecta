@@ -93,19 +93,28 @@ def _remaining(deadline: float) -> float:
     return remaining
 
 
-def _git(workspace: Path, deadline: float, *args: str) -> str:
+def _git_bytes(workspace: Path, deadline: float, *args: str) -> bytes:
     # Eget repo utan remotes, användarinställningar, mallar eller ärvda Git-variabler.
     env = {name: os.environ[name] for name in ("PATH", "SystemRoot", "WINDIR", "TEMP", "TMP")
            if name in os.environ}
-    env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull)
+    env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, GIT_NO_REPLACE_OBJECTS="1")
     try:
-        result = subprocess.run(["git", *args], cwd=workspace, env=env, capture_output=True,
-                                text=True, encoding="utf-8", timeout=_remaining(deadline))
+        result = subprocess.run(["git", *args], cwd=workspace, env=env, capture_output=True, check=False,
+                                timeout=_remaining(deadline))
     except OSError as exc:
         raise CodingError("Git kunde inte startas i kodmiljön.") from exc
     if result.returncode:
         raise CodingError("Kodbaskopian kunde inte skapas i kodmiljön.")
-    return result.stdout.strip()
+    return result.stdout
+
+
+def _git(workspace: Path, deadline: float, *args: str) -> str:
+    return _git_bytes(workspace, deadline, *args).decode("utf-8").strip()
+
+
+def committed_diff(workspace: Path, deadline: float, base: str, head: str) -> str:
+    return _git_bytes(workspace, deadline, "diff", "--no-ext-diff", "--no-textconv", "--no-renames",
+                      "--full-index", "--color=never", base, head, "--").decode("utf-8")
 
 
 def _apply_proposal(workspace: Path, files: Mapping[str, str], proposal: EditProposal) -> str:
@@ -132,6 +141,7 @@ def run_development_case(
     files: Mapping[str, str],
     verify: Callable[[Path], TestEvidence],
     directory: Path = DEFAULT_RUN_DIR,
+    snapshot: Path | None = None,
 ) -> CodingResult:
     """Kör en fiktiv källsnapshot. Startaren äger underlag, filmandat och testfunktion."""
     for name in files:
@@ -143,13 +153,14 @@ def run_development_case(
             raise ValueError("Källsnapshoten innehåller en ogiltig sökväg.")
     journal = FileJournal(directory, run_id=str(scope.run_id), team="utveckling", agent=scope.actor.id)
     try:
-        return _run(store, scope, case_id, coder, dict(files), verify, journal)
+        return _run(store, scope, case_id, coder, dict(files), verify, journal, snapshot)
     finally:
         journal.close()
 
 
 def _run(store: ChangeRequests, scope: ChangeQueueRun, case_id: UUID, coder: Coder,
-         files: dict[str, str], verify: Callable[[Path], TestEvidence], journal: FileJournal) -> CodingResult:
+         files: dict[str, str], verify: Callable[[Path], TestEvidence], journal: FileJournal,
+         snapshot: Path | None) -> CodingResult:
     deadline = monotonic() + MAX_SECONDS
     branch = f"demo/{scope.run_id}"
     journal.append("run_started", case_id=str(case_id), max_attempts=MAX_ATTEMPTS, max_seconds=MAX_SECONDS)
@@ -198,6 +209,13 @@ def _run(store: ChangeRequests, scope: ChangeQueueRun, case_id: UUID, coder: Cod
                     _git(workspace, deadline, "-c", "user.name=Demo", "-c", "user.email=demo@example.invalid",
                          "commit", "--no-gpg-sign", "-m", "Testad fiktiv ändring")
                     head_commit = _git(workspace, deadline, "rev-parse", "HEAD")
+                    if snapshot is not None:
+                        _git(workspace, deadline, "clone", "--bare", "--no-local", "--template=", "--",
+                             str(workspace), str(snapshot))
+                        _git(snapshot, deadline, "remote", "remove", "origin")
+                        actual_diff = committed_diff(snapshot, deadline, base_commit, head_commit)
+                        attempts[-1] = attempts[-1].model_copy(update={"diff": actual_diff})
+                        journal.append("development_snapshot", head_commit=head_commit, diff_hash=digest(actual_diff))
                     outcome = "tests_passed"
                     break
                 (workspace / proposal.path).write_text(files[proposal.path], encoding="utf-8", newline="\n")

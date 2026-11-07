@@ -695,8 +695,9 @@ Betrodd kod prövar beslutet och de obligatoriska kontrollerna. Testdubblarna
 ger skilda kvitton för merge, observerad målversion och verifiering. Vid
 okänt utfall hämtar startaren kvittot före ett nytt försök. En ordinarie
 profil och köbevakning återstår.
-Projekt 11 prövar först granskat arbete. Ett senare autonomt läge avgränsas
-till förhandsgodkända ändringstyper i testmiljö enligt en separat policy.
+Granskat arbete är standard i projekt 11. U6 provar uttryckligt valt
+autonomt kodgodkännande för en fiktiv offertändring i en separat lokal
+testmiljö. [Sandlådepolicy och körning](../projekt/11_utveckling_och_andringshantering/U6_SANDLADEPOLICY.md)
 Merge till `main` följer AGENTS.md §4.6 och databasmigrationer följer §4.5.
 
 ## 10. Delegering och flöden: det Fas 3b behöver bära från start
