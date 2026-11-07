@@ -38,6 +38,8 @@ class FlowContext:
     input: Mapping[str, Any]
     results: Mapping[str, Mapping[str, Any]]
     run_ids: Mapping[str, str] = field(default_factory=dict)
+    created_by: str = ""
+    approved_by: Mapping[str, str] = field(default_factory=dict)
 
     def result(self, step_key: str) -> Mapping[str, Any]:
         try:

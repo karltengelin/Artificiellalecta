@@ -51,6 +51,8 @@ agenter hör hemma i centralen respektive i teamens egna områden.
   av egna ärenden. Ansvarig och granskningsreferenser syns i samma arbetsyta.
   Operatören kan ta över från en agentkörning. En skrivskyddad serveradapter läser GitHubs tekniska status
   när en lästoken är konfigurerad.
+  I demo kan operatören också [lämna en antagen regel till utveckling](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u4-i-demo).
+  Flödet och boarden länkar till samma ändringsärende och använder operatörens inloggning.
 - **Bara lokalt; v1-handläggningen kräver ingen inloggning.**
   - Servern binds till `127.0.0.1`, och Host-huvudet måste vara `127.0.0.1` eller `localhost`
     (skydd mot DNS-rebinding).

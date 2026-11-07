@@ -19,8 +19,9 @@ from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.engine import Engine
 
 from agents.flows.console import FlowConsole
+from ai import AIClient
 from services import ServiceLayer
-from services.change_requests import change_requests_table
+from services.change_requests import ChangeRequests, change_requests_table
 from services.db import session_factory_for
 from web.agent import CaseAgent
 from web.config import WebConfigError, WebSettings
@@ -78,6 +79,14 @@ def build_question_services(settings: WebSettings, *, ai, renderer):
     questions = QuestionConsole.build(session_factory, trusted=service, actuary_service=actuary,
         ai=ai, renderer=renderer, environment_id=settings.database, dataset_ref=settings.dataset_ref)
     return service, agent, questions
+
+
+def build_demo_rule_flows(service: ServiceLayer, requests: ChangeRequests, *, ai: AIClient) -> FlowConsole:
+    factory = service._session_factory
+    compliance = ServiceLayer(session_factory=factory, validation_session_factory=factory, agent_role="agent_compliance")
+    actuary = ServiceLayer(session_factory=factory, validation_session_factory=factory, agent_role="agent_aktuarie")
+    return FlowConsole.build(factory, trusted=service, agent_service=compliance, team_services={"aktuarie": actuary},
+                             ai=ai, change_requests=requests)
 
 
 def build_engine(settings: WebSettings) -> Engine:
