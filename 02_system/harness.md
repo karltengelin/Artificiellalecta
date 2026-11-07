@@ -433,6 +433,18 @@ Kontextbyggaren lägger samman en kort stabil bolagskontext (sandbox, ITP1-scope
 
 Historiken hålls append-only och använder `response.to_message()`. `provider_state` går tillbaka oförändrat genom AI-lagret; harness tolkar inte modellens interna tänkande. Når kontexten taket stoppas körningen med en kontrollerad överlämning. Senare komprimering startar ett nytt länkat segment med sammanfattning och källreferenser, i stället för att redigera den gamla historiken.
 
+#### Verktygsurval efter uppdragstyp
+
+Ge förutsägbara rutinuppdrag en smal, uttrycklig verktygslista (`only_skills`)
+när behovet är känt i förväg. För öppna analysuppdrag ska agenten kunna söka
+efter relevanta verktyg inom uppdragets mandat och hämta deras kontrakt vid
+behov. Bolaget styr vilka uppgifter och handlingar som är tillåtna. Agenten
+väljer vilka verktyg den använder och i vilken ordning.
+
+Vid fortsatt bygge är [aktuariedialogens katalog](aktuarie_dialog.md#arkitektur-och-data)
+förebild. Katalogen ska visa verktyg som är tillgängliga inom uppdragets mandat.
+Varje anrop ska prövas mot behörighet, resursmandat och gällande godkännandekrav.
+
 ### 6.2 Loopens ordning
 
 1. Validera profil, instruktion och betrott uppdrag. Skapa run-id, versionsbild, budget och `run_started` innan modellen anropas.
