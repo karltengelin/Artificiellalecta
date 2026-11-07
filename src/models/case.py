@@ -32,7 +32,8 @@ from .base import Base
 # none_as_null: None blir SQL NULL och stoppas av NOT NULL, inte JSON-värdet null
 _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgresql")
 
-CASE_TYPES = ("salary_report",)
+#: salary_file_deviation: avvikelse i löneunderlagsfil som handläggaren avgör (B-046, P1-PREMIE-001 §4.2)
+CASE_TYPES = ("salary_report", "salary_file_deviation")
 CASE_STATUSES = ("open", "in_progress", "waiting_approval", "waiting_info", "closed")
 CASE_OUTCOMES = ("approved", "rejected", "supplement_requested", "manual_review", "no_action")
 CASE_CHANNELS = ("manual", "employer_file", "customer_portal", "chatbot")

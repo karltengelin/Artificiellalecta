@@ -23,6 +23,8 @@
         <dt>Arbetsgivare</dt><dd>{{ case.employer_org_number or "–" }}</dd>
         {% if case.policy_number %}<dt>Försäkring</dt><dd><a href="/forsakringar/{{ case.policy_number }}">{{ case.policy_number }}</a></dd>{% endif %}
         <dt>Månad</dt><dd>{{ case.period_month | month }}</dd>
+        {% if case.case_type == "salary_file_deviation" %}<dt>Avvikelse</dt><dd><code>{{ d.get("reason") }}</code> · {{ d.get("message") }}{% if d.get("row") %} (rad {{ d.get("row") }} i <code>{{ d.get("file_reference") }}</code>){% endif %}</dd>
+        {% set d = d.get("reported") or {} %}{% endif %}
         <dt>Lön</dt><dd>{{ d.get("pensionable_salary_sek") | sek }}</dd>
         <dt>Rapport</dt><dd>{% if d.get("kind") == "correction" %}Rättelse av version {{ d.get("corrects_version") }}{% else %}Ny rapport{% endif %} · {{ d.get("source") | label('salary_source') }}</dd>
         <dt>Mottaget</dt><dd>{{ case.received_date | iso_date }}{% if case.source_reference %} · referens <code>{{ case.source_reference }}</code>{% endif %}</dd>
@@ -42,7 +44,7 @@
       <p class="small">Läser ärendet, den försäkrades översikt, löneunderlag och premiehistorik, förhandsberäknar premien och föreslår registrering.
         Förslag hamnar i <a href="/godkannanden">godkännandekön</a>. Agenten ändrar aldrig ärendets status själv.</p>
       <p class="small">Databas: {{ agent.role_label }}{% if agent.simulated_role %} <span class="pill pill--pending">simulerad</span>{% endif %}</p>
-      {% if case.status != "closed" and not assistant_available %}
+      {% if case.status != "closed" and not assistant_available and case.case_type == "salary_report" %}
       <form method="post" action="/arenden/{{ case.case_number }}/agent" hx-confirm="Starta handläggaragenten i {{ case.case_number }}? Körningen gör modellanrop som kostar.">
         {{ csrf() }}
         <button type="submit">Starta agent</button>

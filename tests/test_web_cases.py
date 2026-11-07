@@ -178,3 +178,22 @@ class TestHandlaggning:
         number = create(web)
         response = post(web, f"/arenden/{number}/stang", {"outcome": "approved", "reason": "Klart"})
         assert response.status_code == 422 and "genomförd ändring" in response.text
+
+
+def test_filavvikelse_visas_med_skal(web):
+    """Paket A steg 2: ärendesidan visar en avvikelse i en löneunderlagsfil utan lönefält."""
+    from models import Employer
+
+    with web.session_factory() as session:
+        employer = session.scalars(select(Employer).order_by(Employer.org_number)).first()
+        session.add(Case(case_number="CASE-000900", case_type="salary_file_deviation", status="open",
+                         employer_id=employer.id, channel="employer_file", received_date=date(2026, 10, 5),
+                         source_reference="LON-2026-09:saknas", period_month=date(2026, 9, 1),
+                         details={"reason": "missing_report", "message": "Saknas i filen", "row": None,
+                                  "file_reference": "LON-2026-09", "reported": None},
+                         created_by="salary_file_intake"))
+        session.commit()
+    page = web.client.get("/arenden/CASE-000900")
+    assert page.status_code == 200
+    assert "Avvikelse i lönefil" in page.text and "missing_report" in page.text and "Saknas i filen" in page.text
+    assert "Starta agent" not in page.text

@@ -27,6 +27,7 @@ from .portfolio_holding import PortfolioHolding
 from .premium_journal import PremiumMonthClose, PremiumMonthJournal, PremiumReceipt
 from .premium_transaction import PremiumTransaction
 from .product_parameter import ProductParameter
+from .salary_file import SalaryFile
 from .salary_report import SalaryReport
 from .trade import Trade
 from .valuation_basis import ValuationBasis
@@ -55,6 +56,7 @@ __all__ = [
     "PremiumTransaction",
     "PremiumMonthClose", "PremiumMonthJournal", "PremiumReceipt",
     "ProductParameter",
+    "SalaryFile",
     "SalaryReport",
     "Trade",
     "ValuationBasis",

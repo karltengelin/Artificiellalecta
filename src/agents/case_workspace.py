@@ -132,6 +132,9 @@ class CaseWorkspace:
                 case = session.scalar(select(Case).where(Case.case_number == case_number).with_for_update())
                 if case is None or case.status == "closed":
                     raise HarnessError("Ärendet saknas eller är stängt")
+                if case.case_type not in policy.case_types:
+                    # Filavvikelser (B-046) handläggs av människa; ingen agent är verifierad för dem.
+                    raise HarnessError("Ärendetypen har ingen verifierad agenthandläggning – handläggaren avgör")
                 existing = session.scalar(select(CaseWork).where(CaseWork.submission_key == submission))
                 if existing:
                     if (existing.case_number, existing.instruction, existing.mode, existing.allow_proposals) != (
