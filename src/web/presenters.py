@@ -46,7 +46,7 @@ APPROVAL_STATUS = {"pending": "Väntar", "approved": "Godkänd", "rejected": "Av
 ACTOR_TYPES = {"human": "Handläggare", "agent": "Agent", "system": "Skript"}
 OPERATION_KINDS = {"read": "Läsning", "compute": "Beräkning", "write": "Ändring", "external": "Extern"}
 CASE_TYPES = {"salary_report": "Löneunderlag", "salary_file_deviation": "Avvikelse i lönefil",
-              "payment_overdue": "Förfallen faktura"}
+              "payment_overdue": "Förfallen faktura", "payment_unmatched": "Oallokerad inbetalning"}
 CASE_STATUS = {
     "open": "Öppet", "in_progress": "Pågår", "waiting_approval": "Väntar på godkännande",
     "waiting_info": "Väntar på komplettering", "closed": "Stängt",

@@ -14,6 +14,7 @@ from services.operations import (  # noqa: F401
     invoices,
     journal,
     management,
+    payments,
     persons,
     policies,
     portfolio_impact,

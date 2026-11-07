@@ -563,14 +563,42 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 - *Fakturerad men inte betald:* den fakturerade raden krediteras i sin helhet på en kreditfaktura mot ursprungsfakturan, och det rättade beloppet debiteras på nytt (`rebill`, fall 9). Rättat till noll ger bara krediten.
 - *Betald:* rättelsen uppåt blir en tilläggsrad (`additional`, fall 10). Rättelse nedåt av mottagen premie stoppas redan i premieunderlaget (fall 11).
 
-**Fakturan:** fakturadatum är dagen den skapas och förfallodagen 30 dagar senare, flyttad till nästa bankdag (fall 16). Fakturanumret är `INV-NNNNNN`. OCR-referensen har längdsiffra och kontrollsiffra enligt modulus 10. Kontrollsumman är SHA-256 över fakturans innehåll. Förmån och försäkring identifierar personen; personnumret står inte på fakturan. En faktura ändras aldrig. Öppet belopp är debetfakturans summa plus kreditfakturor mot den; mottagna belopp avräknas från steg 4.
+**Fakturan:** fakturadatum är dagen den skapas och förfallodagen 30 dagar senare, flyttad till nästa bankdag (fall 16). Fakturanumret är `INV-NNNNNN`. OCR-referensen har längdsiffra och kontrollsiffra enligt modulus 10. Kontrollsumman är SHA-256 över fakturans innehåll. Förmån och försäkring identifierar personen; personnumret står inte på fakturan. En faktura ändras aldrig. Öppet belopp är debetfakturans summa plus kreditfakturor mot den, minus mottagna belopp (§9.12).
 
 **Bevakningen** körs för dagens datum. Ärendet skapas av betrodd kod som `invoice_monitor`, med kanalen `system`, och ett ärende per faktura. Vid 30 dagars dröjsmål sätts `assigned_to = operator` och `escalated` i ärendets uppgifter (fall 17). Ingen påminnelseavgift, ingen ränta, ingen uppsägning och inget pensionsstopp; garantin ändras inte. Bevakningen startas manuellt i detta steg. Om den körs i ärendearbetarens `--once` eller ett eget systemsteg avgörs med motpartssimulatorn (steg 5).
 
 **Spärras:**
 - *Blockeras:* premieperiod före 2026-10.
 - *Faktureras inte:* negativt belopp före fakturering och rättelse nedåt av mottagen premie; de redovisas i `skipped`.
-- Delbetalning och mottagna belopp kommer i steg 4. Tills dess räknas en kedja som betald när premieraden har status `paid`.
+- *Manuell prövning:* en delbetald premie som rättas faktureras inte om automatiskt; den redovisas i `skipped`.
+
+### 9.12 Inbetalning, matchning och avstämningskonto (paket A steg 4, B-046) – vad som stöds och vad som blockeras
+
+Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.6–4.7. Kod: `src/services/operations/payments.py`, tabeller `bank_events` och `payment_allocations` ([databasschema §8e](databasschema.md#8e-tabeller-bank_events-och-payment_allocations--inbetalningar)).
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `import_bank_file` | `write` | Nej | `HUMAN_ONLY` | Läser en bankfil och matchar varje ny inbetalning på OCR och betalare i samma transaktion. Rest och omatchat går till avstämningskontot med ett ärende |
+| `allocate_unmatched_payment` | `write` | Nej | `HUMAN_ONLY` | Fördelar en oallokerad post till en debetfaktura när betalaren är verifierad. Idempotent per `request_key` |
+| `get_receivables` | `read` | Nej | `HUMAN_ONLY` | Öppna fordringar per faktura och avstämningen mellan inbetalningar, fördelat och avstämningskonto |
+
+**Bankfilen:** källsystem, filreferens, kontrollsumma (`bank_file_checksum`) och händelser med bankens händelse-ID, mottagningsdag, belopp, betalarens organisationsnummer och angiven referens. Varje händelse sparas en gång per källsystem och händelse-ID. Samma händelse i en ny fil ger samma kvitto (fall 15). Samma ID med ändrat innehåll stoppar hela filen.
+
+**Matchningen** (PR-ITP1-018):
+1. OCR-referensen pekar ut en debetfaktura och betalaren ska vara fakturans arbetsgivare.
+2. Nettot fördelas med befintliga `allocate_receipt` på fakturans återstående rader: proportionellt, med största bråkrest och stabil radordning (`line-NNNN`). Krediterade och redan betalda delar räknas som allokerade (fall 12).
+3. Överskott (`overpayment`, fall 13), okänd referens (`unknown_reference`) och fel betalare (`wrong_payer`, fall 14) blir en post på avstämningskontot och ett ärende `payment_unmatched`. Ärendet skapas av betrodd kod som `payment_matching` med kanalen `system`. Kommer pengarna från en okänd betalare har ärendet varken försäkrad eller arbetsgivare.
+4. Brutto = netto och externt avdrag = 0; intern simulering har ingen valcentral.
+
+**Betalstatus (PA6):** allokeringarna är sanningskällan. När en fakturarad är fullt betald får dess premierader `status='paid'` och `paid_date` = sista mottagningsdagen. En delbetald rad behåller `invoiced`. Fakturans öppna belopp och förfallobevakningen räknar med mottagna belopp.
+
+**Manuell fördelning:** en negativ avstämningspost (`manual_release`) och nya radallokeringar (`manual`) – allokeringar ändras aldrig. Det som inte ryms på fakturan blir kvar på kontot. Ingen återbetalning.
+
+**Avstämning (§7):** `get_receivables` visar att inbetalningar = fördelat + avstämningskonto och att fakturerat − fördelat = öppna fordringar (`balanced`). Mottagen premie skapar ingen garanti och ändrar inget kapital här; det gör månadsjournalen (PA7, steg 6).
+
+**Spärras:**
+- *Blockeras:* fel kontrollsumma, samma händelse-ID två gånger i filen, mottagningsdag i framtiden, manuell fördelning utan oallokerat belopp eller till en faktura utan öppet belopp.
+- *Konflikt:* samma händelse med ändrat innehåll; idempotensnyckeln redan använd för en annan faktura.
 
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation

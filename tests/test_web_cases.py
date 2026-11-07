@@ -217,3 +217,18 @@ def test_forfallen_faktura_visas(web):
     assert page.status_code == 200
     assert "Förfallen faktura" in page.text and "INV-000001" in page.text and "700000193" in page.text
     assert "Starta agent" not in page.text
+
+
+def test_oallokerad_inbetalning_visas_utan_arbetsgivare(web):
+    """Paket A steg 4: en inbetalning från okänd betalare har varken försäkrad eller arbetsgivare."""
+    with web.session_factory() as session:
+        session.add(Case(case_number="CASE-000902", case_type="payment_unmatched", status="open",
+                         channel="system", received_date=date(2026, 10, 5), source_reference="bank-sim:E1",
+                         details={"source_system": "bank-sim", "event_id": "E1", "amount_sek": "6733.13",
+                                  "unallocated_sek": "6733.13", "reason": "wrong_payer", "reference": "700000193",
+                                  "payer_org_number": "5569999999", "invoice_number": "INV-000001"},
+                         created_by="payment_matching"))
+        session.commit()
+    page = web.client.get("/arenden/CASE-000902")
+    assert page.status_code == 200
+    assert "Oallokerad inbetalning" in page.text and "wrong_payer" in page.text and "5569999999" in page.text

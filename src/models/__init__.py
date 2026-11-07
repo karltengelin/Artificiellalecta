@@ -11,6 +11,7 @@ from .actuarial_workspace import (
     ActuarialTurn,
 )
 from .approval_request import ApprovalRequestRecord
+from .bank import BankEvent, PaymentAllocation
 from .base import Base
 from .base_amount import BaseAmount
 from .case import Case
@@ -37,6 +38,7 @@ from .valuation_run import ValuationExtractRecord, ValuationResult, ValuationRun
 __all__ = [
     "ActuarialAnalysis", "ActuarialConversation", "ActuarialDataset", "ActuarialTurn",
     "ApprovalRequestRecord",
+    "BankEvent",
     "Base",
     "BaseAmount",
     "Case",
@@ -51,6 +53,7 @@ __all__ = [
     "Invoice",
     "InvoiceLineRecord",
     "OperationEventRecord",
+    "PaymentAllocation",
     "Policy",
     "PolicyBenefit",
     "PolicyState",

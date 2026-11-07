@@ -20,8 +20,9 @@ sker med kredit och ny debet. Premieraderna får status `invoiced`. Ingen extern
 operatören efter 30 dagars dröjsmål. Ingen påminnelseavgift, ingen dröjsmålsränta,
 ingen uppsägning och inget pensionsstopp. Förfallna premier är fordringar, inte kapital.
 
-Delbetalningar och mottagna belopp kommer i steg 4; i detta steg är en premiekedja
-betald när dess premierad har status `paid`.
+Mottagna belopp avräknas från fakturans öppna belopp (steg 4, payments.py). En
+premiekedja är betald när dess premierad har status `paid` (PA6). En delbetald premie
+som rättas faktureras inte om automatiskt utan redovisas för manuell prövning.
 """
 
 from __future__ import annotations
@@ -41,6 +42,7 @@ from models import (
     Employer,
     Invoice,
     InvoiceLineRecord,
+    PaymentAllocation,
     Policy,
     PolicyBenefit,
     PremiumTransaction,
@@ -89,7 +91,7 @@ class InvoiceView(BaseModel):
     total_sek: Decimal
     credited_invoice_number: str | None
     open_sek: Decimal | None = Field(
-        description="Debetfaktura: summa efter krediteringar (mottagna belopp avräknas från steg 4)"
+        description="Debetfaktura: summa efter krediteringar och mottagna belopp"
     )
     checksum: str
     lines: list[InvoiceLineView]
@@ -134,11 +136,15 @@ def _line_label(session, line_id) -> str | None:
 
 
 def _open_amount(session, invoice: Invoice) -> Decimal:
-    """Debetfakturans summa plus kreditfakturor mot den. Mottagna belopp avräknas i steg 4."""
+    """Debetfakturans summa plus kreditfakturor mot den, minus mottagna belopp (steg 4, PA6)."""
     credits = session.scalar(
         select(func.coalesce(func.sum(Invoice.total_sek), 0)).where(Invoice.credited_invoice_id == invoice.id)
     )
-    return Decimal(invoice.total_sek) + Decimal(credits)
+    received = session.scalar(
+        select(func.coalesce(func.sum(PaymentAllocation.amount_sek), 0)).where(
+            PaymentAllocation.invoice_id == invoice.id, PaymentAllocation.kind == "invoice_line")
+    )
+    return Decimal(invoice.total_sek) + Decimal(credits) - Decimal(received)
 
 
 # --- create_invoice -------------------------------------------------------------------------------
@@ -221,6 +227,12 @@ def create_invoice(ctx: OperationContext, data: InvoiceRequest) -> InvoiceRun:
         if live is None:
             skipped.append(SkippedRow(transaction_id=str(original.id),
                                       reason="Premieraden är fakturerad men fakturaraden saknas – manuell prövning"))
+            continue
+        if session.scalar(select(func.count()).select_from(PaymentAllocation)
+                          .where(PaymentAllocation.invoice_line_id == live.id)):
+            skipped.append(SkippedRow(
+                transaction_id=str(original.id),
+                reason="Delbetald premie har rättats – kredit och ny debet kräver manuell prövning (PR-ITP1-018)"))
             continue
         corrected = sum((r.amount_sek for r in chain), ZERO)
         # Rättat till noll: krediten ensam fakturerar rättelsen

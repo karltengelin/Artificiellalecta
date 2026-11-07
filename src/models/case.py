@@ -34,7 +34,8 @@ _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgres
 
 #: salary_file_deviation: avvikelse i löneunderlagsfil som handläggaren avgör (B-046, P1-PREMIE-001 §4.2)
 #: payment_overdue: obetald faktura efter förfallodagen, eskaleras efter 30 dagar (B-046, P1-PREMIE-001 §4.5)
-CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue")
+#: payment_unmatched: inbetalning på avstämningskontot – överskott, okänd referens eller fel betalare (§4.6)
+CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue", "payment_unmatched")
 CASE_STATUSES = ("open", "in_progress", "waiting_approval", "waiting_info", "closed")
 CASE_OUTCOMES = ("approved", "rejected", "supplement_requested", "manual_review", "no_action")
 #: system: betrodd bevakning som upptäcker ärendet själv, t.ex. förfallen faktura (B-046)
@@ -58,7 +59,11 @@ class Case(Base):
         CheckConstraint(_in("status", CASE_STATUSES), name="ck_cases_status"),
         CheckConstraint(f"outcome IS NULL OR {_in('outcome', CASE_OUTCOMES)}", name="ck_cases_outcome"),
         CheckConstraint(_in("channel", CASE_CHANNELS), name="ck_cases_channel"),
-        CheckConstraint("insured_person_id IS NOT NULL OR employer_id IS NOT NULL", name="ck_cases_subject"),
+        # En oallokerad inbetalning kan komma från en okänd betalare (B-046, §4.6)
+        CheckConstraint(
+            "insured_person_id IS NOT NULL OR employer_id IS NOT NULL OR case_type = 'payment_unmatched'",
+            name="ck_cases_subject",
+        ),
         CheckConstraint(
             "(status = 'closed' AND outcome IS NOT NULL AND closed_by IS NOT NULL AND closed_at IS NOT NULL)"
             " OR (status <> 'closed' AND outcome IS NULL AND closed_by IS NULL AND closed_at IS NULL)",
