@@ -8,6 +8,7 @@ from io import BytesIO
 from pathlib import Path
 from subprocess import CompletedProcess
 from threading import Barrier
+from time import monotonic
 from uuid import UUID, uuid4
 
 import pytest
@@ -15,22 +16,36 @@ from argon2 import PasswordHasher
 from fastapi.testclient import TestClient
 
 from agents import development_codex
-from agents.development import CodingResult, CodingTask, run_development_case
+from agents.development import (
+    CodingAttempt,
+    CodingResult,
+    CodingTask,
+    _git,
+    run_development_case,
+)
 from agents.journal import read_journal
-from scripts.demo.run_development_case import DRAFT, FILE, SOURCE, ScriptedCoder, verify_quote
+from scripts.demo.run_development_case import (
+    DRAFT,
+    FILE,
+    SOURCE,
+    ScriptedCoder,
+    verify_quote,
+)
 from services import Actor
 from services.change_requests import (
     DEVELOPER,
     ChangeQueueRun,
     ChangeRequest,
     ChangeRequestDraft,
+    ChangeRequestOrder,
+    ChangeRequestOrigin,
     ReviewReferences,
     change_release_events,
     change_request_events,
     change_requests_table,
 )
-from services.errors import AccessDeniedError, ConflictError
 from services.development_demo import Candidate, Evidence, OutcomeUnknown, TargetState
+from services.errors import AccessDeniedError, ConflictError
 from web import development_github
 from web.app import create_app
 from web.config import WebSettings
@@ -781,3 +796,180 @@ def test_u5_inforande_och_verifiering_ar_skilda_utfall(release_case):
             assert ("Underkänd" in page.text) == (status == "deployed")
         assert page.context["item"].status == "verified" and page.context["release"].check.version == merged.version
         assert [item.id for item in client.get(BASE).context["columns"]["verified"]] == [case_id]
+
+
+@pytest.fixture
+def quote_sandbox(tmp_path):
+    """Betrodd provmiljö för u6-quote-discount/v1, med Git-objekt och fast kodprov."""
+    repo = tmp_path / "quote-repo"
+    repo.mkdir()
+    test_input = tmp_path / "committed-quote"
+    test_input.mkdir()
+
+    def git(*args):
+        return _git(repo, monotonic() + 10, *args)
+
+    def commit():
+        git("-c", "user.name=U6 test", "-c", "user.email=demo@example.invalid", "commit",
+            "--no-gpg-sign", "-m", "Syntetisk offert")
+
+    git("init", "--template=", "--object-format=sha1", "--initial-branch=proposal")
+    quote = repo / FILE
+    quote.write_bytes(b"SELECT :price + :discount;\n")
+    git("add", "--", FILE)
+    commit()
+    base = git("rev-parse", "HEAD")
+    git("branch", "main", base)
+    before = git("hash-object", "--no-filters", FILE)
+    quote.write_bytes(b"SELECT :price - :discount;\n")
+    after = git("hash-object", "--no-filters", FILE)
+    git("add", "--", FILE)
+    commit()
+
+    def observe(case_id, run_id):
+        head = git("rev-parse", "refs/heads/proposal")
+        if (git("rev-parse", "refs/heads/main") != base
+                or git("show", "-s", "--format=%P", head) != base
+                or git("ls-tree", "-r", "-t", base) != f"100644 blob {before}\t{FILE}"
+                or git("ls-tree", "-r", "-t", head) != f"100644 blob {after}\t{FILE}"):
+            return None
+        diff = git("diff", "--no-ext-diff", "--no-textconv", "--no-renames", base, head, "--")
+        (test_input / FILE).write_bytes((git("cat-file", "blob", f"{head}:{FILE}") + "\n").encode())
+        proof = verify_quote(test_input)
+        if not proof.passed:
+            return None
+        result = CodingResult(run_id=run_id, case_id=case_id, base_commit=base, head_commit=head,
+                              branch="proposal", outcome="tests_passed",
+                              attempts=(CodingAttempt(plan="Rätta fiktiv offert", diff=diff, tests=proof),))
+        refs = result.review()
+        return Candidate(pull_request=case_id, base=base, head=head, diff=diff, references=refs,
+                         checks=(Evidence(name="kodprov", reference=refs.test_ref,
+                                          passed=True, summary=proof.summary),))
+
+    return repo, git, commit, observe
+
+
+def prepare_quote_review(settings, observe, *, rule_change=False):
+    releases = create_app(settings=settings).state.change_releases
+    store = releases.requests
+    operator = Actor.human("karl")
+    if rule_change:
+        order = ChangeRequestOrder(
+            **(DRAFT.model_dump() | {"kind": "rule_change", "motivation": "Ny pensionslogik",
+                                    "decision_ref": "syntetiskt regelbeslut", "rule_version": "v2"}),
+            origin=ChangeRequestOrigin(channel="rule_change_code", reference="FLOW-TEST/order"),
+        )
+        item = store.submit_order(operator, order)
+    else:
+        item = store.create(operator, uuid4(), DRAFT)
+    run = demo_scope(item.id)
+    store.claim(run, item.id)
+    candidate = observe(item.id, run.run_id)
+    assert candidate is not None
+    store.handoff(run, item.id, candidate.references)
+    releases.delivery.stage(candidate)
+    return releases, operator, run, candidate
+
+
+@pytest.mark.parametrize("change", ["extra_file", "mode", "sql_bytes", "base_ref", "parent"])
+def test_u6_sandladeforslaget_ger_avslag_for_andrad_git_kandidat(quote_sandbox, change):
+    repo, git, commit, observe = quote_sandbox
+    case_id, run_id = uuid4(), uuid4()
+    assert observe(case_id, run_id) is not None
+    if change == "base_ref":
+        git("branch", "-f", "main", "HEAD")
+    elif change == "parent":
+        git("-c", "user.name=U6 test", "-c", "user.email=demo@example.invalid", "commit",
+            "--allow-empty", "--no-gpg-sign", "-m", "Extra förälder")
+    else:
+        git("reset", "--soft", "refs/heads/main")
+        if change == "extra_file":
+            (repo / "verify.py").write_bytes(b"assert True\n")
+            git("add", "--", "verify.py")
+        elif change == "mode":
+            git("update-index", "--chmod=+x", FILE)
+        else:
+            (repo / FILE).write_bytes(b"SELECT :price - :discount;\n\n")
+            git("add", "--", FILE)
+        commit()
+    assert observe(case_id, run_id) is None
+
+
+@pytest.mark.parametrize("field", ["diff", "head", "checks", "branch", "repository"])
+def test_u6_granskningsvagen_binder_faktisk_commit_och_bevis(settings, quote_sandbox, field):
+    observe = quote_sandbox[-1]
+    releases, operator, run, candidate = prepare_quote_review(settings, observe)
+    case_id = candidate.pull_request
+    assert releases.read(operator, case_id, preview=True).preview.candidate == observe(case_id, run.run_id)
+    approval = approve_release(releases, operator, case_id)
+    changes = {"diff": "förändrad diff", "head": "b" * 40, "branch": "annan-branch", "repository": "extern/repo",
+               "checks": (candidate.checks[0].model_copy(update={"reference": "annat testbevis"}),)}
+    replacement = candidate.model_copy(update={field: changes[field]})
+    releases.delivery.stage(replacement)
+    assert replacement != observe(case_id, run.run_id)
+    with pytest.raises(ConflictError):
+        releases.advance("merge", run, case_id, approval)
+    assert releases.requests.get(operator, case_id).status == "waiting_review"
+    assert releases.delivery.lookup_merge(f"merge/{case_id}/{approval}") is None
+
+
+@pytest.mark.parametrize("rule_change", [False, True], ids=["synthetic_defect", "pension_rule"])
+def test_u6_ordinarie_granskning_kravs_med_eller_utan_syntetiskt_arende(settings, quote_sandbox, rule_change):
+    observe = quote_sandbox[-1]
+    releases, operator, run, candidate = prepare_quote_review(settings, observe, rule_change=rule_change)
+    case_id = candidate.pull_request
+    item = releases.requests.get(operator, case_id)
+    if rule_change:
+        assert item.draft.kind == "rule_change" and item.origin.channel == "rule_change_code"
+    assert candidate == observe(case_id, run.run_id)
+    assert releases.read(operator, case_id).approval is None
+    with pytest.raises(AccessDeniedError):
+        releases.advance("merge", demo_scope(case_id), case_id, 1)
+    with pytest.raises(ConflictError, match="mänskligt beslut"):
+        releases.advance("merge", run, case_id, 1)
+    assert releases.requests.get(operator, case_id).status == "waiting_review"
+    assert releases.delivery.lookup_merge(f"merge/{case_id}/1") is None
+
+
+def test_u6_offertprov_stams_av_fore_dubbelanrop_och_inforande(settings, quote_sandbox, monkeypatch):
+    releases, operator, run, candidate = prepare_quote_review(settings, quote_sandbox[-1])
+    case_id = candidate.pull_request
+    approval = approve_release(releases, operator, case_id)
+    operation = f"merge/{case_id}/{approval}"
+    merge = releases.delivery.merge
+    calls = []
+
+    def lose_response(key, expected):
+        calls.append(key)
+        merge(key, expected)
+        raise OutcomeUnknown("Mergebeskedet uteblev.")
+
+    monkeypatch.setattr(releases.delivery, "merge", lose_response)
+    with pytest.raises(OutcomeUnknown):
+        releases.advance("merge", run, case_id, approval)
+    assert releases.read(operator, case_id).pending == "merge_pending"
+
+    resumed = create_app(settings=settings).state.change_releases
+    lookup = resumed.delivery.lookup_merge
+
+    def unavailable(_):
+        raise OutcomeUnknown("Källan svarar ännu inte.")
+
+    monkeypatch.setattr(resumed.delivery, "merge", lose_response)
+    monkeypatch.setattr(resumed.delivery, "lookup_merge", unavailable)
+    with pytest.raises(OutcomeUnknown):
+        resumed.advance("merge", run, case_id, approval)
+    assert resumed.read(operator, case_id).pending == "merge_pending"
+
+    monkeypatch.setattr(resumed.delivery, "lookup_merge", lookup)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        jobs = [executor.submit(resumed.advance, "merge", run, case_id, approval) for _ in range(2)]
+        assert all(job.result(timeout=10) for job in jobs)
+    view = resumed.read(operator, case_id)
+    assert calls == [operation] and view.merge == lookup(operation)
+    assert view.deployment is None and view.check is None
+    assert resumed.advance("deploy", operator, case_id, approval)
+    assert resumed.read(operator, case_id).check is None
+    assert resumed.advance("verify", operator, case_id, approval)
+    verified = resumed.read(operator, case_id)
+    assert verified.check.passed and verified.check.version == verified.deployment.version == view.merge.version

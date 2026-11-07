@@ -287,6 +287,7 @@ externa integrationer och behörigheter enligt AGENTS.md.
 - [ ] **U6 – Avgränsad autonomi.** Prova förhandsgodkända ändringstyper i
   sandlådan efter verifiering av U5. Testa nekat mandat, ändrad diff efter
   granskning, dubbla anrop och okänt resultat efter avbrott.
+  [Förslag till första sandlådepolicy och lokala prov](U6_SANDLADEPOLICY.md).
 
 Bygg i ordning från U1. Projekt 4 äger regel och förväntad verksamhetseffekt,
 berört domänteam äger fackgranskningen och projekt 10 ger åtkomst från centralen.
