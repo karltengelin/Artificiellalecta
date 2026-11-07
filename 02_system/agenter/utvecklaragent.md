@@ -31,6 +31,20 @@ Codex eller Claude Code ska kunna arbeta med samma uppdrags- och resultatkontrak
 
 ## Behörigheter
 
+### Ändringskön (U3)
+
+När en U3-körning startas ska agenten via bolagets tjänsteoperationer kunna
+lista nya ändringsärenden inom sitt mandat och ta ett av dem. När agenten tar
+ärendet ska systemet reservera det för agenten och sätta status *Pågår* i samma
+transaktion. När kodändring och testbevis har lämnats kan agenten sätta status
+*Väntar på granskning* med referenser till båda underlagen. Boarden visar samma
+status, ansvarig och historik som tjänsteoperationerna sparar.
+
+Acceptansen för U3 ska visa att agenten bara kan se och ta behöriga ärenden,
+att ett samtidigt anspråk från en människa och en agent ger en ansvarig och
+att överlämningen för granskning syns på boarden. Automatisk bevakning av kön
+och villkoren för när den startar en körning behandlas separat.
+
 ### Kod och införande
 
 Agenten arbetar med källkod och testdata på egen branch. Den kan committa och
