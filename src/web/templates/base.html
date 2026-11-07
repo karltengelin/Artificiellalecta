@@ -22,10 +22,11 @@
   <header class="topbar{% if settings.is_production %} topbar--prod{% endif %}">
     <a class="brand" href="{{ '/central' if operator_page else '/' }}"><span class="brand__mark" aria-hidden="true"></span>Artificiellalecta <span class="brand__sub">{{ 'Operatörscentral' if operator_page else 'Handläggare' }}</span></a>
     <nav class="mainnav" aria-label="Huvudmeny">
-      {{ nav("/central", "Centralen", path.startswith("/central") and not path.startswith("/central/fragor")) }}
+      {{ nav("/central", "Centralen", path.startswith("/central") and not path.startswith(("/central/fragor", "/central/utveckling"))) }}
       {{ nav("/central/fragor", "Fråga bolaget", path.startswith("/central/fragor")) }}
       {{ nav("/team/aktuarie", "Aktuarieteamet", path.startswith("/team/aktuarie")) }}
       {% if operator_page %}
+      {% if settings.database == "demo" %}{{ nav("/central/utveckling", "Utveckling", path.startswith("/central/utveckling")) }}{% endif %}
       {{ nav("/", "Försäkringsteamets arbetsyta", false) }}
       {% else %}
       {{ nav("/", "Sök", path == "/" or path == "/sok") }}
@@ -87,6 +88,7 @@
   <footer class="footer">
     {% if path.startswith("/team/aktuarie") %}Källbundna analyser, versionerade grunder och mänskligt granskade leveranser.
     {% elif path.startswith("/central/fragor") %}Bolagsfrågor med källbundet underlag och mänskligt granskade leveranser.
+    {% elif path.startswith("/central/utveckling") %}Manuell ändringshantering i lokal demo.
     {% elif operator_page %}Ledningsaggregat via försäkringstjänsten. Agentekonomi från deklarerade loggkällor. Läsbar översikt enligt B-038.
     {% else %}
     Alla läsningar och ändringar går via tjänstelagret och loggas med handläggare och motivering (B-028).

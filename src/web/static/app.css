@@ -356,6 +356,13 @@ pre.draft { white-space: pre-wrap; background: var(--color-background); border-r
   .actuary-register td p { margin-top: var(--space-2); grid-column: 2; }
 }
 .dialogue-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+
+/* Manuella ändringsärenden */
+.change-requests td, .change-request { overflow-wrap: anywhere; }
+.change-request .panel__head > div { min-width: 0; }
+.change-request dt { font-weight: var(--font-weight-label); }
+.change-request dd { margin: 0 0 var(--space-2); }
+.change-request__text { white-space: pre-wrap; }
 .dialogue-human { border-left: 4px solid var(--color-brand); }
 .dialogue-chart { display: block; width: 100%; height: auto; }
 .dialogue-messages { display: grid; gap: 1rem; }

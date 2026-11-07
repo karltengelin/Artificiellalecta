@@ -33,6 +33,14 @@
 
 **Planerade tabeller (ej i denna omgång):** Kapitalets kassaflödesjournal och premiekoppling byggs senare; se §9d.
 
+**Lokal demotabell i projekt 11.** `change_requests` skapas vid webbstart även i
+befintliga demofiler. Den har egen metadata för SQLite och används av
+`services.change_requests.ChangeRequests`. `id` är ett UUID och används även
+vid omskickad registrering. `requested_by` är den verifierade operatören och
+indexeras för listning. `status` börjar som `new` och `created_at` lagras i UTC.
+`draft` är det validerade ärendeunderlaget i JSON. Se
+[projektplanen för U1](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u1-i-demo).
+
 ---
 
 ## 2. Designprinciper

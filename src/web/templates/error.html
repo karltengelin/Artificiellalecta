@@ -3,5 +3,9 @@
 {% block content %}
 <h1>{{ error.title }}</h1>
 {% include "partials/error_box.html" %}
+{% if base is defined and base == '/central/utveckling' %}
+<p><a href="/central">Till centralen</a></p>
+{% else %}
 <p><a href="/">Till sökningen</a></p>
+{% endif %}
 {% endblock %}

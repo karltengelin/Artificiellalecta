@@ -88,17 +88,17 @@ def check_csrf(request: Request, form: Any) -> None:
 
 def render(
     request: Request, template: str, context: dict[str, Any] | None = None, status_code: int = 200,
-    *, push_url: str | None = None,
+    *, push_url: str | None = None, check_database: bool = True,
 ):
     """push_url: adressen HTMX lägger i historiken – en sida som går att ladda om, inte formulärets POST-adress."""
-    pending = pending_approvals(request)
+    pending = pending_approvals(request) if check_database else None
     operator = current_session(request)
     base = {
         "settings": settings(request),
         "csrf_token": request.app.state.csrf_token,
         "rules": service(request).rules,
         "pending_approvals": pending,
-        "database_available": pending is not None,
+        "database_available": not check_database or pending is not None,
         "flows_available": getattr(request.app.state, "flow_console", None) is not None,
         "environment_choices": SWITCHABLE_DATABASES,
         "operator_auth_enabled": request.app.state.operator_auth.enabled,

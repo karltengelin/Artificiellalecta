@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field with context %}
+{% block title %}Nytt ändringsärende{% endblock %}
+{% block content %}
+{% macro text_field(name, label, max_length, required=false) %}
+  {% call field(name, label, errors) %}
+  <input id="f-{{ name }}" name="{{ name }}" value="{{ values.get(name, '') }}" maxlength="{{ max_length }}"{% if required %} required{% endif %}>
+  {% endcall %}
+{% endmacro %}
+{% macro notes(name, label, max_length, required=false) %}
+  {% call field(name, label, errors) %}
+  <textarea id="f-{{ name }}" name="{{ name }}" rows="3" maxlength="{{ max_length }}"{% if required %} required{% endif %}>{{ values.get(name, '') }}</textarea>
+  {% endcall %}
+{% endmacro %}
+<p><a href="{{ base }}">← Mina ändringsärenden</a></p>
+<section class="panel panel--standalone">
+  <h1>Nytt ändringsärende</h1>
+  <p class="muted">Välj typ, ge ärendet en titel och beskriv behovet. Fyll gärna i resten om du har underlaget. Använd fiktiva uppgifter i demo.</p>
+  {% if errors %}<p class="alert alert--error" role="alert">Kontrollera de markerade fälten.</p>{% endif %}
+  <form method="post" action="{{ base }}" class="form" hx-boost="false">
+    <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+    <input type="hidden" name="request_id" value="{{ request_id }}">
+    {% call field('kind', 'Typ (obligatoriskt)', errors) %}
+    <select id="f-kind" name="kind" required>
+      <option value="">Välj typ</option>
+      {% for value, label in kinds.items() %}
+      <option value="{{ value }}"{% if values.get('kind') == value %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    {% endcall %}
+    {{ text_field('title', 'Titel (obligatoriskt)', 160, required=true) }}
+    {{ notes('need', 'Behov (obligatoriskt)', 3000, required=true) }}
+    {{ notes('motivation', 'Motivering', 1200) }}
+    {{ text_field('affected_system', 'Berört system', 160) }}
+    {{ notes('acceptance', 'Så ska resultatet prövas', 1200) }}
+    <fieldset class="form">
+      <legend>Underlag vid behov</legend>
+      {{ notes('source_refs', 'Källreferenser', 1200) }}
+      <div class="row">
+        {{ text_field('decision_ref', 'Beslutsreferens', 160) }}
+        {{ text_field('rule_version', 'Regelversion', 160) }}
+        {% call field('effective_on', 'Gäller från', errors) %}
+        <input id="f-effective_on" name="effective_on" type="date" value="{{ values.get('effective_on', '') }}">
+        {% endcall %}
+      </div>
+    </fieldset>
+    <div class="form__actions">
+      <button type="submit">Registrera ändringsärende</button>
+      <a href="{{ base }}">Avbryt</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
