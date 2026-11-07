@@ -9,9 +9,9 @@ tests = ["tests/test_services_enrollment.py", "tests/test_services_cases.py", "t
 dependents = ["agents", "web", "tooling"]
 
 [suites.premiums]
-description = "Löneunderlag, premie och produktparametrar; fakturakedjan återstår"
+description = "Löneunderlag, premie, faktura, inbetalning, överlämning till månadsjournalen och produktparametrar"
 status = "partial"
-tests = ["tests/test_premium_month.py", "tests/test_calculate_itp1_premium.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_services_write_ops.py", "tests/test_bank_calendar.py", "tests/test_premium_basis.py", "tests/test_salary_files.py", "tests/test_invoices.py", "tests/test_ocr.py", "tests/test_payments.py"]
+tests = ["tests/test_premium_month.py", "tests/test_calculate_itp1_premium.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_services_write_ops.py", "tests/test_bank_calendar.py", "tests/test_premium_basis.py", "tests/test_salary_files.py", "tests/test_invoices.py", "tests/test_ocr.py", "tests/test_payments.py", "tests/test_premium_month_export.py"]
 dependents = ["services", "agents", "web", "insights", "data", "tooling"]
 
 [suites.pensions]
@@ -57,9 +57,9 @@ tests = ["tests/test_analytics_premium_impact.py", "tests/test_portfolio_impact.
 dependents = ["services", "tooling"]
 
 [suites.simulation]
-description = "Frysta premie-/betalningsunderlag och avstämd syntetisk FTA-månad"
+description = "Frysta premie-/betalningsunderlag, avstämd syntetisk FTA-månad, motpartssimulatorn och överlämningen från paket A"
 status = "partial"
-tests = ["tests/test_premium_month.py"]
+tests = ["tests/test_premium_month.py", "tests/test_counterparty_simulation.py", "tests/test_premium_month_export.py"]
 dependents = []
 
 [suites.compliance]
@@ -154,8 +154,8 @@ paths = [
 full = true
 
 [[rules]]
-paths = ["src/skills/calculation/**", "src/utils/bank_calendar.py", "src/utils/ocr.py", "src/services/operations/invoices.py", "src/models/invoice.py", "src/services/operations/payments.py", "src/models/bank.py", "src/services/parameters.py", "src/services/operations/premium_basis.py", "src/services/operations/salary_files.py", "src/models/salary_file.py", "src/services/operations/premiums.py", "src/services/operations/salary.py", "src/services/operations/corrections.py", "src/services/operations/product_parameters.py"]
-suites = ["premiums"]
+paths = ["src/skills/calculation/**", "src/utils/bank_calendar.py", "src/utils/ocr.py", "src/services/operations/invoices.py", "src/models/invoice.py", "src/services/operations/payments.py", "src/models/bank.py", "src/services/parameters.py", "src/services/operations/premium_basis.py", "src/services/operations/salary_files.py", "src/models/salary_file.py", "src/services/operations/premiums.py", "src/services/operations/salary.py", "src/services/operations/corrections.py", "src/services/operations/product_parameters.py", "src/services/premium_month_export.py", "src/services/operations/premium_export.py"]
+suites = ["premiums", "simulation"]
 
 [[rules]]
 paths = ["src/skills/calculation/actuarial_annuity.py", "src/skills/calculation/capital_rollforward.py", "src/skills/calculation/fta_valuation.py", "src/services/valuation_bases.py", "src/services/valuation_extract.py", "src/services/valuation.py", "src/services/operations/valuations.py", "01_domän/parametrar/DODLIGHET_SCB_2025.md", "01_domän/parametrar/PARAMETERREGISTER.md", "scripts/diagnostics/valuation_summary.py", "scripts/migrations/migrate_valuation_runs.py", "src/utils/migration_valuation_runs.py"]

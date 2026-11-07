@@ -146,13 +146,17 @@ OLDER_COHORT = older_cohort()
 
 
 def create_demo_database(
-    engine: Engine, *, with_proposals: bool = True, with_older_cohort: bool = True, today: date | None = None
+    engine: Engine, *, with_proposals: bool = True, with_older_cohort: bool = True, today: date | None = None,
+    born_from: int | None = None,
 ) -> None:
     """Skapar tabellerna i en TOM databas och fyller den med demobeståndet.
 
     Vägrar om databasen (eller schemat i search_path) redan har tabeller –
     befintliga tabeller ändras aldrig härifrån. `today` sätts i tester;
     `with_older_cohort=False` ger bara de fyra personerna, utan den äldre kohorten.
+    `born_from=1961` utelämnar personer födda före det året (David Dahl och kohortens födda
+    1959–1960), så att beståndet ryms i månadsjournalens första försök (P6-MANAD-001). Bara
+    röktestet för premiekedjan använder det; övriga försäkringsnummer är oförändrade.
     """
     existing = inspect(engine).get_table_names()
     if existing:
@@ -161,7 +165,7 @@ def create_demo_database(
         )
     Base.metadata.create_all(engine)
     session_factory = session_factory_for(engine)
-    seed_demo_stock(session_factory, with_older_cohort=with_older_cohort)
+    seed_demo_stock(session_factory, with_older_cohort=with_older_cohort, born_from=born_from)
     if with_proposals:
         add_demo_proposals(session_factory, today=today)
 
@@ -179,7 +183,7 @@ def add_missing_demo_tables(engine: Engine) -> None:
             s.commit()
 
 
-def seed_demo_stock(session_factory, *, with_older_cohort: bool = True) -> None:
+def seed_demo_stock(session_factory, *, with_older_cohort: bool = True, born_from: int | None = None) -> None:
     with session_factory() as s:
         s.add_all(BaseAmount(year=y, income_base_amount_sek=Decimal(v)) for y, v in IBB.items())
         s.add_all(default_parameter_rows())
@@ -193,6 +197,8 @@ def seed_demo_stock(session_factory, *, with_older_cohort: bool = True) -> None:
 
         for number, (pnr, first, last, org, emp_from, emp_to, salary, status, itp1_from, states,
                      (prem_from, prem_to), last_paid) in enumerate(PERSONS, start=1):
+            if born_from is not None and int(pnr[:4]) < born_from:
+                continue
             person = InsuredPerson(
                 personal_id_number=pnr, first_name=first, last_name=last,
                 email=f"{first.lower()}.{last.lower()}@example.se",
@@ -214,12 +220,14 @@ def seed_demo_stock(session_factory, *, with_older_cohort: bool = True) -> None:
             _add_premiums(s, benefit.id, pnr, Decimal(salary), prem_from, prem_to, last_paid)
 
         if with_older_cohort:
-            _add_older_cohort(s, [employers[data["org_number"]] for data in EMPLOYERS])
+            _add_older_cohort(s, [employers[data["org_number"]] for data in EMPLOYERS], born_from)
 
 
-def _add_older_cohort(s, employers: list[Employer]) -> None:
+def _add_older_cohort(s, employers: list[Employer], born_from: int | None = None) -> None:
     """Kohorten som aktiva, premiebetalande försäkrade hos demoarbetsgivarna i tur och ordning."""
     for number, person in enumerate(OLDER_COHORT, start=len(PERSONS) + 1):
+        if born_from is not None and person.birth_date.year < born_from:
+            continue
         employer = employers[number % len(employers)]
         itp1_from = max(person.employment_start_date, employer.affiliation_date)
         insured = InsuredPerson(

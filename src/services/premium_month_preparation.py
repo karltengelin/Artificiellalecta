@@ -1,4 +1,7 @@
-"""Skrivskyddad förberedelse av novemberförsöket. Inga nya grunder antas här."""
+"""Skrivskyddad förberedelse av novemberförsöket. Inga nya grunder antas här.
+
+`opening` och `assemble` används också av överlämningen från paket A (`premium_month_export`).
+"""
 
 from datetime import date
 from decimal import Decimal
@@ -47,12 +50,34 @@ def snapshot_parameters(session) -> list[dict]:
     return out
 
 
-def prepare_inputs(session, scenario_id: str, expected_opening_checksum: str) -> MonthInputs:
-    """Läser och räknar; anroparen ansvarar för READ ONLY-transaktion vid Lakebase."""
+def opening(session):
+    """IB per oktober 2026: värdering av S-04-utdraget. Gemensam för syntetiskt underlag och paket A."""
     c = compute_valuation(session, OPENING_DATE, "scenario", basis_code="SIM-V-2026-01",
                           curve_code="FI-SIM-2026-10")
     if not c.checks_passed:
         raise ValueError("IB:s värderingskontroller är underkända")
+    return c
+
+
+def assemble(session, c, scenario_id: str, expected_opening_checksum: str, invoices: list, receipts: list) -> MonthInputs:
+    """Bundet källpaket: IB, frysta grunder och parametrar samt fakturor och mottagningar."""
+    required = set(c.extract.bases) | {c.basis.code, c.curve.code, "SIM-G-2026-01"}
+    bases = [BasisSnapshot(code=b.code, purpose=b.purpose, assumptions=b.assumptions, checksum=b.checksum,
+                           valid_from=b.valid_from, valid_to=b.valid_to)
+             for b in session.scalars(select(ValuationBasis).where(ValuationBasis.code.in_(required))
+                                      .order_by(ValuationBasis.code))]
+    package = MonthInputs(scenario_id=scenario_id, opening=c.extract, bases=bases,
+        parameters=snapshot_parameters(session), opening_basis_code=c.basis.code, opening_curve_code=c.curve.code,
+        expected_opening_checksum=expected_opening_checksum, code_version=c.code_version,
+        period_end=PERIOD_END, invoices=invoices, receipts=receipts)
+    if not reference_plan_unchanged(package):
+        raise ValueError("Referensplaner flyttas under försöksmånaden")
+    return MonthInputs.model_validate({**package.model_dump(mode="json"), "checksum": inputs_checksum(package)})
+
+
+def prepare_inputs(session, scenario_id: str, expected_opening_checksum: str) -> MonthInputs:
+    """Läser och räknar; anroparen ansvarar för READ ONLY-transaktion vid Lakebase."""
+    c = opening(session)
     population = {p.policy_id for p in c.extract.policies}
     rows = session.execute(select(PolicyBenefit, Policy, InsuredPerson).select_from(PolicyBenefit)
                            .join(Policy, Policy.id == PolicyBenefit.policy_id)
@@ -98,15 +123,4 @@ def prepare_inputs(session, scenario_id: str, expected_opening_checksum: str) ->
             break
     if len(invoices) < 10:
         raise ValueError("Försöket kräver minst tio behöriga befintliga försäkringar för skyddade aggregat")
-    required = set(c.extract.bases) | {c.basis.code, c.curve.code, "SIM-G-2026-01"}
-    bases = [BasisSnapshot(code=b.code, purpose=b.purpose, assumptions=b.assumptions, checksum=b.checksum,
-                           valid_from=b.valid_from, valid_to=b.valid_to)
-             for b in session.scalars(select(ValuationBasis).where(ValuationBasis.code.in_(required))
-                                      .order_by(ValuationBasis.code))]
-    package = MonthInputs(scenario_id=scenario_id, opening=c.extract, bases=bases,
-        parameters=snapshot_parameters(session), opening_basis_code=c.basis.code, opening_curve_code=c.curve.code,
-        expected_opening_checksum=expected_opening_checksum, code_version=c.code_version,
-        period_end=PERIOD_END, invoices=invoices, receipts=receipts)
-    if not reference_plan_unchanged(package):
-        raise ValueError("Referensplaner flyttas under försöksmånaden")
-    return MonthInputs.model_validate({**package.model_dump(mode="json"), "checksum": inputs_checksum(package)})
+    return assemble(session, c, scenario_id, expected_opening_checksum, invoices, receipts)

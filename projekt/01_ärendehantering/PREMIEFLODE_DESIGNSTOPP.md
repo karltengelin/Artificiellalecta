@@ -19,6 +19,19 @@
 > okänd betalare saknar både försäkrad och arbetsgivare; CHECK-villkoret på `cases` tillåter det för typen
 > (ny ärendetyp och lättat CHECK-villkor godkända av Karl i chatten 2026-11-07, ”Godkänn och mergea”).
 > En delbetald premie som rättas går till manuell prövning i stället för kredit och ny debet.
+> Steg 5 (motpartssimulatorn) byggt 2026-11-07 i `src/simulation/`, se [tjänstelager §9.12](../../02_system/tjänstelager.md).
+> Hela kedjan körd i demo med `smoke_test_premium_chain.py`, 19 av 19 kontroller; i `svc_test` återstår körningen
+> eftersom testdatabasens endpoint var avstängd. Röktestet sätter operationernas dagsfunktion till kedjans
+> affärsdatum, eftersom ingen gemensam simuleringsklocka (S-01) finns. Bevakningens körsätt är fortfarande öppet (§13).
+> Steg 6 (överlämning till månadsjournalen) byggt och testat lokalt 2026-11-07, se [tjänstelager §9.13](../../02_system/tjänstelager.md).
+> `export_premium_month` (läsning, `HUMAN_ONLY`) gör periodens mottagna premier till källpaketet för
+> `open_premium_month`; journalens kvitton motsvarar allokeringarna exakt i ören (fall 20). Inga nya tabeller.
+> Röktestet slutar i journalen, 23 av 23 kontroller i demo och `svc_test`. `run_tests.py --changed --run --postgres`
+> mot main `36a8d59`: 1 860 godkända prov, inga fel eller överhoppade. **Avvikelser, godkända av Karl i chatten 2026-11-07 (”Approve and merge”):** ett
+> tillägg på mottagen premie räknas som egen premiepost i `MonthInputs`; ett kvitto per bankhändelse och faktura
+> med allokeringarnas belopp, så att avstämningskontot inte följer med (Karls instruktion); röktestets demobestånd
+> utelämnar personer födda före 1961 (`born_from=1961`, Karls val i chatten 2026-11-07), eftersom journalens första
+> försök inte tar emot påbörjade eller ej beräknade försäkringar.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).
