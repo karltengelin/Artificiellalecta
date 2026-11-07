@@ -224,6 +224,11 @@ grindar, och domängodkännanden ligger kvar hos behörig beslutsfattare.
 
 ## Ansvar och samordning
 
+Operatörscentralen länkar till utvecklingsytan i
+[projekt 11](../11_utveckling_och_andringshantering/PROJEKTPLAN.md). Där kan
+operatören skapa ändringsärenden, följa granskning och införande samt se
+länkade GitHub-ärenden och kodändringar.
+
 | Område | Äger |
 |---|---|
 | Projekt 10 | VD-upplevelse, navigation, ledningsunderlag och samlad operatörscentral |

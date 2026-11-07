@@ -300,7 +300,7 @@ backup och operatörens OK (AGENTS.md §4.5); fram till dess gäller beskrivning
 
 ## 10. Utanför demon (förslag till ATT_GORA)
 
-- Utvecklingsteamet: patch i isolerad arbetsyta, tester och release för ändringar som kräver ny logik (`harness.md` §9.7).
+- Regler som kräver ny logik ska kunna lämnas till ett spårbart ändringsärende i [projekt 11](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md). En människa eller utvecklaragent kan ta ärendet, lämna testad kod och återföra bevis för granskning och verifierat införande.
 - Kommunikationsteamet: kundinformation om ändringen, med godkännande av exakt utskick (§3.5).
 - Delegering mellan team (3c-1) och flera flödestyper.
 - Bakgrundsarbetare och automatisk återupptagning med idempotens (`harness.md` §10.4).

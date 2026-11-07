@@ -20,7 +20,7 @@ Varje agent tillhör ett team (B-026). Teamets ledande agent är dess orkestrera
 | Regelefterlevnad & rapportering (`compliance`) | [Rapporteringsagent](agenter/rapporteringsagent.md) | Specialist | Regulatorisk rapportering | 🔲 Ej påbörjad |
 | Ekonomi & inköp (`ekonomi`) | [Ekonomiagent](agenter/ekonomiagent.md) | Ledande (orkestrerare) | Ekonomi & redovisning | 🔲 Ej påbörjad |
 | Ekonomi & inköp (`ekonomi`) | [Inköpsagent](agenter/inkopsagent.md) | Specialist | Inköp & avtalsgranskning | 🔲 Ej påbörjad |
-| Utveckling & plattform (`utveckling`) | [Utvecklaragent](agenter/utvecklaragent.md) | Ledande (orkestrerare) | IT & dataplattform | 🔲 Ej påbörjad |
+| Utveckling & plattform (`utveckling`) | [Utvecklaragent](agenter/utvecklaragent.md) | Ledande (orkestrerare) | IT & dataplattform | 🟡 [Projekt 11](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md) planerat. Körbar profil och kodverktyg återstår |
 
 ---
 
