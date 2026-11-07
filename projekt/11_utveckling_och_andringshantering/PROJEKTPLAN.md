@@ -1,6 +1,6 @@
 # Projekt 11 – Utveckling och ändringshantering
 
-> Planeringsuppdrag från operatören 2026-11-07. Status **U1 och U2 byggda i lokal demo**. Projektet
+> Planeringsuppdrag från operatören 2026-11-07. Status **U1–U3 byggda i lokal demo**. Projektet
 > omfattar utvecklaragenten, ändringsflödet, utvecklingsytan och GitHub-kopplingen.
 
 ## Syfte och första leverans
@@ -33,8 +33,7 @@ oförändrade uppgifter och ger då samma ID.
 
 Öppna ett eget ärende och välj **Pågår** under **Bolagets ärendestatus**.
 Klicka på **Flytta ärendet**. Kortet visas nu i motsvarande kolumn på boarden.
-Du kan flytta ett steg framåt eller bakåt mellan **Nytt**, **Pågår** och
-**Väntar på granskning**. Under **Teknisk status från GitHub** kan du spara
+Under **Teknisk status från GitHub** kan du spara
 en direktlänk till ett issue eller en pull request i det konfigurerade repot.
 Töm fältet och spara för att ta bort länken. Ärendehistoriken visar vem som
 flyttade ärendet eller ändrade länken, tidpunkten och värdena före och efter.
@@ -55,6 +54,55 @@ visas som föråldrad. GitHub-statusen lagras i serverns minne och hämtas på
 nytt efter omstart. Länk, bolagets status och historik är varaktiga. I äldre
 demofiler skapar webbstarten den lokala tabellen `change_request_events`
 för flyttar och länkbyten. Tidigare ärenden ligger kvar i `change_requests`.
+
+## Prova U3 i demo
+
+Kör `python scripts/demo/run_development_case.py --operator-id karl` från
+arbetskopian. Använd ditt lokala operatörs-ID om det är ett annat än `karl`.
+Skriptet registrerar ett fiktivt offertfel i den lokala demofilen och ger
+utvecklaragentens körning mandat till just det ärendet. Skriptet provar två
+fiktiva kontrollfall. Den första patchen ger ett testfel och teståterkopplingen
+leder till en korrigering. Öppna **Utveckling** i den lokala demowebben och
+välj ärendet med det ID som skriptet skriver ut.
+
+På kortet ser du agenten som ansvarig under **Väntar på granskning**. Detaljen
+visar anspråkets körnings-ID och referenser till diff och testbevis. Välj
+**Ta över ärendet** för att bli ansvarig. Historiken behåller agentens
+anspråk och underlag. Vid övertagande mitt under arbetet kan en redan startad
+kodarförfrågan löpa till sin tidsgräns. Dess svar kan då inte ändra ärendet.
+Som människa kan du ta ett nytt ärende genom att flytta det till **Pågår**.
+Formuläret **Lämna för granskning** kräver referenser till kodändringen och
+testbeviset. Äldre U2-ärenden kan visas med tidigare status utan U3-underlag.
+
+### Körkontrakt och lagring
+
+- Den betrodda startaren utfärdar en körningsnyckel för utvecklaragenten,
+  en beställare och en mängd uttryckligen tillåtna ärende-ID:n.
+  `ChangeRequests.list_new`, `claim` och `handoff` använder samma mandat.
+  Anspråk och status sparas i en demotransaktion. Varje körningsnyckel
+  kan ta ett ärende en gång. Operatörens övertagande binder samma nyckel.
+- Kodaren får fiktivt underlag och källsnapshot på en egen lokal Git-branch.
+  Körningen har högst två kodförsök och 120 sekunder. Kodaren lämnar en plan
+  och föreslår en avgränsad textändring. Betrodd kod tillämpar den bara i
+  tillåten fil och kör fasta tester. Demon testar SQL-beräkningen i en
+  separat minnesdatabas med begränsad frågekörning.
+- `logs/development_runs/<körnings-id>/result.json` innehåller bascommit,
+  plan, diff, testbevis och utfall. Den närliggande JSONL-filen är harnessens
+  körjournal. Referenserna på ärendet binder körnings-ID, bascommit, diff och
+  det godkända testutfallet med SHA-256. Den temporära kodkopian tas bort
+  efter försöket. Betrodd kod sparar underlaget före överlämningen och
+  kontrollerar ansvaret igen i överlämningstransaktionen.
+- Demotabellerna `change_requests` och `change_request_events` används som
+  i U2. Nya händelsetyper i den befintliga loggen registrerar ansvar,
+  övertagande och granskningsreferenser. Boarden och detaljen läser samma
+  projektion.
+
+Demokommandot använder en skriptad kodare. Provet för `CodexCli` ersätter
+CLI-processen med en lokal testdubbel som använder samma uppdrags- och
+svarskontrakt. Adaptern följer OpenAI Docs för schemavaliderad utdata från
+`codex exec` och använder skrivskyddat läge. En körning med riktig modell
+kräver operatörens godkännande och en separat miljö med endast syntetiskt
+underlag och egna behörigheter. [OpenAI Docs](https://learn.chatgpt.com/docs/non-interactive-mode)
 
 ## En ingång till ändringsarbetet från flera håll
 
@@ -155,12 +203,10 @@ externa integrationer och behörigheter enligt AGENTS.md.
   manuella flyttar och skrivskyddad status för länkat issue eller pull request.
   Verifierat i lokal demo med testdubblar. Skarp läsanslutning provas efter
   operatörens konfiguration.
-- [ ] **U3 – Utvecklaragent och mänskligt övertagande.** Kör ett ärende i en
-  isolerad kodmiljö med en första adapter till [Codex](https://learn.chatgpt.com/docs/non-interactive-mode)
-  eller [Claude Code](https://code.claude.com/docs/en/headless). Använd ett gemensamt
-  kontrakt för plan, diff, testbevis och utfall. Verifiera att agenten kan rätta ett
-  testfel och att en människa kan ta över. Återanvänd principerna i harness och
-  befintliga köer för identitet, budget, anspråk och körspår.
+- [x] **U3 – Utvecklaragent och mänskligt övertagande.** Verifierat i lokal demo
+  med en första Codex CLI-adapter och testdubbel. Mandatstyrt urval, samtidiga
+  anspråk, rättning efter testfel, granskningsbevis på boarden och mänskligt
+  övertagande är provade. Modellkörning med externa behörigheter återstår.
 - [ ] **U4 – Överlämning från bolaget.** Anslut ett uttryckligt steg för en regel
   som kräver kod. Lägg till andra beställarvägar som Fråga bolaget när respektive
   ingång kan lämna behöriga uppdrag. Vid omförsök skapas samma ändringsärende.

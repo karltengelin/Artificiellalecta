@@ -685,7 +685,10 @@ och kör kodloopen på en egen branch. En mänsklig utvecklare ska kunna ta öve
 samma ärende. Granskning, merge och införande verifieras av betrodd kod utanför
 kodmiljön. Godkännandet binds till den granskade kodversionen.
 
-**Byggstatus.** Teamet saknar en körbar profil och monterade kodverktyg.
+**Byggstatus.** U3 har en uttryckligt startad demokörning med ärendemandat,
+atomiskt anspråk, försökstak, tidsbudget och harnessens `FileJournal`.
+Den kodar via ett separat kontrakt och lämnar diff och verifierade testbevis
+till operatörens board. En ordinarie profil och köbevakning återstår.
 Projekt 11 prövar först granskat arbete. Ett senare autonomt läge avgränsas
 till förhandsgodkända ändringstyper i testmiljö enligt en separat policy.
 Merge till `main` följer AGENTS.md §4.6 och databasmigrationer följer §4.5.

@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
-from services.change_requests import STATUS_MOVES, ChangeRequestDraft, ChangeRequests
+from services.change_requests import STATUS_MOVES, ChangeRequestDraft, ChangeRequests, ReviewReferences
 from services.errors import ConflictError
 from web.handler import render
 from web.operator_auth import operator_action, operator_actor
@@ -122,14 +122,39 @@ def parse_request_id(request_id: str) -> UUID:
 
 @router.post("/{request_id}/status")
 async def move_request(request: Request, request_id: str):
-    form = await auth_form(request, {"csrf_token", "previous", "status"})
+    form = await auth_form(request, {"csrf_token", "previous", "status", "code_ref", "test_ref"})
     actor = operator_action(request, form)
     store = workspace(request)
     identifier = parse_request_id(request_id)
     try:
-        found = await run_in_threadpool(store.move, actor, identifier, form.get("previous", ""), form.get("status", ""))
+        status = form.get("status", "")
+        review = None
+        if status == "waiting_review":
+            review = ReviewReferences(code_ref=form.get("code_ref", ""), test_ref=form.get("test_ref", ""))
+        found = await run_in_threadpool(store.move, actor, identifier, form.get("previous", ""), status, review)
+    except ValidationError:
+        raise HTTPException(422, "Ange referenser till kodändringen och testbeviset (högst 300 tecken vardera).") from None
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from None
+    except ConflictError as exc:
+        raise HTTPException(409, str(exc)) from None
+    if not found:
+        raise missing_request()
+    return RedirectResponse(f"{BASE}/{identifier}", status_code=303, headers=HEADERS)
+
+
+@router.post("/{request_id}/ta-over")
+async def take_over_request(request: Request, request_id: str):
+    form = await auth_form(request, {"csrf_token", "run_id"})
+    actor = operator_action(request, form)
+    store = workspace(request)
+    identifier = parse_request_id(request_id)
+    try:
+        run_id = UUID(form.get("run_id", ""))
+    except ValueError:
+        raise HTTPException(422, "Öppna ärendet igen för att ta över.") from None
+    try:
+        found = await run_in_threadpool(store.takeover, actor, identifier, run_id)
     except ConflictError as exc:
         raise HTTPException(409, str(exc)) from None
     if not found:

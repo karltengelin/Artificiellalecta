@@ -1,4 +1,4 @@
-"""Manuella ändringsärenden i demo. Ägaren är den autentiserade beställaren."""
+"""Ändringsärenden i demo. Skrivoperationer använder demomotorns BEGIN IMMEDIATE."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
+    case,
     select,
 )
 from sqlalchemy.dialects.sqlite import insert
@@ -51,6 +52,8 @@ STATUS_MOVES: dict[ChangeStatus, tuple[ChangeStatus, ...]] = {
     "in_progress": ("new", "waiting_review"),
     "waiting_review": ("in_progress",),
 }
+DEVELOPER = Actor.agent("utvecklaragent", "utveckling")
+ASSIGNMENT_ACTIONS = ("agent_claim", "human_claim", "takeover", "release")
 
 
 ShortText = Annotated[str, StringConstraints(min_length=1, max_length=160)]
@@ -80,7 +83,7 @@ class ChangeRequestDraft(BaseModel):
 class ChangeRequestEvent(BaseModel):
     actor_id: str
     occurred_at: datetime
-    action: Literal["status", "github"]
+    action: Literal["status", "github", "agent_claim", "human_claim", "takeover", "release", "review"]
     previous: str | None
     current: str | None
 
@@ -92,7 +95,39 @@ class ChangeRequest(BaseModel):
     created_at: datetime
     draft: ChangeRequestDraft
     github_url: str | None = None
+    assignee_id: str | None = None
+    assignment: Literal["agent_claim", "human_claim", "takeover", "release"] | None = None
+    agent_run_id: UUID | None = None
     history: tuple[ChangeRequestEvent, ...] = ()
+
+    @property
+    def review(self) -> ReviewReferences | None:
+        if self.status == "waiting_review" and self.history:
+            event = next((event for event in self.history if event.action == "review"), None)
+            if event is not None:
+                return ReviewReferences(code_ref=event.previous, test_ref=event.current)
+        return None
+
+
+EvidenceRef = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
+
+
+class ReviewReferences(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    code_ref: EvidenceRef
+    test_ref: EvidenceRef
+
+
+class ChangeQueueRun(BaseModel):
+    """Mandat som den betrodda startaren utfärdar, utanför kodarens miljö."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    actor: Actor
+    run_id: UUID
+    requested_by: str
+    allowed_requests: frozenset[UUID]
 
 
 class ChangeRequests:
@@ -119,6 +154,12 @@ class ChangeRequests:
         with self._session_factory() as session:
             return [ChangeRequest.model_validate(row) for row in session.execute(statement).mappings()]
 
+    def list_new(self, run: ChangeQueueRun) -> list[ChangeRequest]:
+        table = change_requests_table
+        statement = self._scoped(run).where(table.c.status == "new").order_by(table.c.created_at, table.c.id)
+        with self._session_factory() as session:
+            return [ChangeRequest.model_validate(row) for row in session.execute(statement).mappings()]
+
     def get(self, actor: Actor, request_id: UUID) -> ChangeRequest | None:
         with self._session_factory() as session:
             row = self._find(session, self._requester(actor), request_id)
@@ -130,7 +171,48 @@ class ChangeRequests:
             ).mappings()
             return ChangeRequest.model_validate({**row, "history": tuple(history)})
 
-    def move(self, actor: Actor, request_id: UUID, previous: str, status: str) -> bool:
+    def claim(self, run: ChangeQueueRun, request_id: UUID) -> ChangeRequest:
+        with self._session_factory() as session:
+            row = self._agent_row(session, run, request_id)
+            if row["status"] != "new":
+                raise ConflictError("Ändringsärendet har redan tagits.")
+            events = change_request_events
+            used = select(events.c.id).where(events.c.action == "agent_claim",
+                                             events.c.previous == str(run.run_id)).exists()
+            if session.scalar(select(used)):
+                raise ConflictError("Agentkörningen har redan tagit ett ändringsärende.")
+            self._assign(session, request_id, run.actor.id, "agent_claim", str(run.run_id))
+            self._set_status(session, request_id, run.actor.id, "new", "in_progress")
+            return ChangeRequest.model_validate(self._agent_row(session, run, request_id))
+
+    def check_claim(self, run: ChangeQueueRun, request_id: UUID) -> None:
+        with self._session_factory() as session:
+            self._require_claim(self._agent_row(session, run, request_id), run)
+
+    def handoff(self, run: ChangeQueueRun, request_id: UUID, review: ReviewReferences) -> None:
+        with self._session_factory() as session:
+            row = self._agent_row(session, run, request_id)
+            if row["status"] == "waiting_review" and row["agent_run_id"] == str(run.run_id):
+                self._check_review_retry(session, request_id, review)
+                return
+            self._require_claim(row, run)
+            self._submit_review(session, request_id, run.actor.id, review)
+
+    def takeover(self, actor: Actor, request_id: UUID, expected_run: UUID) -> bool:
+        requested_by = self._requester(actor)
+        with self._session_factory() as session:
+            row = self._find(session, requested_by, request_id)
+            if row is None:
+                return False
+            if row["assignment"] == "takeover" and row["assignment_ref"] == str(expected_run):
+                return True
+            if row["agent_run_id"] != str(expected_run):
+                raise ConflictError("Ärendet har bytt ansvarig. Öppna det igen och kontrollera historiken.")
+            self._assign(session, request_id, requested_by, "takeover", str(expected_run))
+            return True
+
+    def move(self, actor: Actor, request_id: UUID, previous: str, status: str,
+             review: ReviewReferences | None = None) -> bool:
         requested_by = self._requester(actor)
         with self._session_factory() as session:
             row = self._find(session, requested_by, request_id)
@@ -138,13 +220,26 @@ class ChangeRequests:
                 return False
             if status not in STATUS_MOVES.get(previous, ()):
                 raise ValueError("Välj ett angränsande steg i ärendets arbetsflöde.")
+            if row["agent_run_id"] is not None:
+                raise ConflictError("Ta över ärendet innan du flyttar det.")
             if row["status"] == status:
+                if status == "waiting_review":
+                    self._check_review_retry(session, request_id, review)
                 return True
             if row["status"] != previous:
                 raise ConflictError("Ärendet har flyttats. Öppna ärendet igen och kontrollera status.")
-            table = change_requests_table
-            session.execute(table.update().where(table.c.id == str(request_id)).values(status=status))
-            self._record(session, request_id, requested_by, "status", previous, status)
+            if status == "waiting_review":
+                if review is None:
+                    raise ValueError("Ange referenser till kodändringen och testbeviset.")
+                if row["assignee_id"] is None:
+                    self._assign(session, request_id, requested_by, "human_claim")
+                self._submit_review(session, request_id, requested_by, review)
+                return True
+            if status == "new":
+                self._record(session, request_id, requested_by, "release", row["assignee_id"], None)
+            elif row["assignee_id"] is None:
+                self._assign(session, request_id, requested_by, "human_claim")
+            self._set_status(session, request_id, requested_by, previous, status)
             return True
 
     def link(self, actor: Actor, request_id: UUID, previous: str | None, url: str | None) -> bool:
@@ -171,6 +266,51 @@ class ChangeRequests:
         statement = self._owned(requested_by).where(change_requests_table.c.id == str(request_id))
         return session.execute(statement).mappings().one_or_none()
 
+    def _agent_row(self, session, run: ChangeQueueRun, request_id: UUID):
+        statement = self._scoped(run).where(change_requests_table.c.id == str(request_id))
+        row = session.execute(statement).mappings().one_or_none()
+        if row is None:
+            self._deny(run)
+        return row
+
+    def _scoped(self, run: ChangeQueueRun):
+        if run.actor != DEVELOPER:
+            self._deny(run)
+        table = change_requests_table
+        return self._owned(run.requested_by).where(table.c.id.in_(str(value) for value in run.allowed_requests))
+
+    @staticmethod
+    def _deny(run: ChangeQueueRun):
+        raise AccessDeniedError("Ändringsärendet ligger utanför körningens mandat.",
+                                operation="change_requests", actor_id=run.actor.id)
+
+    @staticmethod
+    def _require_claim(row, run: ChangeQueueRun) -> None:
+        if row["status"] != "in_progress" or row["agent_run_id"] != str(run.run_id):
+            raise ConflictError("Körningen ansvarar inte längre för ändringsärendet.")
+
+    def _assign(self, session, request_id: UUID, actor_id: str, action: str, run_ref: str | None = None):
+        self._record(session, request_id, actor_id, action, run_ref, actor_id)
+
+    def _set_status(self, session, request_id: UUID, actor_id: str, previous: str, status: str):
+        table = change_requests_table
+        session.execute(table.update().where(table.c.id == str(request_id)).values(status=status))
+        self._record(session, request_id, actor_id, "status", previous, status)
+
+    def _submit_review(self, session, request_id: UUID, actor_id: str, review: ReviewReferences):
+        self._record(session, request_id, actor_id, "review", review.code_ref, review.test_ref)
+        self._set_status(session, request_id, actor_id, "in_progress", "waiting_review")
+
+    @staticmethod
+    def _check_review_retry(session, request_id: UUID, review: ReviewReferences | None):
+        events = change_request_events
+        saved = session.execute(select(events.c.previous, events.c.current)
+                                .where(events.c.request_id == str(request_id), events.c.action == "review")
+                                .order_by(events.c.id.desc()).limit(1)).one_or_none()
+        refs = (review.code_ref, review.test_ref) if review is not None else None
+        if saved != refs:
+            raise ConflictError("Ärendet har redan lämnats med ett annat granskningsunderlag.")
+
     @staticmethod
     def _owned(requested_by: str):
         table = change_requests_table
@@ -178,7 +318,16 @@ class ChangeRequests:
         github_url = (select(events.c.current)
                       .where(events.c.request_id == table.c.id, events.c.action == "github")
                       .order_by(events.c.id.desc()).limit(1).scalar_subquery())
-        return select(table, github_url.label("github_url")).where(table.c.requested_by == requested_by)
+        assignment = events.alias("assignment")
+        assignment_id = (select(events.c.id)
+                         .where(events.c.request_id == table.c.id, events.c.action.in_(ASSIGNMENT_ACTIONS))
+                         .order_by(events.c.id.desc()).limit(1).correlate(table).scalar_subquery())
+        return (select(table, github_url.label("github_url"), assignment.c.current.label("assignee_id"),
+                       assignment.c.action.label("assignment"), assignment.c.previous.label("assignment_ref"),
+                       case((assignment.c.action == "agent_claim", assignment.c.previous), else_=None)
+                       .label("agent_run_id"))
+                .select_from(table.outerjoin(assignment, assignment.c.id == assignment_id))
+                .where(table.c.requested_by == requested_by))
 
     @staticmethod
     def _requester(actor: Actor) -> str:

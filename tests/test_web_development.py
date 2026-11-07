@@ -5,21 +5,30 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from io import BytesIO
+from pathlib import Path
+from subprocess import CompletedProcess
 from threading import Barrier
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from argon2 import PasswordHasher
 from fastapi.testclient import TestClient
 
+from agents import development_codex
+from agents.development import CodingResult, CodingTask, run_development_case
+from agents.journal import read_journal
+from scripts.demo.run_development_case import DRAFT, FILE, SOURCE, ScriptedCoder, verify_quote
 from services import Actor
 from services.change_requests import (
+    DEVELOPER,
+    ChangeQueueRun,
     ChangeRequest,
     ChangeRequestDraft,
+    ReviewReferences,
     change_request_events,
     change_requests_table,
 )
-from services.errors import AccessDeniedError
+from services.errors import AccessDeniedError, ConflictError
 from web import development_github
 from web.app import create_app
 from web.config import WebSettings
@@ -28,6 +37,7 @@ from web.database import demo_engine
 BASE = "/central/utveckling"
 ORIGIN = {"Origin": "https://testserver"}
 PASSWORD = "en-fiktiv-losenfras-for-u1"
+REVIEW = ReviewReferences(code_ref="commit demo-12", test_ref="testprotokoll demo-12")
 
 
 @pytest.fixture(scope="module")
@@ -263,7 +273,9 @@ def test_u2_board_laser_github_separat_och_fungerar_vid_avbrott(settings, github
         assert page.status_code == 200
         assert "GitHub-status kunde inte hämtas." in page.text and "Föråldrad GitHub-status" in page.text
         assert "Mergad" in page.text and "hemlig teknisk feldetalj" not in page.text
-        assert post_action(client, detail, "status", token, previous="in_progress", status="waiting_review").status_code == 303
+        assert post_action(client, detail, "status", token, previous="in_progress", status="waiting_review").status_code == 422
+        assert post_action(client, detail, "status", token, previous="in_progress", status="waiting_review",
+                           **REVIEW.model_dump()).status_code == 303
         board = client.get(BASE)
         assert board.status_code == 200 and "GitHub-status kunde inte hämtas." in board.text
         assert [item.draft.title for item in board.context["columns"]["waiting_review"]] == [form["title"]]
@@ -273,8 +285,10 @@ def test_u2_board_laser_github_separat_och_fungerar_vid_avbrott(settings, github
         login(client)
         item = client.get(detail).context["item"]
         assert item.github_url == pr_url and item.status == "waiting_review"
+        assert item.review == REVIEW and item.assignee_id == "karl"
         assert [(event.actor_id, event.action, event.current) for event in item.history] == [
-            ("karl", "status", "waiting_review"), ("karl", "github", pr_url), ("karl", "status", "in_progress"),
+            ("karl", "status", "waiting_review"), ("karl", "review", REVIEW.test_ref),
+            ("karl", "github", pr_url), ("karl", "status", "in_progress"), ("karl", "human_claim", "karl"),
         ]
 
 
@@ -320,8 +334,9 @@ def test_u2_skrivskydd_omforsok_och_utgangna_formular(settings, github_api):
         assert post_action(client, detail, "status", token, previous="new", status="in_progress").status_code == 303
         assert post_action(client, detail, "status", token, previous="waiting_review", status="in_progress").status_code == 303
         assert post_action(client, detail, "status", token, previous="in_progress", status="new").status_code == 303
-        assert post_action(client, detail, "status", token, previous="in_progress", status="waiting_review").status_code == 409
-        assert len(client.get(detail).context["item"].history) == 4
+        assert post_action(client, detail, "status", token, previous="in_progress", status="waiting_review",
+                           **REVIEW.model_dump()).status_code == 409
+        assert len(client.get(detail).context["item"].history) == 6
         assert client.post(BASE, headers=ORIGIN, data=form).headers["location"] == detail
 
     with client_for(create_app(settings=replace(settings, operator_id="annan"))) as client:
@@ -354,3 +369,171 @@ def test_github_tillstand_fran_api(github_api, kind, payload, label):
     assert calls == [("GET", path)]
     assert status.label == label
     assert (status.error is None) == (label is not None)
+
+
+def demo_scope(*allowed, actor=DEVELOPER):
+    return ChangeQueueRun(actor=actor, run_id=uuid4(), requested_by="karl", allowed_requests=allowed)
+
+
+def test_u3_mandat_och_samtidigt_ansprak(settings):
+    app = create_app(settings=settings)
+    store = app.state.change_requests
+    human = Actor.human("karl")
+    case_id, other_id, foreign_id = uuid4(), uuid4(), uuid4()
+    store.create(human, case_id, DRAFT)
+    store.create(human, other_id, DRAFT)
+    store.create(Actor.human("annan"), foreign_id, DRAFT)
+    scope = demo_scope(case_id, foreign_id)
+    assert [item.id for item in store.list_new(scope)] == [case_id]
+    for denied in (other_id, foreign_id):
+        with pytest.raises(AccessDeniedError):
+            store.claim(scope, denied)
+    for actor in (Actor.agent("aktuarie", "aktuarie"), Actor.agent("utvecklaragent"), human):
+        with pytest.raises(AccessDeniedError):
+            store.list_new(demo_scope(case_id, actor=actor))
+        with pytest.raises(AccessDeniedError):
+            store.claim(demo_scope(case_id, actor=actor), case_id)
+
+    barrier = Barrier(2, timeout=10)
+
+    def compete(action):
+        barrier.wait()
+        try:
+            action()
+        except ConflictError:
+            return False
+        return True
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        agent = executor.submit(compete, lambda: store.claim(scope, case_id))
+        operator = executor.submit(compete, lambda: store.move(human, case_id, "new", "in_progress"))
+    assert agent.result() != operator.result()
+    item = store.get(human, case_id)
+    assert item.status == "in_progress" and not store.list_new(scope)
+    assert item.assignee_id == (DEVELOPER.id if agent.result() else human.id)
+    assert [event.action for event in item.history] == ["status", "agent_claim" if agent.result() else "human_claim"]
+
+
+def test_u3_codexadapter_rattar_testfel_och_lamnar_granskningsbevis(settings, tmp_path, monkeypatch):
+    app = create_app(settings=settings)
+    store = app.state.change_requests
+    attempts = []
+    executable = tmp_path / "codex"
+
+    def local_cli(args, *, input, cwd, env, timeout, **kwargs):
+        assert args[:6] == [str(executable), "--ask-for-approval", "never", "exec", "--ephemeral", "--ignore-user-config"]
+        assert "read-only" in args and 0 < timeout <= 120
+        assert env == {"U3_TEST": "syntetiskt"}
+        schema = json.loads(Path(args[-2]).read_text(encoding="utf-8"))
+        assert schema["required"] == ["plan", "path", "before", "after"]
+        assert sorted(path.name for path in cwd.iterdir()) == [".git", FILE]
+        assert (cwd / FILE).read_text(encoding="utf-8") == SOURCE
+        assert (cwd / ".git" / "HEAD").read_text(encoding="utf-8").startswith("ref: refs/heads/demo/")
+        task = CodingTask.model_validate_json(input.split("\n\n", 1)[1])
+        attempts.append(task.feedback.summary)
+        edit = ScriptedCoder().propose(task, cwd, timeout)
+        return CompletedProcess(args, 0, edit.model_dump_json(), "")
+
+    monkeypatch.setattr(development_codex, "run", local_cli)
+    with client_for(app) as client:
+        login(client)
+        form = new_form(client, **DRAFT.model_dump(mode="json", exclude_none=True))
+        detail = client.post(BASE, headers=ORIGIN, data=form).headers["location"]
+        case_id = UUID(form["request_id"])
+        scope = demo_scope(case_id)
+        result = run_development_case(
+            store, scope, case_id, coder=development_codex.CodexCli(executable, isolated_env={"U3_TEST": "syntetiskt"}),
+            files={FILE: SOURCE}, verify=verify_quote, directory=tmp_path,
+        )
+        assert "1200" in attempts[0] and "rabatt 0" in attempts[1]
+        assert result.outcome == "tests_passed" and not result.baseline.passed
+        assert [attempt.tests.passed for attempt in result.attempts] == [False, True]
+        assert "+SELECT :price - :discount;" in result.attempts[-1].diff
+        assert CodingResult.model_validate_json((tmp_path / str(scope.run_id) / "result.json").read_bytes()) == result
+        trace, incomplete = read_journal(tmp_path / f"{scope.run_id}.jsonl")
+        assert not incomplete and trace[-1]["outcome"] == "tests_passed"
+        assert [event["passed"] for event in trace if event["type"] == "development_tested"] == [False, True]
+
+        board = client.get(BASE)
+        assert [item.id for item in board.context["columns"]["waiting_review"]] == [case_id]
+        assert "utvecklaragent (agent)" in board.text
+        page = client.get(detail)
+        assert page.context["item"].review == result.review()
+        assert result.review().code_ref in page.text and result.review().test_ref in page.text
+        assert str(scope.run_id) in page.text and "Tog ansvar som agent" in page.text
+        store.handoff(scope, case_id, result.review())
+        with pytest.raises(ConflictError):
+            store.handoff(scope, case_id, REVIEW)
+
+
+def test_u3_operator_tar_over_och_inaktuell_korning_kan_inte_lamna_underlag(settings):
+    app = create_app(settings=settings)
+    store = app.state.change_requests
+    with client_for(app) as client:
+        login(client)
+        form = new_form(client)
+        detail = client.post(BASE, headers=ORIGIN, data=form).headers["location"]
+        case_id = UUID(form["request_id"])
+        scope = demo_scope(case_id)
+        store.claim(scope, case_id)
+        assert "Ta över ärendet" in client.get(detail).text
+        assert post_action(client, detail, "ta-over", "fel", run_id=scope.run_id).status_code == 403
+        assert post_action(client, detail, "ta-over", form["csrf_token"], run_id=uuid4()).status_code == 409
+        assert post_action(client, detail, "status", form["csrf_token"], previous="in_progress",
+                           status="new").status_code == 409
+        assert not store.takeover(Actor.human("annan"), case_id, scope.run_id)
+        for _ in range(2):
+            assert post_action(client, detail, "ta-over", form["csrf_token"], run_id=scope.run_id).status_code == 303
+        with pytest.raises(ConflictError):
+            store.handoff(scope, case_id, REVIEW)
+        board = client.get(BASE)
+        assert board.context["columns"]["in_progress"][0].assignee_id == "karl"
+        assert "Ansvarig · karl" in board.text
+        page = client.get(detail)
+        assert "Tog över från agentkörning" in page.text
+        assert [event.action for event in page.context["item"].history] == ["takeover", "status", "agent_claim"]
+        assert post_action(client, detail, "status", form["csrf_token"], previous="in_progress",
+                           status="waiting_review", **REVIEW.model_dump()).status_code == 303
+
+
+def test_u3_diff_utanfor_filmandatet_blockeras(settings, tmp_path):
+    app = create_app(settings=settings)
+    store = app.state.change_requests
+    case_id = uuid4()
+    store.create(Actor.human("karl"), case_id, DRAFT)
+
+    class OutsideScope(ScriptedCoder):
+        def propose(self, task, workspace, timeout):
+            return super().propose(task, workspace, timeout).model_copy(update={"path": "../outside.sql"})
+
+    result = run_development_case(store, demo_scope(case_id), case_id, coder=OutsideScope(),
+                                  files={FILE: SOURCE}, verify=verify_quote, directory=tmp_path)
+    assert result.outcome == "blocked" and result.attempts == ()
+    item = store.get(Actor.human("karl"), case_id)
+    assert item.status == "in_progress" and item.review is None
+
+
+def test_u3_overtagande_under_kodforsok_och_gammal_kornyckel(settings, tmp_path):
+    store = create_app(settings=settings).state.change_requests
+    human = Actor.human("karl")
+    case_id = uuid4()
+    store.create(human, case_id, DRAFT)
+    scope = demo_scope(case_id)
+
+    class InterruptedCoder(ScriptedCoder):
+        def propose(self, task, workspace, timeout):
+            assert store.takeover(human, case_id, scope.run_id)
+            return super().propose(task, workspace, timeout)
+
+    result = run_development_case(store, scope, case_id, coder=InterruptedCoder(),
+                                  files={FILE: SOURCE}, verify=verify_quote, directory=tmp_path)
+    assert result.outcome == "superseded" and result.attempts == ()
+    assert store.get(human, case_id).assignee_id == human.id
+    assert store.move(human, case_id, "in_progress", "new")
+    with pytest.raises(ConflictError):
+        store.claim(scope, case_id)
+    next_run = demo_scope(case_id)
+    store.claim(next_run, case_id)
+    with pytest.raises(ConflictError):
+        store.handoff(scope, case_id, REVIEW)
+    assert store.get(human, case_id).agent_run_id == next_run.run_id
