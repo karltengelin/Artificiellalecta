@@ -312,3 +312,38 @@ def test_agenter_far_inte_hantera_filer(db):
     layer = service(db)
     for name in ("import_salary_file", "get_salary_file", "approve_salary_file", "reject_salary_file"):
         assert layer.decision(name).effective == AgentAccess.HUMAN_ONLY
+
+
+class TestLista:
+    """list_salary_files – sidan Premier och betalningar (steg 7)."""
+
+    def test_filerna_listas_senast_mottagna_forst_utan_personuppgifter(self, db):
+        approve(db, import_file(db, full_october()))
+        import_file(db, [row(ACTIVE, "50000", kind="correction", corrects=1)], ref="LON-2026-10-R1",
+                    received=date(2026, 11, 6))
+        listing = run(db, "list_salary_files", {})
+        assert listing.missing_tables == []
+        assert [(f.file_reference, f.status) for f in listing.files] == [
+            ("LON-2026-10-R1", "received"), ("LON-2026-10", "approved")]
+        approved = listing.files[1]
+        assert (approved.employer_name, approved.summary.valid, approved.cases) == ("Testbolaget AB", 3, 0)
+        assert approved.decided_by == "karl"
+        dumped = listing.model_dump_json()
+        assert ACTIVE not in dumped and SECOND not in dumped
+
+    def test_urval(self, db):
+        import_file(db, full_october())
+        assert run(db, "list_salary_files", {"status": "approved"}).files == []
+        assert run(db, "list_salary_files", {"period_month": "2026-11-01"}).files == []
+        assert run(db, "list_salary_files", {"employer_org_number": OTHER_EMPLOYER}).files == []
+        assert run(db, "list_salary_files", {"employer_org_number": EMPLOYER, "period_month": "2026-10-15"}).count == 1
+
+    def test_saknade_tabeller_ger_besked_i_stallet_for_fel(self, db):
+        with db.engine.begin() as connection:
+            for table in reversed(common.PREMIUM_FLOW_TABLES):
+                connection.exec_driver_sql(f"DROP TABLE {table}")
+        listing = run(db, "list_salary_files", {})
+        assert (listing.files, listing.missing_tables) == ([], list(common.PREMIUM_FLOW_TABLES))
+
+    def test_listan_ar_bara_for_handlaggare(self, db):
+        assert service(db).decision("list_salary_files").effective == AgentAccess.HUMAN_ONLY

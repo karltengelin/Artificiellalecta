@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Faktura {{ invoice.invoice_number }}{% endblock %}
+{% block content %}
+<p class="small"><a href="/premier#fakturor">← Premier och betalningar</a></p>
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>{{ "Kreditfaktura" if invoice.invoice_type == "credit" else "Faktura" }} {{ invoice.invoice_number }}</h1>
+    {% if invoice.open_sek is not none %}
+    {% if invoice.open_sek == 0 %}<span class="pill pill--approved">Betald</span>{% else %}<span class="pill pill--pending">{{ invoice.open_sek | sek }} öppet</span>{% endif %}
+    {% endif %}
+  </div>
+  <dl class="facts">
+    <div><dt>Arbetsgivare</dt><dd>{{ employer_name or invoice.employer_org_number }}{% if employer_name %}<br><span class="muted small">{{ invoice.employer_org_number }}</span>{% endif %}</dd></div>
+    <div><dt>Premieperiod</dt><dd>{{ invoice.period_month | month }}</dd></div>
+    <div><dt>OCR</dt><dd><code>{{ invoice.ocr_reference }}</code></dd></div>
+    <div><dt>Fakturadag</dt><dd>{{ invoice.invoice_date | iso_date }}</dd></div>
+    <div><dt>Förfallodag</dt><dd>{{ invoice.due_date | iso_date }}</dd></div>
+    <div><dt>Belopp</dt><dd>{{ invoice.total_sek | sek }}</dd></div>
+    {% if invoice.credited_invoice_number %}<div><dt>Krediterar</dt><dd><a href="/premier/fakturor/{{ invoice.credited_invoice_number }}">{{ invoice.credited_invoice_number }}</a></dd></div>{% endif %}
+    <div><dt>Kontrollsumma</dt><dd><code class="small" title="{{ invoice.checksum }}">{{ invoice.checksum[:16] }}…</code></dd></div>
+  </dl>
+  <p class="muted small">Förmån och försäkring identifierar den försäkrade; personnumret står inte på fakturan. En faktura ändras aldrig –
+    rättelser görs med kredit och ny debet eller tillägg (PR-ITP1-017).</p>
+</section>
+<section class="panel">
+  <h2>Rader</h2>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th class="num">Rad</th><th>Typ</th><th>Försäkring</th><th>Period</th><th class="num">Belopp</th><th>Krediterar</th></tr></thead>
+    <tbody>{% for l in invoice.lines %}<tr>
+      <td class="num">{{ l.line_number }}</td>
+      <td>{{ l.line_type | label('invoice_line_type') }}</td>
+      <td><a href="/forsakringar/{{ l.policy_number }}/premier">{{ l.policy_number }}</a></td>
+      <td class="nowrap">{{ l.period_month | month }}</td>
+      <td class="num">{{ l.amount_sek | sek }}</td>
+      <td>{{ l.credits or "–" }}</td>
+    </tr>{% endfor %}</tbody>
+    <tfoot><tr><th colspan="4">Summa</th><th class="num">{{ invoice.total_sek | sek }}</th><th></th></tr></tfoot>
+  </table></div>
+</section>
+{% endblock %}

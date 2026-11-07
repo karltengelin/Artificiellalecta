@@ -55,6 +55,19 @@ CASE_OUTCOMES = {
     "approved": "Godkänt", "rejected": "Avslaget", "supplement_requested": "Komplettering begärd",
     "manual_review": "Manuell prövning", "no_action": "Ingen åtgärd",
 }
+SALARY_FILE_STATUS = {"received": "Väntar på granskning", "approved": "Godkänd", "rejected": "Avslagen"}
+INVOICE_TYPES = {"debit": "Debet", "credit": "Kredit"}
+INVOICE_LINE_TYPES = {"ordinary": "Ordinarie", "rebill": "Ny debet", "additional": "Tillägg", "credit": "Kredit"}
+UNMATCHED_REASONS = {"overpayment": "Överskott", "unknown_reference": "Okänd referens", "wrong_payer": "Fel betalare"}
+SALARY_FILE_REASONS = {
+    "duplicate_in_file": "Dubblett i filen", "unknown_person": "Okänd person", "other_employer": "Annan arbetsgivare",
+    "negative_salary": "Negativ lön", "invalid_version_relation": "Fel versionsangivelse", "start_gap": "Startluckan",
+    "after_file_period": "Efter filens period", "outside_employment": "Utanför anställningen",
+    "already_reported": "Redan rapporterad", "correction_without_base": "Rättelse utan rapport",
+    "stale_correction": "Inaktuell rättelse", "correction_unchanged": "Oförändrad rättelse",
+    "premium_exists": "Premie finns redan", "missing_report": "Saknad rad", "premium_blocked": "Premie stoppad",
+    "file_rejected": "Avslagen fil",
+}
 RUN_STATUS = {
     "completed": "Klar", "waiting_approval": "Väntar på godkännande", "needs_compliance": "Behöver compliance",
     "needs_human": "Handläggaren tar över", "blocked": "Stoppad av harness", "failed": "Misslyckades",
@@ -76,6 +89,11 @@ LABELS = {
     "case_status": CASE_STATUS,
     "case_outcome": CASE_OUTCOMES,
     "run_status": RUN_STATUS,
+    "salary_file_status": SALARY_FILE_STATUS,
+    "invoice_type": INVOICE_TYPES,
+    "invoice_line_type": INVOICE_LINE_TYPES,
+    "unmatched_reason": UNMATCHED_REASONS,
+    "salary_file_reason": SALARY_FILE_REASONS,
 }
 
 
@@ -223,6 +241,19 @@ FIELD_NAMES = {
     "status": "Status",
     "outcome": "Utfall",
     "closing_note": "Motivering till utfallet",
+    "file": "Fil",
+    "file_reference": "Filreferens",
+    "checksum": "Kontrollsumma",
+    "rows": "Rader",
+    "events": "Inbetalningar",
+    "source_system": "Källsystem",
+    "expected_digest": "Granskningssumma",
+    "decision_note": "Skäl för avslaget",
+    "invoice_number": "Faktura",
+    "event_id": "Bankhändelse",
+    "amount_sek": "Belopp",
+    "payer_verification": "Hur betalaren verifierats",
+    "request_key": "Fördelningens nyckel",
 }
 
 

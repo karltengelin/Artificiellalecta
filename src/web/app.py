@@ -50,6 +50,7 @@ from web.routes import (
     journal,
     operator,
     parameters,
+    premium_payments,
     questions,
 )
 
@@ -132,6 +133,7 @@ def create_app(
     app.include_router(changes.router)
     app.include_router(journal.router)
     app.include_router(cases.router)
+    app.include_router(premium_payments.router)
     app.include_router(case_workspace.router)
     app.include_router(parameters.router)
     app.include_router(flows.router)

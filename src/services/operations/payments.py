@@ -457,6 +457,72 @@ def _manual_result(session, event, invoice, status, allocations, paid) -> Manual
     )
 
 
+# --- list_bank_events -----------------------------------------------------------------------------
+
+
+class BankEventQuery(BaseModel):
+    payer_org_number: str | None = Field(default=None, pattern=r"^\d{10}$", description="Betalare, valfri")
+    unallocated_only: bool = Field(default=False, description="Bara poster med saldo på avstämningskontot")
+    limit: int = Field(default=100, ge=1, le=500)
+
+
+class BankEventRow(BaseModel):
+    source_system: str
+    event_id: str
+    file_reference: str
+    received_date: date
+    amount_sek: Decimal
+    payer_org_number: str
+    reference: str
+    invoice_number: str | None
+    allocated_sek: Decimal = Field(description="Fördelat på fakturarader, även manuellt")
+    unallocated_sek: Decimal = Field(description="Kvar på avstämningskontot")
+    reason: str | None = Field(description="Varför en del gick till avstämningskontot")
+    allocations: list[LineAllocation]
+    case_number: str | None
+
+
+class BankEventList(BaseModel):
+    events: list[BankEventRow]
+    count: int
+    missing_tables: list[str] = Field(
+        description="Paket A:s tabeller som saknas i vald databas; listan är då tom (Lakebase före steg 8)"
+    )
+
+
+@operation(
+    name="list_bank_events",
+    description=(
+        "Listar inlästa inbetalningar med betalare, referens, matchad faktura, fördelat belopp och saldo på "
+        "avstämningskontot med skäl och ärende, senaste först. Inga personuppgifter."
+    ),
+    kind=OperationKind.READ,
+)
+def list_bank_events(ctx: OperationContext, data: BankEventQuery) -> BankEventList:
+    session = ctx.require_session()
+    missing = common.missing_tables(session, common.PREMIUM_FLOW_TABLES)
+    if missing:
+        return BankEventList(events=[], count=0, missing_tables=missing)
+    query = select(BankEvent)
+    if data.payer_org_number is not None:
+        query = query.where(BankEvent.payer_org_number == data.payer_org_number)
+    if data.unallocated_only:
+        balances = (
+            select(PaymentAllocation.bank_event_id).where(PaymentAllocation.kind == "suspense")
+            .group_by(PaymentAllocation.bank_event_id).having(func.sum(PaymentAllocation.amount_sek) > 0)
+        )
+        query = query.where(BankEvent.id.in_(balances))
+    query = query.order_by(BankEvent.received_date.desc(), BankEvent.source_system, BankEvent.event_id)
+    rows = []
+    for event in session.scalars(query.limit(data.limit)):
+        outcome = _outcome(session, event, "already_received")
+        rows.append(BankEventRow(
+            **outcome.model_dump(exclude={"status"}), source_system=event.source_system, file_reference=event.file_reference,
+            received_date=event.received_date, payer_org_number=event.payer_org_number, reference=event.reference,
+        ))
+    return BankEventList(events=rows, count=len(rows), missing_tables=[])
+
+
 # --- get_receivables ------------------------------------------------------------------------------
 
 

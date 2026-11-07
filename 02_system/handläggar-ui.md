@@ -1,6 +1,6 @@
 # Handläggar-UI:t
 
-> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5). **Verifierat skarpt i Lakebase 2026-10-12** (S6, se ATT_GORA): verifieringsposten AL-000499.
+> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5); *Premier och betalningar* (paket A steg 7, B-046, lokalt). **Verifierat skarpt i Lakebase 2026-10-12** (S6, se ATT_GORA): verifieringsposten AL-000499.
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret), B-032 (anslutning, stamdata och arbetsgivare), B-036 (försäkringsteamets område på plattformen)
 > **Kod:** `src/web/` · **Start:** `python scripts/web/start_ui.py` · **Tester:** `tests/test_web_*.py`
 > **Relaterat:** [tjänstelager.md](tjänstelager.md), [tjänstelager_operationer.md](tjänstelager_operationer.md), `projekt/01_ärendehantering/PROJEKTPLAN.md`
@@ -232,6 +232,29 @@ Rättas lönen för en månad som har premie, länkar resultatsidan direkt till 
 
 Handläggaren utför ändringarna direkt. En agent kan bara föreslå en ny version, och förslaget avgörs i
 `/godkannanden`. Procentsatser skrivs som andel (0,045 = 4,5 %) och visas i procent.
+
+**Premier och betalningar (paket A steg 7, B-046).** Handläggarens sida för premieflödet från
+arbetsgivarens löneunderlagsfil till mottagen nettopremie ([designstoppet P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §8).
+Kod i `src/web/routes/premium_payments.py`, tester i `tests/test_web_premium_payments.py`.
+
+| Adress | Innehåll | Operationer |
+|---|---|---|
+| `/premier?period=&arbetsgivare=` | Avstämning (fakturerat netto, inbetalt, fördelat, avstämningskonto, öppna fordringar och om det går ihop), löneunderlagsfiler, fakturor, inbetalningar och avstämningskontots poster, med urval på premieperiod och arbetsgivare | `list_salary_files`, `list_invoices`, `list_bank_events`, `get_receivables`, `list_employers` |
+| `/premier/fil?arbetsgivare=&referens=` | En fils sammanställning, rader med utfall, saknade rader, ärenden och beslut; formulär för godkännande och avslag medan filen väntar | `get_salary_file`, `list_employers` |
+| `/premier/fakturor/{nr}` | Fakturan med OCR, förfallodag, öppet belopp och rader per försäkring | `get_invoice`, `list_employers` |
+| `/premier/filer` (POST, fil) | Ta emot en löneunderlagsfil (JSON) och visa valideringen | `import_salary_file` |
+| `/premier/fil/godkann`, `/premier/fil/avsla` (POST) | Godkänn hashbundet mot granskningssumman, eller avslå med skäl | `approve_salary_file`, `reject_salary_file` |
+| `/premier/fakturera`, `/premier/bevakning` (POST) | Fakturera en arbetsgivares premieperiod; kör förfallobevakningen | `create_invoice`, `check_overdue_invoices` |
+| `/premier/bankfil` (POST, fil) | Läs in en bankfil (JSON) och matcha inbetalningarna | `import_bank_file` |
+| `/premier/fordela` (POST) | Fördela en post på avstämningskontot till en faktura, med verifierad betalare och idempotensnyckel | `allocate_unmatched_payment` |
+
+Filer laddas upp som JSON i motpartssimulatorns format; ett `_label`-fält från simulatorn ignoreras.
+Personnummer visas bara på filsidan, där `get_salary_file` redan returnerar dem och läsningen loggas som
+personuppgiftsläsning. Översikten och fakturasidan visar inga personnummer, och listläsningarna loggas inte.
+Fördelningsformuläret förväljer en öppen faktura hos samma betalare. Saknas premieflödets tabeller i
+datakällan (Lakebase före paket A steg 8) visar sidan en notis med de saknade tabellerna i stället för ett fel,
+och varje POST svarar 409 utan att något ändras eller loggas. Alla operationer är `HUMAN_ONLY` för agenter;
+sidan ger ingen ny agentbefogenhet. När förfallobevakningen ska köras automatiskt är öppet (designstoppet §13).
 
 **Flöden (Fas 3c, 3c-3, B-035; avgränsat enligt B-037).** Flödet `rule_change_parameter` från regeländring till verifierad
 produktparameter ([flaggskeppsflöde.md](flaggskeppsflöde.md) §6–7). Sidorna och adaptern finns som

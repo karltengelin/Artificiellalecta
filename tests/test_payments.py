@@ -263,3 +263,38 @@ def test_agenter_far_inte_hantera_betalningar(db):
     layer = ServiceLayer(session_factory=db.session_factory, rules=ProductRuleCatalog(today=START))
     for name in ("import_bank_file", "allocate_unmatched_payment", "get_receivables"):
         assert layer.decision(name).effective == AgentAccess.HUMAN_ONLY
+
+
+class TestInbetalningslistan:
+    """list_bank_events – sidan Premier och betalningar (steg 7)."""
+
+    def test_inbetalningar_och_avstamningskontots_poster(self, db, clock, invoiced):
+        bank(db, clock, [event("E1", "4000.00", invoiced.ocr_reference, received="2026-11-09"),
+                         event("E2", "100.00", "99999999", received="2026-11-10")])
+        listing = run(db, "list_bank_events", {})
+        assert listing.missing_tables == []
+        assert [(e.event_id, e.invoice_number, e.allocated_sek, e.unallocated_sek, e.reason) for e in listing.events] == [
+            ("E2", None, Decimal("0.00"), Decimal("100.00"), "unknown_reference"),
+            ("E1", invoiced.invoice_number, Decimal("4000.00"), Decimal("0.00"), None),
+        ]
+        assert listing.events[0].case_number is not None and listing.events[0].file_reference == "BANK-2026-11-10"
+        [open_post] = run(db, "list_bank_events", {"unallocated_only": True}).events
+        assert open_post.event_id == "E2"
+        assert run(db, "list_bank_events", {"payer_org_number": STRANGER}).events == []
+
+    def test_fordelad_post_lamnar_avstamningskontot(self, db, clock, invoiced):
+        bank(db, clock, [event("E1", "100.00", "99999999")])
+        run(db, "allocate_unmatched_payment", {"event_id": "E1", "invoice_number": invoiced.invoice_number,
+                                               "payer_verification": "Telefon", "request_key": "k1"})
+        assert run(db, "list_bank_events", {"unallocated_only": True}).events == []
+        [listed] = run(db, "list_bank_events", {}).events
+        assert (listed.allocated_sek, listed.unallocated_sek) == (Decimal("100.00"), Decimal("0.00"))
+
+    def test_saknade_tabeller_ger_besked_i_stallet_for_fel(self, db):
+        with db.engine.begin() as connection:
+            for table in reversed(common.PREMIUM_FLOW_TABLES):
+                connection.exec_driver_sql(f"DROP TABLE {table}")
+        listing = run(db, "list_bank_events", {})
+        assert (listing.events, listing.missing_tables) == ([], list(common.PREMIUM_FLOW_TABLES))
+        assert ServiceLayer(session_factory=db.session_factory).decision("list_bank_events").effective \
+            == AgentAccess.HUMAN_ONLY
