@@ -6,6 +6,10 @@
 > OK före varje Lakebase-ingrepp (§11). Loggat som **B-046** samma dag.
 > **Byggstatus:** steg 1 (bankdagskalender och premieunderlag ur löneunderlag) byggt och
 > testat lokalt 2026-11-07, se [tjänstelager §9.9](../../02_system/tjänstelager.md). Ingen schemaändring och inget i Lakebase.
+> Steg 2 (filintag och granskning) byggt och testat lokalt 2026-11-07, se [tjänstelager §9.10](../../02_system/tjänstelager.md).
+> Tabellen `salary_files` finns lokalt och migreras i steg 8. **Avvikelse från §4.2, väntar på Karls OK:** avvikelser
+> utan lön eller känd person (saknad rad, okänd person, avslagen fil m.fl.) blir den nya ärendetypen
+> `salary_file_deviation`, som bara handläggaren avgör. Rättelserelaterade avvikelser blir `salary_report` som i §4.2.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).

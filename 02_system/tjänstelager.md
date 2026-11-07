@@ -516,6 +516,37 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 
 Bankdagskalendern för fakturans förfallodag finns i `src/utils/bank_calendar.py` och används från fakturasteget.
 
+### 9.10 Löneunderlagsfil: intag, granskning och godkännande (paket A steg 2, B-046) – vad som stöds och vad som blockeras
+
+Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.1–4.2. Kod: `src/services/operations/salary_files.py`, tabell `salary_files` ([databasschema §8c](databasschema.md#8c-tabell-salary_files--löneunderlagsfiler)).
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `import_salary_file` | `write` | Ja | `HUMAN_ONLY` | Tar emot en fil per arbetsgivare och period, kontrollerar kontrollsumman och validerar varje rad. Sparar fil och valideringsresultat; registrerar inga löner eller premier |
+| `get_salary_file` | `read` | Ja | `HUMAN_ONLY` | Sammanställning, varje rads utfall och saknade rader. En fil som väntar valideras om mot dagens bestånd och får en aktuell granskningssumma |
+| `approve_salary_file` | `write` | Ja | `HUMAN_ONLY` | Godkänner med granskningssumman. I en transaktion: giltiga rader registreras med `register_salary_report`, premieunderlag skapas med `create_premium_from_salary_report` och avvikande eller saknade rader blir ärenden |
+| `reject_salary_file` | `write` | Nej | `HUMAN_ONLY` | Avslår med motivering. Registrerar ingenting och skapar ett uppföljningsärende |
+
+**Filformat:** arbetsgivarens organisationsnummer, period, referens, mottagningsdag, kontrollsumma och rader med personnummer, utbetalningsmånad, pensionsmedförande lön, `kind` och ev. `corrects_version`. Kontrollsumman är SHA-256 över det kanoniska innehållet (`file_checksum`); avsändaren räknar likadant.
+
+**Radernas utfall:** en giltig rad hör till en ansluten person hos arbetsgivaren, ligger inom anställningen (avslutsmånaden ingår), har lön noll eller större och en korrekt versionsrelation. Avvikelser har en skälkod:
+- `duplicate_in_file`, `unknown_person`, `other_employer`, `negative_salary`, `invalid_version_relation`;
+- `start_gap` (före 2026-10), `after_file_period`, `outside_employment` (samma kontroll som `register_salary_report`);
+- `already_reported`, `correction_without_base`, `stale_correction`, `correction_unchanged`, `premium_exists`.
+
+*Saknade rader* är premiebetalande personer hos arbetsgivaren utan rad för perioden och utan registrerat underlag. En uttrycklig nolla är en giltig rad. En giltig rad får en förhandsberäknad premie med samma motor som premieunderlaget, eller ett skäl till att premie inte kan skapas.
+
+**Ärenden vid godkännande**, skapade av betrodd kod som `salary_file_intake` med kanalen `employer_file`:
+- `salary_report` för `already_reported`, `correction_without_base` och `stale_correction` hos en känd person. Ärendearbetaren kan förbereda dem; varje förslag granskas (§8 i designstoppet).
+- `salary_file_deviation` för övriga avvikelser, saknade rader (`missing_report`), premie som inte kunde skapas (`premium_blocked`, löneunderlaget är då registrerat) och avslagen fil (`file_rejected`). Typen finns inte i ärendepolicyn och kan inte lämnas till agenten.
+
+**Spärras:**
+- *Blockeras:* fel kontrollsumma, period före 2026-10 eller i framtiden, mottagningsdag i framtiden eller före perioden.
+- *Konflikt:* samma referens med ändrat innehåll; granskningssumman stämmer inte längre (beståndet eller registreringarna har ändrats – granska igen); filen är redan godkänd eller avslagen.
+- *Samma fil igen* ger samma kvitto (`already_received`) och inga nya poster.
+
+Ingen faktura skapas i detta steg (steg 3). Ingen extern sändning till arbetsgivaren.
+
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.

@@ -17,10 +17,11 @@
 | `policy_benefits` | Försäkringsförmåner – förmåner inom en försäkring | 🟢 I drift i Lakebase; förmånen ålderspension |
 | `premium_transactions` | Premietransaktioner (en rad per förmån och månad) | 🟢 I drift i Lakebase med importerad premiehistorik; `corrects_transaction_id` migrerad 2026-10-11 |
 | `salary_reports` | Löneunderlag – pensionsmedförande lön per person, arbetsgivare och månad, versionerat | 🟢 Skapad i Lakebase 2026-10-11 (§8b); registrering verifierad i S6 2026-10-12 |
+| `salary_files` | Arbetsgivarens löneunderlagsfil per period: innehåll, kontrollsumma, validering och granskningsbeslut (§8c) | 🟡 Paket A steg 2 (B-046): modell, operationer och lokala tester; ej skapad i Lakebase – migreras i steg 8 tillsammans med fakturans och bankens tabeller |
 | `premium_month_journals` / `premium_receipts` / `premium_month_closes` | Frysta syntetiska månadsunderlag, mottagning med kapital-/garantispår och avstämd FTA-analys | 🟢 Skapade tomma i Lakebase 2026-11-03 efter backup `backups/20261103T212124Z` och separat OK (P6-MANAD-001); inga nya agenträttigheter. [Fält, nycklar och riktad migration](avstamd_fta_manad.md#tabeller-och-lakebase-gräns) |
 | `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟢 I drift (seedad 2023–2026) |
 | `operation_events` / `approval_requests` | Tjänstelagrets händelselogg och godkännandekö (§9b–9c) | 🟢 Skapade i Lakebase i Fas 1f T3a; kö/logg används av tjänstelagret och UI:t |
-| `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad med agentrollens läsrätt i Lakebase 2026-10-24. Agentflödet verifierat i Lakebase 2026-11-02 (F5-5–6) |
+| `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad med agentrollens läsrätt i Lakebase 2026-10-24. Agentflödet verifierat i Lakebase 2026-11-02 (F5-5–6). 🟡 Ärendetypen `salary_file_deviation` (paket A steg 2) finns lokalt; CHECK-villkoret ändras i Lakebase i steg 8 |
 | `case_work` / `case_messages` / `case_work_days` | Varaktiga ärendeuppdrag, skyddad dialog och daglig budgetbok (§12b) | 🟢 Skapade tomma i Lakebase 2026-10-31 efter backup och operatörens OK; inga direkta agenträttigheter. Schema är avstängt |
 | `product_parameters` | Versionerade premieåldrar, premiesatser och brytpunkter, samt kapitalavgift och skattebelastning per år (§9h) | 🟢 Skapad och seedad i Lakebase 2026-10-25; agentrollens läsrätt satt. Förändringsoperationer finns; komplett flödesverifiering återstår i 3c-V. 🟢 Kapitalets nycklar (A5) införda i Lakebase 2026-10-31 efter backup `backups/20261031T172901Z` och operatörens OK |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
@@ -242,6 +243,42 @@ Tabellen är **append-only**: en rättelse är en ny version som pekar på den d
 - Index `(insured_person_id, period_month)`
 
 **Skrivs av** tjänstelagrets `register_salary_report` (`02_system/tjänstelager.md` §9). Operationen skapar ingen premie och räknar inte om gamla premier – en rättelse av en månad som redan har premie redovisar den berörda premien, som rättas separat med `correct_premium_transaction` (PR-ITP1-019 p.1). Ingen historik skapas retroaktivt: premiehistoriken 2023–2026 har sitt löneunderlag i `premium_transactions.pensionable_salary_sek`.
+
+---
+
+## 8c. Tabell: `salary_files` – Löneunderlagsfiler
+
+> **Status:** Paket A steg 2 (**B-046**, [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.1–4.2 och §5). Modell `src/models/salary_file.py`, operationer i `src/services/operations/salary_files.py` och lokala tester. **Ej skapad i Lakebase**: migrationen skrivs i steg 8 tillsammans med fakturans och bankens tabeller (designstoppet §11).
+
+**Domän:** En fil från en arbetsgivare för en period, med en rad per anställd och månad. Filen tas emot och valideras i betrodd kod utan att något registreras. Handläggaren granskar och godkänner eller avslår den. Innehållet ändras aldrig. Vid godkännande registreras giltiga rader i `salary_reports` med källreferensen `<filens referens>:<radnummer>`.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Surrogatnyckel |
+| `employer_id` | `UUID` | NOT NULL, FK → `employers(id)` ON DELETE RESTRICT | Avsändande arbetsgivare |
+| `period_month` | `DATE` | NOT NULL, CHECK (dag = 1) | Filens period, från 2026-10 (PA1) |
+| `file_reference` | `VARCHAR(60)` | NOT NULL | Arbetsgivarens referens för filen |
+| `received_date` | `DATE` | NOT NULL | Mottagningsdag |
+| `content` | `JSONB` | NOT NULL | Det kanoniska innehållet: huvud och rader (personnummer, månad, lön, `kind`, `corrects_version`) |
+| `checksum` | `VARCHAR(64)` | NOT NULL | SHA-256 över `content`; avsändaren räknar likadant och filen tas inte emot om summorna skiljer sig |
+| `validation` | `JSONB` | NOT NULL | Varje rads utfall (`valid`/`deviation` med skälkod), saknade premiebetalande personer och sammanställning med lönesumma och förhandsberäknad premie |
+| `review_digest` | `VARCHAR(64)` | NOT NULL | SHA-256 över `checksum` och `validation`; godkännandet binder den |
+| `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`received`, `approved`, `rejected`) | Filens läge |
+| `created_by` / `created_at` | `VARCHAR(100)` / `TIMESTAMPTZ` | NOT NULL | Vem som tog emot filen och när |
+| `decided_by` / `decided_at` | `VARCHAR(100)` / `TIMESTAMPTZ` | NULL | Satta exakt när filen är godkänd eller avslagen |
+| `decision_note` | `TEXT` | NULL | Motivering; krävs vid avslag |
+| `outcome` | `JSONB` | NULL | Vid godkännande: registrerade löneunderlag, premierader, premiesumma och skapade ärenden |
+
+**Integritet:**
+- Unikt `(employer_id, file_reference)` – samma referens tas emot en gång. Samma innehåll igen ger samma kvitto; ändrat innehåll ger konflikt
+- CHECK: `received` saknar beslut, `approved`/`rejected` har beslutsfattare och tidpunkt
+- CHECK: `rejected` har `decision_note`
+- CHECK: båda kontrollsummorna är 64 tecken; `period_month` är första dagen i månaden (Postgres- och SQLite-variant)
+- Index `(employer_id, period_month)`
+
+**Skrivs av** `import_salary_file`, `approve_salary_file` och `reject_salary_file`; **läses av** `get_salary_file` (alla `HUMAN_ONLY`, `02_system/tjänstelager.md` §9.10). Agentrollerna får inga rättigheter på tabellen i första versionen.
+
+**Personuppgifter:** `content`, `validation` och `outcome` har personnummer och lön (B-006).
 
 ---
 
@@ -486,18 +523,18 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
 | `case_number` | `VARCHAR(20)` | NOT NULL, UNIQUE, CHECK form `CASE-NNNNNN` | Ärendenumret; står i `case_id` i kö och logg |
-| `case_type` | `VARCHAR(40)` | NOT NULL, CHECK in (`'salary_report'`) | Ärendetyp. Fler typer läggs till med ny CHECK (B-033 val C) |
+| `case_type` | `VARCHAR(40)` | NOT NULL, CHECK in (`'salary_report'`, `'salary_file_deviation'`) | Ärendetyp. Fler typer läggs till med ny CHECK (B-033 val C). `salary_file_deviation` (paket A steg 2) är en avvikelse i en löneunderlagsfil som bara handläggaren avgör; CHECK-villkoret är ännu inte ändrat i Lakebase |
 | `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`open`, `in_progress`, `waiting_approval`, `waiting_info`, `closed`), default `open` | Aktuell status |
 | `outcome` | `VARCHAR(20)` | NULL, CHECK in (`approved`, `rejected`, `supplement_requested`, `manual_review`, `no_action`) | Utfall; satt exakt när ärendet är stängt |
 | `insured_person_id` | `UUID` | NULL, FK → `insured_persons(id)` ON DELETE RESTRICT | Den försäkrade ärendet gäller |
 | `policy_id` | `UUID` | NULL, FK → `policies(id)` ON DELETE RESTRICT | Försäkringen, om ärendet gäller en viss |
 | `employer_id` | `UUID` | NULL, FK → `employers(id)` ON DELETE RESTRICT | Arbetsgivaren, t.ex. avsändare av löneunderlaget |
 | `period_month` | `DATE` | NULL, CHECK (dag = 1) | Månaden ärendet gäller |
-| `channel` | `VARCHAR(20)` | NOT NULL, CHECK in (`manual`, `employer_file`, `customer_portal`, `chatbot`) | Inkommande kanal; `manual` i v1, övriga reserverade (delprojekt 3 och 7) |
+| `channel` | `VARCHAR(20)` | NOT NULL, CHECK in (`manual`, `employer_file`, `customer_portal`, `chatbot`) | Inkommande kanal; `manual` för handläggarens registrering och `employer_file` för ärenden ur en godkänd eller avslagen löneunderlagsfil (paket A steg 2); övriga reserverade (delprojekt 3 och 7) |
 | `received_date` | `DATE` | NOT NULL | Mottagningsdag (PR-ITP1-031) |
 | `source_reference` | `VARCHAR(100)` | NULL | Avsändarens referens, t.ex. lönefilens id |
 | `due_date` | `DATE` | NULL | Tidsfrist, t.ex. för klagomål (PR-ITP1-030); ingen för löneunderlag i v1 |
-| `details` | `JSONB` | NOT NULL | Typens uppgifter, validerade mot en Pydantic-modell per typ i tjänstelagret (B-033 val F). För `salary_report`: rapporterad lön, källa, `kind` och ev. `corrects_version` |
+| `details` | `JSONB` | NOT NULL | Typens uppgifter, validerade mot en Pydantic-modell per typ i tjänstelagret (B-033 val F). För `salary_report`: rapporterad lön, källa, `kind` och ev. `corrects_version`. För `salary_file_deviation`: skälkod, meddelande, filens id och referens, radnummer och den rapporterade raden |
 | `assigned_to` | `VARCHAR(100)` | NULL | Handläggaren som äger ärendet |
 | `last_run_id` | `VARCHAR(100)` | NULL | Senaste agentkörningen; journal i `logs/agent_runs/<run_id>.jsonl` |
 | `created_by` | `VARCHAR(100)` | NOT NULL | Den som registrerade ärendet |
@@ -513,7 +550,7 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 - CHECK: `period_month` är första dagen i månaden (Postgres- och SQLite-variant, §12)
 - Index på `status`, `case_type` och `insured_person_id`
 
-**Skrivs av** tjänstelagrets ärendeoperationer (F5-2): `create_case`, `update_case_status` och `close_case` (`HUMAN_ONLY`; harness skriver status efter en körning som systemaktör). **Läses av** `list_cases` (`HUMAN_ONLY`) och `get_case` (`AGENT`, bara körningens ärende). Agenten kan inte skapa, ändra eller stänga ärenden.
+**Skrivs av** tjänstelagrets ärendeoperationer (F5-2): `create_case`, `update_case_status` och `close_case` (`HUMAN_ONLY`; harness skriver status efter en körning som systemaktör). Filintagets ärenden skapas av betrodd kod i `approve_salary_file` och `reject_salary_file`, i samma transaktion, med `created_by = salary_file_intake` (P1-PREMIE-001 §6). **Läses av** `list_cases` (`HUMAN_ONLY`) och `get_case` (`AGENT`, bara körningens ärende). Agenten kan inte skapa, ändra eller stänga ärenden.
 
 **Personuppgifter:** `details` kan innehålla lön och fri text (B-006). Gallring följer PR-ITP1-031 och beslutas i tjänstelagerprojektets lagringspolicy.
 

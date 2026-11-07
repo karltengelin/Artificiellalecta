@@ -1,7 +1,7 @@
 """Hela arbetsuppgifter, beslut, återhämtning och nekanden – inga riktiga modeller."""
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -9,6 +9,7 @@ import yaml
 from sqlalchemy import func, select
 
 from agents.case_policy import DEFAULT_POLICY, CasePolicy
+from agents.errors import HarnessError
 from models import Case, CaseMessage, CaseWorkDay, OperationEventRecord, SalaryReport
 from services import OperationContext
 from services.errors import ApprovalError, ConflictError
@@ -415,3 +416,17 @@ def test_uppfoljningen_visar_senaste_uppdraget_i_oppna_arenden(env):
     env.trusted.execute("close_case", OperationContext(actor=HUMAN, reason="Handlagt"),
                         {"case_number": human, "outcome": "no_action", "closing_note": "Inget att göra"})
     assert env.workspace.follow_up() == {waiting: "waiting_approval"}
+
+
+def test_filavvikelse_kan_inte_lamnas_till_agenten(env):
+    """B-046: salary_file_deviation saknar verifierad agenthandläggning – handläggaren avgör."""
+    from models import Employer
+
+    with env.session_factory() as session:
+        employer = session.scalar(select(Employer).where(Employer.org_number == "5560000001"))
+        session.add(Case(case_number="CASE-000900", case_type="salary_file_deviation", status="open",
+                         employer_id=employer.id, channel="employer_file", received_date=date(2026, 11, 5),
+                         details={"reason": "missing_report"}, created_by="salary_file_intake"))
+        session.commit()
+    with pytest.raises(HarnessError, match="ingen verifierad agenthandläggning"):
+        env.workspace.submit("CASE-000900", "Handlägg avvikelsen", actor=HUMAN, key="avvikelse")
