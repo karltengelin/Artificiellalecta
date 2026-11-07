@@ -32,6 +32,14 @@
 > med allokeringarnas belopp, så att avstämningskontot inte följer med (Karls instruktion); röktestets demobestånd
 > utelämnar personer födda före 1961 (`born_from=1961`, Karls val i chatten 2026-11-07), eftersom journalens första
 > försök inte tar emot påbörjade eller ej beräknade försäkringar.
+> Steg 7 (handläggarsidan *Premier och betalningar*) byggt och testat lokalt 2026-11-07, se
+> [handläggar-UI §4](../../02_system/handläggar-ui.md#4-sidor). Webbkontroll i demo med simulatorns filer: två filer
+> mottagna och godkända, två fakturor, en bankfil med delbetalning och okänd referens, och posten fördelad från
+> avstämningskontot så att avstämningen går ihop. **Avvikelser, att godkänna:** två nya läsningar,
+> `list_salary_files` och `list_bank_events` (`HUMAN_ONLY`, ingen PII), som §6 inte räknar upp; sidan behöver
+> dem för filernas och inbetalningarnas listor. De returnerar `missing_tables` när premieflödets tabeller saknas,
+> så att sidan visar en notis i Lakebase före steg 8. Filer laddas upp som JSON i simulatorns format.
+> Webbkontrollen satte operationernas dag till kedjans affärsdatum med ett lokalt startskript, som röktestet gör.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).

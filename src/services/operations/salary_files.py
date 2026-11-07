@@ -608,6 +608,73 @@ def reject_salary_file(ctx: OperationContext, data: SalaryFileRejection) -> Sala
     )
 
 
+# --- list_salary_files ----------------------------------------------------------------------------
+
+
+class SalaryFileQuery(BaseModel):
+    employer_org_number: str | None = Field(default=None, pattern=r"^\d{10}$", description="Arbetsgivare, valfri")
+    period_month: date | None = Field(default=None, description="Filens period, valfri – dagen ignoreras")
+    status: Literal["received", "approved", "rejected"] | None = Field(default=None, description="Valfri status")
+    limit: int = Field(default=100, ge=1, le=500)
+
+
+class SalaryFileListRow(BaseModel):
+    employer_org_number: str
+    employer_name: str
+    period_month: date
+    file_reference: str
+    received_date: date
+    status: Literal["received", "approved", "rejected"]
+    summary: SalaryFileSummary = Field(
+        description="Sammanställningen vid intaget eller beslutet; en väntande fil valideras om när den öppnas"
+    )
+    cases: int = Field(description="Ärenden som beslutet skapade")
+    decided_by: str | None
+    decided_at: str | None
+
+
+class SalaryFileList(BaseModel):
+    files: list[SalaryFileListRow]
+    count: int
+    missing_tables: list[str] = Field(
+        description="Paket A:s tabeller som saknas i vald databas; listan är då tom (Lakebase före steg 8)"
+    )
+
+
+@operation(
+    name="list_salary_files",
+    description=(
+        "Listar mottagna löneunderlagsfiler med arbetsgivare, period, status och sammanställning, senast "
+        "mottagna först. Inga personuppgifter; filens rader visas med get_salary_file."
+    ),
+    kind=OperationKind.READ,
+)
+def list_salary_files(ctx: OperationContext, data: SalaryFileQuery) -> SalaryFileList:
+    session = ctx.require_session()
+    missing = common.missing_tables(session, common.PREMIUM_FLOW_TABLES)
+    if missing:
+        return SalaryFileList(files=[], count=0, missing_tables=missing)
+    query = select(SalaryFile, Employer).join(Employer, Employer.id == SalaryFile.employer_id)
+    if data.employer_org_number is not None:
+        query = query.where(Employer.org_number == data.employer_org_number)
+    if data.period_month is not None:
+        query = query.where(SalaryFile.period_month == common.month_of(data.period_month))
+    if data.status is not None:
+        query = query.where(SalaryFile.status == data.status)
+    query = query.order_by(SalaryFile.received_date.desc(), SalaryFile.created_at.desc(), SalaryFile.file_reference)
+    rows = [
+        SalaryFileListRow(
+            employer_org_number=employer.org_number, employer_name=employer.name, period_month=file.period_month,
+            file_reference=file.file_reference, received_date=file.received_date, status=file.status,
+            summary=SalaryFileSummary(**file.validation["summary"]),
+            cases=len((file.outcome or {}).get("cases", [])), decided_by=file.decided_by,
+            decided_at=file.decided_at.isoformat(timespec="seconds") if file.decided_at else None,
+        )
+        for file, employer in session.execute(query.limit(data.limit)).all()
+    ]
+    return SalaryFileList(files=rows, count=len(rows), missing_tables=[])
+
+
 # --- hjälpare -------------------------------------------------------------------------------------
 
 _STATUS_TEXT = {"approved": "godkänd", "rejected": "avslagen", "received": "mottagen"}

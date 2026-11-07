@@ -101,7 +101,7 @@ dependents = ["agents", "services", "web", "tooling"]
 [suites.web]
 description = "HTTP, formulär och handläggarflöden"
 status = "active"
-tests = ["tests/test_actuarial_workspace.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_case_workspace.py", "tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_flows.py", "tests/test_web_operator.py", "tests/test_design_web_css.py"]
+tests = ["tests/test_actuarial_workspace.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_case_workspace.py", "tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_premium_payments.py", "tests/test_web_flows.py", "tests/test_web_operator.py", "tests/test_design_web_css.py"]
 dependents = ["tooling"]
 
 [suites.data]

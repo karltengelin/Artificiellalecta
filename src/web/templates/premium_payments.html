@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, reason, csrf, op_info with context %}
+{% set fe = error.field_errors if error else {} %}
+{% block title %}Premier och betalningar{% endblock %}
+{% macro reason_field(form, placeholder) %}
+{% set id = "f-reason-" ~ form %}
+<div class="field{% if error and values.get(form) is not none and error.field_errors.get('reason') %} field--error{% endif %}">
+  <label for="{{ id }}">Motivering</label>
+  <textarea id="{{ id }}" name="reason" rows="2" required placeholder="{{ placeholder }}">{{ values.get(form, {}).get("reason", "") }}</textarea>
+  <small class="field__help">Krävs för alla ändringar och sparas i händelseloggen.</small>
+</div>
+{% endmacro %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <h1>Premier och betalningar</h1>
+    {% if not missing_tables %}
+    <form method="get" action="/premier" class="filter" aria-label="Urval">
+      <label for="f-period">Premieperiod</label>
+      <input id="f-period" type="month" name="period" value="{{ url_filters.period }}">
+      <label for="f-arbetsgivare">Arbetsgivare</label>
+      <select id="f-arbetsgivare" name="arbetsgivare">
+        <option value="">Alla</option>
+        {% for e in employers %}<option value="{{ e.org_number }}"{% if url_filters.arbetsgivare == e.org_number %} selected{% endif %}>{{ e.name }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="secondary">Visa</button>
+      {% if filters %}<a href="/premier">Rensa</a>{% endif %}
+    </form>
+    {% endif %}
+  </div>
+  <p class="muted small">Premieflödet från arbetsgivarens löneunderlagsfil till mottagen nettopremie (B-046, P1-PREMIE-001).
+    Handläggaren granskar och godkänner filer, fakturerar, läser in bankfiler och fördelar oallokerade inbetalningar.
+    Alla operationer är <code>HUMAN_ONLY</code> för agenter. Garanti och kapital uppstår först i månadsjournalen.</p>
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+
+  {% if missing_tables %}
+  <div class="alert alert--info" role="status">
+    <strong class="alert__title">Premieflödet är inte infört i {{ settings.database_label }}</strong>
+    <p>Paket A:s tabeller saknas i den här databasen: {% for t in missing_tables %}<code>{{ t }}</code>{{ ", " if not loop.last }}{% endfor %}.
+      I Lakebase förs de in i steg 8, efter backup, torrkörning och operatörens OK (P1-PREMIE-001 §11).
+      Sidan går att använda i demo och i testbeståndet.</p>
+    {% if write_refused %}<p class="alert__nochange">Ingenting har ändrats.</p>{% endif %}
+  </div>
+  {% else %}
+  <h2>Avstämning{% if filters.employer %} – {{ employer_names.get(filters.employer, filters.employer) }}{% endif %}</h2>
+  <dl class="metrics metrics--amounts">
+    <div class="metric"><dt>Fakturerat netto</dt><dd>{{ receivables.invoiced_sek | sek }}</dd></div>
+    <div class="metric"><dt>Inbetalt</dt><dd>{{ receivables.bank_total_sek | sek }}</dd></div>
+    <div class="metric"><dt>Fördelat på fakturor</dt><dd>{{ receivables.allocated_sek | sek }}</dd></div>
+    <div class="metric"><dt>Avstämningskonto</dt><dd>{{ receivables.suspense_sek | sek }}</dd></div>
+    <div class="metric"><dt>Öppna fordringar</dt><dd>{{ receivables.receivables_sek | sek }}</dd></div>
+  </dl>
+  <p class="small">
+    {% if receivables.balanced %}<span class="pill pill--approved">Går ihop</span>
+    {% else %}<span class="pill pill--rejected">Går inte ihop</span>{% endif %}
+    Inbetalningar = fördelat + avstämningskonto{% if not filters.employer %}, och fakturerat − fördelat = öppna fordringar{% endif %}.
+    {% if filters.period %}<span class="muted">Avstämningen gäller alla perioder; urvalet på period gäller filer och fakturor.</span>{% endif %}
+  </p>
+  {% endif %}
+</section>
+
+{% if not missing_tables %}
+{% if outcome %}
+<section class="panel" id="resultat">
+  {% set r = outcome.result %}
+  {% if outcome.kind == "invoice" %}
+  <h2>Faktureringen</h2>
+  {% if r.invoices %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Faktura</th><th>Typ</th><th>OCR</th><th>Förfaller</th><th class="num">Belopp</th><th class="num">Rader</th></tr></thead>
+    <tbody>{% for i in r.invoices %}<tr><td class="nowrap"><a href="/premier/fakturor/{{ i.invoice_number }}">{{ i.invoice_number }}</a></td><td>{{ i.invoice_type | label('invoice_type') }}</td><td><code>{{ i.ocr_reference }}</code></td><td>{{ i.due_date | iso_date }}</td><td class="num">{{ i.total_sek | sek }}</td><td class="num">{{ i.lines | length }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Ingen ny faktura – inga öppna premieunderlag att fakturera.</p>{% endif %}
+  {% if r.skipped %}
+  <h3>Inte fakturerat</h3>
+  <ul>{% for s in r.skipped %}<li><code class="small">{{ s.transaction_id }}</code> – {{ s.reason }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% elif outcome.kind == "bank" %}
+  <h2>Bankfilen {{ r.file_reference }}</h2>
+  <p class="small">{{ r.new_events }} nya, {{ r.already_received }} redan inlästa · {{ r.paid_premium_rows }} premierader blev betalda.</p>
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Händelse</th><th></th><th class="num">Belopp</th><th>Faktura</th><th class="num">Fördelat</th><th class="num">Avstämningskonto</th><th>Ärende</th></tr></thead>
+    <tbody>{% for o in r.outcomes %}<tr>
+      <td><code class="small">{{ o.event_id }}</code></td>
+      <td>{{ "Ny" if o.status == "new" else "Redan inläst" }}</td>
+      <td class="num">{{ o.amount_sek | sek }}</td>
+      <td class="nowrap">{% if o.invoice_number %}<a href="/premier/fakturor/{{ o.invoice_number }}">{{ o.invoice_number }}</a>{% else %}–{% endif %}</td>
+      <td class="num">{{ o.allocated_sek | sek }}</td>
+      <td class="num">{{ o.unallocated_sek | sek }}{% if o.reason %}<br><span class="muted small">{{ o.reason | label('unmatched_reason') }}</span>{% endif %}</td>
+      <td class="nowrap">{% if o.case_number %}<a href="/arenden/{{ o.case_number }}">{{ o.case_number }}</a>{% else %}–{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% elif outcome.kind == "overdue" %}
+  <h2>Förfallobevakningen {{ r.as_of | iso_date }}</h2>
+  {% if r.actions %}
+  <ul>{% for a in r.actions %}<li><a href="/premier/fakturor/{{ a.invoice_number }}">{{ a.invoice_number }}</a>: {{ a.days_overdue }} dagar, {{ a.open_sek | sek }} öppet –
+    {{ "ärende skapat" if a.action == "created" else "eskalerat till operatören" }} (<a href="/arenden/{{ a.case_number }}">{{ a.case_number }}</a>)</li>{% endfor %}</ul>
+  {% else %}<p class="empty">Inga nya påminnelser eller eskaleringar.</p>{% endif %}
+  {% elif outcome.kind == "allocate" %}
+  <h2>Fördelningen från avstämningskontot</h2>
+  <p class="small">{{ r.allocated_sek | sek }} till <a href="/premier/fakturor/{{ r.invoice_number }}">{{ r.invoice_number }}</a>,
+    {{ r.remaining_suspense_sek | sek }} kvar på kontot · {{ r.paid_premium_rows }} premierader blev betalda.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="panel" id="filer">
+  <div class="panel__head"><h2>Löneunderlagsfiler</h2></div>
+  {% if files.files %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Fil</th><th>Arbetsgivare</th><th>Period</th><th>Mottagen</th><th>Status</th><th class="num">Rader</th><th class="num">Avvikelser</th><th class="num">Saknade</th><th class="num">Lönesumma</th><th class="num">Premie (förhand)</th><th class="num">Ärenden</th></tr></thead>
+    <tbody>{% for f in files.files %}<tr>
+      <td class="nowrap"><a href="/premier/fil?arbetsgivare={{ f.employer_org_number }}&amp;referens={{ f.file_reference | urlencode }}">{{ f.file_reference }}</a></td>
+      <td>{{ f.employer_name }}</td>
+      <td class="nowrap">{{ f.period_month | month }}</td>
+      <td class="nowrap">{{ f.received_date | iso_date }}</td>
+      <td><span class="pill{% if f.status == 'approved' %} pill--approved{% elif f.status == 'rejected' %} pill--rejected{% else %} pill--pending{% endif %}">{{ f.status | label('salary_file_status') }}</span></td>
+      <td class="num">{{ f.summary.rows }}</td>
+      <td class="num">{{ f.summary.deviations }}</td>
+      <td class="num">{{ f.summary.missing }}</td>
+      <td class="num">{{ f.summary.salary_total_sek | sek }}</td>
+      <td class="num">{{ f.summary.premium_preview_sek | sek }}</td>
+      <td class="num">{{ f.cases if f.status != "received" else "–" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Inga löneunderlagsfiler{% if filters %} i urvalet{% endif %}.</p>{% endif %}
+  <details{% if values.salary is defined %} open{% endif %}>
+    <summary>Ta emot löneunderlagsfil</summary>
+    <div class="formgrid">
+      <form method="post" action="/premier/filer" enctype="multipart/form-data" class="form">
+        {{ csrf() }}
+        {% call field("file", "Fil (JSON)", fe if values.salary is defined else {}, "Arbetsgivarens fil i operationens format, t.ex. från motpartssimulatorn") %}
+        <input id="f-file" type="file" name="file" accept=".json,application/json" required>
+        {% endcall %}
+        {{ reason_field("salary", "T.ex. arbetsgivarens fil för oktober, mottagen via filöverföring") }}
+        <div class="form__actions"><button type="submit">Ta emot och validera</button></div>
+      </form>
+      {{ op_info(ops.import_salary_file) }}
+    </div>
+  </details>
+</section>
+
+<section class="panel" id="fakturor">
+  <div class="panel__head"><h2>Fakturor</h2></div>
+  {% if invoices.invoices %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Faktura</th><th>Typ</th><th>Arbetsgivare</th><th>Period</th><th>OCR</th><th>Fakturadag</th><th>Förfaller</th><th class="num">Belopp</th><th class="num">Öppet</th></tr></thead>
+    <tbody>{% for i in invoices.invoices %}<tr>
+      <td class="nowrap"><a href="/premier/fakturor/{{ i.invoice_number }}">{{ i.invoice_number }}</a></td>
+      <td>{{ i.invoice_type | label('invoice_type') }}</td>
+      <td>{{ employer_names.get(i.employer_org_number, i.employer_org_number) }}</td>
+      <td class="nowrap">{{ i.period_month | month }}</td>
+      <td><code>{{ i.ocr_reference }}</code></td>
+      <td class="nowrap">{{ i.invoice_date | iso_date }}</td>
+      <td class="nowrap">{{ i.due_date | iso_date }}</td>
+      <td class="num">{{ i.total_sek | sek }}</td>
+      <td class="num">{% if i.open_sek is none %}–{% elif i.open_sek == 0 %}<span class="pill pill--approved">Betald</span>{% else %}{{ i.open_sek | sek }}{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Inga fakturor{% if filters %} i urvalet{% endif %}.</p>{% endif %}
+  <details{% if values.invoice is defined %} open{% endif %}>
+    <summary>Fakturera en premieperiod</summary>
+    <div class="formgrid">
+      <form method="post" action="/premier/fakturera" class="form">
+        {{ csrf() }}
+        {% set ifv = values.get("invoice", {}) %}
+        {% set ife = fe if values.invoice is defined else {} %}
+        <div class="row">
+          {% call field("employer_org_number", "Arbetsgivare", ife) %}
+          <select id="f-employer_org_number" name="employer_org_number" required>
+            {% for e in employers %}<option value="{{ e.org_number }}"{% if (ifv.get("employer_org_number") or filters.get("employer")) == e.org_number %} selected{% endif %}>{{ e.name }} ({{ e.org_number }})</option>{% endfor %}
+          </select>
+          {% endcall %}
+          {% call field("period_month", "Premieperiod", ife, "Från 2026-10 (startluckan, PA1)") %}
+          <input id="f-period_month" type="month" name="period_month" value="{{ ifv.get('period_month') or (filters.get('period') or '')[:7] }}" required>
+          {% endcall %}
+        </div>
+        {{ reason_field("invoice", "T.ex. godkänt löneunderlag för perioden") }}
+        <div class="form__actions"><button type="submit">Fakturera</button></div>
+      </form>
+      {{ op_info(ops.create_invoice) }}
+    </div>
+  </details>
+  <details{% if values.overdue is defined %} open{% endif %}>
+    <summary>Kör förfallobevakningen</summary>
+    <div class="formgrid">
+      <form method="post" action="/premier/bevakning" class="form">
+        {{ csrf() }}
+        <p class="small">Bevakningen körs för dagens datum: ärende dagen efter förfallodagen och eskalering till operatören efter 30 dagar.
+          Ingen avgift, ränta eller pensionsstopp.</p>
+        {{ reason_field("overdue", "T.ex. daglig bevakning") }}
+        <div class="form__actions"><button type="submit" class="secondary">Kör bevakningen</button></div>
+      </form>
+      {{ op_info(ops.check_overdue_invoices) }}
+    </div>
+  </details>
+</section>
+
+<section class="panel" id="inbetalningar">
+  <div class="panel__head"><h2>Inbetalningar</h2></div>
+  {% if events.events %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Mottagen</th><th>Händelse och referens</th><th>Betalare</th><th class="num">Belopp</th><th>Faktura</th><th class="num">Fördelat</th><th class="num">Avstämningskonto</th><th>Ärende</th></tr></thead>
+    <tbody>{% for e in events.events %}<tr>
+      <td class="nowrap">{{ e.received_date | iso_date }}</td>
+      <td class="nowrap"><code class="small" title="Bankfil {{ e.file_reference }}">{{ e.event_id }}</code><br><code class="small muted">{{ e.reference }}</code></td>
+      <td>{{ employer_names.get(e.payer_org_number, e.payer_org_number) }}</td>
+      <td class="num">{{ e.amount_sek | sek }}</td>
+      <td class="nowrap">{% if e.invoice_number %}<a href="/premier/fakturor/{{ e.invoice_number }}">{{ e.invoice_number }}</a>{% else %}–{% endif %}</td>
+      <td class="num">{{ e.allocated_sek | sek }}</td>
+      <td class="num">{% if e.unallocated_sek %}{{ e.unallocated_sek | sek }}{% if e.reason %}<br><span class="muted small">{{ e.reason | label('unmatched_reason') }}</span>{% endif %}{% else %}–{% endif %}</td>
+      <td class="nowrap">{% if e.case_number %}<a href="/arenden/{{ e.case_number }}">{{ e.case_number }}</a>{% else %}–{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Inga inlästa inbetalningar{% if filters.employer %} från arbetsgivaren{% endif %}.</p>{% endif %}
+  <details{% if values.bank is defined %} open{% endif %}>
+    <summary>Läs in bankfil</summary>
+    <div class="formgrid">
+      <form method="post" action="/premier/bankfil" enctype="multipart/form-data" class="form">
+        {{ csrf() }}
+        {% call field("file", "Fil (JSON)", fe if values.bank is defined else {}, "Bankens fil i operationens format, t.ex. från motpartssimulatorn") %}
+        <input id="f-bankfile" type="file" name="file" accept=".json,application/json" required>
+        {% endcall %}
+        {{ reason_field("bank", "T.ex. dagens bankfil från den simulerade banken") }}
+        <div class="form__actions"><button type="submit">Läs in och matcha</button></div>
+      </form>
+      {{ op_info(ops.import_bank_file) }}
+    </div>
+  </details>
+</section>
+
+<section class="panel" id="avstamningskonto">
+  <div class="panel__head"><h2>Avstämningskonto</h2><span class="muted small">{{ suspense.count }} {{ "post" if suspense.count == 1 else "poster" }} med saldo</span></div>
+  <p class="muted small">Överskott, okänd referens och fel betalare. Posterna har ingen garanti- eller kapitaleffekt.
+    Fördela en post till en faktura när betalaren är verifierad; det som inte ryms blir kvar. Återbetalning ingår inte.</p>
+  {% if suspense.events %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Mottagen</th><th>Händelse</th><th>Betalare</th><th>Skäl</th><th class="num">Saldo</th><th>Ärende</th></tr></thead>
+    <tbody>{% for e in suspense.events %}
+      {% set key = e.source_system ~ ":" ~ e.event_id %}
+      {% set av = values.allocate if values.allocate is defined and (values.allocate.source_system ~ ":" ~ values.allocate.event_id) == key else none %}
+      {% set own = open_debits | selectattr("employer_org_number", "equalto", e.payer_org_number) | map(attribute="invoice_number") | first %}
+      {% set chosen = av.invoice_number if av else own %}
+      {% set fid = loop.index %}
+      <tr{% if av %} class="is-highlight"{% endif %}>
+      <td class="nowrap">{{ e.received_date | iso_date }}</td>
+      <td><code class="small nowrap">{{ e.event_id }}</code><br><span class="muted small">Referens <code>{{ e.reference }}</code> · {{ e.amount_sek | sek }}</span></td>
+      <td>{{ employer_names.get(e.payer_org_number, e.payer_org_number) }}<br><span class="muted small">{{ e.payer_org_number }}</span></td>
+      <td>{{ e.reason | label('unmatched_reason') if e.reason else "–" }}{% if e.invoice_number %}<br><span class="muted small">{{ e.invoice_number }}</span>{% endif %}</td>
+      <td class="num nowrap">{{ e.unallocated_sek | sek }}</td>
+      <td class="nowrap">{% if e.case_number %}<a href="/arenden/{{ e.case_number }}">{{ e.case_number }}</a>{% else %}–{% endif %}</td>
+    </tr>
+    <tr{% if av %} class="is-highlight"{% endif %}><td colspan="6">
+      {% if open_debits %}
+      <details{% if av %} open{% endif %}>
+        <summary>Fördela posten till en faktura</summary>
+        <form method="post" action="/premier/fordela" class="form">
+          {{ csrf() }}
+          <input type="hidden" name="source_system" value="{{ e.source_system }}">
+          <input type="hidden" name="event_id" value="{{ e.event_id }}">
+          <input type="hidden" name="request_key" value="{{ av.request_key if av else new_key() }}">
+          <div class="row">
+            <div class="field">
+              <label for="f-invoice-{{ fid }}">Faktura</label>
+              <select id="f-invoice-{{ fid }}" name="invoice_number" required>
+                <option value=""{% if not chosen %} selected{% endif %}>Välj faktura</option>
+                {% for o in open_debits %}<option value="{{ o.invoice_number }}"{% if chosen == o.invoice_number %} selected{% endif %}>{{ o.invoice_number }} · {{ employer_names.get(o.employer_org_number, o.employer_org_number) }} · {{ o.open_sek | sek }} öppet</option>{% endfor %}
+              </select>
+              <small class="field__help">Förvald är en öppen faktura hos samma betalare, om det finns en</small>
+            </div>
+            <div class="field">
+              <label for="f-amount-{{ fid }}">Belopp</label>
+              <input id="f-amount-{{ fid }}" name="amount_sek" inputmode="decimal" value="{{ av.amount_sek if av else '' }}">
+              <small class="field__help">Tomt = hela saldot</small>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="f-verification-{{ fid }}">Hur betalaren verifierats</label>
+              <input id="f-verification-{{ fid }}" name="payer_verification" required value="{{ av.payer_verification if av else '' }}" placeholder="T.ex. bekräftat med arbetsgivarens ekonomiavdelning">
+            </div>
+            <div class="field">
+              <label for="f-allocate-reason-{{ fid }}">Motivering</label>
+              <input id="f-allocate-reason-{{ fid }}" name="reason" required value="{{ av.reason if av else '' }}">
+            </div>
+          </div>
+          <div class="form__actions"><button type="submit">Fördela</button></div>
+        </form>
+      </details>
+      {% else %}<span class="muted small">Ingen faktura med öppet belopp att fördela till.</span>{% endif %}
+    </td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Avstämningskontot är tomt.</p>{% endif %}
+  <details>
+    <summary>Om operationen</summary>
+    {{ op_info(ops.allocate_unmatched_payment) }}
+  </details>
+</section>
+{% endif %}
+{% endblock %}

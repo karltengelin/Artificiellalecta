@@ -33,6 +33,8 @@ operations:
   get_invoice: HUMAN_ONLY              # fakturans rader per förmån; agentläsning prövas vid behov (B-046)
   list_invoices: HUMAN_ONLY            # fakturor och öppna belopp per arbetsgivare (B-046)
   get_receivables: HUMAN_ONLY          # öppna fordringar och avstämning av inbetalningar (B-046)
+  list_salary_files: HUMAN_ONLY        # filerna med status och sammanställning, inga individrader (B-046, steg 7)
+  list_bank_events: HUMAN_ONLY         # inbetalningar, matchning och avstämningskontots poster (B-046, steg 7)
   calculate_premium_preview: AGENT     # beräkning enligt PR-ITP1-001, sparar ingenting
   get_product_parameters: AGENT        # produktparametrarna med versioner (B-035), inga personuppgifter
   schedule_product_parameter_change: APPROVAL    # ny parameterversion från en framtida månad (B-035); agenten föreslår

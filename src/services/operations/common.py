@@ -4,10 +4,20 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 
 from models import InsuredPerson, Policy, PolicyBenefit, PremiumTransaction
 from services.errors import BlockedError, NotFoundError
+
+
+#: Paket A:s tabeller (B-046). De förs in i Lakebase först i steg 8 (P1-PREMIE-001 §11)
+PREMIUM_FLOW_TABLES = ("salary_files", "invoices", "invoice_lines", "bank_events", "payment_allocations")
+
+
+def missing_tables(session, names) -> list[str]:
+    """Tabellerna bland `names` som saknas i vald databas – för läsningar som ska ge ett besked i stället för fel."""
+    inspector = inspect(session.connection())
+    return [name for name in names if not inspector.has_table(name)]
 
 
 def today() -> date:

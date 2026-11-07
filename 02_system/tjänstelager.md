@@ -526,6 +526,7 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 | `get_salary_file` | `read` | Ja | `HUMAN_ONLY` | Sammanställning, varje rads utfall och saknade rader. En fil som väntar valideras om mot dagens bestånd och får en aktuell granskningssumma |
 | `approve_salary_file` | `write` | Ja | `HUMAN_ONLY` | Godkänner med granskningssumman. I en transaktion: giltiga rader registreras med `register_salary_report`, premieunderlag skapas med `create_premium_from_salary_report` och avvikande eller saknade rader blir ärenden |
 | `reject_salary_file` | `write` | Nej | `HUMAN_ONLY` | Avslår med motivering. Registrerar ingenting och skapar ett uppföljningsärende |
+| `list_salary_files` | `read` | Nej | `HUMAN_ONLY` | Filerna med status, sparad sammanställning, antal ärenden och beslut, utan individrader (steg 7). Saknas premieflödets tabeller returneras en tom lista med `missing_tables` i stället för ett fel |
 
 **Filformat:** arbetsgivarens organisationsnummer, period, referens, mottagningsdag, kontrollsumma och rader med personnummer, utbetalningsmånad, pensionsmedförande lön, `kind` och ev. `corrects_version`. Kontrollsumman är SHA-256 över det kanoniska innehållet (`file_checksum`); avsändaren räknar likadant.
 
@@ -581,6 +582,7 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 | `import_bank_file` | `write` | Nej | `HUMAN_ONLY` | Läser en bankfil och matchar varje ny inbetalning på OCR och betalare i samma transaktion. Rest och omatchat går till avstämningskontot med ett ärende |
 | `allocate_unmatched_payment` | `write` | Nej | `HUMAN_ONLY` | Fördelar en oallokerad post till en debetfaktura när betalaren är verifierad. Idempotent per `request_key` |
 | `get_receivables` | `read` | Nej | `HUMAN_ONLY` | Öppna fordringar per faktura och avstämningen mellan inbetalningar, fördelat och avstämningskonto |
+| `list_bank_events` | `read` | Nej | `HUMAN_ONLY` | Inbetalningar med matchning, fördelat och saldo på avstämningskontot; `unallocated_only` visar avstämningskontots poster (steg 7). Saknade tabeller ger `missing_tables` som `list_salary_files` |
 
 **Bankfilen:** källsystem, filreferens, kontrollsumma (`bank_file_checksum`) och händelser med bankens händelse-ID, mottagningsdag, belopp, betalarens organisationsnummer och angiven referens. Varje händelse sparas en gång per källsystem och händelse-ID. Samma händelse i en ny fil ger samma kvitto (fall 15). Samma ID med ändrat innehåll stoppar hela filen.
 

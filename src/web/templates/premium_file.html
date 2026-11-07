@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import field, csrf, op_info with context %}
+{% set fe = error.field_errors if error else {} %}
+{% block title %}Löneunderlagsfil{% if file %} {{ file.file_reference }}{% endif %}{% endblock %}
+{% block content %}
+<p class="small"><a href="/premier#filer">← Premier och betalningar</a></p>
+<section class="panel panel--standalone">
+  {% if file %}
+  <div class="panel__head">
+    <h1>Löneunderlagsfil {{ file.file_reference }}</h1>
+    <span class="pill{% if file.status == 'approved' %} pill--approved{% elif file.status == 'rejected' %} pill--rejected{% else %} pill--pending{% endif %}">{{ file.status | label('salary_file_status') }}</span>
+  </div>
+  {% else %}<h1>Löneunderlagsfil</h1>{% endif %}
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+  {% if file %}
+  <dl class="facts">
+    <div><dt>Arbetsgivare</dt><dd>{{ employer_name or file.employer_org_number }}<br><span class="muted small">{{ file.employer_org_number }}</span></dd></div>
+    <div><dt>Period</dt><dd>{{ file.period_month | month }}</dd></div>
+    <div><dt>Mottagen</dt><dd>{{ file.received_date | iso_date }}</dd></div>
+    <div><dt>Kontrollsumma</dt><dd><code class="small" title="{{ file.checksum }}">{{ file.checksum[:16] }}…</code></dd></div>
+    {% if file.decided_by %}<div><dt>Beslut</dt><dd>{{ file.decided_by }}<br><span class="muted small">{{ file.decided_at | iso_date }}</span></dd></div>{% endif %}
+  </dl>
+  {% if file.decision_note %}<p class="small"><strong>Skäl för avslaget:</strong> {{ file.decision_note }}</p>{% endif %}
+  <h2>Sammanställning</h2>
+  {% if file.status == "received" %}<p class="muted small">Filen är validerad mot dagens bestånd när sidan öppnades. Godkännandet är bundet till granskningssumman nedan;
+    ändras beståndet eller registreringarna innan dess stoppas godkännandet och filen granskas igen.</p>{% endif %}
+  <dl class="metrics metrics--amounts">
+    <div class="metric"><dt>Rader</dt><dd>{{ file.summary.rows }}</dd></div>
+    <div class="metric"><dt>Giltiga</dt><dd>{{ file.summary.valid }}</dd></div>
+    <div class="metric"><dt>Avvikelser</dt><dd>{{ file.summary.deviations }}</dd></div>
+    <div class="metric"><dt>Saknade</dt><dd>{{ file.summary.missing }}</dd></div>
+    <div class="metric"><dt>Rättelser</dt><dd>{{ file.summary.corrections }}</dd></div>
+    <div class="metric"><dt>Lönesumma</dt><dd>{{ file.summary.salary_total_sek | sek }}</dd></div>
+    <div class="metric"><dt>Premie (förhand)</dt><dd>{{ file.summary.premium_preview_sek | sek }}</dd></div>
+  </dl>
+  {% endif %}
+</section>
+
+{% if decision %}
+<section class="panel" id="beslut">
+  <h2>{{ "Godkännandet" if decision.status == "approved" else "Avslaget" }}</h2>
+  <dl class="kv">
+    <dt>Registrerade löneunderlag</dt><dd>{{ decision.salary_reports }}</dd>
+    <dt>Premie- och rättelserader</dt><dd>{{ decision.premium_rows }} · {{ decision.premium_total_sek | sek }}</dd>
+    <dt>Ärenden</dt><dd>{{ decision.cases | length }}</dd>
+  </dl>
+  {% if decision.status == "approved" %}<p class="small">Nästa steg: <a href="/premier?period={{ file.period_month | month }}&amp;arbetsgivare={{ file.employer_org_number }}#fakturor">fakturera perioden</a>.</p>{% endif %}
+</section>
+{% endif %}
+
+{% if file %}
+{% set case_refs = (file.outcome or {}).get("cases", []) %}
+{% if case_refs %}
+<section class="panel" id="arenden">
+  <h2>Ärenden från filen</h2>
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Ärende</th><th>Typ</th><th>Skäl</th><th class="num">Rad</th></tr></thead>
+    <tbody>{% for c in case_refs %}<tr>
+      <td><a href="/arenden/{{ c.case_number }}">{{ c.case_number }}</a></td>
+      <td>{{ c.case_type | label('case_type') }}</td>
+      <td>{{ c.reason | label('salary_file_reason') }}</td>
+      <td class="num">{{ c.row or "–" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endif %}
+
+<section class="panel" id="rader">
+  <h2>Rader</h2>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th class="num">Rad</th><th>Personnummer</th><th>Månad</th><th>Typ</th><th class="num">Lön</th><th>Utfall</th><th class="num">Premie (förhand)</th></tr></thead>
+    <tbody>{% for r in file.rows %}<tr{% if r.outcome == "deviation" %} class="is-highlight"{% endif %}>
+      <td class="num">{{ r.row }}</td>
+      <td class="pnr nowrap"><a href="/forsakrade/{{ r.personal_id_number }}">{{ r.personal_id_number | pnr }}</a></td>
+      <td class="nowrap">{{ r.period_month | month }}</td>
+      <td>{{ "Rättelse" if r.kind == "correction" else "Ny" }}</td>
+      <td class="num">{{ r.pensionable_salary_sek | sek }}</td>
+      <td>{% if r.outcome == "valid" %}<span class="pill pill--approved">Giltig</span>{% if r.premium_issue %}<br><span class="muted small">{{ r.premium_issue }}</span>{% endif %}
+        {% else %}<span class="pill pill--pending">{{ r.reason | label('salary_file_reason') }}</span><br><span class="small">{{ r.message }}</span>{% endif %}</td>
+      <td class="num">{{ r.premium_preview_sek | sek if r.premium_preview_sek is not none else "–" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% if file.missing %}
+  <h3>Saknade rader</h3>
+  <p class="muted small">Premiebetalande hos arbetsgivaren utan rad i filen och utan registrerat underlag. Ingen premie skapas; ärende vid godkännandet (PR-ITP1-017).</p>
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Personnummer</th><th>Försäkring</th></tr></thead>
+    <tbody>{% for m in file.missing %}<tr>
+      <td class="pnr nowrap"><a href="/forsakrade/{{ m.personal_id_number }}">{{ m.personal_id_number | pnr }}</a></td>
+      <td><a href="/forsakringar/{{ m.policy_number }}">{{ m.policy_number }}</a></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+</section>
+
+{% if file.status == "received" %}
+<section class="panel" id="beslut-formular">
+  <h2>Godkänn eller avslå</h2>
+  <div class="formgrid">
+    <div>
+      <form method="post" action="/premier/fil/godkann" class="form">
+        {{ csrf() }}
+        <input type="hidden" name="employer_org_number" value="{{ file.employer_org_number }}">
+        <input type="hidden" name="file_reference" value="{{ file.file_reference }}">
+        <input type="hidden" name="expected_digest" value="{{ file.review_digest }}">
+        <p class="small">Godkännandet registrerar {{ file.summary.valid }} giltiga rader som löneunderlag, skapar premieunderlag och gör
+          {{ file.summary.deviations + file.summary.missing }} avvikande eller saknade rader till ärenden – i en transaktion.
+          Granskningssumma <code class="small" title="{{ file.review_digest }}">{{ file.review_digest[:16] }}…</code>.</p>
+        {% set av = values.get("approve", {}) %}
+        {% call field("reason", "Motivering", fe if values.approve is defined else {}, "Krävs och sparas i händelseloggen.") %}
+        <textarea id="f-reason" name="reason" rows="2" required placeholder="T.ex. granskad mot arbetsgivarens följebrev">{{ av.get("reason", "") }}</textarea>
+        {% endcall %}
+        <div class="form__actions"><button type="submit">Godkänn filen</button></div>
+      </form>
+      <details{% if values.reject is defined %} open{% endif %}>
+        <summary>Avslå filen</summary>
+        <form method="post" action="/premier/fil/avsla" class="form">
+          {{ csrf() }}
+          {% set rv = values.get("reject", {}) %}
+          {% set rfe = fe if values.reject is defined else {} %}
+          <input type="hidden" name="employer_org_number" value="{{ file.employer_org_number }}">
+          <input type="hidden" name="file_reference" value="{{ file.file_reference }}">
+          {% call field("decision_note", "Skäl för avslaget", rfe, "Sparas på filen och i uppföljningsärendet") %}
+          <textarea id="f-decision_note" name="decision_note" rows="2" required>{{ rv.get("decision_note", "") }}</textarea>
+          {% endcall %}
+          <div class="field{% if rfe.get('reason') %} field--error{% endif %}">
+            <label for="f-reject-reason">Motivering</label>
+            <textarea id="f-reject-reason" name="reason" rows="2" required>{{ rv.get("reason", "") }}</textarea>
+          </div>
+          <div class="form__actions"><button type="submit" class="danger">Avslå filen</button></div>
+        </form>
+      </details>
+    </div>
+    {{ op_info(approve_op) }}
+  </div>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}
