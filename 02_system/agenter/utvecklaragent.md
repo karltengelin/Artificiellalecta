@@ -7,7 +7,7 @@
 | **Funktionsområde** | IT & dataplattform |
 | **Team** | Utveckling & plattform (`utveckling`) – se `../agentekosystem.md` §3 (B-026) |
 | **Roll i teamet** | Ledande agent (orkestrerare) |
-| **Status** | 🟡 Planerad i [projekt 11](../../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md) |
+| **Status** | 🟡 Ändringskö och avgränsad kodkörning verifierade med testdubblar i [U3](../../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u3-i-demo) |
 | **Skapad** | 2026-05-15 |
 
 ## Mandat
@@ -33,17 +33,17 @@ Codex eller Claude Code ska kunna arbeta med samma uppdrags- och resultatkontrak
 
 ### Ändringskön (U3)
 
-När en U3-körning startas ska agenten via bolagets tjänsteoperationer kunna
-lista nya ändringsärenden inom sitt mandat och ta ett av dem. När agenten tar
-ärendet ska systemet reservera det för agenten och sätta status *Pågår* i samma
-transaktion. När kodändring och testbevis har lämnats kan agenten sätta status
-*Väntar på granskning* med referenser till båda underlagen. Boarden visar samma
-status, ansvarig och historik som tjänsteoperationerna sparar.
+Vid uttrycklig start får U3-körningen ett mandat från betrodd kod. Agenten
+listar nya ärenden inom mandatet och kan ta ett av dem. Samma transaktion
+reserverar ärendet för körningen och sätter status *Pågår*. Efter godkända
+tester sparar körningen referenser till diff och testbevis och lämnar
+ärendet i *Väntar på granskning*. Boarden och detaljen visar ansvarig, status
+och den gemensamma historiken. Operatören kan ta över och spärra den tidigare
+körningens överlämning.
 
-Acceptansen för U3 ska visa att agenten bara kan se och ta behöriga ärenden,
-att ett samtidigt anspråk från en människa och en agent ger en ansvarig och
-att överlämningen för granskning syns på boarden. Automatisk bevakning av kön
-och villkoren för när den startar en körning behandlas separat.
+Den lokala körningen använder fiktivt underlag och en skriptad kodare.
+Codex CLI-adaptern är verifierad med en processdubbel. Automatisk bevakning
+och villkoren för när kön ska starta en körning behandlas separat.
 
 ### Kod och införande
 
