@@ -125,6 +125,14 @@ class ReceiptInput(Strict):
         return self.model_dump(mode="json", exclude={"delivery_ref"})
 
 
+def obligation(invoice: InvoiceInput, line: InvoiceLine) -> tuple:
+    """Ordinarie premie faktureras en gång per förmån och period. Ett tillägg på mottagen premie
+    (PR-ITP1-019 p.1, paket A:s radtyp `additional`) är en egen länkad premiepost och räknas för sig."""
+    if line.calculation_basis.get("invoice_line_type") == "additional":
+        return ("additional", invoice.id, line.id)
+    return (line.benefit_id, line.period_month)
+
+
 def receipt_key(scenario_id: str, receipt: ReceiptInput) -> str:
     return vb.checksum({"scenario": scenario_id, "system": receipt.source.system,
                         "event": receipt.event_id})
@@ -195,7 +203,7 @@ class MonthInputs(Strict):
         invoice_ids = {i.id for i in self.invoices}
         if len(invoice_ids) != len(self.invoices):
             raise ValueError("Dubbla fakturaunderlag")
-        obligations = [(line.benefit_id, line.period_month) for invoice in self.invoices for line in invoice.lines]
+        obligations = [obligation(invoice, line) for invoice in self.invoices for line in invoice.lines]
         if len(set(obligations)) != len(obligations):
             raise ValueError("Samma ordinarie premieunderlag har fakturerats flera gånger")
         if any(line.policy_id not in population for i in self.invoices for line in i.lines):

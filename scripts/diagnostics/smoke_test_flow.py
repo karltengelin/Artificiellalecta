@@ -103,7 +103,7 @@ class Report:
 
 
 @contextmanager
-def demo_database() -> Iterator[SimpleNamespace]:
+def demo_database(born_from: int | None = None) -> Iterator[SimpleNamespace]:
     from sqlalchemy import create_engine
     from sqlalchemy.pool import StaticPool
 
@@ -111,7 +111,7 @@ def demo_database() -> Iterator[SimpleNamespace]:
     from utils.demo_data import create_demo_database
 
     engine = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
-    create_demo_database(engine, with_proposals=False)
+    create_demo_database(engine, with_proposals=False, born_from=born_from)
     try:
         yield SimpleNamespace(label="demo (SQLite i minnet)", factory=session_factory_for(engine), team_factories={})
     finally:
@@ -119,8 +119,12 @@ def demo_database() -> Iterator[SimpleNamespace]:
 
 
 @contextmanager
-def svc_test_database(teams: tuple[str, ...] = ("aktuarie", "compliance")) -> Iterator[SimpleNamespace]:
-    """Eget schema i den isolerade testdatabasen, med teamens rättigheter på testrollerna."""
+def svc_test_database(teams: tuple[str, ...] = ("aktuarie", "compliance"),
+                      born_from: int | None = None) -> Iterator[SimpleNamespace]:
+    """Eget schema i den isolerade testdatabasen, med teamens rättigheter på testrollerna.
+
+    `born_from` utelämnar demopersoner födda före året (se `create_demo_database`).
+    """
     from sqlalchemy import create_engine
 
     from services.db import session_factory_for
@@ -145,7 +149,7 @@ def svc_test_database(teams: tuple[str, ...] = ("aktuarie", "compliance")) -> It
     engine = create_engine(url, connect_args={"options": f"-csearch_path={name}"})
     agent_engines = []
     try:
-        create_demo_database(engine, with_proposals=False)
+        create_demo_database(engine, with_proposals=False, born_from=born_from)
         team_factories, used = {}, set()
         for team, own in candidates.items():
             agent_url = own or shared
