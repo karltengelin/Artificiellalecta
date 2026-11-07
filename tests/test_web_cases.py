@@ -197,3 +197,23 @@ def test_filavvikelse_visas_med_skal(web):
     assert page.status_code == 200
     assert "Avvikelse i lönefil" in page.text and "missing_report" in page.text and "Saknas i filen" in page.text
     assert "Starta agent" not in page.text
+
+
+def test_forfallen_faktura_visas(web):
+    """Paket A steg 3: ärendesidan för en förfallen faktura visar faktura, belopp och eskalering."""
+    from models import Employer
+
+    with web.session_factory() as session:
+        employer = session.scalars(select(Employer).order_by(Employer.org_number)).first()
+        session.add(Case(case_number="CASE-000901", case_type="payment_overdue", status="open",
+                         employer_id=employer.id, channel="system", received_date=date(2026, 10, 5),
+                         source_reference="INV-000001", period_month=date(2026, 9, 1),
+                         details={"invoice_number": "INV-000001", "ocr_reference": "700000193",
+                                  "due_date": "2026-10-04", "open_sek": "6733.13", "days_overdue": 1,
+                                  "escalated": False, "escalated_on": None, "rule": "PR-ITP1-017"},
+                         created_by="invoice_monitor"))
+        session.commit()
+    page = web.client.get("/arenden/CASE-000901")
+    assert page.status_code == 200
+    assert "Förfallen faktura" in page.text and "INV-000001" in page.text and "700000193" in page.text
+    assert "Starta agent" not in page.text
