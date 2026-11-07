@@ -23,10 +23,11 @@ from agents.case_workspace import CaseWorkspace
 from agents.flows.console import FlowConsole
 from agents.flows.product_reports import ProductReportConsole
 from agents.flows.questions import QuestionConsole
+from ai import AIClient
 from services import ServiceLayer
 from services.change_requests import ChangeRequests
 from web.agent import CaseAgent
-from web.config import WebSettings
+from web.config import WebConfigError, WebSettings
 from web.development_github import GitHubReader
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.operator_auth import OperatorAuth
@@ -60,20 +61,35 @@ def create_app(
     case_workspace_console: CaseWorkspace | None = None,
     product_report_console: ProductReportConsole | None = None,
     actuarial_dialogue_console=None,
+    rule_flow_ai: AIClient | None = None,
 ) -> FastAPI:
     """case_agent: handläggaragenten för ärenden. Byggs med tjänstelagret om inget anges;
     med ett givet tjänstelager utan agent visas ärendena utan knappen *Starta agent*.
 
     question_console: explicit ansluten OC-3a-adapter, gemensam för centralen och aktuariens teamyta.
     flow_console: flödena (`/floden`, Fas 3c 3c-3) på samma sätt. Steg som stod som pågående
-    när UI:t senast stoppades blir `reconciliation_required` här och avgörs av handläggaren."""
+    när UI:t senast stoppades blir `reconciliation_required` här och avgörs av handläggaren.
+    rule_flow_ai: anslut demo med de två regeländringsflödena och operatörens utvecklingsyta."""
     settings = settings or WebSettings.from_env()
+    if rule_flow_ai is not None and (
+        settings.database != "demo" or settings.operator_password_hash is None or flow_console is not None
+    ):
+        raise WebConfigError("Regeländringsflöden med utvecklingsöverlämning kräver demo och operatörsinloggning")
     if service is None:
         from web.database import build_services
 
         service, built_agent, built_flows = build_services(settings)
         case_agent = case_agent or built_agent
         flow_console = flow_console or built_flows
+    change_requests = (
+        ChangeRequests(service._session_factory) if settings.database == "demo" and service._session_factory else None
+    )
+    if rule_flow_ai is not None:
+        from web.database import build_demo_rule_flows
+
+        if change_requests is None:
+            raise WebConfigError("Utvecklingsöverlämning kräver en demodatabas")
+        flow_console = build_demo_rule_flows(service, change_requests, ai=rule_flow_ai)
     if flow_console is not None:
         try:
             interrupted = flow_console.mark_interrupted()
@@ -85,9 +101,7 @@ def create_app(
 
     app = FastAPI(title="Artificiellalecta – handläggare", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
-    app.state.change_requests = (
-        ChangeRequests(service._session_factory) if settings.database == "demo" and service._session_factory else None
-    )
+    app.state.change_requests = change_requests
     app.state.development_github = GitHubReader(
         settings.development_github_repository, settings.development_github_token,
     ) if app.state.change_requests is not None else None

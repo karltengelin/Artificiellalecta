@@ -26,6 +26,8 @@ def main() -> None:
     parser.add_argument("--port", type=int, help="Port (Lakebase 8765, test 8766, demo 8767)")
     parser.add_argument("--company-questions", action="store_true", help="Anslut OC-3a med konfigurerad AI-klient och aktuarieteam")
     parser.add_argument("--actuary-workspace", action="store_true", help="Anslut aktuariens teamyta och rapporter med konfigurerad AI-klient")
+    parser.add_argument("--rule-change-flows", action="store_true",
+                        help="Anslut regeländringsflöden i demo med konfigurerad AI-klient och operatörsinloggning")
     parser.add_argument("--report-font-dir", type=Path, default=Path("tmp/pdfs/fonts"), help="Lokala statiska DM Sans-filer för A4-export")
     parser.add_argument(
         "--reset-demo", action="store_true",
@@ -36,6 +38,13 @@ def main() -> None:
     settings = WebSettings.from_env()
     if args.db:
         settings = replace(settings, database=args.db)
+    rule_flow_ai = None
+    if args.rule_change_flows:
+        if settings.database != "demo" or settings.operator_password_hash is None:
+            parser.error("--rule-change-flows kräver demo och konfigurerad operatörsinloggning")
+        from ai import AIClient
+
+        rule_flow_ai = AIClient()
     port = args.port if args.port is not None else DEFAULT_PORTS[settings.database]
     if args.reset_demo:
         if settings.database != "demo":
@@ -55,9 +64,9 @@ def main() -> None:
                                      environment_id=settings.database, dataset_ref=settings.dataset_ref)
         app = create_app(service=service, settings=settings, case_agent=agent,
                          question_console=questions, product_report_console=reports,
-                         actuarial_dialogue_console=dialogue)
+                         actuarial_dialogue_console=dialogue, rule_flow_ai=rule_flow_ai)
     else:
-        app = create_app(settings=settings)
+        app = create_app(settings=settings, rule_flow_ai=rule_flow_ai)
     print(f"Handläggar-UI: http://{HOST}:{port}  ·  {settings.database_label}  ·  handläggare {settings.handler_id}", flush=True)
     uvicorn.run(app, host=HOST, port=port, access_log=False, proxy_headers=False)
 

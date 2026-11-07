@@ -247,7 +247,7 @@ class FlowEngine:
                 row.agent = self._runtime().ecosystem.teams[step_def.team].lead
             run_id, step_id = row.run_id, str(row.id)
             version = bump(s, flow, expected_version)
-            ctx = self._context(flow, steps)
+            ctx = self._context(flow, steps, decisions)
 
         try:
             if isinstance(step_def, AgentStep):
@@ -544,10 +544,23 @@ class FlowEngine:
                 "starta ett nytt flöde"
             )
 
-    def _context(self, flow: Flow, steps: list[FlowStep]) -> FlowContext:
+    def _context(self, flow: Flow, steps: list[FlowStep],
+                 decisions: Iterable[FlowGateDecision] = ()) -> FlowContext:
+        completed = {st.step_key: st for st in steps if st.status == "completed" and st.result is not None}
+        approved_by = {}
+        for decision in decisions:
+            gate = completed.get(decision.step_key)
+            if (
+                decision.decision == "approved" and gate is not None and gate.completed_by == decision.decided_by
+                and gate.result.get("decision") == "approved" and gate.result.get("bound_hash") == decision.bound_hash
+                and canonical_hash(gate.result) == gate.result_hash
+                and all(key in completed and canonical_hash(completed[key].result) == completed[key].result_hash
+                        for key in decision.bound_steps)
+            ):
+                approved_by[decision.step_key] = decision.decided_by
         return FlowContext(
-            flow_id=flow.flow_id, input=dict(flow.input),
-            results={st.step_key: st.result for st in steps if st.status == "completed" and st.result is not None},
+            flow_id=flow.flow_id, input=dict(flow.input), created_by=flow.created_by, approved_by=approved_by,
+            results={key: step.result for key, step in completed.items()},
             run_ids={st.step_key: st.run_id for st in steps if st.run_id},
         )
 

@@ -8,23 +8,43 @@ version och hashen av underlaget som visades, och gamla värden ger en konflikt.
 
 from __future__ import annotations
 
+import json
 import re
+from dataclasses import replace
 from datetime import date
+from uuid import UUID, uuid4
 
 import pytest
+from argon2 import PasswordHasher
 from fastapi.testclient import TestClient
-from sqlalchemy import update
+from sqlalchemy import delete, update
 
+from agents.flows import console as flow_adapter
 from agents.flows.console import FlowConsole
-from models import FlowStep
+from agents.flows.definitions.rule_change_code import FLOW_TYPE as CODE_FLOW_TYPE, HANDOFF
+from agents.gateways import DraftGateway, RegulatoryGateway
+from ai.providers.fake import text_result
+from models import FlowGateDecision, FlowStep
 from services import Actor, ProductRuleCatalog, ServiceLayer
-from tests.flow_helpers import flow_client
+from services.change_requests import DEVELOPER, ChangeQueueRun
+from services.errors import AccessDeniedError
+from tests.flow_helpers import CHANGE, call, flow_client
 from web import create_app
 from web.config import WebSettings
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
 
 SOURCE = "K-SIM-ITP-2027"
+CODE_SOURCE = "K-SIM-KOD-2027"
+ORIGIN = {"Origin": "https://testserver"}
+BOARD = "/central/utveckling"
+FLOW = "/floden/FLOW-000001"
+ADOPTION = {
+    "decision": "approved", "has_details": "1", "rule_id": "PR-ITP1-013", "rule_version": "1.2",
+    "valid_from": "2027-02-01", "decision_number": "B-999", "affected_system": "Premieberäkning",
+    "code_reason": "Rättelser behöver bedömas per ursprungsmånad och övergångsvillkor.",
+    "expected_effect": "Rättelser efter februari använder den nya regeln bara för berörda ursprungsmånader.",
+}
 
 
 def build_console(web, tmp_path) -> FlowConsole:
@@ -221,3 +241,196 @@ class TestAvbrottOchAvstamning:
         assert "/godkannanden?status=vantar#arende-" in page.text
         stopped = post(flow_web, "/floden/FLOW-000001/kor", {"version": hidden(page, "version")})
         assert stopped.status_code == 422 and "väntar på godkännande" in stopped.text
+
+
+@pytest.fixture
+def code_app(tmp_path, monkeypatch):
+    sources = tmp_path / "04_regulatoriskt" / "03_bevakning"
+    sources.mkdir(parents=True)
+    (sources / f"{CODE_SOURCE}.md").write_text(
+        "# Fiktiv regel för rättelser\n\n**Version:** 1.0\n\n"
+        "Rättelser ska följa ett övergångsvillkor för den ursprungliga premiemånaden.",
+        encoding="utf-8",
+    )
+    (sources / f"{SOURCE}.md").write_text("# Annat bevakningsunderlag", encoding="utf-8")
+    monkeypatch.setattr(flow_adapter, "RegulatoryGateway", lambda: RegulatoryGateway(tmp_path))
+    monkeypatch.setattr(flow_adapter, "DraftGateway", lambda: DraftGateway(tmp_path / "utkast"))
+    monkeypatch.setattr(flow_adapter, "DEFAULT_JOURNAL_DIR", tmp_path / "runs")
+    settings = WebSettings(demo_path=tmp_path / "demo.db", allowed_hosts=("testserver",),
+                           handler_id="legacy-handler", operator_id="karl",
+                           operator_password_hash=PasswordHasher().hash("fiktiv-losenfras-u4"))
+
+    def build(*, source_read=CODE_SOURCE, parameter_change=False, operator_id="karl"):
+        answer = {
+            "summary": "Inför övergångsvillkor för rättelser av tidigare perioder.",
+            "affected_rules": ["PR-ITP1-013"], "parameter_changes": [CHANGE] if parameter_change else [],
+            "customer_impact": "Historiska perioder behandlas enligt övergångsvillkoret.",
+            "uncertainties": [], "source_handles": [source_read], "draft_names": [],
+        }
+        ai = flow_client(interpretation_responses=[
+            call("read_regulatory_document", {"handle": source_read, "section": None, "offset": 0}, 1),
+            text_result(json.dumps(answer, ensure_ascii=False)),
+        ])
+        return create_app(settings=replace(settings, operator_id=operator_id), rule_flow_ai=ai)
+
+    return build
+
+
+def code_client(app):
+    return TestClient(app, base_url="https://testserver", follow_redirects=False)
+
+
+def login_operator(client, username="karl"):
+    page = client.get("/logga-in")
+    response = client.post("/logga-in", headers=ORIGIN, data={
+        "username": username, "password": "fiktiv-losenfras-u4", "csrf_token": page.context["session_csrf"],
+    })
+    assert response.status_code == 303
+
+
+def code_post(client, page, path, data=None):
+    payload = {"csrf_token": page.context["operator_csrf"], **(data or {})}
+    if path != "/floden":
+        payload["version"] = hidden(page, "version")
+    if path.endswith("/grind"):
+        payload["seen_hash"] = hidden(page, "seen_hash")
+    return client.post(path, headers=ORIGIN, data=payload)
+
+
+def interpret_code_rule(client):
+    login_operator(client)
+    listing = client.get("/floden")
+    page = code_post(client, listing, "/floden", {"flow_type": CODE_FLOW_TYPE, "source_handle": CODE_SOURCE})
+    assert page.status_code == 200, page.text
+    page = code_post(client, page, FLOW + "/kor")
+    assert page.status_code == 200 and "Anta regeln för utveckling" in page.text
+    return page
+
+
+def adopt_code_rule(client):
+    page = code_post(client, interpret_code_rule(client), FLOW + "/grind", ADOPTION)
+    assert page.status_code == 200 and "Lämna till utveckling" in page.text
+    return page
+
+
+def test_u4_bestallningen_syns_i_flodet_boarden_och_den_behoriga_agentkon(code_app):
+    app = code_app()
+    store = app.state.change_requests
+    operator = Actor.human("karl")
+    with code_client(app) as client:
+        page = adopt_code_rule(client)
+        assert not store.list(operator)
+        page = code_post(client, page, FLOW + "/kor")
+        assert page.status_code == 200 and page.context["flow"].status == "completed"
+        assert "Överlämnat till utveckling" in page.text
+        request_id = UUID(page.context["flow"].step(HANDOFF).result["change_request_id"])
+        detail_url = f"{BOARD}/{request_id}"
+        assert f'href="{detail_url}"' in page.text
+        assert f'href="{detail_url}"' in client.get(BOARD).text
+        detail = client.get(detail_url)
+        assert f'href="{FLOW}#steg-{HANDOFF}"' in detail.text
+        item = detail.context["item"]
+        source = page.context["flow"].step("tolkning").result["output"]["evidence"]["sources"][0]
+        assert item.status == "new" and item.requested_by == "karl"
+        assert item.origin.reference == f"FLOW-000001/{HANDOFF}"
+        assert item.draft.source_refs == f"{CODE_SOURCE} v1.0 · sha {source['sha256']}"
+        assert item.draft.decision_ref == "FLOW-000001 G2 B-999"
+        assert item.draft.rule_version == "1.2" and item.draft.effective_on == date(2027, 2, 1)
+        assert item.draft.acceptance == ADOPTION["expected_effect"]
+        run = ChangeQueueRun(actor=DEVELOPER, run_id=uuid4(), requested_by="karl",
+                             allowed_requests=frozenset({request_id}))
+        assert store.list_new(run.model_copy(update={"allowed_requests": frozenset()})) == []
+        with pytest.raises(AccessDeniedError):
+            store.claim(run.model_copy(update={"requested_by": "annan"}), request_id)
+        assert [item.id for item in store.list_new(run)] == [request_id]
+        assert store.claim(run, request_id).agent_run_id == run.run_id
+        assert client.get(detail_url).context["item"].status == "in_progress"
+        assert f'href="{detail_url}"' in client.get(FLOW).text
+
+
+def test_u4_omstart_efter_sparat_arende_bevarar_id_och_ansvar(code_app, monkeypatch):
+    app = code_app()
+    operator = Actor.human("karl")
+    engine = app.state.flow_console.engine
+
+    def interrupt(*args, **kwargs):
+        raise RuntimeError("Testavbrott före flödeskvittot")
+
+    with code_client(app) as client:
+        page = adopt_code_rule(client)
+        monkeypatch.setattr(engine, "_record_system", interrupt)
+        with pytest.raises(RuntimeError, match="Testavbrott"):
+            code_post(client, page, FLOW + "/kor")
+        case, = app.state.change_requests.list(operator)
+        assert app.state.change_requests.move(operator, case.id, "new", "in_progress")
+
+    restarted = code_app()
+    with code_client(restarted) as client:
+        login_operator(client)
+        page = client.get(FLOW)
+        assert page.context["flow"].status == "reconciliation_required"
+        page = code_post(client, page, FLOW + "/avstam", {"retry": "1", "note": "Ärendet finns på boarden."})
+        page = code_post(client, page, FLOW + "/kor")
+        assert page.context["flow"].step(HANDOFF).result["change_request_id"] == str(case.id)
+        saved, = restarted.state.change_requests.list(operator)
+        assert saved.id == case.id and saved.status == "in_progress" and saved.assignee_id == "karl"
+        history = restarted.state.change_requests.get(operator, case.id).history
+        assert sum(event.action == "ordered" for event in history) == 1
+
+
+@pytest.mark.parametrize(("setup", "details", "message"), [
+    ({}, {"expected_effect": ""}, "Ogiltiga uppgifter"),
+    ({}, {"rule_id": "PR-ITP1-016"}, "måste finnas bland tolkningens berörda regler"),
+    ({"source_read": SOURCE}, {}, "saknar verifierat källunderlag"),
+    ({"parameter_change": True}, {}, "Hantera den i parameterflödet"),
+])
+def test_u4_grinden_stoppar_otillrackligt_underlag(code_app, setup, details, message):
+    app = code_app(**setup)
+    with code_client(app) as client:
+        page = interpret_code_rule(client)
+        page = code_post(client, page, FLOW + "/grind", {**ADOPTION, **details})
+        assert page.status_code == 422 and message in page.text
+        assert page.context["flow"].status == "waiting_gate"
+        assert code_post(client, page, FLOW + "/kor").status_code == 422
+        assert app.state.change_requests.list(Actor.human("karl")) == []
+
+
+@pytest.mark.parametrize("tamper", ["bound_input", "missing_decision"])
+def test_u4_kraver_bestandigt_beslut_och_oforandrat_underlag(code_app, tamper):
+    app = code_app()
+    with code_client(app) as client:
+        page = adopt_code_rule(client)
+        flow = page.context["flow"]
+        with app.state.service._session_factory() as session:
+            if tamper == "missing_decision":
+                session.execute(delete(FlowGateDecision).where(FlowGateDecision.flow_id == flow.flow_id))
+            else:
+                result = {**flow.step("tolkning").result, "run": {"status": "failed"}}
+                session.execute(update(FlowStep).where(FlowStep.flow_id == flow.flow_id, FlowStep.step_key == "tolkning")
+                                .values(result=result))
+        response = code_post(client, page, FLOW + "/kor")
+        assert response.context["flow"].status == "failed" and "verifierat beslut" in response.text
+        assert app.state.change_requests.list(Actor.human("karl")) == []
+
+
+def test_u4_skrivning_och_underlag_kraver_ratt_operator(code_app):
+    app = code_app()
+    with code_client(app) as client:
+        data = {"flow_type": CODE_FLOW_TYPE, "source_handle": CODE_SOURCE, "csrf_token": app.state.csrf_token}
+        assert client.post("/floden", headers=ORIGIN, data=data).status_code == 401
+        page = adopt_code_rule(client)
+        assert client.post(FLOW + "/kor", headers=ORIGIN, data={**data, "version": hidden(page, "version")}).status_code == 403
+        assert client.post(FLOW + "/kor", data={
+            "csrf_token": page.context["operator_csrf"], "version": hidden(page, "version"),
+        }).status_code == 403
+
+    with code_client(code_app(operator_id="annan")) as client:
+        login_operator(client, "annan")
+        listing = client.get("/floden")
+        assert FLOW not in listing.text
+        assert client.get(FLOW).status_code == 404
+        assert client.get(FLOW + "/steg/tolkning/journal").status_code == 404
+        assert client.post(FLOW + "/kor", headers=ORIGIN, data={
+            "csrf_token": listing.context["operator_csrf"], "version": hidden(page, "version"),
+        }).status_code == 404
+    assert app.state.change_requests.list(Actor.human("karl")) == []

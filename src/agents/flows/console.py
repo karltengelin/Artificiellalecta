@@ -28,6 +28,8 @@ from typing import Any
 
 from agents.ecosystem import Ecosystem
 from agents.flows.definitions import DEFINITIONS
+from agents.flows.definitions.rule_change_code import FLOW_TYPE as CODE_FLOW_TYPE, rule_change_code
+from agents.flows.definitions.rule_change_parameter import FLOW_TYPE as PARAMETER_FLOW_TYPE
 from agents.flows.engine import AgentRuntime, FlowEngine, FlowView
 from agents.flows.store import FlowError
 from agents.gateways import (
@@ -41,6 +43,7 @@ from agents.journal import DEFAULT_JOURNAL_DIR
 from agents.skills import SkillRegistry
 from ai import AIClient
 from services import Actor, ServiceLayer, default_registry
+from services.change_requests import ChangeRequests
 
 #: Dokumentslag i regelverksgatewayen som kan starta ett flöde
 SOURCE_KINDS = ("bevakning",)
@@ -73,6 +76,7 @@ class FlowConsole:
         journal_dir: Path | None = None,
         drafts_dir: Path | None = None,
         regulatory: RegulatoryGateway | None = None,
+        change_requests: ChangeRequests | None = None,
     ) -> FlowConsole:
         """Bygg en adapter med uttrycklig modellklient och oförändrade tjänstelager."""
         if ai is None:
@@ -87,7 +91,8 @@ class FlowConsole:
             gateways=Gateways(regulatory=regulatory, drafts=drafts), journal_dir=journal_dir,
             team_services=dict(team_services or {}),
         )
-        engine = FlowEngine(session_factory, DEFINITIONS, runtime=runtime, trusted=trusted)
+        definitions = DEFINITIONS if change_requests is None else (*DEFINITIONS, rule_change_code(change_requests))
+        engine = FlowEngine(session_factory, definitions, runtime=runtime, trusted=trusted)
         return cls(engine=engine, regulatory=regulatory, drafts=drafts, journal_dir=journal_dir,
                    model_label="konfigurerad AI-klient", simulated_role=simulated_role)
 
@@ -127,12 +132,20 @@ class FlowConsole:
     def busy(self) -> bool:
         return self._lock.locked()
 
+    @property
+    def code_changes_available(self) -> bool:
+        return CODE_FLOW_TYPE in self.engine.definitions
+
     # --- åtgärder -----------------------------------------------------------------------------------
 
-    def start(self, source_handle: str, actor: Actor) -> FlowView:
+    def start(self, source_handle: str, actor: Actor, *, flow_type: str = PARAMETER_FLOW_TYPE) -> FlowView:
+        if flow_type not in self.engine.definitions:
+            raise FlowError("Flödestypen är inte ansluten i den här miljön")
+        if flow_type == CODE_FLOW_TYPE and actor.type != "human":
+            raise FlowError("Ett kodändringsflöde startas av den ansvariga operatören")
         if source_handle not in {source.handle for source in self.sources()}:
             raise FlowError("Källan finns inte bland tillgängliga bevakningsunderlag")
-        return self.engine.start("rule_change_parameter", {"source_handle": source_handle}, actor=actor)
+        return self.engine.start(flow_type, {"source_handle": source_handle}, actor=actor)
 
     def run_next(self, flow_id: str, version: int, actor: Actor) -> FlowView:
         if not self._lock.acquire(blocking=False):
