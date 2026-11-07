@@ -1,8 +1,9 @@
-# U6 – Förslag till första sandlådepolicy
+# U6 – Första sandlådepolicy
 
 **Policy-ID och version** `u6-quote-discount/v1`
 
-**Beslutsstatus** Förslag. Autonomt godkännande kräver operatörens uttryckliga val av denna version för ett lokalt sandlådeprov. Granskat läge är standard.
+**Beslutsstatus** Operatören valde denna version för det lokala sandlådeprovet
+i chatten 2026-11-07. Granskat läge är standard i den ordinarie utvecklingsytan.
 
 ## Tillåten ändring
 
@@ -60,12 +61,31 @@ en föreslagen ändring eller ett testbevis råkar matcha offertprovet.
    nytt muterande anrop. Efter övertagande kan operatören stämma av det
    redan påbörjade försöket. Ett nytt försök kräver gällande mandat.
 
-## Lokala förberedelser
+## Kör det uttryckliga sandlådeprovet
 
-Proven använder faktiska Git-commits, det befintliga offertprovet och U5:s
-varaktiga SQLite-kvitton. De provar den föreslagna gränsen och U5:s
-ordinarie granskningsväg. Dubbelanrop och avbrott täcks även i U5:s
-befintliga prov. Testkoden utfärdar inget autonomt godkännande.
+Starta från reporoten. Katalogen för `start` ska vara ny och dess förälder
+ska finnas. Startaren använder en skriptad kodare och U5:s lokala SQLite-
+testdubblar. Den stannar efter den simulerade mergen. Operatören kör sedan
+`deploy` och `verify` som separata kommandon om införandekedjan ska provas.
+
+```powershell
+python scripts/demo/run_sandbox_policy.py --directory tmp/u6-offert start --policy u6-quote-discount/v1 --operator-id karl
+python scripts/demo/run_sandbox_policy.py --directory tmp/u6-offert status
+python scripts/demo/run_sandbox_policy.py --directory tmp/u6-offert deploy
+python scripts/demo/run_sandbox_policy.py --directory tmp/u6-offert verify
+```
+
+`status` visar policybeslut, granskningsunderlag eller avslag samt skilda
+kvitton. Kör `merge` för att stämma av ett avbrutet mergeförsök från samma
+katalog. Vid avslag visar `status` skälet och eventuellt underlag för U5:s
+mänskliga väg. Efter granskning kan operatören använda `review --seen`
+med underlagets fingeravtryck och därefter `merge`.
+
+Startaren lagrar mandatet i `sandbox.json`, den arkiverade Git-kopian i
+`source.git`, provbevis i `runs/` och ärendets beslut i `case.db`.
+Testdubblarnas kvitton ligger i `case.delivery.db`. De lokala proven täcker
+nekat mandat, ändrad diff, commit och testbevis, regelärenden, dubbelanrop
+och avstämning efter avbrott. Införande och hälsokontroll provas separat.
 
 Valet av denna policy gäller ett lokalt sandlådeprov. Verkliga
 skrivanslutningar, ändrad mergepolicy och integration av U6 till

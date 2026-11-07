@@ -17,12 +17,12 @@ from fastapi.testclient import TestClient
 
 from agents import development_codex
 from agents.development import (
-    CodingAttempt,
     CodingResult,
     CodingTask,
     _git,
     run_development_case,
 )
+from agents.development_sandbox import QuoteSandbox
 from agents.journal import read_journal
 from scripts.demo.run_development_case import (
     DRAFT,
@@ -31,7 +31,10 @@ from scripts.demo.run_development_case import (
     ScriptedCoder,
     verify_quote,
 )
+from scripts.demo.run_sandbox_policy import main as sandbox_main
+from scripts.demo.run_sandbox_policy import prepare as prepare_sandbox
 from services import Actor
+from services.change_releases import ChangeReleases
 from services.change_requests import (
     DEVELOPER,
     ChangeQueueRun,
@@ -44,7 +47,14 @@ from services.change_requests import (
     change_request_events,
     change_requests_table,
 )
-from services.development_demo import Candidate, Evidence, OutcomeUnknown, TargetState
+from services.development_demo import (
+    Candidate,
+    DemoDelivery,
+    Evidence,
+    OutcomeUnknown,
+    TargetState,
+    demo_target,
+)
 from services.errors import AccessDeniedError, ConflictError
 from web import development_github
 from web.app import create_app
@@ -799,177 +809,154 @@ def test_u5_inforande_och_verifiering_ar_skilda_utfall(release_case):
 
 
 @pytest.fixture
-def quote_sandbox(tmp_path):
-    """Betrodd provmiljö för u6-quote-discount/v1, med Git-objekt och fast kodprov."""
-    repo = tmp_path / "quote-repo"
-    repo.mkdir()
-    test_input = tmp_path / "committed-quote"
-    test_input.mkdir()
-
-    def git(*args):
-        return _git(repo, monotonic() + 10, *args)
-
-    def commit():
-        git("-c", "user.name=U6 test", "-c", "user.email=demo@example.invalid", "commit",
-            "--no-gpg-sign", "-m", "Syntetisk offert")
-
-    git("init", "--template=", "--object-format=sha1", "--initial-branch=proposal")
-    quote = repo / FILE
-    quote.write_bytes(b"SELECT :price + :discount;\n")
-    git("add", "--", FILE)
-    commit()
-    base = git("rev-parse", "HEAD")
-    git("branch", "main", base)
-    before = git("hash-object", "--no-filters", FILE)
-    quote.write_bytes(b"SELECT :price - :discount;\n")
-    after = git("hash-object", "--no-filters", FILE)
-    git("add", "--", FILE)
-    commit()
-
-    def observe(case_id, run_id):
-        head = git("rev-parse", "refs/heads/proposal")
-        if (git("rev-parse", "refs/heads/main") != base
-                or git("show", "-s", "--format=%P", head) != base
-                or git("ls-tree", "-r", "-t", base) != f"100644 blob {before}\t{FILE}"
-                or git("ls-tree", "-r", "-t", head) != f"100644 blob {after}\t{FILE}"):
-            return None
-        diff = git("diff", "--no-ext-diff", "--no-textconv", "--no-renames", base, head, "--")
-        (test_input / FILE).write_bytes((git("cat-file", "blob", f"{head}:{FILE}") + "\n").encode())
-        proof = verify_quote(test_input)
-        if not proof.passed:
-            return None
-        result = CodingResult(run_id=run_id, case_id=case_id, base_commit=base, head_commit=head,
-                              branch="proposal", outcome="tests_passed",
-                              attempts=(CodingAttempt(plan="Rätta fiktiv offert", diff=diff, tests=proof),))
-        refs = result.review()
-        return Candidate(pull_request=case_id, base=base, head=head, diff=diff, references=refs,
-                         checks=(Evidence(name="kodprov", reference=refs.test_ref,
-                                          passed=True, summary=proof.summary),))
-
-    return repo, git, commit, observe
-
-
-def prepare_quote_review(settings, observe, *, rule_change=False):
-    releases = create_app(settings=settings).state.change_releases
-    store = releases.requests
+def enabled_sandbox(settings, tmp_path):
+    settings = replace(settings, demo_path=tmp_path / "case.db")
+    base = create_app(settings=settings).state.change_releases
     operator = Actor.human("karl")
-    if rule_change:
-        order = ChangeRequestOrder(
-            **(DRAFT.model_dump() | {"kind": "rule_change", "motivation": "Ny pensionslogik",
-                                    "decision_ref": "syntetiskt regelbeslut", "rule_version": "v2"}),
-            origin=ChangeRequestOrigin(channel="rule_change_code", reference="FLOW-TEST/order"),
-        )
-        item = store.submit_order(operator, order)
-    else:
-        item = store.create(operator, uuid4(), DRAFT)
+    grant, run = prepare_sandbox(tmp_path, base.requests, base.delivery, operator)
+    sandbox = QuoteSandbox(tmp_path, grant, verify_quote)
+    releases = ChangeReleases(base.requests, base.delivery, sandbox=sandbox)
+    return base, releases, operator, run, grant
+
+
+def test_u6_betrodd_start_kraver_policyval_och_skilda_inforandesteg(tmp_path, capsys):
+    directory = tmp_path / "probe"
+    args = ["--directory", str(directory)]
+    with pytest.raises(SystemExit) as missing:
+        sandbox_main([*args, "start", "--operator-id", "karl"])
+    assert missing.value.code == 2 and not directory.exists()
+    assert sandbox_main([*args, "start", "--policy", "u6-quote-discount/v1", "--operator-id", "karl"]) == 0
+    merged = json.loads(capsys.readouterr().out)
+    assert merged["status"] == "merged" and merged["decision"]["policy"] == "u6-quote-discount/v1"
+    assert merged["merge"] and merged["deployment"] is None and merged["check"] is None
+    assert sandbox_main([*args, "deploy"]) == 0
+    deployed = json.loads(capsys.readouterr().out)
+    assert deployed["status"] == "deployed" and deployed["check"] is None
+    assert sandbox_main([*args, "verify"]) == 0
+    verified = json.loads(capsys.readouterr().out)
+    assert verified["status"] == "verified" and verified["check"]["passed"]
+    assert verified["check"]["version"] == deployed["deployment"]["version"] == merged["merge"]["version"]
+
+
+def test_u6_policy_kraver_aktivt_mandat_och_egen_miljo(enabled_sandbox):
+    base, releases, operator, run, grant = enabled_sandbox
+    case_id = grant.request_id
+    with pytest.raises(AccessDeniedError):
+        releases.approve_sandbox(demo_scope(case_id), case_id)
+    with pytest.raises(ConflictError, match="mänskligt beslut"):
+        base.advance("merge", run, case_id, 1)
+    wrong = ChangeReleases(base.requests, DemoDelivery(releases.sandbox.directory / "annan.db"),
+                           sandbox=releases.sandbox)
+    assert wrong.approve_sandbox(run, case_id) is None
+    view = releases.read(operator, case_id)
+    assert view.approval is None and "målmiljö" in view.policy_error
+    assert releases.requests.get(operator, case_id).status == "waiting_review"
+    assert releases.advance("merge", operator, case_id, approve_release(releases, operator, case_id))
+
+
+def test_u6_matchande_offertbevis_ger_aldrig_policybeslut_for_regelandring(enabled_sandbox):
+    base, releases, operator, _, grant = enabled_sandbox
+    order = ChangeRequestOrder(**(DRAFT.model_dump() | {"kind": "rule_change", "motivation": "Ny pensionslogik"}),
+                               origin=ChangeRequestOrigin(channel="rule_change_code", reference="FLOW-TEST/order"))
+    item = base.requests.submit_order(operator, order)
     run = demo_scope(item.id)
-    store.claim(run, item.id)
-    candidate = observe(item.id, run.run_id)
-    assert candidate is not None
-    store.handoff(run, item.id, candidate.references)
-    releases.delivery.stage(candidate)
-    return releases, operator, run, candidate
+    base.requests.claim(run, item.id)
+    quote = base.delivery.candidate(grant.request_id).model_copy(update={"pull_request": item.id})
+    base.requests.handoff(run, item.id, quote.references)
+    base.delivery.stage(quote)
+    rule_grant = grant.model_copy(update={"request_id": item.id, "run_id": run.run_id, "target": demo_target(item.id)})
+    sandbox = replace(releases.sandbox, grant=rule_grant)
+    guarded = ChangeReleases(base.requests, base.delivery, sandbox=sandbox)
+    assert guarded.approve_sandbox(run, item.id) is None
+    view = guarded.read(operator, item.id)
+    assert view.approval is None and "mänsklig granskning" in view.policy_error
 
 
-@pytest.mark.parametrize("change", ["extra_file", "mode", "sql_bytes", "base_ref", "parent"])
-def test_u6_sandladeforslaget_ger_avslag_for_andrad_git_kandidat(quote_sandbox, change):
-    repo, git, commit, observe = quote_sandbox
-    case_id, run_id = uuid4(), uuid4()
-    assert observe(case_id, run_id) is not None
-    if change == "base_ref":
-        git("branch", "-f", "main", "HEAD")
-    elif change == "parent":
-        git("-c", "user.name=U6 test", "-c", "user.email=demo@example.invalid", "commit",
-            "--allow-empty", "--no-gpg-sign", "-m", "Extra förälder")
-    else:
-        git("reset", "--soft", "refs/heads/main")
-        if change == "extra_file":
-            (repo / "verify.py").write_bytes(b"assert True\n")
-            git("add", "--", "verify.py")
-        elif change == "mode":
-            git("update-index", "--chmod=+x", FILE)
+@pytest.mark.parametrize("change", ["diff", "proof", "base", "head", "evidence_file",
+                                    "git_extra", "git_mode", "git_bytes", "git_parent"])
+def test_u6_policy_kontrollerar_aktuellt_underlag_igen_fore_merge(enabled_sandbox, change):
+    _, releases, operator, run, grant = enabled_sandbox
+    case_id = grant.request_id
+    approval = releases.approve_sandbox(run, case_id)
+    assert approval is not None
+    candidate = releases.delivery.candidate(case_id)
+    if change.startswith("git_"):
+        workspace = releases.sandbox.directory / "altered"
+        deadline = monotonic() + 15
+        repo = releases.sandbox.directory / "source.git"
+        _git(repo, deadline, "clone", "--no-local", "--", str(repo), str(workspace))
+        commit_args = ("--amend", "--no-edit")
+        if change == "git_extra":
+            (workspace / "extra.py").write_text("print(1)\n", encoding="utf-8")
+            _git(workspace, deadline, "add", "--", "extra.py")
+        elif change == "git_mode":
+            _git(workspace, deadline, "update-index", "--chmod=+x", FILE)
+        elif change == "git_bytes":
+            (workspace / FILE).write_bytes(b"SELECT :price - :discount;\n\n")
+            _git(workspace, deadline, "add", "--", FILE)
         else:
-            (repo / FILE).write_bytes(b"SELECT :price - :discount;\n\n")
-            git("add", "--", FILE)
-        commit()
-    assert observe(case_id, run_id) is None
-
-
-@pytest.mark.parametrize("field", ["diff", "head", "checks", "branch", "repository"])
-def test_u6_granskningsvagen_binder_faktisk_commit_och_bevis(settings, quote_sandbox, field):
-    observe = quote_sandbox[-1]
-    releases, operator, run, candidate = prepare_quote_review(settings, observe)
-    case_id = candidate.pull_request
-    assert releases.read(operator, case_id, preview=True).preview.candidate == observe(case_id, run.run_id)
-    approval = approve_release(releases, operator, case_id)
-    changes = {"diff": "förändrad diff", "head": "b" * 40, "branch": "annan-branch", "repository": "extern/repo",
-               "checks": (candidate.checks[0].model_copy(update={"reference": "annat testbevis"}),)}
-    replacement = candidate.model_copy(update={field: changes[field]})
-    releases.delivery.stage(replacement)
-    assert replacement != observe(case_id, run.run_id)
-    with pytest.raises(ConflictError):
+            commit_args = ("--allow-empty", "-m", "En extra commit")
+        _git(workspace, deadline, "-c", "user.name=U6", "-c", "user.email=demo@example.invalid",
+             "commit", "--no-gpg-sign", *commit_args)
+        _git(repo, deadline, "fetch", "--no-tags", str(workspace), f"+HEAD:refs/heads/demo/{grant.run_id}")
+        changed = candidate.model_copy(update={"head": _git(workspace, deadline, "rev-parse", "HEAD")})
+        expected = "commit eller" if change == "git_parent" else "tillåtna ändringen"
+        with pytest.raises(ConflictError, match=expected):
+            releases.sandbox.check_candidate(changed)
+    elif change == "evidence_file":
+        proof = releases.sandbox.directory / "runs" / str(grant.run_id) / "result.json"
+        proof.write_text("{}", encoding="utf-8")
+    else:
+        updates = {"diff": {"diff": "ändrad diff"}, "head": {"head": "a" * 40}, "base": {"base": "b" * 40},
+                   "proof": {"checks": (candidate.checks[0].model_copy(update={"reference": "annat bevis"}),)}}
+        releases.delivery.stage(candidate.model_copy(update=updates[change]))
+    with pytest.raises(ConflictError, match="nytt beslut"):
         releases.advance("merge", run, case_id, approval)
+    view = releases.read(operator, case_id)
+    assert view.stopped and view.policy_error and view.pending is None
     assert releases.requests.get(operator, case_id).status == "waiting_review"
     assert releases.delivery.lookup_merge(f"merge/{case_id}/{approval}") is None
+    assert releases.approve_sandbox(run, case_id) is None
 
 
-@pytest.mark.parametrize("rule_change", [False, True], ids=["synthetic_defect", "pension_rule"])
-def test_u6_ordinarie_granskning_kravs_med_eller_utan_syntetiskt_arende(settings, quote_sandbox, rule_change):
-    observe = quote_sandbox[-1]
-    releases, operator, run, candidate = prepare_quote_review(settings, observe, rule_change=rule_change)
-    case_id = candidate.pull_request
-    item = releases.requests.get(operator, case_id)
-    if rule_change:
-        assert item.draft.kind == "rule_change" and item.origin.channel == "rule_change_code"
-    assert candidate == observe(case_id, run.run_id)
-    assert releases.read(operator, case_id).approval is None
-    with pytest.raises(AccessDeniedError):
-        releases.advance("merge", demo_scope(case_id), case_id, 1)
-    with pytest.raises(ConflictError, match="mänskligt beslut"):
-        releases.advance("merge", run, case_id, 1)
-    assert releases.requests.get(operator, case_id).status == "waiting_review"
-    assert releases.delivery.lookup_merge(f"merge/{case_id}/1") is None
-
-
-def test_u6_offertprov_stams_av_fore_dubbelanrop_och_inforande(settings, quote_sandbox, monkeypatch):
-    releases, operator, run, candidate = prepare_quote_review(settings, quote_sandbox[-1])
-    case_id = candidate.pull_request
-    approval = approve_release(releases, operator, case_id)
+@pytest.mark.parametrize("applied", [False, True], ids=["before_effect", "after_effect"])
+def test_u6_policybeslut_stams_av_efter_avbrott_och_overtagande(enabled_sandbox, monkeypatch, applied):
+    _, releases, operator, run, grant = enabled_sandbox
+    case_id = grant.request_id
+    approval = releases.approve_sandbox(run, case_id)
+    assert approval is not None and releases.approve_sandbox(run, case_id) == approval
     operation = f"merge/{case_id}/{approval}"
     merge = releases.delivery.merge
     calls = []
 
-    def lose_response(key, expected):
+    def interrupt(key, candidate):
         calls.append(key)
-        merge(key, expected)
-        raise OutcomeUnknown("Mergebeskedet uteblev.")
+        if applied:
+            merge(key, candidate)
+        raise OutcomeUnknown("Svaret uteblev.")
 
-    monkeypatch.setattr(releases.delivery, "merge", lose_response)
+    monkeypatch.setattr(releases.delivery, "merge", interrupt)
     with pytest.raises(OutcomeUnknown):
         releases.advance("merge", run, case_id, approval)
     assert releases.read(operator, case_id).pending == "merge_pending"
+    assert releases.requests.takeover(operator, case_id, run.run_id)
+    delivery = DemoDelivery(releases.sandbox.directory / "case.db")
+    resumed = ChangeReleases(releases.requests, delivery, sandbox=releases.sandbox)
+    with monkeypatch.context() as patch:
+        def unavailable(_):
+            raise OutcomeUnknown("Källan svarar ännu inte.")
 
-    resumed = create_app(settings=settings).state.change_releases
-    lookup = resumed.delivery.lookup_merge
-
-    def unavailable(_):
-        raise OutcomeUnknown("Källan svarar ännu inte.")
-
-    monkeypatch.setattr(resumed.delivery, "merge", lose_response)
-    monkeypatch.setattr(resumed.delivery, "lookup_merge", unavailable)
-    with pytest.raises(OutcomeUnknown):
-        resumed.advance("merge", run, case_id, approval)
-    assert resumed.read(operator, case_id).pending == "merge_pending"
-
-    monkeypatch.setattr(resumed.delivery, "lookup_merge", lookup)
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        jobs = [executor.submit(resumed.advance, "merge", run, case_id, approval) for _ in range(2)]
-        assert all(job.result(timeout=10) for job in jobs)
+        patch.setattr(delivery, "lookup_merge", unavailable)
+        with pytest.raises(OutcomeUnknown):
+            resumed.advance("merge", operator, case_id, approval)
+    if applied:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            jobs = [executor.submit(resumed.advance, "merge", operator, case_id, approval) for _ in range(2)]
+            assert all(job.result(timeout=15) for job in jobs)
+    else:
+        with pytest.raises(ConflictError, match="Ingen merge hittades"):
+            resumed.advance("merge", operator, case_id, approval)
     view = resumed.read(operator, case_id)
-    assert calls == [operation] and view.merge == lookup(operation)
-    assert view.deployment is None and view.check is None
-    assert resumed.advance("deploy", operator, case_id, approval)
-    assert resumed.read(operator, case_id).check is None
-    assert resumed.advance("verify", operator, case_id, approval)
-    verified = resumed.read(operator, case_id)
-    assert verified.check.passed and verified.check.version == verified.deployment.version == view.merge.version
+    assert calls == [operation] and view.merge == delivery.lookup_merge(operation)
+    assert view.pending is None and view.deployment is None
+    assert bool(view.merge) == applied and view.stopped != applied
