@@ -252,11 +252,11 @@ Filer laddas upp som JSON i motpartssimulatorns format; ett `_label`-fält från
 Personnummer visas bara på filsidan, där `get_salary_file` redan returnerar dem och läsningen loggas som
 personuppgiftsläsning. Översikten och fakturasidan visar inga personnummer, och listläsningarna loggas inte.
 Fördelningsformuläret förväljer en öppen faktura hos samma betalare. Saknas premieflödets tabeller i
-datakällan (Lakebase tills `migrate_premium_flow.py` körts skarpt i paket A steg 8) visar sidan en notis med de
+datakällan (som i Lakebase före paket A steg 8) visar sidan en notis med de
 saknade tabellerna i stället för ett fel, och varje POST svarar 409 utan att något ändras eller loggas. Migrationen
 inför tabellerna och de vidgade villkoren på `cases` i samma transaktion, så notisen försvinner först när flödets
 ärenden också kan skapas ([databasschema §12](databasschema.md#12-migrationer-och-versionering)). Migrationen är
-torrkörd mot Lakebase 2026-11-08 och väntar på Karls OK. Alla operationer är `HUMAN_ONLY` för agenter;
+införd i Lakebase 2026-11-08, så notisen visas inte längre där. Alla operationer är `HUMAN_ONLY` för agenter;
 sidan ger ingen ny agentbefogenhet. När förfallobevakningen ska köras automatiskt är öppet (designstoppet §13).
 
 **Flöden (Fas 3c, 3c-3, B-035; avgränsat enligt B-037).** Flödet `rule_change_parameter` från regeländring till verifierad

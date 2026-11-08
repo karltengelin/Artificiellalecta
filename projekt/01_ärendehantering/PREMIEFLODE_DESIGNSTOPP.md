@@ -46,10 +46,13 @@
 > Torrkörningen sker i en skrivskyddad transaktion. Migrationen är verifierad mot `svc_test`, och kedjan är
 > körd på ett migrerat schema med `smoke_test_premium_chain.py --db svc_test_migrerad`, 26 av 26 kontroller (tre av dem för migrationen). Lakebase är torrkörd
 > efter backup `backups/20261108T075712Z`: 24 satser, inga schemaskillnader, inga hinder och inget skrivet.
+> **Införd i Lakebase 2026-11-08** efter Karls OK (§11 punkt 2): inga andra klientanslutningar, radantalen lika
+> med backupen, 24 satser i en transaktion. Efteråt, med bara läsning: tabellerna tomma, villkoren bytta, ingen
+> schemaskillnad, inga agenträttigheter, övriga radantal oförändrade och en ny torrkörning ger `already_applied`.
 > `run_tests.py --changed --run --postgres` mot main `0197e9b`: 1 922 godkända prov, inga fel eller överhoppade.
 > **Avvikelse från §5 och §11, att godkänna:** inga nya kolumner i `premium_transactions`. Fakturaraden pekar redan
 > på premieraden, och en premierad kan ha flera fakturarader. Löneunderlagets id och version står i
-> `calculation_basis`. **Väntar på Karls OK:** (a) skarp körning, (b) därefter första operativa perioden 2026-10.
+> `calculation_basis`. **Väntar på Karls OK:** första operativa perioden 2026-10 (§11 punkt 3).
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).
