@@ -52,7 +52,9 @@
 > `run_tests.py --changed --run --postgres` mot main `0197e9b`: 1 922 godkända prov, inga fel eller överhoppade.
 > **Avvikelse från §5 och §11, att godkänna:** inga nya kolumner i `premium_transactions`. Fakturaraden pekar redan
 > på premieraden, och en premierad kan ha flera fakturarader. Löneunderlagets id och version står i
-> `calculation_basis`. **Väntar på Karls OK:** första operativa perioden 2026-10 (§11 punkt 3).
+> `calculation_basis`. **Första operativa perioden 2026-10 (§11 punkt 3), 2026-11-08:** SvenskIndustries AB #02 (en saknad rad, en nolla, en okänd person) och TeknikNorden AB #01 (utan avvikelser), verklig kalender, simulatorns seed 2026, backup `backups/20261108T094751Z`. Filintag, godkännande och fakturering (INV-000001 och INV-000002, förfallodag 2026-12-08) med två öppna ärenden `salary_file_deviation`; skrivskyddad
+> kontroll av §7: 31 av 31 för fall 1–7 och 18. **Väntar på Karls OK:** bankdelen (fall 12–15), tidigast 2026-11-09,
+> eftersom en inbetalning inte får ha framtida mottagningsdag och Karl valde verklig kalender.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).
