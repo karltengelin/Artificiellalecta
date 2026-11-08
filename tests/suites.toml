@@ -11,7 +11,7 @@ dependents = ["agents", "web", "tooling"]
 [suites.premiums]
 description = "Löneunderlag, premie, faktura, inbetalning, överlämning till månadsjournalen och produktparametrar"
 status = "partial"
-tests = ["tests/test_premium_month.py", "tests/test_calculate_itp1_premium.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_services_write_ops.py", "tests/test_bank_calendar.py", "tests/test_premium_basis.py", "tests/test_salary_files.py", "tests/test_invoices.py", "tests/test_ocr.py", "tests/test_payments.py", "tests/test_premium_month_export.py"]
+tests = ["tests/test_premium_month.py", "tests/test_calculate_itp1_premium.py", "tests/test_product_parameters.py", "tests/test_product_parameter_changes.py", "tests/test_services_write_ops.py", "tests/test_bank_calendar.py", "tests/test_premium_basis.py", "tests/test_salary_files.py", "tests/test_invoices.py", "tests/test_ocr.py", "tests/test_payments.py", "tests/test_premium_month_export.py", "tests/test_migration_premium_flow.py"]
 dependents = ["services", "agents", "web", "insights", "data", "tooling"]
 
 [suites.pensions]
@@ -107,7 +107,7 @@ dependents = ["tooling"]
 [suites.data]
 description = "Datamodeller, backup och migrationer"
 status = "active"
-tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_flows.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
+tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_flows.py", "tests/test_migration_premium_flow.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
 dependents = []
 
 [suites.design]
@@ -138,8 +138,11 @@ postgres = [
   "tests/test_valuation_runs.py::TestMigration::test_migrationen_mot_postgres",
   "tests/test_valuation_runs.py::TestLockPostgres::test_samtidiga_beslut_kraver_ny_granskning",
   "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
+  "tests/test_migration_premium_flow.py::test_migrationen_infor_premieflodet_och_blir_identisk_med_create_all",
+  "tests/test_migration_premium_flow.py::test_torrkorningen_ar_skrivskyddad_och_delvis_inforande_stoppar",
+  "tests/test_migration_premium_flow.py::test_saknad_forutsattning_stoppar",
 ]
-integration = ["tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_questions.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py", "tests/test_agents_flow_rule_change.py", "tests/test_web_flows.py"]
+integration = ["tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_questions.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py", "tests/test_agents_flow_rule_change.py", "tests/test_web_flows.py"]
 security = ["tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test_services_access.py", "tests/test_services_transactions.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_skills.py", "tests/test_agents_postgres_role.py", "tests/test_ai_boundaries.py", "tests/test_portfolio_impact.py::TestIngaIndividuppgifter", "tests/test_portfolio_impact.py::TestAtkomst", "tests/test_agents_teams.py::TestGatewayverktyg", "tests/test_agents_teams.py::TestParametermandatet"]
 
 # Alla matchande regler förenas. dependents utvidgar sedan kodändringens urval transitivt.
@@ -265,6 +268,8 @@ postgres = [
   "tests/test_product_parameters.py::test_uppgraderingen_lagger_till_kapitalets_parametrar",
   "tests/test_valuation_bases.py::TestMigration::test_migrationen_mot_postgres",
   "tests/test_valuation_runs.py::TestMigration::test_migrationen_mot_postgres",
+  "tests/test_migration_premium_flow.py::test_migrationen_infor_premieflodet_och_blir_identisk_med_create_all",
+  "tests/test_migration_premium_flow.py::test_torrkorningen_ar_skrivskyddad_och_delvis_inforande_stoppar",
 ]
 
 [[rules]]
@@ -302,3 +307,16 @@ postgres = ["tests/test_actuarial_workspace.py::test_actuarial_migration_and_con
 [[rules]]
 paths = ["src/services/premium_month*.py", "src/services/operations/premium_month.py", "src/skills/calculation/premium_origin_ledger.py", "src/utils/migration_premium_journal.py", "scripts/migrations/migrate_premium_journal.py"]
 postgres = ["tests/test_premium_month.py::test_premium_journal_postgres_migration_and_concurrent_receipt"]
+
+# Paket A steg 8 (B-046): premieflödets migration mot Lakebase; agentrollerna får inga rättigheter
+[[rules]]
+paths = ["src/utils/migration_premium_flow.py", "scripts/migrations/migrate_premium_flow.py"]
+suites = ["premiums", "data", "tooling"]
+
+[[rules]]
+paths = ["src/utils/migration_premium_flow.py", "scripts/migrations/migrate_premium_flow.py", "src/models/case.py"]
+postgres = [
+  "tests/test_migration_premium_flow.py::test_migrationen_infor_premieflodet_och_blir_identisk_med_create_all",
+  "tests/test_migration_premium_flow.py::test_torrkorningen_ar_skrivskyddad_och_delvis_inforande_stoppar",
+  "tests/test_migration_premium_flow.py::test_saknad_forutsattning_stoppar",
+]

@@ -40,6 +40,21 @@
 > dem för filernas och inbetalningarnas listor. De returnerar `missing_tables` när premieflödets tabeller saknas,
 > så att sidan visar en notis i Lakebase före steg 8. Filer laddas upp som JSON i simulatorns format.
 > Webbkontrollen satte operationernas dag till kedjans affärsdatum med ett lokalt startskript, som röktestet gör.
+> Steg 8 (Lakebase) förberett 2026-11-08, se [databasschema §12](../../02_system/databasschema.md#12-migrationer-och-versionering).
+> `migrate_premium_flow.py` inför de fem tabellerna och byter tre CHECK-villkor på `cases` i en transaktion:
+> ärendetyperna, kanalen `system` (steg 3; saknades också i Lakebase) och undantaget för `payment_unmatched`.
+> Torrkörningen sker i en skrivskyddad transaktion. Migrationen är verifierad mot `svc_test`, och kedjan är
+> körd på ett migrerat schema med `smoke_test_premium_chain.py --db svc_test_migrerad`, 26 av 26 kontroller (tre av dem för migrationen). Lakebase är torrkörd
+> efter backup `backups/20261108T075712Z`: 24 satser, inga schemaskillnader, inga hinder och inget skrivet.
+> **Införd i Lakebase 2026-11-08** efter Karls OK (§11 punkt 2): inga andra klientanslutningar, radantalen lika
+> med backupen, 24 satser i en transaktion. Efteråt, med bara läsning: tabellerna tomma, villkoren bytta, ingen
+> schemaskillnad, inga agenträttigheter, övriga radantal oförändrade och en ny torrkörning ger `already_applied`.
+> `run_tests.py --changed --run --postgres` mot main `0197e9b`: 1 922 godkända prov, inga fel eller överhoppade.
+> **Avvikelse från §5 och §11, att godkänna:** inga nya kolumner i `premium_transactions`. Fakturaraden pekar redan
+> på premieraden, och en premierad kan ha flera fakturarader. Löneunderlagets id och version står i
+> `calculation_basis`. **Första operativa perioden 2026-10 (§11 punkt 3), 2026-11-08:** SvenskIndustries AB #02 (en saknad rad, en nolla, en okänd person) och TeknikNorden AB #01 (utan avvikelser), verklig kalender, simulatorns seed 2026, backup `backups/20261108T094751Z`. Filintag, godkännande och fakturering (INV-000001 och INV-000002, förfallodag 2026-12-08) med två öppna ärenden `salary_file_deviation`; skrivskyddad
+> kontroll av §7: 31 av 31 för fall 1–7 och 18. **Väntar på Karls OK:** bankdelen (fall 12–15), tidigast 2026-11-09,
+> eftersom en inbetalning inte får ha framtida mottagningsdag och Karl valde verklig kalender.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).

@@ -11,8 +11,11 @@ avstämning. Kedjan slutar i månadsjournalen: periodens mottagna premier export
 |------------|--------------------------------------------------------------------------------|
 | `demo`     | Demobeståndet i en SQLite-databas i minnet                                     |
 | `svc_test` | Demobeståndet i ett eget schema i SERVICES_TEST_POSTGRES_URL, tas bort efteråt |
+| `svc_test_migrerad` | Som `svc_test`, men schemat byggs som Lakebase före steg 8 och förs fram med `migrate_premium_flow` |
 
-Lakebase ingår inte; där krävs de nya tabellerna först (steg 8).
+Lakebase ingår inte. `svc_test_migrerad` prövar kedjan på samma väg som Lakebase tar i steg 8
+(B-046, P1-PREMIE-001 §11): befintliga tabeller utan premieflödets fem, `cases` med villkoren från
+F5-1, demobeståndet, torrkörning och skarp migration – och först därefter kedjan.
 
 **Bestånd.** Demobeståndet byggs utan personer födda före 1961 (`born_from=1961`): David Dahl
 med pågående utbetalning och kohortens födda 1959–1960, vars referensplan startar 2026-11.
@@ -41,6 +44,7 @@ scenariot** (det simulatorn förutsade för just dessa filer).
 Användning (från repo-roten, i .venv):
     python scripts/diagnostics/smoke_test_premium_chain.py                    # demo
     python scripts/diagnostics/smoke_test_premium_chain.py --db svc_test
+    python scripts/diagnostics/smoke_test_premium_chain.py --db svc_test_migrerad
     python scripts/diagnostics/smoke_test_premium_chain.py --seed 7 --utdata logs/simulation
 """
 
@@ -310,18 +314,48 @@ def hand_over(db, call, invoices: dict, report: Report) -> None:
                  and {r["reused"] for r in repeated} == {True} and journal_again == journal)
 
 
+def migrated_build(report: Report):
+    """Byggare för svc_test: schemat som Lakebase före steg 8, beståndet och sedan migrationen."""
+    def build(engine) -> None:
+        from models import Base
+        from services.db import session_factory_for
+        from utils.demo_data import seed_demo_stock
+        from utils.migration_premium_flow import CASE_CHECKS_BEFORE, TABLES, migrate_premium_flow
+
+        not_in_lakebase = {*TABLES, "portfolios", "portfolio_holdings", "trades"}
+        Base.metadata.create_all(engine, tables=[t for t in Base.metadata.sorted_tables if t.name not in not_in_lakebase])
+        with engine.begin() as conn:
+            for name, definition in CASE_CHECKS_BEFORE.items():
+                conn.exec_driver_sql(f"ALTER TABLE cases DROP CONSTRAINT {name}")
+                conn.exec_driver_sql(f"ALTER TABLE cases ADD CONSTRAINT {name} CHECK ({definition})")
+        seed_demo_stock(session_factory_for(engine), born_from=BORN_FROM)
+        dry = migrate_premium_flow(engine)
+        report.check("migration", "torrkörningen ändrar inget och visar inga schemaskillnader eller hinder",
+                     not dry.applied and not dry.drift and not dry.problems and len(dry.statements) > 0,
+                     f"{len(dry.statements)} satser")
+        done = migrate_premium_flow(engine, dry_run=False)
+        report.check("migration", "migrationen inför tabellerna och villkoren med oförändrade radantal",
+                     done.applied and done.row_counts == dry.row_counts,
+                     f"{sum(done.row_counts.values())} rader i {len(done.row_counts)} tabeller")
+        report.check("migration", "en andra körning gör ingenting",
+                     migrate_premium_flow(engine, dry_run=False).already_applied)
+    return build
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--db", choices=("demo", "svc_test"), default="demo")
+    parser.add_argument("--db", choices=("demo", "svc_test", "svc_test_migrerad"), default="demo")
     parser.add_argument("--period", type=date.fromisoformat, default=date(2026, 10, 1),
                         help="Premieperiod, ÅÅÅÅ-MM-01 (standard 2026-10, första operativa)")
     parser.add_argument("--seed", type=int, default=2026, help="Simulatorns seed")
     parser.add_argument("--utdata", type=Path, help="Skriv de simulerade filerna och facit hit")
     args = parser.parse_args()
 
-    databases = {"demo": lambda: demo_database(born_from=BORN_FROM),
-                 "svc_test": lambda: svc_test_database((), born_from=BORN_FROM)}
     report = Report()
+    databases = {"demo": lambda: demo_database(born_from=BORN_FROM),
+                 "svc_test": lambda: svc_test_database((), born_from=BORN_FROM),
+                 "svc_test_migrerad": lambda: svc_test_database((), born_from=BORN_FROM,
+                                                                build=migrated_build(report))}
     with databases[args.db]() as db:
         print(f"Databas: {db.label}; period {args.period:%Y-%m}, seed {args.seed}")
         run_chain(db, args.period.replace(day=1), args.seed, args.utdata, report)

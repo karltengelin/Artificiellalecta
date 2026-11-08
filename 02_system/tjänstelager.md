@@ -499,7 +499,7 @@ systemsteg återanvänder `run_valuation`; `valuation_close` är ännu inte bygg
 
 ### 9.9 Premieunderlag ur löneunderlag (paket A steg 1, B-046) – vad som stöds och vad som blockeras
 
-Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.3. Kod: `src/services/operations/premium_basis.py`. Ingen schemaändring: kopplingen till löneunderlaget står i `calculation_basis`. Kolumnerna i `premium_transactions` (designstoppet §5) läggs till först i Lakebase-steget (steg 8), eftersom koden på `main` annars inte kan läsa premierader i Lakebase före migrationen.
+Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md) §4.3. Kod: `src/services/operations/premium_basis.py`. Ingen schemaändring: kopplingen till löneunderlaget (id, version, källa och källreferens) står i `calculation_basis.salary_report`. Lakebase-steget (steg 8) inför inga kolumner i `premium_transactions`; designstoppets kolumner (§5) är ett separat förslag till Karl, och premieflödets tabeller och villkor förs in med `migrate_premium_flow.py` ([databasschema §12](databasschema.md#12-migrationer-och-versionering)).
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
