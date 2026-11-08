@@ -52,7 +52,7 @@ Lakebase. Migrationen är införd, och för period 2026-10 är filerna från Sve
 TeknikNorden AB #01 godkända och fakturerade: INV-000001 (30 724,48 kr) och INV-000002 (36 261,66 kr),
 fakturadag 2026-11-08, förfallodag 2026-12-08. Ingen inbetalning finns än. Karl valde verklig kalender,
 och en inbetalning får inte ha mottagningsdag i framtiden, så bankdelen kan köras tidigast 2026-11-09.
-Allt arbete finns på branchen `claude/paket-a-steg8-42c5f9` (senast `a76c39b`), som inte är mergad.
+Steg 8 hittills är mergat till `main` 2026-11-08 efter Karls OK, före bankdelen.
 
 1. Fråga Karl hur arbetsgivarna ska betala, t.ex. att den ena delbetalar och den andra betalar två gånger
    (fall 12–15 i [designstoppet §7](projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md#7-normal--och-avvikelsefall-för-verifiering)),
@@ -62,8 +62,8 @@ Allt arbete finns på branchen `claude/paket-a-steg8-42c5f9` (senast `a76c39b`),
    fakturadagen (`days_after_invoice=1`, standard 5 ger tidigast 2026-11-13).
 4. Kontrollera fall 12–15 och avstämningen med bara läsning: inbetalt = fördelat + avstämningskonto,
    och fakturerat − fördelat = öppna fordringar.
-5. Uppdatera byggstatus i designstoppet, `databasschema.md` §12 och paket A-raden. **Merge till `main`
-   först efter Karls OK, när bankdelen är klar** (Karls val 2026-11-08).
+5. Uppdatera byggstatus i designstoppet, `databasschema.md` §12 och paket A-raden, på en ny branch.
+   Merge till `main` efter Karls OK.
 
 Underlag: skripten för perioden och kontrollen, de simulerade filerna och facit ligger i huvudkatalogens
 `logs/simulation/paket-a-2026-10/`. Öppet utanför detta jobb: handläggarens avgörande av CASE-000009–000010
