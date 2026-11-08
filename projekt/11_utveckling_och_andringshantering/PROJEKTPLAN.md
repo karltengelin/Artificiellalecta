@@ -55,6 +55,13 @@ nytt efter omstart. Länk, bolagets status och historik är varaktiga. I äldre
 demofiler skapar webbstarten den lokala tabellen `change_request_events`
 för flyttar och länkbyten. Tidigare ärenden ligger kvar i `change_requests`.
 
+När läsnyckeln är på plats kan du prova med en riktig pull request i
+det valda repot. Lägg dess direkta länk på ett ärende i demowebben och öppna
+ärendets detalj. Jämför **Teknisk status från GitHub** med PR:ens status på
+GitHub. Gå sedan tillbaka till boarden och kontrollera att den visar samma
+hämtade status på rätt kort. Kortet ligger kvar i sin kolumn tills
+bolagets ärendestatus ändras.
+
 ## Prova U3 i demo
 
 Kör `python scripts/demo/run_development_case.py --operator-id karl` från
