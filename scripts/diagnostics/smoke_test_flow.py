@@ -120,10 +120,11 @@ def demo_database(born_from: int | None = None) -> Iterator[SimpleNamespace]:
 
 @contextmanager
 def svc_test_database(teams: tuple[str, ...] = ("aktuarie", "compliance"),
-                      born_from: int | None = None) -> Iterator[SimpleNamespace]:
+                      born_from: int | None = None, build=None) -> Iterator[SimpleNamespace]:
     """Eget schema i den isolerade testdatabasen, med teamens rättigheter på testrollerna.
 
-    `born_from` utelämnar demopersoner födda före året (se `create_demo_database`).
+    `born_from` utelämnar demopersoner födda före året (se `create_demo_database`). `build(engine)`
+    bygger schemat och beståndet i stället för `create_demo_database`, t.ex. via en migration.
     """
     from sqlalchemy import create_engine
 
@@ -149,7 +150,10 @@ def svc_test_database(teams: tuple[str, ...] = ("aktuarie", "compliance"),
     engine = create_engine(url, connect_args={"options": f"-csearch_path={name}"})
     agent_engines = []
     try:
-        create_demo_database(engine, with_proposals=False, born_from=born_from)
+        if build is None:
+            create_demo_database(engine, with_proposals=False, born_from=born_from)
+        else:
+            build(engine)
         team_factories, used = {}, set()
         for team, own in candidates.items():
             agent_url = own or shared
