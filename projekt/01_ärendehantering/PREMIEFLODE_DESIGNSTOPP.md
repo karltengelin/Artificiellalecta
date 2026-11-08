@@ -35,7 +35,7 @@
 > Steg 7 (handläggarsidan *Premier och betalningar*) byggt och testat lokalt 2026-11-07, se
 > [handläggar-UI §4](../../02_system/handläggar-ui.md#4-sidor). Webbkontroll i demo med simulatorns filer: två filer
 > mottagna och godkända, två fakturor, en bankfil med delbetalning och okänd referens, och posten fördelad från
-> avstämningskontot så att avstämningen går ihop. **Avvikelser, att godkänna:** två nya läsningar,
+> avstämningskontot så att avstämningen går ihop. **Avvikelser, alla tre godkända av Karl i chatten 2026-11-08 (de nya läsningarna, JSON-uppladdningen och startskriptet med affärsdatum, som bara används i demo):** två nya läsningar,
 > `list_salary_files` och `list_bank_events` (`HUMAN_ONLY`, ingen PII), som §6 inte räknar upp; sidan behöver
 > dem för filernas och inbetalningarnas listor. De returnerar `missing_tables` när premieflödets tabeller saknas,
 > så att sidan visar en notis i Lakebase före steg 8. Filer laddas upp som JSON i simulatorns format.
@@ -50,11 +50,12 @@
 > med backupen, 24 satser i en transaktion. Efteråt, med bara läsning: tabellerna tomma, villkoren bytta, ingen
 > schemaskillnad, inga agenträttigheter, övriga radantal oförändrade och en ny torrkörning ger `already_applied`.
 > `run_tests.py --changed --run --postgres` mot main `0197e9b`: 1 922 godkända prov, inga fel eller överhoppade.
-> **Avvikelse från §5 och §11, att godkänna:** inga nya kolumner i `premium_transactions`. Fakturaraden pekar redan
+> **Avvikelse från §5 och §11, godkänd av Karl i chatten 2026-11-08 (”kör på din rekommendation”):** inga nya kolumner i `premium_transactions`. Fakturaraden pekar redan
 > på premieraden, och en premierad kan ha flera fakturarader. Löneunderlagets id och version står i
 > `calculation_basis`. **Första operativa perioden 2026-10 (§11 punkt 3), 2026-11-08:** SvenskIndustries AB #02 (en saknad rad, en nolla, en okänd person) och TeknikNorden AB #01 (utan avvikelser), verklig kalender, simulatorns seed 2026, backup `backups/20261108T094751Z`. Filintag, godkännande och fakturering (INV-000001 och INV-000002, förfallodag 2026-12-08) med två öppna ärenden `salary_file_deviation`; skrivskyddad
 > kontroll av §7: 31 av 31 för fall 1–7 och 18. **Väntar på Karls OK:** bankdelen (fall 12–15), tidigast 2026-11-09,
-> eftersom en inbetalning inte får ha framtida mottagningsdag och Karl valde verklig kalender.
+> eftersom en inbetalning inte får ha framtida mottagningsdag och Karl valde verklig kalender. Ärendena
+> CASE-000009 (okänd person) och CASE-000010 (saknad rapport) avgörs efter bankdelen som riktiga ärenden, enligt Karls val 2026-11-08: en kompletterande fil från simulatorn med den saknade raden (sen rapportering, premie och tilläggsfaktura) stänger CASE-000010, och CASE-000009 stängs som felaktig rad utan åtgärd.
 > **Uppdrag:** [ATT_GORA, paket A](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning)
 > och raden *Kommande verksamhetsuppdrag*; gap V-01–03 i
 > [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).
