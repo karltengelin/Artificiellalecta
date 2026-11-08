@@ -45,6 +45,31 @@ Se [MASTER_CONTEXT §1](MASTER_CONTEXT.md#1-vision-och-syfte) och
 
 ## 🔴 Hög prioritet – grunden
 
+### ⏭️ Nästa jobb – paket A steg 8: bankdelen för period 2026-10 (tidigast 2026-11-09)
+
+**Prioriterat av Karl 2026-11-08: görs först när han frågar efter nästa jobb.** Steg 8 är halvvägs i
+Lakebase. Migrationen är införd, och för period 2026-10 är filerna från SvenskIndustries AB #02 och
+TeknikNorden AB #01 godkända och fakturerade: INV-000001 (30 724,48 kr) och INV-000002 (36 261,66 kr),
+fakturadag 2026-11-08, förfallodag 2026-12-08. Ingen inbetalning finns än. Karl valde verklig kalender,
+och en inbetalning får inte ha mottagningsdag i framtiden, så bankdelen kan köras tidigast 2026-11-09.
+Allt arbete finns på branchen `claude/paket-a-steg8-42c5f9` (senast `a76c39b`), som inte är mergad.
+
+1. Fråga Karl hur arbetsgivarna ska betala, t.ex. att den ena delbetalar och den andra betalar två gånger
+   (fall 12–15 i [designstoppet §7](projekt/01_ärendehantering/PREMIEFLODE_DESIGNSTOPP.md#7-normal--och-avvikelsefall-för-verifiering)),
+   och få hans OK för körningen.
+2. Stäm av att ingen annan agent kör mot Lakebase (AGENTS.md §4.5) och ta en ny backup.
+3. Kör bankfilen ur motpartssimulatorn med verkligt datum, seed 2026 och betalning dagen efter
+   fakturadagen (`days_after_invoice=1`, standard 5 ger tidigast 2026-11-13).
+4. Kontrollera fall 12–15 och avstämningen med bara läsning: inbetalt = fördelat + avstämningskonto,
+   och fakturerat − fördelat = öppna fordringar.
+5. Uppdatera byggstatus i designstoppet, `databasschema.md` §12 och paket A-raden. **Merge till `main`
+   först efter Karls OK, när bankdelen är klar** (Karls val 2026-11-08).
+
+Underlag: skripten för perioden och kontrollen, de simulerade filerna och facit ligger i huvudkatalogens
+`logs/simulation/paket-a-2026-10/`. Öppet utanför detta jobb: handläggarens avgörande av CASE-000009–000010
+(`salary_file_deviation`), Karls beslut om kolumnerna i `premium_transactions` och de ej godkända
+avvikelserna från steg 7. Förfallobevakningen (fall 17) kan köras först från 2026-12-09.
+
 ### Nästa bygguppdrag – avstämd månad från mottagen premie till förklarad FTA-förändring
 
 **Prioriterat av Karl 2026-11-02 för nästa arbetstillfälle.** Börja nästa gång med
