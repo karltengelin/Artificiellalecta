@@ -30,11 +30,11 @@ register_url_convertor("archived_id", ArchivedId())
 
 
 def archive(request):
-    operator_actor(request)
+    actor = operator_actor(request)
     value = request.app.state.mission_archive
     if value is None:
         raise HTTPException(404, "Uppdragsarkivet är inte tillgängligt")
-    return value
+    return value, actor
 
 
 def page(request, **context):
@@ -49,7 +49,8 @@ def page(request, **context):
 @router.get("/team/aktuarie/rapporter", include_in_schema=False)
 @router.get("/team/aktuarie/uppdrag", include_in_schema=False)
 def listing(request: Request):
-    return page(request, records=archive(request).list())
+    store, actor = archive(request)
+    return page(request, records=store.list(actor))
 
 
 @router.get(BASE + "/{ident}")
@@ -59,9 +60,9 @@ def listing(request: Request):
 @router.get("/team/aktuarie/rapporter/{ident:archived_id}", include_in_schema=False)
 @router.get("/team/aktuarie/{ident:archived_id}", include_in_schema=False)
 def detail(request: Request, ident: str):
-    store = archive(request)
+    store, actor = archive(request)
     try:
-        record, steps, decisions = store.get(ident)
+        record, steps, decisions = store.get(actor, ident)
     except NotFoundError as exc:
         raise HTTPException(404, str(exc)) from None
     return page(request, record=record, steps=steps, decisions=decisions, receipt=store.delivery_receipt(steps))
@@ -73,8 +74,9 @@ def detail(request: Request, ident: str):
 @router.get("/team/aktuarie/rapporter/{ident:archived_id}/leverans/{version}/{name}", include_in_schema=False)
 @router.get("/team/aktuarie/{ident:archived_id}/leverans/{version}/{name}", include_in_schema=False)
 def delivery(request: Request, ident: str, version: int, name: str):
+    store, actor = archive(request)
     try:
-        data = archive(request).delivery(ident, version, name)
+        data = store.delivery(actor, ident, version, name)
     except NotFoundError as exc:
         raise HTTPException(404, str(exc)) from None
     except DeliveryError:
@@ -86,8 +88,9 @@ def delivery(request: Request, ident: str, version: int, name: str):
 @router.get(BASE + "/{ident}/steg/{key}/utkast/{name}")
 @router.get("/floden/{ident:archived_id}/steg/{key}/utkast/{name}", include_in_schema=False)
 def draft(request: Request, ident: str, key: str, name: str):
+    store, actor = archive(request)
     try:
-        data = archive(request).draft(ident, key, name)
+        data = store.draft(actor, ident, key, name)
     except (NotFoundError, GatewayError, FileNotFoundError):
         raise HTTPException(404, "Utkastet finns inte i arkivet") from None
     return Response(data, media_type="text/markdown", headers=HEADERS)
@@ -96,8 +99,9 @@ def draft(request: Request, ident: str, key: str, name: str):
 @router.get(BASE + "/{ident}/steg/{key}/journal")
 @router.get("/floden/{ident:archived_id}/steg/{key}/journal", include_in_schema=False)
 def trace(request: Request, ident: str, key: str):
+    store, actor = archive(request)
     try:
-        value = archive(request).trace(ident, key)
+        value = store.trace(actor, ident, key)
     except NotFoundError as exc:
         raise HTTPException(404, str(exc)) from None
     response = render(request, "company_trace.html", {"base": BASE, "trace": value,

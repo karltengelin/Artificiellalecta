@@ -190,6 +190,7 @@ def test_fria_fragor_och_skrivskyddad_historik(demo, tmp_path):
     store.deliveries = DeliveryStore(tmp_path / "deliveries")
     archive_id = "FLOW-000001"
     waiting_id = "FLOW-000002"
+    private_id = "FLOW-000003"
     report_path = store.deliveries.root / archive_id / "v1" / "rapport.md"
     report_path.parent.mkdir(parents=True)
     data = b"# Sparad rapport"
@@ -203,6 +204,8 @@ def test_fria_fragor_och_skrivskyddad_historik(demo, tmp_path):
                  finished_at=datetime.now(UTC)),
             Flow(flow_id=waiting_id, flow_type="rule_change_parameter", definition_version="1",
                  status="waiting_gate", input={}, created_by=OPERATOR.id),
+            Flow(flow_id=private_id, flow_type="rule_change_code", definition_version="1",
+                 status="waiting_gate", input={}, created_by="annan-operator"),
         ])
         session.flush()
         session.add(FlowStep(flow_id=archive_id, step_key="render", position=1, kind="system",
@@ -212,7 +215,9 @@ def test_fria_fragor_och_skrivskyddad_historik(demo, tmp_path):
                                      decided_by=OPERATOR.id, bound_steps=["render"], bound_hash=checksum))
         session.commit()
 
-    assert waiting_id in demo.web.get(archive_url).text
+    listing = demo.web.get(archive_url)
+    assert waiting_id in listing.text and private_id not in listing.text
+    assert demo.web.get(f"/floden/{private_id}").status_code == 404
     for path in (f"/floden/{archive_id}", f"/team/aktuarie/rapporter/{archive_id}"):
         archived = demo.web.get(path)
         assert archived.status_code == 200
