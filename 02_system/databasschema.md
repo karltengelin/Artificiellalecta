@@ -16,6 +16,7 @@
 | `policy_states` | Premieförloppet – premiebetalande eller fribrev per försäkring, som tidsperioder (§6) | 🟢 I drift i Lakebase; importerad historik och tjänsteoperationer. Paket B steg 1 (B-047): villkoret smalnat till `premium_paying` och `paid_up` i Lakebase 2026-11-14 (§12) |
 | `policy_benefits` | Försäkringsförmåner – förmåner inom en försäkring | 🟢 I drift i Lakebase; förmånen ålderspension |
 | `payout_parts` / `payout_part_states` | Uttagsdelar under en förmån och deras pensionsförlopp (§7b) | 🟢 Paket B steg 1 (B-047, P1-PENSION-001 §4): skapade i Lakebase 2026-11-14 efter backup `backups/20261114T150341Z` och Karls OK, med uttagsdel 1 `not_started` för alla 499 förmåner (§12). `agent_forsakring` och `agent_aktuarie` har SELECT (B-048) |
+| `ledger_batches` / `ledger_guarantee_parts` / `ledger_capital_entries` / `ledger_controls` | Den operativa kapital- och garantijournalen: verifikationer, garantidelar, kapitalposter per konto och spår, och kontrollposter (§7c) | 🟡 Paket B steg 2 (B-047, P1-PENSION-001 §6): modeller, övergången från S-04, migration och tester; verifierade mot isolerad Postgres. Ej införda i Lakebase; agentrollerna får inga rättigheter |
 | `premium_transactions` | Premietransaktioner (en rad per förmån och månad) | 🟢 I drift i Lakebase med importerad premiehistorik; `corrects_transaction_id` migrerad 2026-10-11 |
 | `salary_reports` | Löneunderlag – pensionsmedförande lön per person, arbetsgivare och månad, versionerat | 🟢 Skapad i Lakebase 2026-10-11 (§8b); registrering verifierad i S6 2026-10-12 |
 | `bank_events` / `payment_allocations` | Inbetalningar enligt banken och deras fördelning på fakturarader eller avstämningskontot (§8e) | 🟢 Paket A steg 4 (B-046): modeller, operationer och lokala tester. Skapade tomma i Lakebase 2026-11-08 med `migrate_premium_flow.py` (§12) efter backup `backups/20261108T075712Z` och Karls OK; agentrollerna har inga rättigheter |
@@ -32,7 +33,7 @@
 | `valuation_bases` | Antagandebiblioteket: aktuariella grunder och diskonteringskurvor med oföränderligt innehåll (§9j) | 🟡 A4 (B-042): modell, operationer, startgrunder och tester; 🟢 skapad och seedad i Lakebase 2026-10-31 efter backup `backups/20261031T124616Z` och operatörens OK; läsrätt för `agent_aktuarie` satt |
 | `valuation_extracts` / `valuation_runs` / `valuation_results` | Värderingsmotorn: sparade datautdrag S-04, värderingskörningar med FTA, villkorad återbäring och underskott, och resultat per segment (§9k) | 🟡 A6 (B-042): modeller, operationer, migration och tester; verifierade mot isolerad Postgres. 🟢 Skapade tomma i Lakebase 2026-10-31 efter backup `backups/20261031T173353Z` och operatörens OK; läsrätt för `agent_aktuarie` på körningar och resultat |
 
-**Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för premieförloppet och `payout_parts` → `payout_part_states` för pensionsförloppet per uttagsdel (§7b). Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
+**Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för premieförloppet och `payout_parts` → `payout_part_states` för pensionsförloppet per uttagsdel (§7b). Uttagsdelen bär journalens garantidelar och kapitalposter (§7c). Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
 **Planerade tabeller (ej i denna omgång):** Kapitalets kassaflödesjournal och premiekoppling byggs senare; se §9d.
 
@@ -234,6 +235,119 @@ Delens **pensionsförlopp** som tidsperioder, på samma sätt som `policy_states
 **Integritet:** Unikt index på `(policy_id, benefit_type)` där `end_date IS NULL` – max en pågående förmån av varje typ per försäkring. Historiska (avslutade) förmåner av samma typ tillåts.
 
 **Relationer:** `policy_benefits.id` ← `premium_transactions.benefit_id` (förmånens premier) och ← `payout_parts.benefit_id` (förmånens uttagsdelar, §7b).
+
+---
+
+## 7c. Tabeller: `ledger_batches`, `ledger_guarantee_parts`, `ledger_capital_entries` och `ledger_controls` – Kapital- och garantijournalen
+
+> **Status:** Paket B steg 2 (B-047 punkt 4, [P1-PENSION-001 §6](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md), PB4).
+> - **Var koden finns:** modeller i `src/models/capital_ledger.py`; övergången och läsningarna i `src/services/capital_ledger.py`; A6-källan `ledger` i `src/services/ledger_extract.py`; månadens premier ur paket A i `src/services/ledger_premiums.py`; migrationen i `scripts/migrations/migrate_capital_ledger.py` (§12).
+> - **Verifierat:** lokalt och mot isolerad Postgres. Fall 36 och 37 är också verifierade på en återställd kopia av Lakebase-backupen `backups/20261114T150341Z`.
+> - **Ej infört i Lakebase.** Migrationen och övergången kräver var sitt OK från Karl. Agentrollerna har inga rättigheter på tabellerna.
+
+**Domän:**
+- Journalen är **bolagets enda källa** för pensionskapitalet C och garantin G efter övergången från S-04.
+- Varje garantidel och kapitalpost hör till exakt en uttagsdel (§7b).
+- Posterna är oföränderliga. En rättelse är en ny länkad post, aldrig en ändring.
+- Ett **kapitalspår** är paret (uttagsdel, ursprungets garantidel). Summan av en dels spår är delens C.
+- Steg 2 bokar bara det **ingående läget** per 2026-10-31. Månadsstängningen som tillför premier, avkastning, avgift och skatt byggs i steg 3.
+
+### `ledger_batches`
+
+En verifikation per bokning.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Stabilt id ur innehållet (uuid5), så att granskning och bokning ger samma rad |
+| `kind` | `VARCHAR(20)` | NOT NULL, CHECK in (`'opening_s04'`) | Verifikationens slag; steg 3 lägger till månadsstängning och rättelse |
+| `period_end` | `DATE` | NOT NULL | Dagen saldona gäller, ett månadsslut |
+| `source` | `VARCHAR(30)` | NOT NULL, CHECK in (`'reconstructed_s04'`, `'ledger'`) | Märkningen, samma värden som `valuation_extracts.source` |
+| `extract_id` | `UUID` | NULL, FK → `valuation_extracts(id)` ON DELETE RESTRICT | Det sparade S-04-utdraget som det ingående läget bygger på |
+| `extract_checksum` | `VARCHAR(64)` | NULL | Utdragets SHA-256 |
+| `content` | `JSONB` | NOT NULL | Sammanställningen som granskades: metod, utdragets och uppspelningens kontrollsummor, totaler, kontroller och ej överförda försäkringar |
+| `checksum` | `VARCHAR(64)` | NOT NULL, UNIQUE, CHECK längd 64 | SHA-256 av `content`, samma som granskningssumman `open_capital_ledger` binder |
+| `created_by` / `created_at` / `updated_at` | | NOT NULL | |
+
+**Integritet:**
+- CHECK `ck_ledger_batches_opening_extract`: det ingående läget har ett utdrag med kontrollsumma.
+- Partiellt unikt index `uq_ledger_batches_one_opening` på `kind` där `kind = 'opening_s04'`: övergången görs en gång.
+
+### `ledger_guarantee_parts`
+
+En garantidel G_j per ursprung och uttagsdel.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Stabilt id ur ursprunget |
+| `batch_id` | `UUID` | NOT NULL, FK → `ledger_batches(id)`, index | Verifikationen som bokade delen |
+| `payout_part_id` | `UUID` | NOT NULL, FK → `payout_parts(id)`, index | Uttagsdelen; i det ingående läget alltid del 1 |
+| `origin_kind` | `VARCHAR(20)` | NOT NULL, CHECK in (`'s04_premium'`, `'payment_allocation'`) | Ursprunget: en premierad i S-04 eller en allokering i paket A |
+| `premium_transaction_id` | `UUID` | NULL, FK → `premium_transactions(id)` | Premieraden: ursprunget för S-04, den fakturerade raden för en allokering |
+| `payment_allocation_id` | `UUID` | NULL, FK → `payment_allocations(id)` | Allokeringen i paket A |
+| `premium_sek` | `NUMERIC(14,2)` | NOT NULL, CHECK > 0 | P_j, mottagen nettopremie (PR-ITP1-008) |
+| `period_month` / `received_month` / `value_date` | `DATE` | NOT NULL | Premieperiod, mottagningsmånad och värdedag (månadsslutet, PR-ITP1-020 steg 4) |
+| `plan_kind` / `plan_start` | | NOT NULL, CHECK in (`'reference_lifelong'`) | Referensplanen som A_g räknas på (aktuariell_grund.md §3) |
+| `basis_code` / `basis_checksum` | | NOT NULL, CHECK längd 64 | Grunden i `valuation_bases` med kontrollsumma |
+| `factor` | `NUMERIC(24,10)` | NOT NULL, CHECK > 0 | A_g vid värdedagen |
+| `guarantee_sek_per_month` | `NUMERIC(24,10)` | NOT NULL, CHECK ≥ 0 | G_j i kr/mån; avrundas först i rapporteringen |
+| `version` / `reason` / `supersedes_id` | | NOT NULL; CHECK `ck_ledger_guarantee_parts_version` | Version 1 har orsaken `premium`. Delning och omräkning (steg 4) ger nya versioner med länk |
+| `source` / `created_by` / tidsstämplar | | NOT NULL | `reconstructed_s04` eller `ledger` |
+
+**Integritet:**
+- CHECK `ck_ledger_guarantee_parts_origin`: en S-04-del har en premierad och ingen allokering; en allokeringsdel har en allokering.
+- Partiellt unikt index `uq_ledger_guarantee_parts_premium`: högst en version 1 per S-04-premierad.
+- Partiellt unikt index `uq_ledger_guarantee_parts_allocation`: högst en version 1 per allokering.
+- Samma premie får inte ge både ett S-04-ursprung och ett ursprung ur paket A (§6.2 p. 5). Det prövas av ledger-utdragets kontroll *en källa per premie*.
+
+### `ledger_capital_entries`
+
+Kapitalposter per konto, uttagsdel och kapitalspår.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | |
+| `batch_id` | `UUID` | NOT NULL, FK → `ledger_batches(id)`, index | |
+| `account` | `VARCHAR(30)` | NOT NULL, CHECK in (`'customer_capital'`, `'payment_liability'`, `'tax_liability'`, `'inheritance_pool'`, `'company'`, `'suspense'`) | Kontot. Kapital, skuld och pool blandas aldrig i samma saldo. Steg 2 använder bara kundkapitalet |
+| `payout_part_id` | `UUID` | NULL, FK → `payout_parts(id)` | Uttagsdelen |
+| `origin_id` | `UUID` | NULL, FK → `ledger_guarantee_parts(id)`, index | Kapitalspårets ursprung |
+| `month` | `DATE` | NOT NULL, CHECK första dagen i månaden | Månaden posten hör till |
+| `reason` | `VARCHAR(20)` | NOT NULL, CHECK in (`'opening'`, `'premium'`, `'return'`, `'fee'`, `'tax'`, `'pension_debit'`, `'company_support'`, `'pool_in'`, `'pool_out'`, `'split'`) | `opening` är det ingående saldot från S-04 |
+| `amount_sek` / `balance_before_sek` / `balance_after_sek` | `NUMERIC(14,2)` | NOT NULL | Belopp i ören och spårets saldo före och efter |
+| `source` / `created_by` / tidsstämplar | | NOT NULL | |
+
+**Integritet:**
+- CHECK `ck_ledger_capital_entries_track`: kundkapital har uttagsdel och spår.
+- CHECK `ck_ledger_capital_entries_balance`: saldot efter är saldot före plus beloppet.
+- CHECK `ck_ledger_capital_entries_non_negative`: inget negativt kundkapital (§11).
+- CHECK `ck_ledger_capital_entries_opening`: det ingående saldot utgår från 0.
+- Unikt `uq_ledger_capital_entries_posting` på (verifikation, konto, del, spår, orsak).
+- Index `ix_ledger_capital_entries_track` på (del, spår, månad).
+
+### `ledger_controls`
+
+Kontrollposter för avstämningens led, utan ekonomisk effekt. Varje post har led, väntat och faktiskt värde, skillnad, källor (`JSONB`), utfall och förklaring. Unikt `uq_ledger_controls_step` på (verifikation, led).
+
+Det ingående läget har nio led:
+- utdragets kontrollsumma;
+- ursprungsspårens uppspelning;
+- kapital per försäkring och totalt;
+- garanti per försäkring och totalt;
+- antal garantidelar;
+- antal uttagsdelar;
+- ej överförda försäkringar.
+
+**Skrivs av:** `open_capital_ledger` (`HUMAN_ONLY`, bara en människa).
+- Operationen bokar det ingående läget från S-04 per 2026-10-31 i en transaktion med ett transaktionsbundet lås.
+- Den bokar en garantidel och en IB-post per premierad i S-04, märkta `reconstructed_s04` och knutna till uttagsdel 1, plus kontrollposterna och det sparade utdraget.
+- Minsta avvikelse stoppar: C per försäkring i ören, G i tio decimaler.
+- Samma granskade innehåll igen ger ingen ny effekt. Annat innehåll ger konflikt.
+- En försäkring med startad eller avslutad uttagsdel förs inte över; den redovisas som ej överförd.
+- Historiska `premium_transactions` ändras inte.
+
+**Läses av:**
+- Värderingsmotorn med källan `ledger` (§9k). I steg 2 gäller det bara per 2026-10-31.
+- P6-MANAD-001, som IB när det ingående läget finns. Scenariot skriver aldrig tillbaka (§6.3).
+- `preview_ledger_premiums`, som visar månadens premier ur paket A:s allokeringar på fakturarader utan att boka dem. Bokningen sker i månadsstängningen (steg 3).
 
 ---
 
@@ -844,7 +958,7 @@ Datautdraget S-04 som körningen räknar på. Samma innehåll sparas en gång.
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK | |
 | `valuation_date` | `DATE` | NOT NULL | Månadsslut |
-| `source` | `VARCHAR(30)` | NOT NULL, CHECK | `reconstructed_s04` eller `ledger` (paket B) |
+| `source` | `VARCHAR(30)` | NOT NULL, CHECK | `reconstructed_s04` (S-04) eller `ledger` (den operativa journalen, §7c; i paket B steg 2 bara per 2026-10-31). Det ingående lägets S-04-utdrag sparas här och pekas ut av `ledger_batches.extract_id` |
 | `checksum` | `VARCHAR(64)` | NOT NULL, UNIQUE, CHECK längd 64 | Utdragets SHA-256; prövas igen före lås |
 | `approved` | `BOOLEAN` | NOT NULL | Kontrollerna i kontraktet §5.3 |
 | `policies` / `guarantee_parts` / `capital_sek` | | NOT NULL | Antal och ΣC för översikt |
@@ -957,6 +1071,18 @@ ingenting. Erfarenhetsdata importeras separat, aldrig från fabricerade modellut
   3. sist smalnas `ck_policy_states_state` till `premium_paying` och `paid_up`.
 
   Torrkörningen är standard och körs `READ ONLY`; den visar SQL, villkorens nuvarande definitioner, övergångens plan, schemaskillnader, hinder och radantal. `--apply` kräver `--backup`. Den skarpa körningen kontrollerar modellens kolumner, de bytta villkoren, exakt del 1 med ett öppet läge per förmån, att inga gamla uttagslägen finns kvar, att radantalen i övriga tabeller är oförändrade – utom `policy_states` och `cases` med exakt övergångens rörelser – och att ingen agentroll har rättigheter på de nya tabellerna – läsrätten enligt B-048 sätts därefter med `grant_agent_role.py`. Minsta avvikelse rullar tillbaka allt. Idempotent; delvis infört stoppar. Verifierat mot isolerad Postgres (`tests/test_migration_payout_parts.py`): från Lakebase-läget före steg 1 blir de två tabellerna, `cases` och `policy_states` identiska med `create_all`, och ett gammalt uttagsläge flyttas med rekonstruktionsärende. I Lakebase finns inga uttagslägen, så där skapas bara delarna. Demo- och testdatabaser får samma övergång genom `add_missing_demo_tables`; David Dahl i demon har uttaget på del 1 och ett öppet rekonstruktionsärende. **Ordning:** migrationen ska vara körd innan koden från steg 1 används mot Lakebase, eftersom läsningarna och premieunderlaget läser uttagsdelarna. **Införd i Lakebase 2026-11-14** efter backup `backups/20261114T150341Z`, torrkörning och Karls OK, med samordning enligt AGENTS.md §4.5 (inga andra klientanslutningar, arbetarens schema inte igång). Torrkörningen gav 10 satser, de två villkoren i paket A:s respektive B-022:s form, 499 ålderspensionsförmåner som får del 1, 0 uttag att flytta, inga schemaskillnader och inga hinder. `--apply` gick igenom med alla kontroller i transaktionen. Kontrollerat efteråt med bara läsning (`scripts/simulation/paket_b_steg1/verify.py`, 8 av 8): tabellerna och villkoren stämmer, exakt 499 delar nr 1 med andel 1 och ett öppet `not_started` från förmånens start, inga gamla uttagslägen, inga nya ärenden, radantalen i backupens 34 tabeller oförändrade (bl.a. 527 lägen, 15 126 premietransaktioner, 11 ärenden), och en ny torrkörning ger `already_applied`. Därefter fick `agent_forsakring` och `agent_aktuarie` SELECT på båda tabellerna med `grant_agent_role.py` (torrkörning först; enda tillägget mot tidigare rättigheter, kolumnrätterna oförändrade, B-048). Verifierat med rollernas egna anslutningar (`verify.py --grants`, 16 av 16): båda läser tabellerna och läsningarnas fråga `parts_by_policy` för alla 499 försäkringar; INSERT, UPDATE och DELETE nekas; `agent_compliance` nekas SELECT. Inga loggrader eller andra data skrevs.
+
+- **Paket B steg 2 (2026-11-14) – kapital- och garantijournalen (§7c, B-047, P1-PENSION-001 §6):** införs med `scripts/migrations/migrate_capital_ledger.py` (`utils/migration_capital_ledger.py`) i **en** transaktion.
+  - **Vad den gör:** skapar `ledger_batches`, `ledger_guarantee_parts`, `ledger_capital_entries` och `ledger_controls` tomma, med index och villkor. Inga befintliga tabeller, villkor eller rader ändras.
+  - **Förutsättningar:** uttagsdelarna (steg 1), premieflödet (paket A) och `valuation_extracts` (A6) ska finnas.
+  - **Torrkörning** är standard och körs `READ ONLY`. Den visar SQL, schemaskillnader i befintliga tabeller, hinder (bl.a. standardrättigheter som skulle ge en agentroll åtkomst) och radantal.
+  - **Skarp körning:** `--apply` kräver `--backup`. Körningen kontrollerar i samma transaktion modellens kolumner, att tabellerna är tomma, att radantalen i övriga tabeller är oförändrade och att ingen agentroll har rättigheter på tabellerna. Minsta avvikelse rullar tillbaka allt.
+  - **Idempotent:** är allt infört görs ingenting; är bara en del infört stoppar migrationen.
+  - **Verifierat** mot isolerad Postgres (`tests/test_migration_capital_ledger.py`): från Lakebase-läget efter steg 1 blir de fyra tabellerna identiska med `create_all`. Övergången från S-04 är också provad där, med låset.
+  - **Övergången är ett eget ingrepp efter migrationen** (designstoppet §12 punkt 3): `scripts/simulation/paket_b_steg2/open_ledger.py` granskar som standard och bokar med `--apply --backup --reviewed-checksum` genom operationen `open_capital_ledger`. `verify.py` i samma mapp kontrollerar fall 36 och 37 skrivskyddat.
+  - **På en återställd kopia av backupen `backups/20261114T150341Z`** gav S-04 per 2026-10-31 den frysta hashen `023946…3fefa`. Övergången bevarade 492 försäkringar och 15 097 garantidelar, med C 42 087 223,57 kr och G 119 195,6502916268 kr/mån exakt per försäkring. Sju försäkringar ligger utanför populationen. A6 med källan `ledger` gav samma FTA, VÅ och U som S-04, och `verify.py` gav 15 av 15.
+  - **Ordning i Lakebase:** backup → torrkörning → `--apply` → `open_ledger.py` (granskning) → `open_ledger.py --apply` → `verify.py --backup`. Varje skarpt steg kräver Karls separata OK och samordning enligt AGENTS.md §4.5.
+  - **Kodens beroende:** koden fungerar utan tabellerna. Värderingen och P6-MANAD-001 läser då S-04 som förut, och journalens operationer blockeras med hänvisning till migrationen. **Ej körd mot Lakebase**
 
 ---
 

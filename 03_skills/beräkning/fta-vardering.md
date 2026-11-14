@@ -23,7 +23,7 @@ U_i   = max(0, FTA_i − C_i)       underskott till följd av garanti (PR-ITP1-0
 
 | Del | Hur |
 |---|---|
-| Garantidelar `G_ij` och kapital `C_i` | Ur datautdraget S-04 ([kapitalavräkning](kapitalavrakning.md)); värderingen ändrar dem aldrig |
+| Garantidelar `G_ij` och kapital `C_i` | Ur datautdraget S-04 ([kapitalavräkning](kapitalavrakning.md)) eller, med källan `ledger`, ur den operativa kapital- och garantijournalen (paket B steg 2); värderingen ändrar dem aldrig |
 | Plan `D_i` | Referensplanen livsvarigt från 66-årsmånaden, samma för alla delar i v1 |
 | Dödlighet | SIM-V:s modell ([aktuariell annuitet](aktuariell-annuitet.md)), i v1 densamma som garantins |
 | Diskontering | Spotkurvan i FI-SIM med linjär interpolation och platt extrapolation: `v(t, n) = (1 + r_⌈n/12⌉ − s_y)^(−n/12)`, n månader till slutet av betalningsmånaden |

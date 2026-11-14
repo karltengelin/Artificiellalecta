@@ -97,7 +97,7 @@ refererar till det.
 | `plan` | Uttagsplan: start, slut eller livsvarig, pausmånader |
 | `guarantee_parts[]` | Per del: premie `P_j`, mottagningsmånad, grund (SIM-HIST-2023-01 eller SIM-G-2026-01), `G_j` |
 | `capital` | `C` vid datumet |
-| `source` | `reconstructed_s04` eller `ledger` (när paket B finns) |
+| `source` | `reconstructed_s04` eller `ledger`: den operativa kapital- och garantijournalen, byggd i paket B steg 2 ([tjänstelager §9.15](../../02_system/tjänstelager.md#915-kapital--och-garantijournalen-paket-b-steg-2-b-047--vad-som-stöds-och-vad-som-blockeras)). I steg 2 täcker journalen bara 2026-10-31 |
 
 ### 5.2 Rekonstruktion S-04 (B-042, val L)
 

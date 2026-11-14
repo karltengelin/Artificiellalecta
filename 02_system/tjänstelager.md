@@ -468,7 +468,7 @@ Beslutat i **B-042** (val I och L) och värderingskontraktet A1 §2–7. Kod: `s
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
-| `run_valuation` | `write` | Nej | `APPROVAL` | Bygger datautdraget S-04, värderar varje försäkring och sparar körningen som utkast med kontrollsummor för utdrag, grund, kurva och resultat, kodversion, totaler, segment och kontroller |
+| `run_valuation` | `write` | Nej | `APPROVAL` | Bygger datautdraget – S-04 eller, med `source = ledger`, den operativa journalen (§9.15) – värderar varje försäkring och sparar körningen som utkast med kontrollsummor för utdrag, grund, kurva och resultat, kodversion, totaler, segment och kontroller |
 | `list_valuation_runs` | `read` | Nej | `AGENT` | Körningarna med datum, ändamål, version, status, grund och kurva samt FTA, VÅ och U i kronor |
 | `get_valuation_run` | `read` | Nej | `AGENT` | En körning som aggregat: indata med kontrollsummor, totaler, segment per läge och födelsedecennium med småcellsskydd, ej beräknade fall per orsak, kontrollerna och vad varje belopp är |
 | `lock_valuation` | `write` | Nej | `HUMAN_ONLY` | Fastställer en basvärdering. Prövar kontrollerna och kontrollsummorna igen; en tidigare låst körning för datumet blir `superseded` |
@@ -614,7 +614,7 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 
 Indata är `{period_month, scenario_id, expected_opening_checksum}`. Svaret innehåller `inputs_json`, paketets `checksum` och en sammanställning. Handläggaren granskar kontrollsumman och öppnar journalen med den, som för det syntetiska försöket ([avstamd_fta_manad.md](avstamd_fta_manad.md)). Agenter nekas även i operationen; ingen ny skrivoperation och ingen agentbefogenhet tillkommer.
 
-**Källpaketet:** samma IB per 2026-10-31, grunder och parametrar som det syntetiska försöket (`premium_month_preparation.opening` och `assemble`). Fakturor och kvitton kommer från paket A:s tabeller:
+**Källpaketet:** samma IB per 2026-10-31, grunder och parametrar som det syntetiska försöket (`premium_month_preparation.opening` och `assemble`). När kapitaljournalens ingående läge finns (paket B steg 2, §9.15) är IB ledger-utdraget, och ursprungsspåren läses ur journalen; scenariot skriver aldrig tillbaka. Fakturor och kvitton kommer från paket A:s tabeller:
 - *Fakturor:* debetfakturor för premieperioden som har mottagna belopp i journalmånaden, som `InvoiceInput`. Raden heter `line-NNNN` som i matchningen. Premieunderlaget bär radtyp, fakturerade premierader och deras beräkningsgrund. En krediterad rad är ingen fordran och följer inte med; kredit och ny debet syns som den nya debetraden.
 - *Kvitton:* ett `ReceiptInput` per bankhändelse och faktura. Beloppet är summan av händelsens allokeringar på fakturans rader (PA6). Original-ID:t är bankhändelsens id och fakturanumret; källan är bankens händelse med dess innehållshash. Brutto = netto, externt avdrag = 0.
 - *Avstämningskontot följer inte med:* överskott, okänd referens och fel betalare står kvar i paket A utan kapital- eller garantieffekt. Sammanställningen visar journalmånadens saldo på periodens fakturor och utan faktura.
@@ -657,6 +657,55 @@ En försäkring har tre förlopp: **premieförloppet** i `policy_states` (`premi
 - *Blockeras i övergången:* `terminated` (avslut sker bara genom slutavräkning eller dödsfall, PB10), uttagslägen som inte ligger sist i tidslinjen eller har glapp, försäkringar med fler än en ålderspensionsförmån och premieförlopp som inte slutar dagen före uttaget. Allt stoppar utan att något skrivs.
 - *Finns inte i steg 1:* start, paus, återupptagande, delning och avslut av en uttagsdel. De byggs i steg 4 och 6, och nya skrivande operationer blir `HUMAN_ONLY`.
 
+
+### 9.15 Kapital- och garantijournalen (paket B steg 2, B-047) – vad som stöds och vad som blockeras
+
+Beslutat i **B-047** punkt 4 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §6 (PB4).
+- **Kod:** `src/services/capital_ledger.py` (övergången, verifikationen och läsningarna), `src/services/ledger_extract.py` (A6-källan `ledger`), `src/services/ledger_premiums.py` (månadens premier ur paket A) och `src/services/operations/capital_ledger.py` (operationerna).
+- **Tabeller och migration:** se [databasschema §7c och §12](databasschema.md#7c-tabeller-ledger_batches-ledger_guarantee_parts-ledger_capital_entries-och-ledger_controls--kapital--och-garantijournalen).
+- **Befogenheter:** tre nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter.
+- **Avgränsning:** månadsstängning, plan och utbetalning byggs i steg 3 och senare.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `preview_ledger_opening` | `read` | Nej | `HUMAN_ONLY` | Granskar övergången från S-04 per 2026-10-31. Bygger utdraget, spelar upp ursprungsspåren, visar garantidelar, IB-spår, kontroller och ej överförda försäkringar, och ger `review_checksum`. Är det ingående läget redan bokat visas det i stället. Skriver ingenting |
+| `open_capital_ledger` | `write` | Nej | `HUMAN_ONLY` | Bokar det ingående läget med den granskade summan och, valfritt, den väntade utdragshashen. Bara en människa, även systemaktören nekas (PB12) |
+| `preview_ledger_premiums` | `read` | Ja | `HUMAN_ONLY` | Visar en månads premier ur paket A som journalens tillskott: en garantidel per allokering på en fakturarad, med uttagsdel, grund, A_g och G_j, summerat per arbetsgivare och grund. Bokar ingenting |
+
+**Övergången (§6.2):**
+- **Källa:** S-04 per 2026-10-31. Ursprungsspåren återskapas med `reconstruct_origins`.
+- **Rader:** varje premierad i S-04 blir en garantidel och en IB-post (orsaken `opening`) på uttagsdel 1, märkta `reconstructed_s04` och pekande på premieraden.
+- **Kontroller:** C per försäkring i ören och G i tio decimaler ska vara exakt S-04:s, liksom summorna. Minsta avvikelse, en annan utdragshash än den väntade eller en premie utan del 1 stoppar.
+- **Ingen konstruerad historik:** historiska `premium_transactions` ändras inte.
+- **Ej överförda försäkringar:** en försäkring med startad eller avslutad uttagsdel förs inte över och redovisas som ej överförd, som i S-04.
+- **Lås och idempotens:** bokningen tar ett transaktionsbundet lås och prövar granskningen igen i samma transaktion. Samma innehåll igen ger ingen ny effekt. Ett ändrat underlag eller annat innehåll ger konflikt.
+
+**A6-källan `ledger`:**
+- `run_valuation` tar `source` (`reconstructed_s04` som standard, eller `ledger`).
+- Med `ledger` byggs utdraget ur journalens garantidelar och kapitalspår, med födelsedag, premieförlopp och uttagsdelarnas lägen ur beståndet.
+- Utdraget har kontrollerna *ingående läge*, *kapitalavstämning* mot det sparade S-04-utdraget och *en källa per premie* (§6.2 p. 5).
+- Per 2026-10-31 ger det samma FTA, VÅ och U som S-04 (fall 36).
+
+**Paket A som premiekälla (§6.2 p. 4):**
+- `preview_ledger_premiums` läser paket A:s allokeringar på fakturarader för en mottagningsmånad efter det ingående läget, aldrig status `paid`. Därför kommer delbetalningar med.
+- Allokeringarna prövas mot `allocate_receipt` i ören, i mottagningsordning.
+- Avstämningskontot och mottagningar efter månadsslutet följer inte med; de redovisas i sammanställningen.
+- Uttagsdelen är den premien räknades för (`calculation_basis.payout_part`).
+- Garantin räknas på mottagningsmånadens grund (SIM-G), med värdedag vid månadsslutet.
+- I Lakebase ger november 2026 51 623,90 kr, varav SvenskIndustries delbetalning 15 362,24 kr. Avstämningskontots 36 261,66 kr ger ingen effekt (fall 37).
+
+**P6-MANAD-001 (§6.3):** när det ingående läget finns är det IB för `export_premium_month` och `open_premium_month`. IB:s kontrollsumma blir ledger-utdragets, och ursprungsspåren läses ur journalen. Scenariot skriver aldrig i den operativa journalen. Utan journalen läses S-04 som förut.
+
+**Spärras:**
+- *Blockeras:*
+  - journalens operationer innan migrationen är körd;
+  - ett andra ingående läge;
+  - källan `ledger` för andra datum än 2026-10-31 (journalen har inget stängt läge förrän månadsstängningen finns, steg 3) och utan ingående läge;
+  - månadens premier före det ingående läget, för oktober 2026 och tidigare, för en uttagsdel som har startat (PR-ITP1-025) och för en premie som redan har ett S-04-ursprung;
+  - allokeringar som journalens fördelning inte återskapar i ören.
+- *Konflikt:* en granskningssumma som inte stämmer, eller ett ingående läge med annat innehåll.
+- *Nekas:* agenter i alla tre operationerna. `open_capital_ledger` nekas också för systemaktören.
+- *Finns inte i steg 2:* bokning av månadens premier, avkastning, avgift, skatt och rättelser. De bokas av månadsstängningen i steg 3.
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.
