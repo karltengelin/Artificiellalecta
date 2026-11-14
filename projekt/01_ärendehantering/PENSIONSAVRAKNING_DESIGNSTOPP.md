@@ -264,7 +264,7 @@ Kontraktet `ReceiptInput` och allokeringsprovet i ören återanvänds oförändr
   - A6 ger samma FTA, VÅ och U ur båda källorna;
   - november 2026 ger 51 623,90 kr, varav SvenskIndustries 15 362,24 kr, utan avstämningskontots 36 261,66 kr.
 
-Avvikelser och val att godkänna:
+Avvikelser, godkända av Karl i chatten 2026-11-14 (”Godkänn avvikelserna”):
 - *Ingående saldo:* en IB-post per kapitalspår med den nya orsaken `opening` (vald av Karl 2026-11-14). §6.1:s orsakslista hade inget ingående saldo.
 - *Fall 37 i steg 2:* premiekällan och dess kontroll är byggda (`preview_ledger_premiums`), men bokningen vid månadsslut sker i månadsstängningen i steg 3 (vald av Karl 2026-11-14). Fall 37 är därmed verifierat som källa och belopp; tillförseln provas igen i steg 3.
 - *Övergången är ett eget ingrepp,* operationen `open_capital_ledger` (`HUMAN_ONLY`), efter migrationen. Det följer §12 punkt 2–3.
