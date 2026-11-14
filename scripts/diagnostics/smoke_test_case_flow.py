@@ -50,7 +50,10 @@ from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 
-from smoke_support import REPO_ROOT, Report, demo_database, svc_test_database
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "src"))
+
+from testing.smoke import Report, demo_database, svc_test_database
 
 OPERATOR_ID = "rooktest"
 TEAM = "forsakring"

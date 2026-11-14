@@ -1,16 +1,11 @@
 """Delade provhjälpare för röktest med lokal demo eller isolerad svc_test."""
 
 import os
-import sys
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
-from pathlib import Path
 from types import SimpleNamespace
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / "src"))
 
 try:
     from dotenv import load_dotenv
