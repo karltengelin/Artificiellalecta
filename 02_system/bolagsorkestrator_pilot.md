@@ -1,14 +1,10 @@
 # Bolagsorkestratör i lokal demo
 
-Piloten ligger i projekt 10 och öppnas från **Operatörscentral → Fråga bolaget
-· lokal pilot**. Använd en lokal demodatabas och konfigurerad
-operatörsinloggning enligt [frågekedjans drift](fragekedja_webb.md).
-`python scripts/web/start_ui.py --db demo --company-orchestrator` använder
-den konfigurerade modellklienten. För parallell provning av ordinarie vägar
-lägg till `--company-questions --actuary-workspace --rule-change-flows` och
-ange DM Sans-katalog enligt driftbeskrivningen. För skriptad modell och
-isolerad demo kör `python scripts/testing/run_tests.py --suite orchestration --run`.
-Testet `test_company_missions.py` kör samma webbformulär som operatören.
+Öppna **Operatörscentral → Fråga bolaget** på `/central/fragor`.
+Starta en lokal demo med `python scripts/web/start_ui.py --db demo --company-orchestrator`
+och konfigurera [operatörsinloggningen](operator_inloggning.md). Modellklienten
+väljs av den befintliga AI-konfigurationen. För skriptad modell och isolerad
+demo kör `python scripts/testing/run_tests.py --suite orchestration --run`.
 
 1. Ställ en dokumentfråga, exempelvis *Vad säger försäkringsvillkoren om
    uppskjutet uttag?* Registrera och kör nästa del. Läs källhänvisning och
@@ -72,10 +68,6 @@ Testet `test_company_missions.py` kör samma webbformulär som operatören.
   exakt regelbeslut. Projekt 11 använder sin stabila ursprungsreferens. Ett
   operatörsbeslut binder version och resultathash, inklusive analysens hash
   där den ingår. Ändrade eller saknade källor och utkast kräver ny granskning.
-- Den nya lagringen använder mönstret från ärendekön och aktuariedialogen,
-  jämte flödesmotorns kanoniska hash. Den generella ordningen och stegtabellen
-  i flödesmotorn är avsedda för fasta definitioner. Äldre rader behåller sina
-  ursprungliga identiteter och kan läsas av nuvarande adaptrar.
 - Piloten hanterar en parameter i taget med stöd av den befintliga
   aggregattjänsten. Blandade ändringar, kodberoende förhandsberäkning och
   områden utanför katalogen kan utredas och lämnas för mänsklig bedömning.
@@ -83,33 +75,22 @@ Testet `test_company_missions.py` kör samma webbformulär som operatören.
   skriptade modeller bevisar körvägar och kontroller. Verksamhetsbedömning av
   nya tolkningar och verkligt modellval ingår i nästa granskning.
 
-## Konsumenter och övergångsvillkor
+## Tidigare uppdrag
 
-| Konsument och normal ingång | Tillstånd, befogenhet och verifiering | Nästa ändring, ägare och återgång |
-|---|---|---|
-| Bolagspilot `/central/bolagsuppdrag`, `--company-orchestrator` | Demo med inloggning. Beställningar och beslut i `company_missions`, specialistutkast och körjournaler i befintliga gatewayformat, stabila domänlänkar. Lokala webbprov av beslut, återstart och kvitton. | Projekt 10 och harness. Verifiera riktig modell i isolerad demo, lås lagrings- och driftskontrakt och lägg till granskad rapportförmåga före ordinarie start. Stäng flaggan för att pausa. |
-| `company_question` via `QuestionConsole`, `/central/fragor` och `/team/aktuarie/uppdrag` | `answer → render → review → deliver`. B-041. Registrerat bestånd och betalmarkerade premier. Ses i båda ytorna. Operatören granskar versionsbunden PDF/Markdown. Spår, avslag och ersättningslänkar i webbsuiten. | Projekt 10, 2 och aktuarien. Anslut adaptern som en hel rapportförmåga med stabilt beställnings-id och återläst status. Prova gamla adresser, beslut och filhashar. Flytta bara nybeställning först. Återställ formulärlänk vid behov. |
-| `product_report` via `ProductReportConsole`, `/team/aktuarie/rapporter` | `summary → render → review → deliver`. Årsperiod och bestånds-/premieaggregat under teamets åtkomst. Versionsbunden rapport, utkast, spår och avslag. Provas i produktsrapport- och webbsuiten. | Projekt 6 och 10. Samordna med B-047 steg 1 om beståndsläsningen och verifiera rapporten med gammal och ny datamodell. Bevara teamytans direktstart tills ny väg finns. |
-| `rule_change_parameter` v2, `/floden`, `/parametrar`, `/godkannanden` | `tolkning/g1/insikt/g2/regeltext/aktivering/verifiering`. Tolkning och analys under respektive team, mänskliga grindar och separat tjänstelagerbeslut. Äldre versioner och grindhashar läses. Motorn kräver matchande definition vid avancering. Prov i orkestrerings- och webbsuiten. | Compliance, aktuarie och projekt 10. Kör beräkningen efter B-047 steg 1 eftersom den läser `policy_states`. Jämför mandat, granskning och kvitton. Stäng ny start först när motsvarande dynamisk väg är godkänd. Driv pågående ärenden till säkert avslut i originaladaptern. |
-| `rule_change_code` v1, `/floden` med `--rule-change-flows` och projekt 11 | `tolkning/g2/bestall_utveckling`. Äldre ändringsärenden länkar ursprung och kvarstående status via FLOW-id. U1–U6 har eget leveranstillstånd; U4/U5 prov i webbsuiten. | Projekt 11 och Compliance. Stäm av ursprung, antagen version, testbevis och installerad kodversion. Behåll båda ursprungsläsarna. Återställ startflaggan vid behov. |
-| `premium_month_review` v1 och aktuariens arbetsbänk | Definitionen `prepare/review/accept` monteras i P6-MANAD-001:s verifieringsprov. Aktuariens dialog och månadsanalys använder separata tjänster. Fast avstämning och hashbundet mänskligt beslut. | Projekt 6 och paket B. B-047 steg 2/3 ändrar källan från S-04 till journalen för operativ stängning. Behåll testvägen och verifiera scenario och operativ signering när journaladaptern finns. |
-| Motor, migreringar, rapportarkiv och agentekonomi | `flows`, `flow_steps` och `flow_gate_decisions`. Sparad versions- och revisionsidentitet, aktör och beslutshash. Leveranser i `logs/deliveries/<flow_id>/v<version>/`; `trace` läser journalen. Telemetrin deduplicerar försök inom miljö och dataset. | Harness, projekt 10 och drift. Bevara motorn så länge en anropare eller historikläsare kräver den. Före eventuell städning inventeras startskript, reservvägar, läsare och testdata på nytt. Exportera och verifiera isolerad kopia innan en eventuell migrering. |
-| Ärendearbetare och aktuariedialog | Domänägda köer, mandat, källor och resultat. Fortsätter via respektive yta. | Projekt 1 och 6. Koppla endast uttryckligt beställda domänförmågor med testad leverans och väntan. |
+De fasta beställningarna och deras fördefinierade steg är avvecklade.
+Fråga bolaget tar en beställning i fritext. De fasta blanketterna för
+beståndsstatistik, produktrapport och regeländring har tagits bort.
 
-## Beslutsförslag inför ordinarie införande
+Sparade uppdrag, även avbrutna eller väntande, går att läsa i
+`/central/uppdragsarkiv`. Äldre länkar med FLOW-id öppnar samma arkiv.
+Arkivet visar sparade beslut, underlag, körspår och rapportfiler.
+Rapportfiler verifieras mot lagrade kontrollsummor. Historiken förblir
+i de befintliga arkivtabellerna, som nya databaser inte skapar.
+Påbörjade domänärenden och godkännanden hanteras i sina respektive ytor.
 
-Precisera B-016 och B-026 så att öppna bolagsuppdrag kan välja
-specialistuppdrag under arbetets gång i centralen. Behåll fasta
-verksamhetskontroller, uppdrags- och beslutsversioner och behöriga
-domängrindar enligt B-036, B-038–039 och B-041. B-037:s krav på lokalt
-avgränsade scenarier och verksamhetsstyrda förmågor gäller även piloten.
-
-Efter operatörens granskning uppdaterar projekt 10 sin projektplan och
-startmatris. Harness beskriver den tekniska samordningsprofilen, det
-varaktiga uppdragskontraktet, budgetförbrukningen och körspåren.
-Driftbeskrivningen lägger till start, stopp, backup och
-återöppning. Backloggen följer upp riktig modell, rapportadapter,
-miljöverifiering och övergång per gammal startväg.
+Aktuariens dialog, värdering, aggregattjänster och månadsgranskning har
+egna verksamhetskontrakt. Parameterbeslut och kodändringsärenden
+använder fortfarande sina separata godkännande- och leveransvägar.
 
 ## Baslinje och parallellt arbete
 
@@ -120,7 +101,7 @@ bestånds-, premieeffekt-, rapport- och månadsproven på det kombinerade
 kodläget före integration. När B-047 steg 2 byter källa ska projekt 6 jämföra
 S-04-scenariot med journaladaptern som del av övergången.
 
-## Verifiering 2026-11-14
+## Verifiering före avvecklingen
 
 | Prov | Miljö | Godkända | Bortvalda | Överhoppade | Fel |
 |---|---|---:|---:|---:|---:|
@@ -128,9 +109,5 @@ S-04-scenariot med journaladaptern som del av övergången.
 | Ändringsstyrt Postgres-urval, markör `postgres` | Isolerade scheman i `svc_test`, kodläget `0764ed1` | 104 | 1 834 | 0 | 0 |
 | Premieeffekt, bestånds- och produktrapporter, månadsgranskning, uttagsdelar och pilot | Isolerad kombination av pilotens kod och B-047 steg 1 (`ebe2772`), SQLite | 118 | 1 221 | 0 | 0 |
 
-Ändringen efter Postgres-provet gäller det fiktiva källunderlaget och
-lokala prov. Pilotens SQLite-lagring och modellval har endast provats
-lokalt. Demowebben svarade på pilotens ingång och de äldre ingångarna.
-Kodfallet verifierade projekt 11:s demokvitto med en syntetisk kandidat.
-Före ordinarie införande återstår modellprov, en adapter för den befintliga
-beståndsrapporten och operatörens ställningstagande till övergången.
+Pilotens SQLite-lagring och modellval provades lokalt. Kodfallet
+verifierade projekt 11:s demokvitto med en syntetisk kandidat.

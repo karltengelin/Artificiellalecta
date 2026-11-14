@@ -18,10 +18,10 @@ from agents.company_capabilities import (
     supports_parameter,
 )
 from agents.company_tools import TEAM, CoordinationInput, CoordinationResult
-from agents.flows.store import canonical_hash
 from agents.gateways import GatewayError, ReadRegulatoryDocumentInput
 from agents.gateways.drafts import _check_content
 from services.errors import ConflictError, InvalidInputError, ServiceError
+from utils.checksums import canonical_hash
 
 MAX_ASSIGNMENTS = 8
 

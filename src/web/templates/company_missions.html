@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Fråga bolaget · pilot{% endblock %}
+{% block title %}Fråga bolaget{% endblock %}
 {% block content %}
-<p><a href="/central">Operatörscentral</a> / <a href="/central/fragor">Ordinarie bolagsfrågor</a></p>
+<p><a href="/central">Operatörscentral</a>{% if operator_user %} / <a href="/central/uppdragsarkiv">Uppdragsarkiv</a>{% endif %}</p>
 <section class="panel panel--standalone">
-  <h1>Fråga bolaget · lokal pilot</h1>
+  <h1>Fråga bolaget</h1>
   {% if not operator_user %}
     <p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att starta och följa bolagsuppdrag.</p>
   {% elif enabled %}
@@ -16,7 +16,7 @@
       <button type="submit">Registrera uppdrag</button>
     </form>
   {% else %}
-    <p>Nya starter är avstängda. Du kan läsa sparade uppdrag här.</p>
+    <p>Nya starter är avstängda i den här miljön.</p>
   {% endif %}
 </section>
 {% if operator_user %}

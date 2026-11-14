@@ -1,10 +1,11 @@
 """Mänskliga beslut och uppdragsbundna överlämningar till ordinarie domäner."""
 
 import re
+from datetime import date
 from decimal import Decimal
 from uuid import NAMESPACE_URL, uuid4, uuid5
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import inspect, select
 
 from agents.company_capabilities import (
@@ -22,19 +23,42 @@ from agents.company_capabilities import (
     matching_parameter,
 )
 from agents.company_store import missions, now
-from agents.flows.definitions.rule_change_code import CodeRuleAdoption
-from agents.flows.definitions.rule_change_parameter import (
-    COMPLIANCE_AGENT,
-    RuleAdoption,
-    RuleTextCommit,
-)
-from agents.flows.store import canonical_hash
 from agents.gateways import DraftGateway, GatewayError, RegulatoryGateway
 from agents.gateways.drafts import _check_content
 from services import Actor, OperationContext
-from services.change_requests import ChangeRequestOrder, ChangeRequestOrigin
+from services.change_requests import (
+    ChangeRequestOrder,
+    ChangeRequestOrigin,
+    Notes,
+    ShortText,
+)
 from services.errors import ApprovalError, ConflictError, InvalidInputError
 from services.parameters import plain, version_label, versions_on
+from utils.checksums import canonical_hash
+
+COMPLIANCE_AGENT = Actor.agent("compliance_agent", team="compliance")
+
+
+class RuleAdoption(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    rule_version: str = Field(pattern=r"^\d+\.\d+$")
+    valid_from: date
+    decision_number: str | None = Field(default=None, pattern=r"^B-\d{3}$")
+
+
+class CodeRuleAdoption(RuleAdoption):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    rule_id: str = Field(pattern=r"^PR-ITP1-\d{3}$")
+    code_reason: Notes
+    affected_system: ShortText
+    expected_effect: Notes
+
+
+class RuleTextCommit(BaseModel):
+    commit: str = Field(pattern=r"^[0-9a-f]{7,40}$")
+    note: str | None = Field(default=None, max_length=500)
 
 
 def decide(state, ident, actor, seen, verdict, form, *, gateways, trusted):

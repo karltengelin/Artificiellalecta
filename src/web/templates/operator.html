@@ -16,7 +16,6 @@
   <a href="{{ href }}?month={{ selected_month }}"{% if active_view == view %} aria-current="page"{% endif %}>{{ label }}</a>
   {% endfor %}
 </nav>
-{% if company_missions_available %}<p><a href="/central/bolagsuppdrag">Fråga bolaget · lokal pilot</a></p>{% endif %}
 <section class="panel oc-context" aria-label="Period och underlag">
   <form method="get" class="filter">
     <label for="oc-month">Månad</label><select name="month" id="oc-month">

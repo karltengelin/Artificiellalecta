@@ -179,48 +179,19 @@ helst, även ett kommandoradsverktyg eller Cowork (B-017). Den tidigare demomode
 är borttagen enligt B-037; inför integration krävs en verifierad, uttrycklig modell-
 och datakoppling. Att flytta UI-koden aktiverar inte den kopplingen.
 
-## Planerad övergång till en bolagsorkestratör
+## Fråga bolaget och bolagsorkestratören
 
-Operatörens inriktning 2026-11-07 är att **Fråga bolaget** ska ta emot frågor,
-följdfrågor och uppdrag i fri dialog. Bolagsorkestratören fungerar som VD-assistent.
-Den svarar själv när godkänd bolagskunskap räcker, anlitar rätt teamledare när
-frågan kräver specialistarbete och samlar svar från flera team när uppdraget
-kräver det. Den kan använda gemensamma rapport- och presentationsskills när de
-är anslutna. För etablerade processer ska den kunna begära att flödesmotorn
-startar ett registrerat flöde. B-038 och B-041 beskriver den byggda, avgränsade
-frågeingången. Övergången ska utredas i en egen session.
+Fråga bolaget är ingången för frågor, följdfrågor och uppdrag i fritext.
+Bolagsorkestratören svarar från godkända källor när de räcker, väljer
+specialistteam utifrån en intern katalog över teamens profiler och
+förmågor och sammanställer svar från de team som behövs. Katalogen
+används internt för delegering. Betrodd kod binder operatör, miljö,
+mandat och budget. Domänbeslut ligger hos behörig beslutsfattare.
 
-Orkestratören behöver en sökbar katalog med bolagets processer, ansvariga team,
-verifierade förmågor och registrerade flöden. Den hämtar detaljer vid behov enligt
-[harnessens verktygsprincip](../../02_system/harness.md#verktygsurval-efter-uppdragstyp).
-Betrodd kod binder operatör, miljö, uppdragsmandat och budget. Teamen arbetar med
-sina egna behörigheter och lämnar resultat med källreferenser. En flödesstart
-prövas mot det valda flödets startvillkor. Flödesmotorn äger steg, väntan och
-grindar, och domängodkännanden ligger kvar hos behörig beslutsfattare.
-
-### Arbetsgång för nästa session
-
-1. **Fastställ baslinjen.** Gå igenom `QuestionConsole`, flödet `company_question`
-   och [webbdriften](../../02_system/fragekedja_webb.md). Kontrollera vägarna för
-   beställning, uppdragsdetalj, granskning och nedladdning i central och teamyta.
-   Ta med sparade uppdrag och rapportversioner i regressionen.
-2. **Prova en separat samtalsingång.** Börja i demo med fria frågor om bolaget och
-   ett specialistuppdrag till aktuarien. Återanvänd `company_question` för den
-   befintliga beståndsöversikten och länka samtalet till det ordinarie uppdraget,
-   dess källor och leverans. Behåll direktbeställningen under provet. En fråga
-   utanför stödet ska ge ett tydligt besked eller en riktad följdfråga.
-3. **Utöka en förmåga i taget.** Pröva först en följdfråga och en presentation
-   som utkast från ett sparat, källbundet underlag. Pröva därefter samordning
-   mellan team och start av ett befintligt flöde var för sig. Verifiera för varje
-   steg att saknade eller otillåtna förmågor hanteras tydligt, att omförsök
-   undviker dubbletter och att godkännanden kan följas till rätt underlag.
-4. **Byt ordinarie ingång efter verifiering.** Kör berörda webb-, flödes-,
-   behörighets- och rapportprov via `scripts/testing/run_tests.py` och följ
-   [teststrategin](../../02_system/teststrategi.md) inför integration. Pröva att
-   gamla länkar, pågående granskningar och sparade rapporter går att öppna under
-   övergången. Aktivera den nya ingången först efter operatörens granskning.
-   Planera så att samtalsingången kan stängas av och direktbeställningen användas
-   igen medan redan skapade uppdrag är åtkomliga med sina ursprungliga referenser.
+[Den lokala piloten](../../02_system/bolagsorkestrator_pilot.md) använder
+`/central/fragor`. Tidigare beställningar och beslut kan läsas i
+`/central/uppdragsarkiv`. Inför ordinarie drift återstår verifiering av
+modellval, lagringskontrakt och miljö.
 
 ## Ansvar och samordning
 
@@ -233,7 +204,7 @@ länkade GitHub-ärenden och kodändringar.
 |---|---|
 | Projekt 10 | VD-upplevelse, navigation, ledningsunderlag och samlad operatörscentral |
 | Projekt 2: BI & insikter | Gemensamma mått, historik, analys-/Genie-underlag och Databricks-dashboard enligt B-029 |
-| Harness och AI-lagret | Teamrouting, körpolicy, budgetverkställighet, körspår, modellroller och leverantörsval, flödesmotorn och flödesdefinitionerna |
+| Harness och AI-lagret | Teamrouting, körpolicy, budgetverkställighet, körspår, modellroller och leverantörsval, samordningsprofilen |
 | Projekt 1 och övriga specialistytor | Enskilda ärenden, domänhandlingar och deras godkännanden |
 | Projekt 5 och 6 | Kapitalvärdering, ekonomi, aktuariella motorer och underlag för konsolidering/risk |
 | Projekt 8 och 9 | Projektkarta respektive processkartor som förklarar hur bolaget hänger ihop |

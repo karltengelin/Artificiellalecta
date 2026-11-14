@@ -290,29 +290,6 @@ def test_tiny_unexplained_delta_stops_analysis(month_db):
                             expected_opening=total.fta, expected_closing=total.fta+residual, sources={})
 
 
-def test_existing_flow_engine_binds_human_month_review(month_db):
-    from agents.flows import FlowEngine
-    from agents.flows.definitions.premium_month_review import (
-        premium_month_review_definition,
-    )
-
-    service = open_package(month_db)
-    p = month_db.package
-    receive_all(service, p)
-    adopt_returns(service, p)
-    call(service, "close_premium_month", {"journal_id": p.scenario_id})
-    engine = FlowEngine(month_db.factory, [premium_month_review_definition()], trusted=service)
-    actor = Actor.human("karl")
-    flow = engine.start("premium_month_review", {"journal_id": p.scenario_id}, actor=actor)
-    flow = engine.run_next(flow.flow_id, expected_version=flow.version, actor=actor)
-    assert flow.status == "waiting_gate"
-    flow = engine.decide_gate(flow.flow_id, expected_version=flow.version, actor=actor,
-                             decision="approved", seen_hash=flow.gate_hashes["review"])
-    flow = engine.run_next(flow.flow_id, expected_version=flow.version, actor=actor)
-    assert flow.status == "completed"
-    assert call(service, "get_premium_month", {"journal_id": p.scenario_id})["state"] == "approved_analysis"
-
-
 def test_receipt_and_guarantee_rollback_with_event_log_failure(month_db):
     from models import PremiumReceipt
 

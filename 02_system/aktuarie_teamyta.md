@@ -1,5 +1,8 @@
 # Aktuariens teamyta v1 – A3
 
+> **Historisk beskrivning.** De fasta bolagsuppdragen har avvecklats. Se
+> [Fråga bolaget och uppdragsarkivet](bolagsorkestrator_pilot.md) för aktuella ingångar.
+
 **Byggt 2026-10-31** enligt
 [A3-uppdraget](../projekt/06_avdelningsfunktioner/UPPDRAG_A3_CODEX.md), B-042,
 B-036 och B-041. Arbetsbranch: `codex/aktuarie-teamyta-a3`.

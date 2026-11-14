@@ -31,8 +31,6 @@ from agents.company_team_catalog import team_catalog
 from agents.company_tools import SKILL, TEAM
 from agents.delegation import CUMULATIVE, RootLedger
 from agents.ecosystem import REPO_ROOT, Ecosystem, Limits
-from agents.flows.questions import policy_ref
-from agents.flows.store import canonical_hash
 from agents.gateways import GatewayError, Gateways, ReadRegulatoryDocumentInput
 from agents.gateways.drafts import _check_content
 from agents.journal import DEFAULT_JOURNAL_DIR
@@ -47,6 +45,7 @@ from services.errors import (
     NotFoundError,
     ServiceError,
 )
+from utils.checksums import canonical_hash
 
 CONTRACT = 1
 MAX_BRIEFS = 6
@@ -54,6 +53,16 @@ MAX_RUNS = 18
 # Ordningen följer sparade anspråk och resultat. Varje klick kör högst ett segment.
 ACTIONS = {"queued", "waiting_external", "reconciliation_required"}
 SOURCE_SKILLS = ("list_regulatory_documents", "read_regulatory_document")
+
+
+def policy_ref(ecosystem, ai):
+    """Behåller körbildens kontrollsumma för tidigare sparade uppdrag."""
+    import hashlib
+    import json
+
+    roles = {name: spec.model for name, spec in ai.config.roles.items()}
+    raw = json.dumps({"ecosystem": ecosystem.checksum, "roles": roles}, sort_keys=True).encode("utf-8")
+    return f"korbild:{hashlib.sha256(raw).hexdigest()[:16]}"
 
 
 class CompanyMissions:

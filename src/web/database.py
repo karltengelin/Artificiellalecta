@@ -18,10 +18,8 @@ from pathlib import Path
 from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.engine import Engine
 
-from agents.flows.console import FlowConsole
-from ai import AIClient
 from services import ServiceLayer
-from services.change_requests import ChangeRequests, change_requests_table
+from services.change_requests import change_requests_table
 from services.db import session_factory_for
 from web.agent import CaseAgent
 from web.config import WebConfigError, WebSettings
@@ -33,12 +31,7 @@ def build_service(settings: WebSettings) -> ServiceLayer:
     return build_services(settings)[0]
 
 
-def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent, FlowConsole | None]:
-    """Handläggarens tjänstelager, handläggaragenten (Fas 5 F5-4) och flödena (Fas 3c 3c-3) mot samma databas.
-
-    Flöden ansluts inte automatiskt. En verksamhetskoppling kräver uttrycklig AI-klient,
-    verifierade teamroller och flödestabeller; databasvalet väljer aldrig en testmodell (B-037).
-    """
+def build_services(settings: WebSettings) -> tuple[ServiceLayer, CaseAgent]:
     engine = build_engine(settings)
     session_factory = session_factory_for(engine)
     return _services_for(settings, session_factory)
@@ -59,34 +52,7 @@ def _services_for(settings: WebSettings, session_factory):
             ),
             simulated_role=True,
         )
-    return service, agent, None
-
-
-def build_question_services(settings: WebSettings, *, ai, renderer):
-    """Explicit OC-3a connection; no model calls, migrations or role grants on startup.
-
-    Demo/svc_test follow the existing UI's simulated-role convention. Lakebase uses
-    agent_aktuarie's real restricted connection, never the trusted connection as fallback.
-    """
-    from agents.flows.questions import QuestionConsole
-    from services.db import agent_service_layer
-
-    session_factory = session_factory_for(build_engine(settings))
-    service, agent, _ = _services_for(settings, session_factory)
-    actuary = agent_service_layer("aktuarie") if settings.database == "lakebase" else ServiceLayer(
-        session_factory=session_factory, validation_session_factory=session_factory, agent_role="agent_aktuarie",
-    )
-    questions = QuestionConsole.build(session_factory, trusted=service, actuary_service=actuary,
-        ai=ai, renderer=renderer, environment_id=settings.database, dataset_ref=settings.dataset_ref)
-    return service, agent, questions
-
-
-def build_demo_rule_flows(service: ServiceLayer, requests: ChangeRequests, *, ai: AIClient) -> FlowConsole:
-    factory = service._session_factory
-    compliance = ServiceLayer(session_factory=factory, validation_session_factory=factory, agent_role="agent_compliance")
-    actuary = ServiceLayer(session_factory=factory, validation_session_factory=factory, agent_role="agent_aktuarie")
-    return FlowConsole.build(factory, trusted=service, agent_service=compliance, team_services={"aktuarie": actuary},
-                             ai=ai, change_requests=requests)
+    return service, agent
 
 
 def build_company_missions(settings, service, requests, releases, *, ai=None):
@@ -102,23 +68,21 @@ def build_company_missions(settings, service, requests, releases, *, ai=None):
     return CompanyMissions(factory, service, requests, releases, dataset=settings.dataset_ref, ai=ai)
 
 
+def build_actuary_service(settings, service):
+    from services.db import agent_service_layer
+
+    if settings.database == "lakebase":
+        return agent_service_layer("aktuarie")
+    return ServiceLayer(session_factory=service._session_factory,
+                        validation_session_factory=service._session_factory, agent_role="agent_aktuarie")
+
+
 def build_engine(settings: WebSettings) -> Engine:
     if settings.database == "demo":
         return demo_engine(settings.demo_path)
     if settings.database == "svc_test":
         return svc_test_engine()
     return lakebase_engine()
-
-
-def build_actuary_services(settings: WebSettings, *, ai, renderer):
-    """A3: båda rapportadaptrarna med samma miljö, anslutning och aktuarieroll."""
-    from agents.flows.product_reports import ProductReportConsole
-
-    service, agent, questions = build_question_services(settings, ai=ai, renderer=renderer)
-    reports = ProductReportConsole.build(service._session_factory, trusted=service,
-        actuary_service=questions.engine.runtime.service, ai=ai, renderer=renderer,
-        environment_id=settings.database, dataset_ref=settings.dataset_ref)
-    return service, agent, questions, reports
 
 
 def demo_engine(path: Path) -> Engine:

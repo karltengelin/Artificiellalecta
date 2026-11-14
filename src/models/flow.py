@@ -1,16 +1,4 @@
-"""SQLAlchemy-modeller för flödesmotorn – flöden, steg och grindbeslut (Fas 3c 3c-2, B-035).
-
-Se 02_system/databasschema.md §9i och 02_system/flaggskeppsflöde.md §6. Tabellerna hör
-till harness (`src/agents/flows/`), inte till försäkringstjänstelagret (harness.md §4.3):
-de skrivs bara av flödesmotorn, med operatören som aktör för grindbeslut och manuella steg.
-
-`flows.version` är flödets version för optimistisk låsning: varje ändring görs med en
-villkorlig UPDATE på den version som lästes, så att två klick inte tar samma steg.
-`flow_gate_decisions` är append-only och binder hashen av det underlag beslutet gäller.
-
-Stegens resultat är strukturerat underlag utan personuppgifter (agents.results); agenternas
-körjournal ligger kvar i logs/agent_runs/ och länkas med `run_id` (val J).
-"""
+"""Historiska uppdrag i befintliga arkivtabeller, utanför det operativa schemat."""
 
 from __future__ import annotations
 
@@ -18,7 +6,18 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    MetaData,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -43,7 +42,12 @@ def _in(column: str, values: tuple[str, ...]) -> str:
     return f"{column} IN ({', '.join(repr(v) for v in values)})"
 
 
-class Flow(Base):
+class ArchiveBase(Base):
+    __abstract__ = True
+    metadata = MetaData()
+
+
+class Flow(ArchiveBase):
     """Ett flöde: en körning av en flödesdefinition, med aktuellt steg och version."""
 
     __tablename__ = "flows"
@@ -73,7 +77,7 @@ class Flow(Base):
         return f"<Flow {self.flow_id} {self.flow_type} {self.status} v{self.version}>"
 
 
-class FlowStep(Base):
+class FlowStep(ArchiveBase):
     """Ett steg i ett flöde, i definitionens ordning."""
 
     __tablename__ = "flow_steps"
@@ -111,7 +115,7 @@ class FlowStep(Base):
         return f"<FlowStep {self.flow_id}/{self.step_key} {self.kind} {self.status}>"
 
 
-class FlowGateDecision(Base):
+class FlowGateDecision(ArchiveBase):
     """Ett grindbeslut. Append-only: ett nytt beslut är en ny rad, ingen rad ändras."""
 
     __tablename__ = "flow_gate_decisions"

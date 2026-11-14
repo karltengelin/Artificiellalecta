@@ -4,8 +4,7 @@ import json
 import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-from datetime import date
-from functools import partial
+from datetime import UTC, date, datetime
 from threading import Event
 from uuid import UUID, uuid4
 
@@ -22,13 +21,12 @@ from agents.company_capabilities import (
 from agents.company_coordination import Coordination
 from agents.company_team_catalog import team_catalog
 from agents.company_tools import SKILL, TEAM, CoordinationInput
-from agents.flows.questions import QuestionConsole
+from agents.deliveries import DeliveryStore, sha256
 from agents.gateways import GatewayError, RegulatoryGateway
 from ai import AIClient, AIConfig
 from ai.providers.fake import FakeProvider, text_result
 from ai.tracing import MemoryTraceSink
-from reporting import render_report
-from reporting.template import Fonts
+from models.flow import ArchiveBase, Flow, FlowGateDecision, FlowStep
 from services import Actor, OperationContext
 from services.change_requests import ReviewReferences
 from services.development_demo import Candidate, Evidence
@@ -36,7 +34,6 @@ from services.errors import AccessDeniedError, ApprovalError, ConflictError
 from services.operations import common
 from tests.flow_helpers import (
     call,
-    flow_client,
     impact_script,
     interpretation_script,
 )
@@ -110,9 +107,8 @@ class Demo:
         self.app = self.web = self.pilot = None
         self.url = None
 
-    def open(self, *, active=True, legacy=False):
-        self.app = create_app(settings=self.settings, company_ai=client() if active else None,
-                              rule_flow_ai=flow_client() if legacy else None)
+    def open(self, *, active=True):
+        self.app = create_app(settings=self.settings, company_ai=client() if active else None)
         self.web = TestClient(self.app, base_url="https://testserver", follow_redirects=False)
         login(self.web)
         self.pilot = self.app.state.company_missions
@@ -176,6 +172,66 @@ def demo(tmp_path, monkeypatch):
     settings = WebSettings(demo_path=tmp_path / "demo.db", allowed_hosts=("testserver",),
                            operator_password_hash=PasswordHasher().hash(PASSWORD))
     return Demo(settings, tmp_path).open()
+
+
+
+def test_fria_fragor_och_skrivskyddad_historik(demo, tmp_path):
+    new_form = demo.web.get(BASE)
+    assert new_form.status_code == 200
+    assert 'name="goal"' in new_form.text
+    assert 'name="question_type"' not in new_form.text
+    assert "Beståndsstatistik" not in new_form.text
+    assert "Agentteam" not in new_form.text
+    assert demo.web.get("/central/bolagsuppdrag").status_code == 200
+
+    archive_url = "/central/uppdragsarkiv"
+    assert "Inga arkiverade uppdrag" in demo.web.get(archive_url).text
+    store = demo.app.state.mission_archive
+    store.deliveries = DeliveryStore(tmp_path / "deliveries")
+    archive_id = "FLOW-000001"
+    waiting_id = "FLOW-000002"
+    report_path = store.deliveries.root / archive_id / "v1" / "rapport.md"
+    report_path.parent.mkdir(parents=True)
+    data = b"# Sparad rapport"
+    report_path.write_bytes(data)
+    checksum = sha256(data)
+    with store.factory() as session:
+        ArchiveBase.metadata.create_all(session.connection())
+        session.add_all([
+            Flow(flow_id=archive_id, flow_type="product_report", definition_version="1",
+                 status="completed", input={"month": "2026-10"}, created_by=OPERATOR.id,
+                 finished_at=datetime.now(UTC)),
+            Flow(flow_id=waiting_id, flow_type="rule_change_parameter", definition_version="1",
+                 status="waiting_gate", input={}, created_by=OPERATOR.id),
+        ])
+        session.flush()
+        session.add(FlowStep(flow_id=archive_id, step_key="render", position=1, kind="system",
+                             title="Levererad rapport", status="completed", result_hash=checksum,
+                             result={"delivery": {"version": 1, "files": {"rapport.md": checksum}}}))
+        session.add(FlowGateDecision(flow_id=archive_id, step_key="granska", decision="approved",
+                                     decided_by=OPERATOR.id, bound_steps=["render"], bound_hash=checksum))
+        session.commit()
+
+    assert waiting_id in demo.web.get(archive_url).text
+    for path in (f"/floden/{archive_id}", f"/team/aktuarie/rapporter/{archive_id}"):
+        archived = demo.web.get(path)
+        assert archived.status_code == 200
+        assert "Sparade beslut" in archived.text
+        assert checksum in archived.text
+    pending = demo.web.get(f"/floden/{waiting_id}")
+    assert pending.status_code == 200
+    assert "waiting_gate" in pending.text
+    assert re.findall(r'<form[^>]+action="([^"]+)"', pending.text) == ["/logga-ut"]
+    assert demo.web.post(f"/floden/{waiting_id}/grind", data={"decision": "approved"}).status_code == 404
+    assert demo.web.post("/floden", data={"flow_type": "rule_change_parameter"}).status_code == 405
+    assert demo.web.post("/team/aktuarie/rapporter", data={"month": "2026-10"}).status_code == 405
+
+    download = f"/team/aktuarie/rapporter/{archive_id}/leverans/1/rapport.md"
+    assert demo.web.get(download).content == data
+    report_path.write_bytes(b"changed")
+    assert demo.web.get(download).status_code == 409
+    guest = TestClient(demo.app, base_url="https://testserver", follow_redirects=False)
+    assert guest.get(download).status_code in (303, 401, 403)
 
 
 def test_parameter_via_webb_med_omstart_och_avstamning(demo, monkeypatch):
@@ -434,63 +490,3 @@ def test_ansprak_avbrott_och_budget(demo, monkeypatch):
     assert demo.state["status"] == "budget_stopped"
     demo.action("ta-over", note="Budgeten är slut")
     assert demo.state["status"] == "taken_over"
-
-
-def test_historik_och_pilot_i_samma_demofil(demo):
-    month = "2026-10-01"
-    def connect_legacy():
-        service = demo.app.state.service
-        ai = client(
-            call("get_company_metrics", {"month": month}, 1),
-            text_result(json.dumps({"status": "partial", "month": month, "conclusion": "Bestånd och premier.",
-                                    "limitations": [], "assumptions": [], "next_steps": []})),
-        )
-        console = QuestionConsole.build(service._session_factory, trusted=service, actuary_service=service,
-            ai=ai, renderer=partial(render_report, fonts=Fonts.helvetica()), environment_id="demo",
-            dataset_ref=demo.settings.dataset_ref, deliveries_dir=demo.tmp_path / "deliveries",
-            journal_dir=demo.tmp_path / "legacy-runs")
-        demo.app.state.question_console = console
-
-    connect_legacy()
-
-    def legacy_start():
-        page = demo.web.get("/central/fragor")
-        response = demo.web.post("/central/fragor", headers=ORIGIN, data={
-            "csrf_token": page.context["operator_csrf"], "request_token": page.context["request_token"],
-            "team": "aktuarie", "question_type": "portfolio_overview", "month": month[:7],
-        })
-        assert response.status_code == 303, response.text
-        return response.headers["location"]
-
-    def legacy_decide(url, decision):
-        page = demo.web.get(url)
-        flow = page.context["flow"]
-        response = demo.web.post(f"{url}/granska", headers=ORIGIN, data={
-            "csrf_token": page.context["operator_csrf"], "version": flow.version, "note": "Granskad",
-            "seen_hash": flow.gate_hashes["review"], "decision": decision,
-        })
-        assert response.status_code == 303, response.text
-
-    done = legacy_start()
-    legacy_decide(done, "approved")
-    connect_legacy()
-    pending = legacy_start()
-    original_pdf = demo.web.get(done + "/leverans/1/rapport.pdf").content
-    assert original_pdf.startswith(b"%PDF-")
-    demo.start("Vad säger villkoren?")
-    demo.process(call("read_regulatory_document", {"handle": "villkor"}, 1),
-                 answer("answered", sources=["villkor"], summary="Försäkringsvillkoren anger tillämpliga villkor."))
-    demo.open(active=False)
-    connect_legacy()
-    assert demo.web.get(demo.url).status_code == 200
-    for url in (done, pending):
-        page = demo.web.get(url)
-        flow = page.context["flow"]
-        team = demo.web.get(f"/team/aktuarie/uppdrag/{flow.flow_id}")
-        assert team.context["trace"].run_id == page.context["trace"].run_id
-        assert demo.web.get(url + "/leverans/1/rapport.md").status_code == 200
-    assert demo.web.get(done + "/leverans/1/rapport.pdf").content == original_pdf
-    assert demo.web.get(done).context["assignment"].accepted
-    assert demo.web.get(pending).context["assignment"].status == "waiting_gate"
-    legacy_decide(pending, "rejected")
-    assert "supersedes=" in demo.web.get(pending).text

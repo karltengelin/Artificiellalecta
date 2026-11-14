@@ -75,9 +75,9 @@ tests = []
 dependents = []
 
 [suites.orchestration]
-description = "Flödesmotor och samverkan mellan team; delegering återstår"
+description = "Dynamiska bolagsuppdrag och samverkan mellan team"
 status = "partial"
-tests = ["tests/test_company_missions.py", "tests/test_premium_month.py", "tests/test_agents_flows.py", "tests/test_agents_flow_rule_change.py", "tests/test_agents_questions.py", "tests/test_product_report.py"]
+tests = ["tests/test_company_missions.py"]
 dependents = ["agents", "web", "tooling"]
 
 [suites.services]
@@ -89,7 +89,7 @@ dependents = ["agents", "web", "tooling"]
 [suites.agents]
 description = "Harness, ärendekörningar, behörigheter och gateways"
 status = "active"
-tests = ["tests/test_actuarial_workspace.py", "tests/test_case_workspace.py", "tests/test_agents_case_runs.py", "tests/test_agents_delegation.py", "tests/test_agents_questions.py", "tests/test_agents_demo.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_listing.py", "tests/test_agents_loop.py", "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py", "tests/test_agents_postgres_role.py", "tests/test_agents_skills.py", "tests/test_agents_teams.py"]
+tests = ["tests/test_actuarial_workspace.py", "tests/test_case_workspace.py", "tests/test_agents_case_runs.py", "tests/test_agents_delegation.py", "tests/test_agents_demo.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_listing.py", "tests/test_agents_loop.py", "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py", "tests/test_agents_postgres_role.py", "tests/test_agents_skills.py", "tests/test_agents_teams.py"]
 dependents = ["orchestration", "web", "tooling"]
 
 [suites.ai]
@@ -101,13 +101,13 @@ dependents = ["agents", "services", "web", "tooling"]
 [suites.web]
 description = "HTTP, formulär och handläggarflöden"
 status = "active"
-tests = ["tests/test_actuarial_workspace.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_case_workspace.py", "tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_premium_payments.py", "tests/test_web_flows.py", "tests/test_web_operator.py", "tests/test_design_web_css.py"]
+tests = ["tests/test_web_actuary.py", "tests/test_actuarial_workspace.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_case_workspace.py", "tests/test_web_auth.py", "tests/test_web_cases.py", "tests/test_web_changes.py", "tests/test_web_database.py", "tests/test_web_enrollment.py", "tests/test_web_environments.py", "tests/test_web_insured.py", "tests/test_web_insured_listing.py", "tests/test_web_journal.py", "tests/test_web_parameters.py", "tests/test_web_premium_payments.py", "tests/test_web_operator.py", "tests/test_design_web_css.py"]
 dependents = ["tooling"]
 
 [suites.data]
 description = "Datamodeller, backup och migrationer"
 status = "active"
-tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_flows.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
+tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
 dependents = []
 
 [suites.design]
@@ -137,14 +137,13 @@ postgres = [
   "tests/test_valuation_bases.py::TestMigration::test_migrationen_mot_postgres",
   "tests/test_valuation_runs.py::TestMigration::test_migrationen_mot_postgres",
   "tests/test_valuation_runs.py::TestLockPostgres::test_samtidiga_beslut_kraver_ny_granskning",
-  "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
   "tests/test_migration_premium_flow.py::test_migrationen_infor_premieflodet_och_blir_identisk_med_create_all",
   "tests/test_migration_premium_flow.py::test_torrkorningen_ar_skrivskyddad_och_delvis_inforande_stoppar",
   "tests/test_migration_premium_flow.py::test_saknad_forutsattning_stoppar",
   "tests/test_migration_payout_parts.py",
 ]
-integration = ["tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_questions.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py", "tests/test_agents_flow_rule_change.py", "tests/test_web_flows.py"]
-security = ["tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_questions.py", "tests/test_web_auth.py", "tests/test_services_access.py", "tests/test_services_transactions.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_skills.py", "tests/test_agents_postgres_role.py", "tests/test_ai_boundaries.py", "tests/test_portfolio_impact.py::TestIngaIndividuppgifter", "tests/test_portfolio_impact.py::TestAtkomst", "tests/test_agents_teams.py::TestGatewayverktyg", "tests/test_agents_teams.py::TestParametermandatet"]
+integration = ["tests/test_company_missions.py", "tests/test_web_actuary.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py"]
+security = ["tests/test_company_missions.py", "tests/test_web_actuary.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_auth.py", "tests/test_services_access.py", "tests/test_services_transactions.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_skills.py", "tests/test_agents_postgres_role.py", "tests/test_ai_boundaries.py", "tests/test_portfolio_impact.py::TestIngaIndividuppgifter", "tests/test_portfolio_impact.py::TestAtkomst", "tests/test_agents_teams.py::TestGatewayverktyg", "tests/test_agents_teams.py::TestParametermandatet"]
 
 # Alla matchande regler förenas. dependents utvidgar sedan kodändringens urval transitivt.
 [[rules]]
@@ -247,7 +246,7 @@ paths = ["src/communication/**"]
 suites = ["communication"]
 
 [[rules]]
-paths = ["src/agents/flows/**"]
+paths = ["src/agents/company_*.py", "src/agents/mission_archive.py"]
 suites = ["orchestration"]
 
 # Produkt-/käll-/instruktionsfiler ovan behandlas som systemindata även om de är Markdown.
@@ -263,7 +262,6 @@ postgres = [
   "tests/test_case_workspace_postgres.py",
   "tests/test_services_postgres.py",
   "tests/test_migration_cases.py::test_migrationen_skapar_bara_cases_och_blir_identisk_med_create_all",
-  "tests/test_migration_flows.py::test_migrationen_skapar_bara_flodestabellerna_och_blir_identisk_med_create_all",
   "tests/test_product_parameters.py::test_migrationen_skapar_fyller_och_raknar_om_identiskt",
   "tests/test_product_parameters.py::test_migrationen_rullas_tillbaka_vid_avvikande_premie",
   "tests/test_product_parameters.py::test_uppgraderingen_lagger_till_kapitalets_parametrar",

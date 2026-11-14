@@ -4,12 +4,12 @@ from datetime import date, timedelta
 from decimal import Decimal
 from hashlib import sha256
 
-from agents.flows.store import canonical_hash
 from agents.gateways import GatewayError, ReadRegulatoryDocumentInput
 from agents.results import CompanyInterpretation
 from services import Actor, OperationContext
 from services.errors import ConflictError, InvalidInputError
 from services.operations.product_parameters import RULE_OF, ParameterChangeInput
+from utils.checksums import canonical_hash
 
 INTERPRET = "interpret_rule"
 IMPACT = "estimate_premium_effect"

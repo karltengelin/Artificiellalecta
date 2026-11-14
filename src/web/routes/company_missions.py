@@ -16,10 +16,11 @@ from services.errors import (
 )
 from web.handler import render
 from web.operator_auth import current_session, operator_action, operator_actor
+from web.operator_forms import HEADERS
 from web.routes.auth import auth_form
-from web.routes.questions import HEADERS
 
-BASE = "/central/bolagsuppdrag"
+BASE = "/central/fragor"
+OLD_BASE = "/central/bolagsuppdrag"
 router = APIRouter()
 STATUSES = {
     "queued": "Köat", "running": "Arbete pågår", "waiting_review": "Väntar på ditt beslut",
@@ -58,15 +59,17 @@ def _error(exc):
 
 
 @router.get(BASE)
+@router.get(OLD_BASE, include_in_schema=False)
 def listing(request: Request):
-    pilot = workspace(request)
+    pilot = request.app.state.company_missions
     session = current_session(request)
     actor = operator_actor(request) if session and session.operator_id else None
-    return page(request, "company_missions.html", items=pilot.store.list(actor) if actor else [],
-                new_key=uuid4().hex, enabled=pilot.ai is not None)
+    return page(request, "company_missions.html", items=pilot.store.list(actor) if actor and pilot else [],
+                new_key=uuid4().hex, enabled=pilot is not None and pilot.ai is not None)
 
 
 @router.post(BASE)
+@router.post(OLD_BASE, include_in_schema=False)
 async def start(request: Request):
     form = await auth_form(request, {"csrf_token", "key", "goal"})
     actor = operator_action(request, form)
@@ -78,6 +81,7 @@ async def start(request: Request):
 
 
 @router.get(BASE + "/{ident}")
+@router.get(OLD_BASE + "/{ident}", include_in_schema=False)
 def detail(request: Request, ident: str):
     actor = operator_actor(request)
     pilot = workspace(request)
@@ -98,6 +102,7 @@ def detail(request: Request, ident: str):
 
 
 @router.post(BASE + "/{ident}/{action}")
+@router.post(OLD_BASE + "/{ident}/{action}", include_in_schema=False)
 async def act(request: Request, ident: str, action: str):
     forms = {
         "kor": set(), "avbrott": set(), "ta-over": {"note"}, "precisera": {"key", "goal"},
@@ -129,6 +134,7 @@ async def act(request: Request, ident: str, action: str):
 
 
 @router.get(BASE + "/{ident}/utkast/{assignment}/{name}")
+@router.get(OLD_BASE + "/{ident}/utkast/{assignment}/{name}", include_in_schema=False)
 def artifact(request: Request, ident: str, assignment: str, name: str):
     actor = operator_actor(request)
     try:
@@ -140,6 +146,7 @@ def artifact(request: Request, ident: str, assignment: str, name: str):
 
 
 @router.get(BASE + "/{ident}/spar/{run}")
+@router.get(OLD_BASE + "/{ident}/spar/{run}", include_in_schema=False)
 def trace(request: Request, ident: str, run: str):
     actor = operator_actor(request)
     try:

@@ -32,9 +32,6 @@ from services.operations.product_parameters import ParameterKey
 READ_DOCUMENT = "read_regulatory_document"
 WRITE_DRAFT = "write_draft"
 ESTIMATE = "estimate_parameter_change_impact"
-COMPANY_METRICS = "get_company_metrics"
-SNAPSHOT = "get_portfolio_snapshot"
-PREMIUM_FLOWS = "get_premium_flows"
 
 
 class _Strict(BaseModel):
@@ -78,27 +75,6 @@ class CompanyInterpretation(InterpretationProposal):
     code_dependency: str = Field(max_length=1200, description="Vilken ny logik eller annan förmåga som behövs")
 
 
-class CompanyAnswer(_Strict):
-    """Bolagsfrågan (OC-3a, B-041): aktuarien besvarar en beståndsfråga ur ledningsaggregatet.
-
-    Talen i rapporten kommer ur get_company_metrics, inte ur texten (val F).
-    """
-
-    status: Literal["answered", "partial", "unavailable", "needs_clarification"] = Field(
-        description="answered bara när båda måtten finns och operatörens precisering kan besvaras med dem; "
-                    "partial när något mått är dolt eller underkänt; unavailable när preciseringen frågar efter "
-                    "något underlaget inte innehåller (t.ex. andra mått eller tidsjämförelser), även om måtten "
-                    "kunde läsas; needs_clarification vid oklar fråga")
-    month: date = Field(description="Månaden du läste med get_company_metrics (månadsförsta)")
-    conclusion: str = Field(description="Slutsatsen för en VD: svaret först, i vanlig svenska utan verktygs-, "
-                                        "funktions- eller kolumnnamn. Skriv inga andra tal än dem i "
-                                        "get_company_metrics-svaret")
-    limitations: list[str] = Field(description="Begränsningar utöver rapportens fasta (läsdag, bankavstämning, "
-                                               "tidsjämförelser) som påverkar slutsatsen – ofta inga")
-    assumptions: list[str] = Field(description="Antaganden du har gjort")
-    next_steps: list[str] = Field(description="Vad som behövs för ett fullständigare svar, om något")
-
-
 class CaseAnswer(_Strict):
     """Deluppdrag i ett ärende. Ett modellsvar bevisar aldrig att ärendet är genomfört."""
 
@@ -125,22 +101,6 @@ class CoordinationAnswer(_Strict):
     assignment_refs: list[str] = Field(max_length=10)
 
 
-class ProductReportSummary(_Strict):
-    """Produktrapporten (A2, B-042): aktuarien sammanfattar bestånd och premier för ett år.
-
-    Tabellerna i rapporten kommer ur get_portfolio_snapshot och get_premium_flows, inte ur texten.
-    """
-
-    year: int = Field(description="Året du läste med get_portfolio_snapshot och get_premium_flows")
-    conclusion: str = Field(description="Sammanfattningen för VD och styrelse: slutsatsen först, i vanlig svenska "
-                                        "utan verktygs-, funktions- eller kolumnnamn. Skriv inga andra tal än dem "
-                                        "i verktygens svar")
-    key_findings: list[str] = Field(description="De viktigaste iakttagelserna om bestånd och premier")
-    recommendations: list[str] = Field(description="Åtgärder eller utredningar du föreslår, om några")
-    limitations: list[str] = Field(description="Begränsningar utöver rapportens fasta (ej beräknade avsnitt, läsdag, "
-                                               "bankavstämning) – ofta inga")
-
-
 RESULT_SCHEMAS: dict[str, type[_Strict]] = {
     "CoordinationAnswer": CoordinationAnswer,
     "CompanyInterpretation": CompanyInterpretation,
@@ -148,8 +108,6 @@ RESULT_SCHEMAS: dict[str, type[_Strict]] = {
     "CaseAnswer": CaseAnswer,
     "InterpretationProposal": InterpretationProposal,
     "PortfolioImpactResult": PortfolioImpactResult,
-    "CompanyAnswer": CompanyAnswer,
-    "ProductReportSummary": ProductReportSummary,
 }
 
 
@@ -183,16 +141,12 @@ def verify(
     source_text: dict[str, list[str]] = {}
     drafts: dict[str, dict] = {}
     estimate: dict | None = None
-    metrics: dict[str, dict] = {}  # månad -> senaste lyckade get_company_metrics
-    yearly: dict[str, dict[int, dict]] = {SNAPSHOT: {}, PREMIUM_FLOWS: {}}  # år -> senaste lyckade läsning
-    metrics_failed = False  # ett anrop som tjänstelagret avböjde, t.ex. en datakälla som inte kunde läsas
     read_case = False
     analyses = {}
     assignments = {}
     for outcome in dispatches:
         for call in outcome.calls:
             if call.status != CallStatus.DONE:
-                metrics_failed |= call.status == CallStatus.ERROR and operation_of.get(call.skill) == COMPANY_METRICS
                 continue
             output = json.loads(call.result.content).get("output") or {}
             operation = operation_of.get(call.skill)
@@ -217,12 +171,6 @@ def verify(
                                           "reference": output["reference"], "sha256": output["sha256"]}
             elif operation == ESTIMATE:
                 estimate = output
-            elif operation == COMPANY_METRICS:
-                metrics[output["period_from"]] = output
-            elif operation in yearly:
-                yearly[operation][output["year"]] = output
-
-    # CompanyAnswer läser inga dokument och skriver inga utkast (B-041 val A)
     handles, names = getattr(result, "source_handles", ()), getattr(result, "draft_names", ())
     problems = [f"källan {h} är inte läst i körningen" for h in handles if h not in sources]
     problems += [f"utkastet {n} är inte skrivet i körningen" for n in names if n not in drafts]
@@ -270,28 +218,6 @@ def verify(
         if estimate is None:
             problems.append("ingen beräkning med estimate_parameter_change_impact i körningen")
         evidence["estimate"] = estimate
-    if isinstance(result, CompanyAnswer):
-        read = metrics.get(result.month.isoformat())
-        if read is None and result.status in ("answered", "partial"):
-            problems.append(f"ingen läsning med get_company_metrics för {result.month.isoformat()} i körningen")
-        if read is not None:
-            incomplete = read["insured_suppressed"] or read["paid_state"] != "available"
-            if result.status == "answered" and incomplete:
-                problems.append("svaret anges som fullständigt trots dolt eller underkänt mått")
-            texts = [result.conclusion, *result.limitations, *result.assumptions, *result.next_steps]
-            problems += [f"talet {n} i svaret finns inte i underlaget" for n in unsupported_numbers(texts, read)]
-        evidence["metrics"] = read
-        evidence["metrics_failed"] = read is None and metrics_failed
-    if isinstance(result, ProductReportSummary):
-        snapshot, flows = yearly[SNAPSHOT].get(result.year), yearly[PREMIUM_FLOWS].get(result.year)
-        problems += [f"ingen läsning med {name} för {result.year} i körningen"
-                     for name, read in ((SNAPSHOT, snapshot), (PREMIUM_FLOWS, flows)) if read is None]
-        if snapshot is not None and flows is not None:
-            texts = [result.conclusion, *result.key_findings, *result.recommendations, *result.limitations]
-            values, dates = _values_and_dates([snapshot, flows])
-            problems += [f"talet {n} i sammanfattningen finns inte i underlaget"
-                         for n in _unsupported(texts, values | _SECTION_NUMBERS, dates)]
-        evidence["snapshot"], evidence["premium_flows"] = snapshot, flows
     if problems:
         raise ResultError(problems)
     return {
@@ -309,8 +235,6 @@ _NUMBER = re.compile(rf"(?<![\w§.,-])\d{{1,3}}(?:{_SPACES}\d{{3}})+(?:[.,]\d+)?
                      r"|(?<![\w§.,-])\d+(?:[.,]\d+)?(?![\w-])")
 
 
-#: Produktrapportens avsnittsnummer 1–10 får nämnas
-_SECTION_NUMBERS = {Decimal(n) for n in range(1, 11)}
 
 
 def _values_and_dates(outputs: Iterable[dict[str, Any]]) -> tuple[set[Decimal], set[date]]:
@@ -348,24 +272,6 @@ def _values_and_dates(outputs: Iterable[dict[str, Any]]) -> tuple[set[Decimal], 
     for output in outputs:
         walk(output)
     return values, dates
-
-
-def unsupported_numbers(texts: Iterable[str], metrics: dict[str, Any]) -> list[str]:
-    """Tal i modellens text som inte motsvarar ett mätvärde, ett datum i läsningen eller en känd gräns (val F).
-
-    Belopp får skrivas exakt eller avrundat till hela kronor, med mellanslag som tusentalsavgränsare.
-    """
-    allowed: set[Decimal] = set()
-    for key in ("insured_count", "paid_sek"):
-        if metrics.get(key) is not None:
-            value = Decimal(str(metrics[key]))
-            allowed |= {value, value.quantize(Decimal(1))}
-    dates = {date.fromisoformat(metrics[k]) for k in ("as_of_date", "period_from", "period_to") if metrics.get(k)}
-    if metrics.get("period_to"):  # periodens sista dag; period_to är exklusivt
-        dates.add(date.fromisoformat(metrics["period_to"]) - timedelta(days=1))
-    if metrics.get("read_at"):
-        dates.add(datetime.fromisoformat(metrics["read_at"]).date())
-    return _unsupported(texts, allowed, dates)
 
 
 def _unsupported(texts: Iterable[str], values: set[Decimal], dates: set[date]) -> list[str]:

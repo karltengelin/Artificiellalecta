@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 from sqlalchemy import JSON, Column, Integer, MetaData, String, Table, select, update
 from sqlalchemy.dialects.sqlite import insert
 
-from agents.flows.store import canonical_hash
 from services.errors import AccessDeniedError, ConflictError, NotFoundError
+from utils.checksums import canonical_hash
 
 missions = Table(
     "company_missions", MetaData(),
