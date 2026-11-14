@@ -154,6 +154,7 @@ class Ecosystem(_Strict):
     schema_version: Literal[1]
     policy_id: str = Field(min_length=1)
     team_ids: tuple[str, ...]
+    technical_team_ids: tuple[str, ...] = ()
     defaults: Defaults
     pods: dict[str, Pod]
     teams: dict[str, Team]
@@ -250,18 +251,19 @@ class Ecosystem(_Strict):
 
     def _validate_structure(self) -> None:
         errors: list[str] = []
-        team_ids = set(self.team_ids)
+        all_ids = (*self.team_ids, *self.technical_team_ids)
+        team_ids = set(all_ids)
 
         def check_ids(kind: str, names: Iterable[str]) -> None:
             for name in names:
                 if not ID_PATTERN.match(name):
                     errors.append(f"{kind}-id '{name}' ska vara engelska snake_case, max 64 tecken")
 
-        check_ids("Team", self.team_ids)
+        check_ids("Team", all_ids)
         check_ids("Podd", self.pods)
         check_ids("Agent", self.agents)
-        if len(team_ids) != len(self.team_ids):
-            errors.append("team_ids innehåller dubbletter")
+        if len(team_ids) != len(all_ids):
+            errors.append("team_ids och technical_team_ids innehåller dubbletter")
 
         # external körs aldrig direkt av en agent (B-026 §5.3) – Fas 3b har ingen kanalgateway
         for where, effects in self._effect_sets():

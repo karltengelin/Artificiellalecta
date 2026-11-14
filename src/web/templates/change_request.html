@@ -82,6 +82,9 @@
     {% if origin.channel == "rule_change_code" %}
       {% set flow_id, separator, step_key = origin.reference.partition("/") %}
       <dd><a href="/floden/{{ flow_id }}#steg-{{ step_key }}">{{ flow_id }} · Lämna till utveckling</a></dd>
+    {% elif origin.channel == "company_mission" %}
+      {% set mission_id, separator, decision_id = origin.reference.partition("/") %}
+      <dd><a href="/central/bolagsuppdrag/{{ mission_id }}#beslut-{{ decision_id }}">Bolagsuppdragets regelbeslut</a></dd>
     {% else %}
       <dd>{{ origin.channel }} · {{ origin.reference }}</dd>
     {% endif %}

@@ -100,6 +100,7 @@ def render(
         "pending_approvals": pending,
         "database_available": not check_database or pending is not None,
         "flows_available": getattr(request.app.state, "flow_console", None) is not None,
+        "company_missions_available": getattr(request.app.state, "company_missions", None) is not None,
         "environment_choices": SWITCHABLE_DATABASES,
         "operator_auth_enabled": request.app.state.operator_auth.enabled,
         "operator_user": operator.operator_id if operator else None,

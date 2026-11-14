@@ -64,7 +64,8 @@ class TestRegelverkIRepot:
         assert {"PR-ITP1-013", "PR-ITP1-016", "T-ITP1-006", "kallregister", "parameterregister", "villkor"} <= set(docs)
         source = docs["K-SIM-ITP-2027"]
         assert source.fictional and source.kind == "bevakning" and source.version == "1.0"
-        assert not any(d.fictional for h, d in docs.items() if h != "K-SIM-ITP-2027")
+        assert docs["K-SIM-KOD-2027"].fictional
+        assert not any(d.fictional for h, d in docs.items() if not h.startswith("K-SIM-"))
         assert docs["PR-ITP1-013"].version == "1.0" and len(docs["PR-ITP1-013"].sha256) == 16
 
     def test_bara_godkanda_platser(self, regelverk):
@@ -255,6 +256,7 @@ class TestVerktyg:
     def test_kontrakten(self):
         assert {(t.name, t.pod, t.side_effect, t.pii) for t in GATEWAY_TOOLS.values()} == {
             ("actuarial_workbench", "analys", "write", False),
+            ("coordinate_company_work", "coordination", "write", False),
             ("list_regulatory_documents", "regelverk", "read", False),
             ("read_regulatory_document", "regelverk", "read", False),
             ("write_draft", "dokument", "write", False),

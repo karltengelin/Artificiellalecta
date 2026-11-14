@@ -139,7 +139,7 @@ class ServiceLayer:
     # --- anrop ------------------------------------------------------------
 
     def execute(
-        self, name: str, ctx: OperationContext, data: BaseModel | dict[str, Any]
+        self, name: str, ctx: OperationContext, data: BaseModel | dict[str, Any], *, proposal_id: str | None = None,
     ) -> OperationResult:
         op = self.registry.get(name)
         validated = self._validate_input(op, data)
@@ -161,7 +161,10 @@ class ServiceLayer:
                     reasons=decision.reasons,
                 )
             if decision.effective == AgentAccess.APPROVAL:
-                return self._propose(op, ctx, validated)
+                return self._propose(op, ctx, validated, proposal_id=proposal_id)
+
+        if proposal_id is not None:
+            raise ApprovalError("Operationen kan inte läggas som förslag med nuvarande aktör och mandat")
 
         with transaction(self._session_factory) as tx:
             output = self._call(op, ctx, validated, tx.session)
@@ -206,6 +209,10 @@ class ServiceLayer:
             from services.case_review import guard_case_proposal
 
             guard_case_proposal(tx.session, request, self)
+            if request.operation == "schedule_product_parameter_change":
+                from agents.company_decisions import guard_activation
+
+                guard_activation(tx.session, request, ctx.actor, service=self)
             op = self.registry.get(request.operation)
             validated = self._validate_input(op, request.input)
             run_ctx = replace(
@@ -321,10 +328,12 @@ class ServiceLayer:
 
     # --- interna hjälpare ---------------------------------------------------
 
-    def _propose(self, op: Operation, ctx: OperationContext, data: BaseModel) -> OperationResult:
+    def _propose(self, op: Operation, ctx: OperationContext, data: BaseModel, *,
+                 proposal_id: str | None = None) -> OperationResult:
         """Lägger ett agentförslag i kön – efter prövning mot aktuellt läge (§6 steg 2)."""
         self._validate_against_state(op, ctx, data)
         request = ApprovalRequest(
+            **({"id": proposal_id} if proposal_id is not None else {}),
             operation=op.name,
             input=data.model_dump(mode="json"),
             reason=ctx.reason,

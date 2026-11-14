@@ -19,6 +19,7 @@ policy_id: harness-v1
 # B-026:s sju team. Namn som får användas som ägare, montering och delegeringsmål,
 # även innan teamet har en aktiv profil under `teams`.
 team_ids: [forsakring, kommunikation, kapital, aktuarie, compliance, ekonomi, utveckling]
+technical_team_ids: [operator_central]
 
 defaults:
   deny_skills: []
@@ -34,6 +35,13 @@ defaults:
     max_wall_seconds: 600
 
 pods:
+  coordination:
+    owner_team: operator_central
+    mountable_by: [operator_central]
+    pii: false
+    allowed_effects: [write]
+    skills:
+      coordinate_company_work: {gateway_tool: coordinate_company_work}
   analys:
     owner_team: aktuarie
     mountable_by: [aktuarie]
@@ -69,7 +77,7 @@ pods:
   # produktparametrarna med versioner. Innehållet är underlag, aldrig instruktion (harness.md §5.2).
   regelverk:
     owner_team: compliance
-    mountable_by: [compliance, aktuarie]
+    mountable_by: [compliance, aktuarie, operator_central]
     pii: false
     allowed_effects: [read]
     skills:
@@ -137,6 +145,19 @@ pods:
       delegate_to_team: {harness_tool: delegate_to_team}
 
 teams:
+  operator_central:
+    lead: company_orchestrator
+    mandate: Samordna öppna bolagsuppdrag i demo och lämna källbundna svar och granskningsunderlag.
+    pods: [coordination, regelverk]
+    allowed_effects: [read, write]
+    deny_skills: [get_product_parameters]
+    limits:
+      max_steps: 10
+      max_tool_calls: 12
+      max_cost_usd: 0.50
+      max_output_tokens: 3500
+      max_wall_seconds: 120
+
   forsakring:
     lead: case_handler
     mandate: Utred tilldelade ITP1-ärenden och förbered administrativa åtgärder.
@@ -185,6 +206,14 @@ teams:
       max_wall_seconds: 480
 
 agents:
+  company_orchestrator:
+    name: Bolagsorkestratör
+    team: operator_central
+    instruction: 02_system/agenter/bolagsorkestrator.md
+    model_role: standard
+    pods: [coordination, regelverk]
+    allowed_effects: [read, write]
+
   case_handler:
     name: Handläggaragent
     team: forsakring

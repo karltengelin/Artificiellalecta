@@ -77,7 +77,7 @@ dependents = []
 [suites.orchestration]
 description = "Flödesmotor och samverkan mellan team; delegering återstår"
 status = "partial"
-tests = ["tests/test_premium_month.py", "tests/test_agents_flows.py", "tests/test_agents_flow_rule_change.py", "tests/test_agents_questions.py", "tests/test_product_report.py"]
+tests = ["tests/test_company_missions.py", "tests/test_premium_month.py", "tests/test_agents_flows.py", "tests/test_agents_flow_rule_change.py", "tests/test_agents_questions.py", "tests/test_product_report.py"]
 dependents = ["agents", "web", "tooling"]
 
 [suites.services]

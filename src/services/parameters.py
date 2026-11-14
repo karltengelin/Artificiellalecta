@@ -111,7 +111,11 @@ def plain(value) -> Decimal:
 
 
 def label(row: ProductParameter) -> str:
-    return f"{row.rule_id} v{row.rule_version} från {row.valid_from.isoformat()}"
+    return version_label(row.rule_id, row.rule_version, row.valid_from)
+
+
+def version_label(rule_id: str, rule_version: str, valid_from: date) -> str:
+    return f"{rule_id} v{rule_version} från {valid_from.isoformat()}"
 
 
 def has_parameter_table(session: Session) -> bool:

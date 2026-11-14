@@ -13,6 +13,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from agents.company_tools import SKILL, CoordinationInput
+from agents.gateways.common import GatewayError
 from agents.gateways.drafts import DraftGateway, WriteDraftInput
 from agents.gateways.regulatory import (
     ListRegulatoryDocumentsInput,
@@ -31,6 +33,7 @@ class GatewayContext:
     regulatory: RegulatoryGateway
     drafts: DraftGateway
     actuarial: Any = None
+    coordination: Any = None
 
 
 @dataclass(frozen=True)
@@ -40,10 +43,11 @@ class Gateways:
     regulatory: RegulatoryGateway = field(default_factory=RegulatoryGateway)
     drafts: DraftGateway = field(default_factory=DraftGateway)
     actuarial: Any = None
+    coordination: Any = None
 
     def context(self, team: str, run_id: str) -> GatewayContext:
         return GatewayContext(team=team, run_id=run_id, regulatory=self.regulatory, drafts=self.drafts,
-                              actuarial=self.actuarial)
+                              actuarial=self.actuarial, coordination=self.coordination)
 
 
 @dataclass(frozen=True)
@@ -76,11 +80,26 @@ def _actuarial_call(ctx, data):
         raise GatewayError("invalid", str(exc)[:1200]) from exc
 
 
+def _coordination_call(ctx: GatewayContext, data: CoordinationInput) -> BaseModel:
+    if ctx.coordination is None:
+        raise GatewayError("unavailable", "Ett anspråk i bolagsuppdragskön krävs")
+    return ctx.coordination.invoke(ctx.team, ctx.run_id, data)
+
+
 from agents.actuarial_workbench import WorkbenchInput
 
 GATEWAY_TOOLS = {
     tool.name: tool
     for tool in (
+        GatewayTool(
+            name=SKILL, pod="coordination", side_effect="write", pii=False,
+            description="Samordna det aktuella bolagsuppdraget. catalog listar tillämpliga förmågor; "
+                        "status läser sparade resultat och beslut. order beställer en förmåga med capability "
+                        "och stabil key. För tolkning anges source och goal; för premieeffekt anges basis "
+                        "(granskad tolkning). review ber om mänsklig granskning med capability och basis "
+                        "(tolkningens deluppdrags-id).",
+            input_model=CoordinationInput, call=_coordination_call,
+        ),
         GatewayTool(
             name="actuarial_workbench", pod="analys", side_effect="write", pii=False,
             description="Aktuariens data- och analysarbetsbänk. Börja med action=catalog, name='', arguments_json='{}'. "

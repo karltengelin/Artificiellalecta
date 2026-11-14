@@ -89,6 +89,19 @@ def build_demo_rule_flows(service: ServiceLayer, requests: ChangeRequests, *, ai
                              ai=ai, change_requests=requests)
 
 
+def build_company_missions(settings, service, requests, releases, *, ai=None):
+    from agents.company_missions import CompanyMissions
+
+    factory = service._session_factory
+    with factory() as session:
+        connection = session.connection()
+        sqlite = connection.dialect.name == "sqlite"
+        present = sqlite and inspect(connection).has_table("company_missions")
+    if not sqlite or (ai is None and not present):
+        return None
+    return CompanyMissions(factory, service, requests, releases, dataset=settings.dataset_ref, ai=ai)
+
+
 def build_engine(settings: WebSettings) -> Engine:
     if settings.database == "demo":
         return demo_engine(settings.demo_path)

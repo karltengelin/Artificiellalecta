@@ -72,6 +72,12 @@ class PortfolioImpactResult(_Strict):
     draft_names: list[str] = Field(description="Filnamn för utkast du har skrivit i den här körningen")
 
 
+class CompanyInterpretation(InterpretationProposal):
+    change_kind: Literal["parameter", "code", "mixed", "unsupported", "interpretation_only"]
+    effective_on: date | None = Field(description="Giltighet enligt källan, eller null om den ännu är okänd")
+    code_dependency: str = Field(max_length=1200, description="Vilken ny logik eller annan förmåga som behövs")
+
+
 class CompanyAnswer(_Strict):
     """Bolagsfrågan (OC-3a, B-041): aktuarien besvarar en beståndsfråga ur ledningsaggregatet.
 
@@ -112,6 +118,13 @@ class ActuarialAnswer(_Strict):
     analysis_refs: list[str] = Field(max_length=15, description="Id:n som arbetsbänken gav eller läste i denna körning")
 
 
+class CoordinationAnswer(_Strict):
+    status: Literal["answered", "waiting", "needs_information", "needs_human"]
+    summary: str = Field(min_length=1, max_length=2500)
+    source_handles: list[str] = Field(max_length=12)
+    assignment_refs: list[str] = Field(max_length=10)
+
+
 class ProductReportSummary(_Strict):
     """Produktrapporten (A2, B-042): aktuarien sammanfattar bestånd och premier för ett år.
 
@@ -129,6 +142,8 @@ class ProductReportSummary(_Strict):
 
 
 RESULT_SCHEMAS: dict[str, type[_Strict]] = {
+    "CoordinationAnswer": CoordinationAnswer,
+    "CompanyInterpretation": CompanyInterpretation,
     "ActuarialAnswer": ActuarialAnswer,
     "CaseAnswer": CaseAnswer,
     "InterpretationProposal": InterpretationProposal,
@@ -165,6 +180,7 @@ def verify(
     """Resultatet med harness bevis – eller ResultError med alla skäl."""
     operation_of = {d.skill: d.operation for d in profile.decisions}
     sources: dict[str, dict] = {}
+    source_text: dict[str, list[str]] = {}
     drafts: dict[str, dict] = {}
     estimate: dict | None = None
     metrics: dict[str, dict] = {}  # månad -> senaste lyckade get_company_metrics
@@ -172,6 +188,7 @@ def verify(
     metrics_failed = False  # ett anrop som tjänstelagret avböjde, t.ex. en datakälla som inte kunde läsas
     read_case = False
     analyses = {}
+    assignments = {}
     for outcome in dispatches:
         for call in outcome.calls:
             if call.status != CallStatus.DONE:
@@ -179,6 +196,9 @@ def verify(
                 continue
             output = json.loads(call.result.content).get("output") or {}
             operation = operation_of.get(call.skill)
+            if operation == "coordinate_company_work":
+                for item in output.get("data", {}).get("assignments", []):
+                    assignments[item["id"]] = item
             if operation == "actuarial_workbench":
                 delivery = output.get("payload", {})
                 if "id" in delivery and "content" in delivery:
@@ -190,6 +210,8 @@ def verify(
                     "handle": doc["handle"], "kind": doc["kind"], "title": doc["title"], "version": doc["version"],
                     "sha256": doc["sha256"], "fictional": doc["fictional"],
                 }
+                if isinstance(result, CoordinationAnswer):
+                    source_text.setdefault(doc["handle"], []).append(output["text"])
             elif operation == WRITE_DRAFT:
                 drafts[output["name"]] = {"name": output["name"], "title": output["title"],
                                           "reference": output["reference"], "sha256": output["sha256"]}
@@ -212,6 +234,24 @@ def verify(
         problems.append("tolkningen anger ingen läst källa")
     if isinstance(result, CaseAnswer) and not read_case:
         problems.append("ärendet har inte lästs med get_case i körningen")
+    if isinstance(result, CoordinationAnswer):
+        refs = result.assignment_refs
+        problems += [f"deluppdraget {ref} har inte lästs i körningen" for ref in refs if ref not in assignments]
+        if result.status == "answered" and not (handles or any(
+                assignments.get(ref, {}).get("status") == "completed" for ref in refs)):
+            problems.append("svaret kräver en läst bolagskälla eller ett läst specialistresultat")
+        # Premiebelopp visas ur det sparade aggregatet. Kvalitativa slutsatser och
+        # tal från lästa dokument får stå i svaret.
+        source_snippets = [snippet for h in handles for snippet in source_text.get(h, ())]
+        if any(assignments.get(ref, {}).get("capability") == "estimate_premium_effect" for ref in refs):
+            problems += [f"ange premieeffekten i ord och hänvisa till analysens tabell i stället för talet {n}"
+                         for n in _unsupported([result.summary], set(), set())]
+        elif result.status == "answered" and not refs:
+            doc_numbers = {n for n in _unsupported([result.summary], set(), set())
+                           if not any(re.search(rf"(?<!\d){re.escape(n)}(?!\d)", snippet)
+                                      for snippet in source_snippets)}
+            problems += [f"talet {n} saknar stöd i det lästa källutdraget" for n in sorted(doc_numbers)]
+        evidence["assignments"] = [assignments[ref] for ref in refs if ref in assignments]
     if isinstance(result, ActuarialAnswer):
         problems += [f"analysen {ref} har inte lästs eller skapats i körningen"
                      for ref in result.analysis_refs if ref not in analyses]

@@ -42,6 +42,7 @@ from web.routes import (
     case_workspace,
     cases,
     changes,
+    company_missions,
     development,
     enrollment,
     environments,
@@ -65,6 +66,7 @@ def create_app(
     product_report_console: ProductReportConsole | None = None,
     actuarial_dialogue_console=None,
     rule_flow_ai: AIClient | None = None,
+    company_ai: AIClient | None = None,
 ) -> FastAPI:
     """case_agent: handläggaragenten för ärenden. Byggs med tjänstelagret om inget anges;
     med ett givet tjänstelager utan agent visas ärendena utan knappen *Starta agent*.
@@ -78,6 +80,8 @@ def create_app(
         settings.database != "demo" or settings.operator_password_hash is None or flow_console is not None
     ):
         raise WebConfigError("Regeländringsflöden med utvecklingsöverlämning kräver demo och operatörsinloggning")
+    if company_ai is not None and (settings.database != "demo" or settings.operator_password_hash is None):
+        raise WebConfigError("Bolagspiloten kräver demo och operatörsinloggning")
     if service is None:
         from web.database import build_services
 
@@ -108,6 +112,13 @@ def create_app(
     app.state.change_releases = (
         ChangeReleases(change_requests, DemoDelivery(settings.demo_path)) if change_requests is not None else None
     )
+    app.state.company_missions = None
+    if change_requests is not None and settings.operator_password_hash is not None:
+        from web.database import build_company_missions
+
+        app.state.company_missions = build_company_missions(
+            settings, service, change_requests, app.state.change_releases, ai=company_ai,
+        )
     app.state.development_github = GitHubReader(
         settings.development_github_repository, settings.development_github_token,
     ) if app.state.change_requests is not None else None
@@ -139,6 +150,7 @@ def create_app(
     app.include_router(flows.router)
     app.include_router(environments.router)
     app.include_router(operator.router)
+    app.include_router(company_missions.router)
     app.include_router(development.router)
     app.include_router(actuary.router)
     app.include_router(actuarial_dialogue.router)
@@ -168,7 +180,7 @@ def create_app(
         if request.url.path.startswith(development.BASE):
             return development.respond(request, "error.html", {"error": error}, status_code=exc.status_code)
         response = render(request, "error.html", {"error": error}, status_code=exc.status_code)
-        if request.url.path.startswith(("/central/fragor", "/team/aktuarie")):
+        if request.url.path.startswith(("/central/fragor", "/team/aktuarie", company_missions.BASE)):
             response.headers.update(questions.HEADERS)
         return response
 
@@ -185,7 +197,7 @@ def create_app(
             response = render(request, "error.html", {"error": error}, status_code=503)
             response.headers["Cache-Control"] = "no-store"
             return response
-        if request.url.path.startswith(("/central/fragor", "/team/aktuarie")):
+        if request.url.path.startswith(("/central/fragor", "/team/aktuarie", company_missions.BASE)):
             error = ErrorView("error", "Uppdraget kunde inte läsas", "Kontrollera uppdragslistan innan du försöker igen.",
                               503, nothing_changed=False)
             response = render(request, "error.html", {"error": error}, status_code=503)

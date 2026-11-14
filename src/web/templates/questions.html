@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Aktuarieteamets uppdrag' if base.startswith('/team/aktuarie/') else 'Fråga bolaget' }}{% endblock %}
 {% block content %}
+{% if company_missions_available and base == "/central/fragor" %}<p><a href="/central/bolagsuppdrag">Fråga bolaget · lokal pilot med fri beställning</a></p>{% endif %}
 {% if base.startswith("/team/aktuarie/") %}<div class="actuary-shell">{% include "partials/actuary_nav.html" %}<div class="actuary-body">{% endif %}
 <p class="oc-eyebrow">{{ 'AKTUARIETEAMETS ARBETSYTA' if base.startswith('/team/aktuarie/') else 'OPERATÖRSCENTRALEN' }}</p>
 <h1>{{ 'Aktuarieteamets uppdrag' if base.startswith('/team/aktuarie/') else 'Fråga bolaget' }}</h1>

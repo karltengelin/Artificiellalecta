@@ -188,7 +188,7 @@ def mandate_from_interpretation(
     Betrodd kod anropar detta efter grind 1. Tolkningen ska föreslå minst en parameterändring;
     `index` väljer vilken när den föreslår flera.
     """
-    if output.get("schema") != "InterpretationProposal":
+    if output.get("schema") not in ("InterpretationProposal", "CompanyInterpretation"):
         raise HarnessError("Mandatet byggs bara ur en tolkning (InterpretationProposal)")
     changes = output["result"]["parameter_changes"]
     if not 0 <= index < len(changes):
