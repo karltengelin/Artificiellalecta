@@ -255,7 +255,7 @@ och värderingar som aldrig låses. Paket B ändrar inte det. Två regler förhi
 Paket A:s överlämning (`export_premium_month`, PA7) får därmed en operativ mottagare.
 Kontraktet `ReceiptInput` och allokeringsprovet i ören återanvänds oförändrade.
 
-**Byggt i steg 2 (2026-11-14, ej infört i Lakebase):**
+**Byggt i steg 2 (2026-11-14, mergat till main efter Karls OK; ej infört i Lakebase):**
 - **Var det finns:** journalens fyra tabeller ([databasschema §7c](../../02_system/databasschema.md#7c-tabeller-ledger_batches-ledger_guarantee_parts-ledger_capital_entries-och-ledger_controls--kapital--och-garantijournalen)), övergången från S-04, A6-källan `ledger` och paket A som premiekälla ([tjänstelager §9.15](../../02_system/tjänstelager.md#915-kapital--och-garantijournalen-paket-b-steg-2-b-047--vad-som-stöds-och-vad-som-blockeras)).
 - **Verifierat:** fall 36 och 37 lokalt, och migrationen och övergången mot isolerad Postgres.
 - **På en återställd kopia av Lakebase-backupen `backups/20261114T150341Z`:**
