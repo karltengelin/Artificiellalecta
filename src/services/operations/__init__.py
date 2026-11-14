@@ -5,6 +5,7 @@ Vad agenter får göra med dem står i services/access_register.yaml.
 
 from services.operations import (  # noqa: F401
     actuarial_analysis,
+    capital_ledger,
     cases,
     corrections,
     employers,

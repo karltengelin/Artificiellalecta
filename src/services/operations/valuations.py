@@ -57,6 +57,10 @@ class RunInput(BaseModel):
                                    description="Bara scenario: värderingsgrund, t.ex. SIM-V-2026-01")
     curve_code: str | None = Field(default=None, pattern=CODE_PATTERN,
                                    description="Bara scenario: diskonteringskurva, t.ex. FI-SIM-2026-10")
+    source: Literal["reconstructed_s04", "ledger"] = Field(
+        default="reconstructed_s04",
+        description="Utdragets källa: S-04 rekonstruerat ur premiehistoriken, eller den operativa journalen "
+                    "(ledger, paket B) för ett månadsslut journalen har ett stängt läge för")
 
 
 class ListQuery(BaseModel):
@@ -280,8 +284,8 @@ def opening_balance(session, valuation_date: date) -> ValuationRun | None:
 
 @operation(
     name="run_valuation",
-    description="Värderar beståndet per ett månadsslut: datautdrag S-04, FTA, villkorad återbäring och underskott "
-                "per försäkring på värderingsgrunden, sparat som utkast med kontrollsummor. Scenarier märks och "
+    description="Värderar beståndet per ett månadsslut: datautdrag S-04 eller den operativa journalen (ledger), "
+                "FTA, villkorad återbäring och underskott per försäkring på värderingsgrunden, sparat som utkast med kontrollsummor. Scenarier märks och "
                 "låses aldrig. Resultatet är aggregat utan personuppgifter.",
     kind=OperationKind.WRITE,
     rules=["PR-ITP1-028", "PR-ITP1-031"],
@@ -292,7 +296,7 @@ def run_valuation(ctx: OperationContext, data: RunInput) -> RunDetail:
         raise InvalidInputError("En basvärdering använder grunden och kurvan som gäller datumet – ange ingen kod")
     try:
         computation = compute_valuation(session, data.valuation_date, data.purpose, basis_code=data.basis_code,
-                                        curve_code=data.curve_code)
+                                        curve_code=data.curve_code, source=data.source)
     except ValuationError as exc:
         raise BlockedError(str(exc)) from exc
     run = save_computation(session, computation, ctx.actor.id, ctx.reason or "")

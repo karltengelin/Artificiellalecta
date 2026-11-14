@@ -14,6 +14,7 @@ from .approval_request import ApprovalRequestRecord
 from .bank import BankEvent, PaymentAllocation
 from .base import Base
 from .base_amount import BaseAmount
+from .capital_ledger import LedgerBatch, LedgerCapitalEntry, LedgerControl, LedgerGuaranteePart
 from .case import Case
 from .case_work import CaseMessage, CaseWork, CaseWorkDay
 from .employer import Employer
@@ -53,6 +54,10 @@ __all__ = [
     "InsuredPerson",
     "Invoice",
     "InvoiceLineRecord",
+    "LedgerBatch",
+    "LedgerCapitalEntry",
+    "LedgerControl",
+    "LedgerGuaranteePart",
     "OperationEventRecord",
     "PaymentAllocation",
     "PayoutPart",

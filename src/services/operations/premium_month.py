@@ -19,6 +19,7 @@ from models import (
     PremiumReceipt,
     ValuationBasis,
 )
+from services import capital_ledger
 from services import valuation_bases as vb
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import (
@@ -181,7 +182,14 @@ def open_month(ctx: OperationContext, data: OpenMonth) -> JsonResult:
             raise ConflictError("Scenario-ID finns med annat underlag; rättelse kräver ny version")
         return JsonResult(payload=month_summary(session, existing))
     _snapshots_match(session, p)
-    origins, replay = reconstruct_origins(p.opening)
+    if p.opening.source == "ledger":
+        # Den operativa journalen är källan: spåren läses därifrån, inte ur S-04 (P1-PENSION-001 §6.3)
+        try:
+            origins, replay = capital_ledger.opening_origins(session, p.opening)
+        except capital_ledger.LedgerError as exc:
+            raise BlockedError(f"Journalens ingående läge kan inte användas som IB: {exc}") from exc
+    else:
+        origins, replay = reconstruct_origins(p.opening)
     c = compute_valuation(session, p.opening.valuation_date, "scenario", basis_code=p.opening_basis_code,
                           curve_code=p.opening_curve_code, extract=p.opening)
     run = _save(session, c, ctx.actor.id, ctx.reason or "")
