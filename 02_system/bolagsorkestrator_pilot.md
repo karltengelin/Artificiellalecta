@@ -111,3 +111,18 @@ Båda grenarna kompletterar `tests/suites.toml` i olika avsnitt. Kör om
 bestånds-, premieeffekt-, rapport- och månadsproven på det kombinerade
 kodläget före integration. När B-047 steg 2 byter källa ska projekt 6 jämföra
 S-04-scenariot med journaladaptern som del av övergången.
+
+## Verifiering 2026-11-14
+
+| Prov | Miljö | Godkända | Bortvalda | Överhoppade | Fel |
+|---|---|---:|---:|---:|---:|
+| Ändringsstyrt urval, hela lokala sviten | `a742ceb`, SQLite och skriptade modeller | 1 834 | 104 | 0 | 0 |
+| Ändringsstyrt Postgres-urval, markör `postgres` | Isolerade scheman i `svc_test`, kodläget `0764ed1` | 104 | 1 834 | 0 | 0 |
+| Premieeffekt, bestånds- och produktrapporter, månadsgranskning, uttagsdelar och pilot | Isolerad kombination av pilotens kod och B-047 steg 1 (`ebe2772`), SQLite | 118 | 1 221 | 0 | 0 |
+
+Ändringen efter Postgres-provet gäller det fiktiva källunderlaget och
+lokala prov. Pilotens SQLite-lagring och modellval har endast provats
+lokalt. Demowebben svarade på pilotens ingång och de äldre ingångarna.
+Kodfallet verifierade projekt 11:s demokvitto med en syntetisk kandidat.
+Före ordinarie införande återstår modellprov, en adapter för den befintliga
+beståndsrapporten och operatörens ställningstagande till övergången.
