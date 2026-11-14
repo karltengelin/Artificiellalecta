@@ -93,10 +93,10 @@ GATEWAY_TOOLS = {
     for tool in (
         GatewayTool(
             name=SKILL, pod="coordination", side_effect="write", pii=False,
-            description="Samordna det aktuella bolagsuppdraget. catalog listar tillämpliga förmågor; "
-                        "status läser sparade resultat och beslut. order beställer en förmåga med capability "
-                        "och stabil key. För tolkning anges source och goal; för premieeffekt anges basis "
-                        "(granskad tolkning). review ber om mänsklig granskning med capability och basis "
+            description="Samordna det aktuella bolagsuppdraget. catalog läser teamens uppdrag, profiler och "
+                        "anslutna beställningsvägar. status läser sparade resultat och beslut. order tar target_team "
+                        "och stabil key. För Compliance anges source och goal. För Aktuarie anges basis "
+                        "(granskad tolkning) och ett valfritt goal. review tar review_kind och basis "
                         "(tolkningens deluppdrags-id).",
             input_model=CoordinationInput, call=_coordination_call,
         ),

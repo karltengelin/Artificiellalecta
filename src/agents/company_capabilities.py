@@ -1,6 +1,5 @@
-"""Verifierade pilotförmågor och betrodda krav på deras underlag."""
+"""Genomförandekontrakt och underlagskrav för bolagspiloten."""
 
-from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
 from hashlib import sha256
@@ -20,29 +19,6 @@ APPROVE_INTERPRETATION = "approve_interpretation"
 ACTIVATION = "schedule_product_parameter_change"
 ORIGIN = "company_mission"
 VERIFIER = Actor.system("company_orchestrator")
-
-
-@dataclass(frozen=True)
-class Capability:
-    team: str
-    when: str
-    input: str
-    result: str
-    limit: str
-
-
-CAPABILITIES = {
-    INTERPRET: Capability("compliance", "Tolka eller precisera en regeländring", "Bevakningshandtag och mål",
-                          "CompanyInterpretation", "Källbundet utkast för operatören"),
-    IMPACT: Capability("aktuarie", "Analysera premieeffekten av en befintlig parameter",
-                       "Exakt en godkänd parameter i tolkningen", "PortfolioImpactResult",
-                       "Skyddade aggregat för den bestämda ändringen, tio års horisont"),
-    DEVELOP: Capability("utveckling", "Förbered regelbeslut och överlämning till projekt 11",
-                        "Verifierad kodtolkning med giltighet, utkast och berörd regel",
-                        "Ändringsärende och verifieringskvitto", "Regelbeslut och kodgranskning görs av operatören"),
-    ACTIVATE: Capability("compliance", "Förbered regelbeslut för en parameter", "Godkänd tolkning och beräknad premieeffekt",
-                         "Förslag i tjänstelagrets godkännandekö", "Kräver regelversion, regeltextreferens och separat beslut"),
-}
 
 
 def current_items(state):

@@ -1,12 +1,9 @@
 """Samordningsverktyget arbetar med ett betrott anspråk och en aktuell beställning."""
 
-from dataclasses import asdict
 from uuid import uuid4
 
 from agents.company_capabilities import (
     ACTIVATE,
-    APPROVE_INTERPRETATION,
-    CAPABILITIES,
     DEVELOP,
     IMPACT,
     INTERPRET,
@@ -30,12 +27,13 @@ MAX_ASSIGNMENTS = 8
 
 
 class Coordination:
-    def __init__(self, store, gateways, ident, actor, run):
+    def __init__(self, store, gateways, ident, actor, run, *, teams):
         self.store = store
         self.gateways = gateways
         self.ident = ident
         self.actor = actor
         self.run = run
+        self.teams = teams
 
     def invoke(self, team: str, run: str, data: CoordinationInput) -> CoordinationResult:
         if team != TEAM or run != self.run:
@@ -45,34 +43,13 @@ class Coordination:
                 state = self.store.get(self.ident, self.actor)["state"]
                 if state["claim"] != run:
                     raise ConflictError("Anspråket har avslutats")
-                return CoordinationResult(data=self.status(state) if data.action == "status" else self.catalog(state))
+                output = self.status(state) if data.action == "status" else {"teams": self.teams}
+                return CoordinationResult(data=output)
             with self.store.edit(self.ident, self.actor, claim=run) as state:
                 result = self.order(state, data) if data.action == "order" else self.review(state, data)
             return CoordinationResult(data=result)
         except ServiceError as exc:
             raise GatewayError("contract", str(exc)) from exc
-
-    @staticmethod
-    def catalog(state):
-        items = [item for item in current_items(state)
-                 if item["capability"] == INTERPRET and item["status"] == "completed"]
-        names = {INTERPRET}
-        for item in items:
-            proposal = interpretation(item)
-            if supports_parameter(proposal):
-                if accepted_interpretation(state, item):
-                    names.add(IMPACT)
-                    if proposal.draft_names and checked_effect(state, item):
-                        names.add(ACTIVATE)
-                else:
-                    names.add(APPROVE_INTERPRETATION)
-            if supports_development(proposal):
-                names.add(DEVELOP)
-        active = {name: asdict(value) for name, value in CAPABILITIES.items() if name in names}
-        if APPROVE_INTERPRETATION in names:
-            active[APPROVE_INTERPRETATION] = {"team": "compliance", "when": "Granska före parametermandat",
-                "input": "Färdigt tolkningsunderlag", "result": "Mänskligt beslut om tolkningen"}
-        return {"capabilities": active}
 
     @staticmethod
     def status(state):
@@ -98,10 +75,10 @@ class Coordination:
                 "external": state["external"], "effects": state["effects"]}
 
     def order(self, state, data):
-        name = data.capability
-        if name not in (INTERPRET, IMPACT) or data.key is None:
-            raise InvalidInputError("Välj en beställningsbar förmåga och en stabil nyckel")
-        if name == INTERPRET:
+        team = data.target_team
+        if not data.key or data.review_kind:
+            raise InvalidInputError("Ange mottagande team och en stabil beställningsnyckel")
+        if team == "compliance":
             if not data.source or not data.goal or data.basis:
                 raise InvalidInputError("Ange bevakningskälla och ett mål för tolkningen")
             _check_content(data.goal)
@@ -109,13 +86,20 @@ class Coordination:
             if source.kind != "bevakning" or not source.fictional:
                 raise InvalidInputError("I piloten får Compliance bara utreda fiktiva bevakningskällor")
             inputs = {"source": data.source, "source_hash": source.sha256, "goal": data.goal}
-        else:
-            if data.source or data.goal:
-                raise InvalidInputError("Premieanalysens mål och källa kommer från det granskade underlaget")
+            name, schema = INTERPRET, "CompanyInterpretation"
+        elif team == "aktuarie":
+            if data.source:
+                raise InvalidInputError("Aktuarien behöver en granskad tolkning som underlag för premieanalysen")
             item = interpretation_for(state, data.basis)
             if not supports_parameter(interpretation(item)) or not accepted_interpretation(state, item):
                 raise InvalidInputError("Premieeffekt kräver en mänskligt godkänd tolkning av exakt en stödd parameter")
             inputs = {"basis": item["id"], "hash": item["result_hash"]}
+            if data.goal:
+                _check_content(data.goal)
+                inputs["goal"] = data.goal
+            name, schema = IMPACT, "PortfolioImpactResult"
+        else:
+            raise InvalidInputError("Teamet tar inte emot direkta beställningar i den här piloten. Se teamkatalogen.")
         brief = len(state["briefs"])
         fingerprint = canonical_hash({"name": name, "brief": brief, "inputs": inputs})
         if existing := state["assignments"].get(data.key):
@@ -130,14 +114,15 @@ class Coordination:
         if state["external"] is not None or state["reviews"]:
             raise ConflictError("En granskning eller verkställighet väntar redan")
         item = {"id": uuid4().hex, "key": data.key, "brief": brief, "capability": name,
-                "team": CAPABILITIES[name].team, "schema": CAPABILITIES[name].result, "fingerprint": fingerprint,
+                "team": team, "schema": schema, "fingerprint": fingerprint,
                 "inputs": inputs, "ordered_by_run": self.run, "status": "queued", "run": None,
                 "result": None, "result_hash": None}
         state["assignments"][data.key] = item
         return {"id": item["id"], "status": item["status"]}
 
     def review(self, state, data):
-        if data.capability not in (APPROVE_INTERPRETATION, ACTIVATE, DEVELOP) or data.key or data.source or data.goal:
+        kind = data.review_kind
+        if kind is None or data.target_team or data.key or data.source or data.goal:
             raise InvalidInputError("Ange vilken granskning och vilket deluppdrag som avses")
         basis = interpretation_for(state, data.basis)
         if any(d["basis"] == basis["id"] and d["decision"] == "approved" and d["kind"] in (ACTIVATE, DEVELOP)
@@ -147,13 +132,13 @@ class Coordination:
         fresh_sources(self.gateways.regulatory, basis["result"]["output"]["evidence"]["sources"])
         check_drafts(self.gateways.drafts, basis)
         effect = None
-        if data.capability == DEVELOP:
+        if kind == DEVELOP:
             if not supports_development(proposal):
                 raise InvalidInputError("Kodöverlämning kräver en renodlad kodändring med regelutkast och giltighet")
         else:
             if not supports_parameter(proposal):
                 raise InvalidInputError("Granskningen stöder exakt en befintlig parameter; blandade ändringar kräver bedömning")
-            if data.capability == ACTIVATE:
+            if kind == ACTIVATE:
                 effect = checked_effect(state, basis)
                 if not accepted_interpretation(state, basis) or effect is None or not proposal.draft_names:
                     raise InvalidInputError("Regelbeslutet kräver regelutkast, godkänd tolkning och utredd premieeffekt")
@@ -161,7 +146,7 @@ class Coordination:
                 raise ConflictError("Tolkningen för detta underlag är redan godkänd")
         if any(item["status"] == "queued" for item in current_items(state)) or state["external"] is not None:
             raise ConflictError("Ett deluppdrag eller en verkställighet väntar")
-        review = {"kind": data.capability, "basis": basis["id"], "basis_hash": basis["result_hash"],
+        review = {"kind": kind, "basis": basis["id"], "basis_hash": basis["result_hash"],
                   "brief": len(state["briefs"]), "effect": effect["id"] if effect else None,
                   "effect_hash": effect["result_hash"] if effect else None}
         review["hash"] = canonical_hash(review)

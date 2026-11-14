@@ -131,6 +131,7 @@ class Team(_Strict):
 
 class Agent(_Strict):
     name: str = Field(min_length=1)  # svenskt visningsnamn
+    description: str | None = Field(default=None, min_length=1)
     team: str
     instruction: str  # sökväg från repo-roten, under 02_system/agenter/
     model_role: str

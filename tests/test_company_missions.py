@@ -18,11 +18,12 @@ from agents.company_capabilities import (
     APPROVE_INTERPRETATION,
     DEVELOP,
     IMPACT,
-    INTERPRET,
 )
-from agents.company_tools import SKILL
+from agents.company_coordination import Coordination
+from agents.company_team_catalog import team_catalog
+from agents.company_tools import SKILL, TEAM, CoordinationInput
 from agents.flows.questions import QuestionConsole
-from agents.gateways import RegulatoryGateway
+from agents.gateways import GatewayError, RegulatoryGateway
 from ai import AIClient, AIConfig
 from ai.providers.fake import FakeProvider, text_result
 from ai.tracing import MemoryTraceSink
@@ -64,7 +65,7 @@ def tool(action, **kwargs):
 
 
 def order(key="tolkning", source=SOURCE, goal="Utred källans regeländring"):
-    return tool("order", capability=INTERPRET, key=key, source=source, goal=goal)
+    return tool("order", target_team="compliance", key=key, source=source, goal=goal)
 
 
 def interpretation(source=SOURCE, kind="parameter"):
@@ -188,7 +189,7 @@ def test_parameter_via_webb_med_omstart_och_avstamning(demo, monkeypatch):
     demo.process(*interpretation())
     item = demo.state["assignments"]["tolkning"]
     assert item["status"] == "completed"
-    demo.process(tool("status"), tool("review", capability=APPROVE_INTERPRETATION, basis=item["id"]),
+    demo.process(tool("status"), tool("review", review_kind=APPROVE_INTERPRETATION, basis=item["id"]),
                  answer(assignments=[item["id"]]))
     assert "Godkänn tolkning för analysmandat" in demo.web.get(demo.url).text
     path = f"{demo.url}/utkast/{item['id']}/regeldiff.md"
@@ -201,10 +202,10 @@ def test_parameter_via_webb_med_omstart_och_avstamning(demo, monkeypatch):
         demo.pilot.review(demo.ident, Actor.agent("company_orchestrator"), demo.row["revision"],
                           review["hash"], "approved", {})
     demo.decide()
-    demo.process(tool("catalog"), tool("order", capability=IMPACT, key="premie", basis=item["id"]), answer())
+    demo.process(tool("catalog"), tool("order", target_team="aktuarie", key="premie", basis=item["id"]), answer())
     demo.process(*impact_script(CHANGE))
     assert demo.state["assignments"]["premie"]["result"]["output"]["evidence"]["estimate"]["key"] == CHANGE["key"]
-    demo.process(tool("status"), tool("review", capability=ACTIVATE, basis=item["id"]), answer())
+    demo.process(tool("status"), tool("review", review_kind=ACTIVATE, basis=item["id"]), answer())
     demo.decide(rule_version="1.1", valid_from=CHANGE["valid_from"], commit="abcdef1")
     assert len(demo.state["decisions"]) == 2
     original = demo.pilot.trusted.execute
@@ -249,6 +250,37 @@ def test_parameter_via_webb_med_omstart_och_avstamning(demo, monkeypatch):
     assert demo.web.post(BASE, data={**form, "csrf_token": demo.session_csrf}, headers=ORIGIN).status_code == 409
 
 
+def test_teamkatalogen_visar_profiler_och_pilotens_bestallningsvagar(demo):
+    demo.start()
+    with demo.pilot.store.edit(demo.ident, OPERATOR) as state:
+        state["claim"] = "test-catalog"
+    coord = Coordination(demo.pilot.store, demo.pilot.gateways, demo.ident, OPERATOR, "test-catalog",
+                         teams=demo.pilot.teams)
+    output = coord.invoke(TEAM, "test-catalog", CoordinationInput(action="catalog")).data
+    teams = output["teams"]
+    assert set(teams) == set(demo.pilot.eco.team_ids) and TEAM not in teams
+    compliance = teams["compliance"]
+    assert compliance["agent_count"] == 1 and compliance["lead"] == "compliance_agent"
+    assert "kundkonsekvenser" in compliance["agents"][0]["description"]
+    assert teams["aktuarie"]["company_intake"] and "värderingsunderlag" in teams["aktuarie"]["agents"][0]["description"]
+    assert teams["utveckling"]["agents"][0]["runtime"] == "project_11_demo"
+    assert teams["utveckling"]["lead"] is None
+    assert teams["forsakring"]["agent_count"] == 1 and teams["forsakring"]["company_intake"] is None
+    assert teams["ekonomi"]["agent_count"] == 0
+    assert "Compliance · 1 agent" in demo.web.get(BASE).text
+    assert demo.web.get(BASE).context["team_catalog"] == teams
+    with pytest.raises(GatewayError, match="tar inte emot direkta beställningar"):
+        coord.invoke(TEAM, "test-catalog", CoordinationInput(action="order", target_team="forsakring", key="forsakring"))
+    assert not demo.state["assignments"]
+
+    eco = demo.pilot.eco
+    analyst = eco.agents["actuary_agent"].model_copy(update={"name": "Analytiker", "description": "Beståndsanalys"})
+    updated = eco.model_copy(update={"agents": {**eco.agents, "analyst": analyst}})
+    actuarial = team_catalog(updated)["aktuarie"]
+    assert actuarial["agent_count"] == 2
+    assert [p["lead"] for p in actuarial["agents"]] == [True, False]
+
+
 def code_sources(demo, *handles):
     root = demo.tmp_path / "sources"
     (root / "04_regulatoriskt/03_bevakning").mkdir(parents=True)
@@ -269,7 +301,7 @@ def code_sources(demo, *handles):
 def test_kod_till_projekt_elva_och_verifierat_demoutfall(demo, monkeypatch):
     demo.start(QUESTION + " Källa " + CODE_SOURCE)
     item = demo.interpret(CODE_SOURCE, "code")
-    demo.process(tool("status"), tool("review", capability=DEVELOP, basis=item["id"]), answer())
+    demo.process(tool("status"), tool("review", review_kind=DEVELOP, basis=item["id"]), answer())
     demo.decide(rule_id="PR-ITP1-013", rule_version="1.2", valid_from="2027-02-01",
                 code_reason="Rättelser kräver ny periodlogik.", affected_system="Premiemotorn",
                 expected_effect="Rättelser bedöms på rätt ursprungsmånad.")
@@ -328,7 +360,7 @@ def test_specialist_utan_verkstallighet(demo, kind, status):
         demo.process(tool("status"), answer(status, assignments=[item["id"]]))
     else:
         demo.process(tool("catalog"), tool("status"),
-                     tool("order", capability=IMPACT, key="nekad", basis=item["id"]),
+                     tool("order", target_team="aktuarie", key="nekad", basis=item["id"]),
                      answer(status, assignments=[item["id"]], summary="Detta behöver mänsklig bedömning."))
     assert demo.state["status"] == status
     assert list(demo.state["assignments"]) == ["tolkning"]
@@ -357,7 +389,7 @@ def test_kalla_andras_eller_saknas_avslag_och_overtagande(demo):
     assert not demo.state["assignments"]
     demo.action("precisera", key=uuid4().hex, goal=f"Använd den fiktiva källan {CODE_SOURCE}.")
     item = demo.interpret(CODE_SOURCE, "code")
-    demo.process(tool("review", capability=DEVELOP, basis=item["id"]), answer())
+    demo.process(tool("review", review_kind=DEVELOP, basis=item["id"]), answer())
     path = next((root / "04_regulatoriskt/03_bevakning").glob("*.md"))
     original = path.read_bytes()
     path.write_bytes(original + b"changed")

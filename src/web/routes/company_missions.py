@@ -63,7 +63,7 @@ def listing(request: Request):
     session = current_session(request)
     actor = operator_actor(request) if session and session.operator_id else None
     return page(request, "company_missions.html", items=pilot.store.list(actor) if actor else [],
-                new_key=uuid4().hex, enabled=pilot.ai is not None)
+                new_key=uuid4().hex, enabled=pilot.ai is not None, team_catalog=pilot.teams if actor else {})
 
 
 @router.post(BASE)

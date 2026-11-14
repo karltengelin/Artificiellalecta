@@ -27,6 +27,7 @@ from agents.company_capabilities import (
 from agents.company_coordination import Coordination
 from agents.company_decisions import activation_receipt, decide, submit_activation
 from agents.company_store import MissionStore, now
+from agents.company_team_catalog import team_catalog
 from agents.company_tools import SKILL, TEAM
 from agents.delegation import CUMULATIVE, RootLedger
 from agents.ecosystem import REPO_ROOT, Ecosystem, Limits
@@ -74,6 +75,7 @@ class CompanyMissions:
                                     if trusted.register.path else None),
                 "contract": CONTRACT,
             })
+        self.teams = team_catalog(self.eco if ai is not None else Ecosystem.load())
         self.team_services = {team: ServiceLayer(session_factory=factory, validation_session_factory=factory,
                              registry=trusted.registry, register=trusted.register, rules=trusted.rules,
                              agent_role=f"agent_{team}") for team in ("aktuarie", "compliance")}
@@ -247,7 +249,9 @@ class CompanyMissions:
                 constraints=("Använd status för aktuellt sparat läge. Lägg aldrig fram ett verksamhetsresultat utan underlag.",),
             )
             service = self.profile_service
-            gateways = replace(gateways, coordination=Coordination(self.store, gateways, ident, actor, claim))
+            gateways = replace(gateways, coordination=Coordination(
+                self.store, gateways, ident, actor, claim, teams=self.teams,
+            ))
         else:
             service = self.team_services[item["team"]]
             inputs = item["inputs"]
@@ -275,7 +279,10 @@ class CompanyMissions:
                 output = basis["result"]["output"]
                 mandate = mandate_from_interpretation(output, ref=f"pc-{item['id']}")
                 request = request_for_impact(mandate, task_id=item["id"], limits=limits, **links)
-                request = request.model_copy(update={"only_skills": ("estimate_parameter_change_impact", "write_draft")})
+                request = request.model_copy(update={
+                    "background": inputs.get("goal", ""),
+                    "only_skills": ("estimate_parameter_change_impact", "write_draft"),
+                })
         return run_assignment(self.ai, self.eco, self.skills, service, request, parameter_change=mandate,
                               gateways=gateways, run_id=claim, journal_dir=self.journal_dir)
 

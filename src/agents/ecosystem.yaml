@@ -216,6 +216,10 @@ agents:
 
   case_handler:
     name: Handläggaragent
+    description: >-
+      Utreder löneunderlag och rättelser i tilldelade försäkringsärenden.
+      Binder uppgifterna till rätt underlag, förbereder registrering inom ärendets mandat
+      och lämnar avvikelser eller förslag till handläggarens granskning.
     team: forsakring
     instruction: 02_system/agenter/handlaggaragent.md
     model_role: standard
@@ -226,6 +230,11 @@ agents:
 
   compliance_agent:
     name: Compliance-agent
+    description: >-
+      Läser avtal, föreskrifter och bolagets produktregler. Tolkar nya källor,
+      identifierar berörda regler, parametrar och kundkonsekvenser, redovisar
+      osäkerheter och lämnar källbundna regelutkast. Kan precisera ett tidigare
+      tolkningsunderlag.
     team: compliance
     instruction: 02_system/agenter/compliance-agent.md
     model_role: deep
@@ -235,6 +244,11 @@ agents:
 
   actuary_agent:
     name: Aktuarieagent
+    description: >-
+      Analyserar bestånd, premieeffekter, antaganden och försäkringsåtaganden.
+      Arbetar med skyddade aggregat, scenarier, värderingsunderlag och rapporter.
+      Förklarar resultat och antaganden och anger vilket underlag som behövs
+      för en slutsats. Fastställande av grunder och värderingar görs av operatören.
     team: aktuarie
     instruction: 02_system/agenter/aktuarieagent.md
     model_role: deep
