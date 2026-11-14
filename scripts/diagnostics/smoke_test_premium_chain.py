@@ -57,7 +57,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 
-from smoke_test_flow import Report, demo_database, svc_test_database
+from smoke_support import Report, demo_database, svc_test_database
 
 OPERATOR_ID = "rooktest"
 DEMOBOLAGET, EXEMPELVERKEN = "5560000001", "5560000002"

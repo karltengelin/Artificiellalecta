@@ -60,7 +60,7 @@ from smoke_test_case_flow import (
     previous_month,
     row_counts,
 )
-from smoke_test_flow import REPO_ROOT, Report, demo_database, svc_test_database
+from smoke_support import REPO_ROOT, Report, demo_database, svc_test_database
 
 OPERATOR_ID = "rooktest"
 #: Demobeståndets Bertil Berg; premier finns till och med 2026-09 (del 3, ny rapport)

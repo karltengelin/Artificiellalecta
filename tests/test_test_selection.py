@@ -81,9 +81,9 @@ def test_repo_katalogen_klassificerar_alla_testfiler_och_markerar_malbilden():
     assert catalog.suites["risk"].status == "partial"
     assert "tests/test_actuarial_annuity.py" in catalog.suites["risk"].tests
     assert catalog.suites["reporting"].status == "partial"
-    # Flödesmotorn finns sedan 3c-2; delegering mellan team återstår
+    # Den lokala bolagspiloten har egna orkestreringsprov.
     assert catalog.suites["orchestration"].status == "partial"
-    assert "tests/test_agents_flows.py" in catalog.suites["orchestration"].tests
+    assert "tests/test_company_missions.py" in catalog.suites["orchestration"].tests
     assert set(full_plan(catalog).tests) == set(catalog.tests)
 
 
@@ -204,9 +204,9 @@ def test_fil_med_isolerat_schema_kraver_postgresmarkoren(small):
 
 def test_repo_katalogen_pekar_ut_postgres_prov_efter_andring():
     catalog = load_catalog()
-    migration = changed_plan(catalog, ["src/utils/migration_flows.py"]).postgres
+    migration = changed_plan(catalog, ["src/utils/migration_cases.py"]).postgres
     assert "tests/test_services_postgres.py" in migration
-    assert any(s.startswith("tests/test_migration_flows.py::") for s in migration)
+    assert any(s.startswith("tests/test_migration_cases.py::") for s in migration)
     assert set(changed_plan(catalog, ["src/utils/demo_data.py"]).postgres) == {
         "tests/test_agents_postgres_aktuarie.py", "tests/test_agents_postgres_compliance.py"}
     # Harness och rapporter rör varken roller, låsning eller migreringar.

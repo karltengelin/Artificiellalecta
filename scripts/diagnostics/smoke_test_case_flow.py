@@ -50,7 +50,7 @@ from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 
-from smoke_test_flow import REPO_ROOT, Report, demo_database, svc_test_database
+from smoke_support import REPO_ROOT, Report, demo_database, svc_test_database
 
 OPERATOR_ID = "rooktest"
 TEAM = "forsakring"
