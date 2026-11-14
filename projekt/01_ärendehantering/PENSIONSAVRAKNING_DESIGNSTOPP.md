@@ -4,7 +4,7 @@
 > **Status:** PB1–PB13 godkända enligt rekommendationerna av Karl i chatten
 > 2026-11-14: ”Godkänn alla”. Byggstart enligt byggordningen i §12 är därmed godkänd,
 > med separat OK före varje Lakebase-ingrepp. De öppna frågorna i §13 avgörs vid
-> respektive byggsteg. Beslutsloggsposten är föreslagen men inte införd.
+> respektive byggsteg. Loggat som **B-047** samma dag efter Karls OK: ”Ja, logga den”.
 > **Uppdrag:** [ATT_GORA, paket B](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning);
 > gap V-04–06 och V-11 i [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).
 > Beställt 2026-11-14 efter att paket A:s första operativa period (2026-10) körts i Lakebase.
@@ -505,7 +505,7 @@ Steg 6 kan byggas parallellt med steg 7 först när anspråkskontraktet i steg 5
 - **Agentens roll:** handläggaragenten kan senare förbereda `payout_request`-ärenden. Det
   kräver eget beslut om ärendepolicyn, som B-043 för löneunderlag.
 
-**Förslag till post i `BESLUTSLOGG.md`, förs in först efter Karls OK till loggningen (ej införd):**
+**Post i `BESLUTSLOGG.md`:** införd som B-047 efter Karls OK 2026-11-14. Förslaget nedan bevaras som underlag; den införda posten är utförligare.
 
 > **B-047 | 2026-11-14 | Paket B: pensions- och månadsavräkning**
 > Operatören godkände designstoppet P1-PENSION-001 med valen PB1–PB13 enligt

@@ -8,6 +8,70 @@
 
 ## Beslut
 
+### B-047 | 2026-11-14 | Paket B: pensions- och månadsavräkning
+
+**Beslut:** Operatören godkände designstoppet
+[P1-PENSION-001](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) med valen PB1–PB13
+enligt rekommendationerna i chatten 2026-11-14: ”Godkänn alla”. Posten loggades efter
+operatörens OK samma dag: ”Ja, logga den”.
+
+1. **Omfattning.** Första versionen omfattar start från 66 år: ordinarie livsvarig start,
+   uppskov, tidsbegränsad plan med minst 60 rättigheter, paus, återstart, förlängning,
+   deluttag i högst tre delar, dödsfall, arvsvinst och slutavräkning. Tidigt uttag före 66,
+   återtag av mottagen premie och återbetalning är senare steg.
+2. **Tre förlopp.** En ny uttagsdel under förmånen bär pensionsförloppet, och varje
+   garantidel, kapitalpost och månadsrätt tillhör exakt en del. `policy_states` bär bara
+   premieförloppet. Betalningsförloppet följs per månadsrätt.
+3. **Begäran och plan.** Begäran registreras med mottagningsdag och kanal och prövas mot
+   fristen. Handläggaren beslutar en versionerad plan hashbundet mot en förhandsberäkning.
+   Saknas val vid 66 skapar månadsstängningen standardplanen när livs- och avtalsstatus är
+   verifierade, annars blir det ett ärende.
+4. **En operativ journal.** En kapital- och garantijournal per post är bolagets enda källa
+   för C och G. Ingående läge är S-04 per 2026-10-31, märkt `reconstructed_s04`, och paket A:s
+   allokeringar är enda källa för nya premier. P6-MANAD-001 förblir scenarioverktyg och läser
+   den operativa journalen. A6 läser journalen som `ledger`.
+5. **Månadsstängning.** En körning per månad för hela kollektivet i PR-020:s åtta steg,
+   i betrodd kod, granskad och stängd med kontrollsumma. Saknad AVK eller parameter blockerar.
+   Rättelse av stängd månad blir en ny version med motposter.
+6. **Månadsrätt, skatt och betalning.** Ett bruttoanspråk per del och månad, debiterat C en
+   gång. Beloppet är max(G, B) med PR-009:s golv. Preliminär skatt styrs av utbetalningsdagens
+   år och registrerad skattestatus; tabellavdrag kräver tabellparameter, annars blockeras
+   betalningen med skulden kvar. Bankuppdrag godkänns av människa och bankkvitton läses in idempotent.
+7. **Dödsfall och avslut.** Dödsfall, arvsvinst och slutavräkning görs i stängningen.
+   `terminate_policy` byggs inte som egen operation; försäkringens avslut härleds.
+8. **Bolagskapital.** Journalen får ett bolagskonto med dokumenterad startinsättning.
+   Bolagsstöd förs därifrån enligt PR-028; räcker det inte blir anspråket ej finansierat och ärendet eskaleras.
+9. **Befogenheter.** Alla nya skrivande operationer är `HUMAN_ONLY`. Operationerna tar kanal
+   och verifierad aktör, så att kundportalen senare kan använda dem.
+10. **Projekt 5 och Lakebase.** Projekt 5 är fortsatt pausat; aktuarien antar AVK tills en
+    avkastningsleverans finns. Pensionsfallen verifieras i demo och `svc_test`. Varje
+    Lakebase-ingrepp kräver separat OK.
+
+**Motivering:** Bolaget kan ta emot premier men inte förvalta ett faktiskt kapital eller
+betala ut pension. Ett läge per försäkring kan inte uttrycka fribrev under pågående pension
+eller flera uttagsdelar, och kapitalet räknas om ur premiehistoriken vid varje värdering.
+Paket B återanvänder `close_month`, `roll_origins`, annuitets- och garantifunktionerna,
+grundbiblioteket, värderingsmotorn och paket A:s mottagningskontrakt i stället för att
+bygga nya motorer.
+
+**Övervägda alternativ:** Att behålla ett läge per försäkring med fler lägesvärden. Att
+utöka P6-MANAD-001:s scenariojournal till operativ journal. Att fortsätta rekonstruera S-04
+varje månad. Att bygga `terminate_policy` som lägesändring. Att anta 30 % skatt när
+skattestatus saknas.
+
+**Konsekvenser:**
+- Nya tabeller för uttagsdelar, planer, begäran, garantidelar, kapitalposter,
+  månadsstängningar, anspråk, bankuppdrag, kvitton, konton, skattestatus och dödsfallsbesked,
+  införda i Lakebase först efter backup och operatörens OK.
+- Ny handläggarsida *Pensioner och utbetalningar* och nya ärendetyper utanför ärendepolicyn.
+- Befintliga läsare av `in_payout` och `set_policy_paid_up` anpassas i byggsteg 1.
+- Byggordningen och verifieringsfallen står i designstoppet §11–12; öppna tillämpningsfrågor i §13.
+
+**Preciserar:** B-022 (lägen), B-027 (garanti), B-028 (tjänstelagret), B-030 p. 2 och 4,
+B-031 (PR-002–011 och 020–028), B-042 (källan `ledger`) och B-046 PA7.
+
+---
+
 ### B-046 | 2026-11-07 | Paket A: premieflöde från löneunderlag till mottagen nettopremie
 
 **Beslut:** Operatören godkände designstoppet
