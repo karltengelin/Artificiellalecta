@@ -101,6 +101,6 @@ Ingen modell-/budgetstyrning eller driftsatt Databricks-integration ingår.
 som lokal grund enligt godkända OC-3a val H–I (2026-10-27): Argon2id,
 serverlagrad session, sessionsbundet formulärskydd och utloggning. Operatören
 sätter själv lösenfrasen med `python scripts/web/set_operator_password.py`.
-Inloggningen krävs för att beställa och granska uppdrag i *Fråga bolaget* i
-centralen och aktuariens teamyta; den befintliga handläggningen och dess flöden
-kräver fortsatt inte denna session.
+Inloggningen krävs för att beställa och granska fria uppdrag i
+[Fråga bolaget](02_system/bolagsorkestrator_pilot.md) i centralen. Äldre
+bolagsuppdrag går att läsa i uppdragsarkivet.

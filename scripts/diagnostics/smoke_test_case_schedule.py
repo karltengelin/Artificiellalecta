@@ -47,6 +47,7 @@ from zoneinfo import ZoneInfo
 
 from smoke_test_case_flow import (
     DEMO_SUBJECT,
+    REPO_ROOT,
     STANDARD_MODEL,
     TEAM,
     build,
@@ -60,7 +61,8 @@ from smoke_test_case_flow import (
     previous_month,
     row_counts,
 )
-from smoke_test_flow import REPO_ROOT, Report, demo_database, svc_test_database
+
+from testing.smoke import Report, demo_database, svc_test_database
 
 OPERATOR_ID = "rooktest"
 #: Demobeståndets Bertil Berg; premier finns till och med 2026-09 (del 3, ny rapport)

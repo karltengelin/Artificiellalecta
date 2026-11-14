@@ -34,7 +34,7 @@ def main():
     if not 1 <= args.poll_seconds <= 60:
         parser.error("--poll-seconds ska vara 1–60")
     settings = replace(WebSettings.from_env(), database=args.db)
-    trusted, agent, _ = build_services(settings)
+    trusted, agent = build_services(settings)
     workspace = CaseWorkspace.build(trusted, agent)
     while True:
         # Förnya regelkatalogen över datumskiften utan att skapa nya anslutningspooler.

@@ -47,8 +47,6 @@ class RunRequest(_Strict):
     root_run_id: str | None = None
     parent_run_id: str | None = None
     continuation_of: str | None = None  # körningen detta segment fortsätter (3b-5)
-    flow_id: str | None = None
-    flow_step_id: str | None = None
     depth: int = Field(default=0, ge=0)
     budget_reservation_usd: float | None = Field(default=None, gt=0)
     # Team som körningen får delegera till (3c-1, B-039 val C). Tomt = verktyget dolt.

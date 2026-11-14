@@ -2,7 +2,7 @@
 {% block title %}Aktuarieteamet{% endblock %}
 {% block actuary_content %}
 <p class="oc-eyebrow">TEAMETS ARBETSPLATS</p><h1>Aktuarieteamet</h1>
-<p class="actuary-intro">Följ uppdrag, granska rapporter och fastställ antaganden på samma underlag som teamets agent.</p>
+<p class="actuary-intro">Samtala med aktuarien, granska värderingar och fastställ antaganden.</p>
 <section class="panel"><h2>Arbeta tillsammans med aktuarien</h2><p>Ställ en fråga, beställ en analys eller undersök om antagandena behöver ändras. Aktuarien väljer underlag och verktyg utifrån samtalet.</p><p><a href="/team/aktuarie/dialog">Öppna samtalet med aktuarien →</a></p></section>
 {% for error in errors %}<p class="alert alert--info">{{ error }}</p>{% endfor %}
 <section class="panel"><div class="panel__head"><h2>Värderingar</h2><a href="/team/aktuarie/varderingar">Kör eller granska →</a></div>
@@ -18,15 +18,9 @@
 {% else %}<p>Inga gällande grunder denna dag. Biblioteket visar även kommande grunder.</p>{% endfor %}
 {% endif %}</section>
 <section class="panel"><h2>Väntande granskningar</h2>
-{% if reports is not none %}{% for item in reports if item.review == 'not_reviewed' and item.status == 'waiting_gate' %}<p><a href="/team/aktuarie/rapporter/{{ item.flow_id }}">Produktrapport {{ item.year }}</a> · {{ item.flow_id }}</p>{% else %}<p>Inga produktrapporter väntar på granskning.</p>{% endfor %}{% endif %}
-{% if assignments is not none %}{% for item in assignments if item.status == 'waiting_gate' %}<p><a href="/team/aktuarie/uppdrag/{{ item.flow_id }}">Beståndsöversikt {{ item.month | month }}</a></p>{% endfor %}{% endif %}
 {% if basis_list %}{% for item in basis_list.bases if item.status == 'proposed' %}<p><a href="/team/aktuarie/antaganden/{{ item.code }}">Grundförslag {{ item.code }}</a></p>{% endfor %}{% endif %}
 </section>
 </div>
-<section class="panel"><div class="panel__head"><h2>Senaste produktrapporter</h2><a href="/team/aktuarie/rapporter">Beställ eller granska →</a></div>
-{% if reports is not none %}{% for item in reports[:5] %}<div class="actuary-row"><a href="/team/aktuarie/rapporter/{{ item.flow_id }}">Produktrapport {{ item.year }} · {{ item.flow_id }}</a><span class="pill">{{ item.status_text }}</span></div>{% else %}<p>Inga produktrapporter i denna miljö ännu.</p>{% endfor %}{% endif %}</section>
-<section class="panel"><div class="panel__head"><h2>Senaste agentuppdrag</h2><a href="/team/aktuarie/uppdrag">Ge aktuarien ett uppdrag →</a></div>
-{% if assignments is not none %}{% for item in assignments[:5] %}<div class="actuary-row"><a href="/team/aktuarie/uppdrag/{{ item.flow_id }}">Beståndsöversikt {{ item.month | month }}</a><span class="pill">{{ item.status_text }}</span></div>{% else %}<p>Inga agentuppdrag i denna miljö ännu.</p>{% endfor %}{% endif %}</section>
 <section class="panel"><h2>Rapporteringsrytm <span class="pill">Plan</span></h2><p class="muted">Statisk plan enligt aktuarieteamets plan §2.4. Detta är ingen aktiv fristbevakning eller inlämning.</p>
 <div class="table-scroll"><table><thead><tr><th>Underlag</th><th>Planerad frist</th></tr></thead><tbody>
 <tr><td>FI kvartal · C, E och F för små företag</td><td>30 april, 10 augusti, 31 oktober och 31 januari</td></tr>

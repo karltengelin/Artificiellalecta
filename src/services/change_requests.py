@@ -181,8 +181,12 @@ class ChangeRequests:
         Omförsök med samma ursprung och underlag behåller ärendets status och ansvar.
         """
         origin = order.origin
-        request_id = uuid5(NAMESPACE_URL, f"artificiellalecta/change-requests/{origin.channel}/{origin.reference}")
+        request_id = self.order_id(origin)
         return self._create(actor, request_id, order.model_dump(mode="json", exclude={"origin"}), origin)
+
+    @staticmethod
+    def order_id(origin: ChangeRequestOrigin) -> UUID:
+        return uuid5(NAMESPACE_URL, f"artificiellalecta/change-requests/{origin.channel}/{origin.reference}")
 
     def _create(self, actor: Actor, request_id: UUID, draft: dict,
                 origin: ChangeRequestOrigin | None = None) -> ChangeRequest:

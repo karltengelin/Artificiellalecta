@@ -1,6 +1,6 @@
 {% macro team_links() %}
   <nav aria-label="Aktuariens sidor">
-  {% for href, label in [('/team/aktuarie/dialog','Samtal med aktuarien'),('/team/aktuarie','Översikt'),('/team/aktuarie/varderingar','Värderingar'),('/team/aktuarie/rapporter','Rapporter'),('/team/aktuarie/antaganden','Antaganden'),('/team/aktuarie/uppdrag','Uppdrag')] %}
+  {% for href, label in [('/team/aktuarie/dialog','Samtal med aktuarien'),('/team/aktuarie','Översikt'),('/team/aktuarie/varderingar','Värderingar'),('/team/aktuarie/antaganden','Antaganden')] %}
     <a href="{{ href }}"{% if request.url.path == href or (href != '/team/aktuarie' and request.url.path.startswith(href ~ '/')) %} aria-current="page"{% endif %}>{{ label }}</a>
   {% endfor %}
   <p class="small muted">Kommande registervyer:</p>

@@ -9,9 +9,9 @@ from starlette.concurrency import run_in_threadpool
 from services import Actor
 from services.errors import ServiceError
 from web.operator_auth import current_session, operator_action
+from web.operator_forms import HEADERS
 from web.routes.actuary import page
 from web.routes.auth import auth_form
-from web.routes.questions import HEADERS
 
 router = APIRouter()
 ROOT = "/team/aktuarie/dialog"

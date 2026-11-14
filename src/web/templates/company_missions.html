@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Fråga bolaget{% endblock %}
+{% block content %}
+<p><a href="/central">Operatörscentral</a>{% if operator_user %} / <a href="/central/uppdragsarkiv">Uppdragsarkiv</a>{% endif %}</p>
+<section class="panel panel--standalone">
+  <h1>Fråga bolaget</h1>
+  {% if not operator_user %}
+    <p><a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att starta och följa bolagsuppdrag.</p>
+  {% elif enabled %}
+    <form method="post" action="{{ base }}">
+      <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+      <input type="hidden" name="key" value="{{ new_key }}">
+      <label for="goal">Vad vill du ha hjälp med?</label>
+      <textarea id="goal" name="goal" maxlength="3200" rows="4" required></textarea>
+      <p class="muted small">Ange gärna ett källhandtag och vad du behöver kunna besluta. Använd fiktiva underlag utan personuppgifter.</p>
+      <button type="submit">Registrera uppdrag</button>
+    </form>
+  {% else %}
+    <p>Nya starter är avstängda i den här miljön.</p>
+  {% endif %}
+</section>
+{% if operator_user %}
+<section class="panel panel--standalone">
+  <h2>Dina uppdrag</h2>
+  <ul>
+  {% for mission in items %}
+    <li><a href="{{ base }}/{{ mission.id }}">{{ mission.state.briefs[0].goal | truncate(100) }}</a>
+      · {{ statuses.get(mission.state.status, mission.state.status) }}</li>
+  {% else %}<li>Inga sparade uppdrag.</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

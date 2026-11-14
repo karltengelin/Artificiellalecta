@@ -14,7 +14,6 @@
   <link rel="stylesheet" href="/static/app.css?v={{ static_version }}">
   <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
   <script src="/static/environment.js?v={{ static_version }}" defer></script>
-  <script src="/static/questions.js?v={{ static_version }}" defer></script>
 </head>
 <body hx-boost="true">
   {% set path = request.url.path %}
@@ -37,7 +36,6 @@
       {{ nav("/arbetsgivare", "Arbetsgivare", path.startswith("/arbetsgivare")) }}
       {{ nav("/handelselogg", "Händelselogg", path.startswith("/handelselogg")) }}
       {{ nav("/parametrar", "Parametrar", path.startswith("/parametrar")) }}
-      {% if flows_available %}{{ nav("/floden", "Flöden", path.startswith("/floden")) }}{% endif %}
       {% endif %}
     </nav>
     <div class="who">

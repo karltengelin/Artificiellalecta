@@ -27,6 +27,7 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 |---|---|---|---|---|---|---|
 | `actuarial_workbench` | `analys` | gateway `actuarial_workbench` | write | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent) |
 | `calculate_premium_preview` | `berakning` | `calculate_premium_preview` | compute | Nej | AGENT | actuary_agent (Aktuarieagent), case_handler (Handläggaragent), compliance_agent (Compliance-agent) |
+| `coordinate_company_work` | `coordination` | gateway `coordinate_company_work` | write | Nej | – (gatewayens policy) | company_orchestrator (Bolagsorkestratör) |
 | `correct_premium_transaction` | `kunddata` | `correct_premium_transaction` | write | Ja | HUMAN_ONLY | – |
 | `delegate_to_team` | `delegering` | harness `delegate_to_team` | read | Nej | – (körpolicyns delegeringsmål och uppdragets `delegation_targets`) | compliance_agent (Compliance-agent) |
 | `estimate_parameter_change_impact` | `bestand` | `estimate_parameter_change_impact` | read | Nej | AGENT, kräver godkänt parameterförslag | actuary_agent (Aktuarieagent) |
@@ -40,10 +41,10 @@ Skills som agenter kan få som verktyg, enligt `src/agents/ecosystem.yaml`. Varj
 | `get_salary_reports` | `kunddata` | `get_salary_reports` | read | Ja | AGENT | case_handler (Handläggaragent) |
 | `get_valuation_basis` | `antaganden` | `get_valuation_basis` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
 | `get_valuation_run` | `aktuariell` | `get_valuation_run` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
-| `list_regulatory_documents` | `regelverk` | gateway `list_regulatory_documents` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
+| `list_regulatory_documents` | `regelverk` | gateway `list_regulatory_documents` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), company_orchestrator (Bolagsorkestratör), compliance_agent (Compliance-agent) |
 | `list_valuation_bases` | `antaganden` | `list_valuation_bases` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
 | `list_valuation_runs` | `aktuariell` | `list_valuation_runs` | read | Nej | AGENT | actuary_agent (Aktuarieagent) |
-| `read_regulatory_document` | `regelverk` | gateway `read_regulatory_document` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |
+| `read_regulatory_document` | `regelverk` | gateway `read_regulatory_document` | read | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), company_orchestrator (Bolagsorkestratör), compliance_agent (Compliance-agent) |
 | `register_salary_report` | `kunddata` | `register_salary_report` | write | Ja | APPROVAL | case_handler (Handläggaragent) |
 | `set_policy_paid_up` | `kunddata` | `set_policy_paid_up` | write | Ja | APPROVAL | – |
 | `write_draft` | `dokument` | gateway `write_draft` | write | Nej | – (gatewayens policy) | actuary_agent (Aktuarieagent), compliance_agent (Compliance-agent) |

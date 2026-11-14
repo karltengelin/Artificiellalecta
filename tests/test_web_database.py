@@ -116,22 +116,16 @@ def test_regelns_rubrik_lases_ur_regelfilen():
 
 
 @pytest.mark.parametrize("mode", ["demo", "svc_test", "lakebase"])
-def test_databasvalet_ansluter_inte_skriptade_floden(monkeypatch, mode):
+def test_databasvalet_bestammer_roll_och_bevarar_regeldatum(monkeypatch, mode):
     """B-037: val av testdata får inte automatiskt välja en testmodell eller framtida regelstatus."""
-    from agents.flows.console import FlowConsole
     from web import database
     from web.config import WebSettings
 
     engine = memory_engine()
     monkeypatch.setattr(database, "build_engine", lambda settings: engine)
 
-    def unexpected(*args, **kwargs):
-        pytest.fail("Databasvalet får inte skapa en flödeskonsol")
-
-    monkeypatch.setattr(FlowConsole, "build", unexpected)
     try:
-        service, agent, flows = database.build_services(WebSettings(database=mode))
-        assert flows is None
+        service, agent = database.build_services(WebSettings(database=mode))
         assert service.rules.today == date.today()
         assert agent.simulated_role == (mode != "lakebase")
     finally:

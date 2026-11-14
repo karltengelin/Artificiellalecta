@@ -106,37 +106,18 @@ underlag och egna behörigheter. [OpenAI Docs](https://learn.chatgpt.com/docs/no
 
 ## Prova U4 i demo
 
-Starta webben med `python scripts/web/start_ui.py --db demo --rule-change-flows`.
-Startvalet kräver en [lokal operatörsinloggning](../../02_system/operator_inloggning.md)
-och ansluter teamens konfigurerade AI-klient med simulerade databasroller.
-Logga in och öppna **Försäkringsteamets arbetsyta → Flöden**. Välj
-**Starta kodändringsflöde** med det bevakningsunderlag som ska tolkas.
-För en ändring av en befintlig parameter använder du **Starta flöde**
-och den vanliga parametervägen.
+Öppna [Fråga bolaget](../../02_system/bolagsorkestrator_pilot.md) i en
+lokal demo med operatörsinloggning. Be bolaget utreda
+`K-SIM-KOD-2027` och förbereda genomförandet. Kör nästa del och granska
+Compliance-tolkningen. I **Anta regeln för Utveckling** anger du berörd
+regel, version, giltighetsdag, berört system, varför kod behövs och
+vilken effekt som ska kunna prövas.
 
-Kör compliance-tolkningen. Granska källan och tolkningen under **Anta regeln
-för utveckling**. Välj berörd regel och ange ny regelversion, giltighetsdag,
-berört system, varför ny kod behövs och vilken effekt som ska kunna prövas.
-Grinden binder tolkningen och dess verifierade källreferens. Ett förslag
-som innehåller en parameterändring hanteras i parameterflödet.
-
-Välj **Lämna till utveckling**. Flödet visar kvittot med ärendets ID och en
-länk till detaljen. Ärendet ligger under **Nytt** på utvecklingsboarden
-för samma operatör och länkar tillbaka till överlämningssteget. En
-utvecklarkörning kan ta ärendet med U3:s uttryckliga ärendemandat.
-
-Betrodd kod skickar `ChangeRequestOrder` med ett stabilt ursprung
-(`rule_change_code` och flödes-ID/stegnyckel) till `ChangeRequests.submit_order`.
-Ursprunget och ärendet sparas i samma demotransaktion i U1–U3:s befintliga
-tabeller. Om kvittot uteblir efter att ärendet sparats kan operatören välja
-**Kör om steget** vid avstämningen. Samma underlag ger samma ärende och bevarar
-dess ansvar och status. Andra behöriga ingångar kan använda samma kontrakt
-med en egen kanal och referens efter sin egen kontroll av mandat och underlag.
-
-Webbproven använder en fiktiv källa och en testmodell och provar hela vägen
-från inloggning till agentens anspråk. De provar också omstart efter att
-ärendet sparats, fel beställare, ändrat eller saknat underlag och den befintliga
-parametervägen. Kör dem via `python scripts/testing/run_tests.py --suite web --run`.
+När orkestratören registrerar beställningen i `ChangeRequests` visar
+uppdraget ärendets referens. Utvecklingsärendet länkar tillbaka till det
+underlag som beslutet gäller. Äldre referenser med FLOW-id öppnar
+uppdragsarkivet. Webbprovet för denna väg körs med
+`python scripts/testing/run_tests.py --suite orchestration --run`.
 
 ## Prova U5 i demo
 

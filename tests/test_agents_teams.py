@@ -333,9 +333,9 @@ COMPLIANCE_SCRIPT = [
 
 class TestTolkning:
     def test_mallen_ger_uppdrag_med_schema_och_kalla(self):
-        req = request_for_interpretation(SOURCE, flow_id="FLOW-000001")
-        assert (req.target_team, req.result_schema, req.references, req.flow_id) == (
-            "compliance", "InterpretationProposal", (SOURCE,), "FLOW-000001")
+        req = request_for_interpretation(SOURCE, task_id="tolkning-1")
+        assert (req.target_team, req.result_schema, req.references, req.task_id) == (
+            "compliance", "InterpretationProposal", (SOURCE,), "tolkning-1")
         assert req.parameter_change_ref is None and req.execution_scope_ref is None
 
     def test_tolkningen_far_bevis_ur_korningen(self, eco, skills, service, gateways):

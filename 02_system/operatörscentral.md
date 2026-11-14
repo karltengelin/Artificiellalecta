@@ -156,8 +156,8 @@ VD-agent med nya rättigheter. Förslaget preciserar B-026:s teamingångar:
    antaganden, osäkerhet, körreferenser och kostnad. Språklig sammanställning
    får inte beräkna nya ekonomiska tal eller dölja motstridiga teamsvar.
 5. Flera team kräver 3c-1 med barnreferenser, gemensam rotbudget och djup-/antalstak.
-   Kända processer återanvänder flödesmotorn. Första leveransen kan rikta ett
-   uppdrag till ett uttryckligen valt team utan automatisk delegering.
+   Bolagsorkestratören väljer team utifrån uppdragsmålet och den interna
+   agentteamskatalogen. Se [den lokala piloten](bolagsorkestrator_pilot.md).
 
 Genie är den planerade datafrågeförmågan över granskade BI-underlag enligt
 B-029. Det är ett verktyg bakom ingången, inte dess ersättare eller en fri väg

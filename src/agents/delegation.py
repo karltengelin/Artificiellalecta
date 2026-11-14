@@ -289,15 +289,14 @@ class Delegator:
             references=tuple(data.references),
             root_run_id=self.root_run_id,
             parent_run_id=self.parent_run_id,
-            flow_id=parent.flow_id,
-            flow_step_id=parent.flow_step_id,
             depth=parent.depth + 1,
             limits=limits,
             # Inga mandat och inga egna delegeringsmål för barnet i första leveransen (B-039 val B, C)
         )
 
     def _run_child(self, profile, service: ServiceLayer, request: RunRequest, run_id: str):
-        from agents.loop import run_agent  # loopen importerar dispatchern, som definierar kontraktet
+        # Loopen importerar dispatchern, som definierar kontraktet.
+        from agents.loop import run_agent
 
         journal = None
         if self.runtime.journal_factory is not None:

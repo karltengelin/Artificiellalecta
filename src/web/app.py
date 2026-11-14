@@ -20,9 +20,7 @@ from starlette.exceptions import HTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from agents.case_workspace import CaseWorkspace
-from agents.flows.console import FlowConsole
-from agents.flows.product_reports import ProductReportConsole
-from agents.flows.questions import QuestionConsole
+from agents.mission_archive import MissionArchive
 from ai import AIClient
 from services import ServiceLayer
 from services.change_releases import ChangeReleases
@@ -33,6 +31,7 @@ from web.config import WebConfigError, WebSettings
 from web.development_github import GitHubReader
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.operator_auth import OperatorAuth
+from web.operator_forms import HEADERS, Submissions
 from web.presenters import ErrorView
 from web.routes import (
     actuarial_dialogue,
@@ -42,16 +41,16 @@ from web.routes import (
     case_workspace,
     cases,
     changes,
+    company_missions,
     development,
     enrollment,
     environments,
-    flows,
     insured,
     journal,
+    mission_archive,
     operator,
     parameters,
     premium_payments,
-    questions,
 )
 
 log = logging.getLogger("web")
@@ -59,55 +58,38 @@ log = logging.getLogger("web")
 
 def create_app(
     service: ServiceLayer | None = None, settings: WebSettings | None = None, case_agent: CaseAgent | None = None,
-    flow_console: FlowConsole | None = None,
-    question_console: QuestionConsole | None = None,
     case_workspace_console: CaseWorkspace | None = None,
-    product_report_console: ProductReportConsole | None = None,
     actuarial_dialogue_console=None,
-    rule_flow_ai: AIClient | None = None,
+    company_ai: AIClient | None = None,
 ) -> FastAPI:
     """case_agent: handläggaragenten för ärenden. Byggs med tjänstelagret om inget anges;
     med ett givet tjänstelager utan agent visas ärendena utan knappen *Starta agent*.
 
-    question_console: explicit ansluten OC-3a-adapter, gemensam för centralen och aktuariens teamyta.
-    flow_console: flödena (`/floden`, Fas 3c 3c-3) på samma sätt. Steg som stod som pågående
-    när UI:t senast stoppades blir `reconciliation_required` här och avgörs av handläggaren.
-    rule_flow_ai: anslut demo med de två regeländringsflödena och operatörens utvecklingsyta."""
+    """
     settings = settings or WebSettings.from_env()
-    if rule_flow_ai is not None and (
-        settings.database != "demo" or settings.operator_password_hash is None or flow_console is not None
-    ):
-        raise WebConfigError("Regeländringsflöden med utvecklingsöverlämning kräver demo och operatörsinloggning")
+    if company_ai is not None and (settings.database != "demo" or settings.operator_password_hash is None):
+        raise WebConfigError("Bolagspiloten kräver demo och operatörsinloggning")
     if service is None:
         from web.database import build_services
 
-        service, built_agent, built_flows = build_services(settings)
+        service, built_agent = build_services(settings)
         case_agent = case_agent or built_agent
-        flow_console = flow_console or built_flows
     change_requests = (
         ChangeRequests(service._session_factory) if settings.database == "demo" and service._session_factory else None
     )
-    if rule_flow_ai is not None:
-        from web.database import build_demo_rule_flows
-
-        if change_requests is None:
-            raise WebConfigError("Utvecklingsöverlämning kräver en demodatabas")
-        flow_console = build_demo_rule_flows(service, change_requests, ai=rule_flow_ai)
-    if flow_console is not None:
-        try:
-            interrupted = flow_console.mark_interrupted()
-        except Exception:  # UI:t startar även om databasen inte svarar; sidan visar felet
-            log.exception("Avbrutna flödessteg kunde inte markeras")
-        else:
-            if interrupted:
-                log.warning("Flödessteg som pågick vid omstart kräver avstämning: %s", ", ".join(interrupted))
-
     app = FastAPI(title="Artificiellalecta – handläggare", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
     app.state.change_requests = change_requests
     app.state.change_releases = (
         ChangeReleases(change_requests, DemoDelivery(settings.demo_path)) if change_requests is not None else None
     )
+    app.state.company_missions = None
+    if change_requests is not None and settings.operator_password_hash is not None:
+        from web.database import build_company_missions
+
+        app.state.company_missions = build_company_missions(
+            settings, service, change_requests, app.state.change_releases, ai=company_ai,
+        )
     app.state.development_github = GitHubReader(
         settings.development_github_repository, settings.development_github_token,
     ) if app.state.change_requests is not None else None
@@ -115,12 +97,9 @@ def create_app(
     app.state.case_workspace = case_workspace_console or (
         CaseWorkspace.build(service, case_agent) if case_agent is not None and service._session_factory else None
     )
-    app.state.flow_console = flow_console
-    app.state.question_console = question_console
-    app.state.product_report_console = product_report_console
     app.state.actuarial_dialogue = actuarial_dialogue_console
-    app.state.question_submissions = questions.Submissions()
-    app.state.actuary_submissions = questions.Submissions()
+    app.state.actuary_submissions = Submissions()
+    app.state.mission_archive = MissionArchive(service._session_factory) if service._session_factory else None
     app.state.settings = settings
     app.state.csrf_token = new_csrf_token()
     app.state.operator_auth = OperatorAuth(settings.operator_id, settings.operator_password_hash)
@@ -136,14 +115,14 @@ def create_app(
     app.include_router(premium_payments.router)
     app.include_router(case_workspace.router)
     app.include_router(parameters.router)
-    app.include_router(flows.router)
     app.include_router(environments.router)
     app.include_router(operator.router)
+    app.include_router(mission_archive.router)
+    app.include_router(company_missions.router)
     app.include_router(development.router)
     app.include_router(actuary.router)
     app.include_router(actuarial_dialogue.router)
     app.include_router(actuary_valuations.router)
-    app.include_router(questions.router)
 
     @app.get("/_instance")
     def instance(request: Request):
@@ -168,8 +147,8 @@ def create_app(
         if request.url.path.startswith(development.BASE):
             return development.respond(request, "error.html", {"error": error}, status_code=exc.status_code)
         response = render(request, "error.html", {"error": error}, status_code=exc.status_code)
-        if request.url.path.startswith(("/central/fragor", "/team/aktuarie")):
-            response.headers.update(questions.HEADERS)
+        if request.url.path.startswith((company_missions.BASE, company_missions.OLD_BASE, mission_archive.BASE, "/floden", "/team/aktuarie")):
+            response.headers.update(HEADERS)
         return response
 
     @app.exception_handler(Exception)
@@ -185,11 +164,11 @@ def create_app(
             response = render(request, "error.html", {"error": error}, status_code=503)
             response.headers["Cache-Control"] = "no-store"
             return response
-        if request.url.path.startswith(("/central/fragor", "/team/aktuarie")):
+        if request.url.path.startswith((company_missions.BASE, company_missions.OLD_BASE, mission_archive.BASE, "/floden", "/team/aktuarie")):
             error = ErrorView("error", "Uppdraget kunde inte läsas", "Kontrollera uppdragslistan innan du försöker igen.",
                               503, nothing_changed=False)
             response = render(request, "error.html", {"error": error}, status_code=503)
-            response.headers.update(questions.HEADERS)
+            response.headers.update(HEADERS)
             return response
         if request.url.path in {"/logga-in", "/logga-ut"}:
             log.error("operator_auth_unavailable")

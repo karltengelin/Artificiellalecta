@@ -10,10 +10,10 @@ from starlette.concurrency import run_in_threadpool
 from services import OperationContext, ServiceError
 from web.handler import read, service
 from web.operator_auth import operator_action
+from web.operator_forms import HEADERS
 from web.presenters import describe_error
-from web.routes.actuary import consume, finish, page, token
+from web.routes.actuary import consume, page, token
 from web.routes.auth import auth_form
-from web.routes.questions import HEADERS
 
 router = APIRouter()
 ROOT = "/team/aktuarie/varderingar"
@@ -58,7 +58,6 @@ async def valuation_start(request: Request):
                                        values=form, status_code=error.status_code)
     except Exception:
         raise HTTPException(503, "Körningens utfall behöver kontrolleras. Läs värderingslistan innan du försöker igen.") from None
-    finish(request, form, str(result.output.run_id))
     return RedirectResponse(f"{ROOT}/{result.output.run_id}", status_code=303, headers=HEADERS)
 
 
@@ -99,5 +98,4 @@ async def valuation_lock(request: Request, run_id: UUID):
                                        status_code=error.status_code)
     except Exception:
         raise HTTPException(503, "Beslutets utfall behöver kontrolleras. Läs körningen innan du försöker igen.") from None
-    finish(request, form, str(run_id))
     return RedirectResponse(f"{ROOT}/{run_id}", status_code=303, headers=HEADERS)

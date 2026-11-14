@@ -1,5 +1,8 @@
 # OC-3a – rapportexport och uppdragsvyer
 
+> **Historisk beskrivning.** De fasta bolagsuppdragen har avvecklats. Se
+> [Fråga bolaget och uppdragsarkivet](bolagsorkestrator_pilot.md) för aktuella ingångar.
+
 **Datum:** 2026-10-28. **Grund:** B-041, designstoppets §7, §9, §10 och §12.
 Codex steg 2–3: lokal implementation. Riktig modell, riktiga teamrättigheter
 i Postgres och Lakebase-aktivering verifieras i det samordnade röktestet.

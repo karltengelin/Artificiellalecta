@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Körspår · bolagsuppdrag{% endblock %}
+{% block content %}
+<p><a href="{{ base }}/{{ ident }}">Till uppdraget</a></p>
+<section class="panel panel--standalone">
+  <h1>Körspår</h1>
+  {% if trace %}
+    <p><code>{{ trace.run_id }}</code> · {{ trace.agent }} · {{ trace.models | join(", ") }}</p>
+    <p>{{ statuses.get(trace.status, trace.status) if trace.complete else "Ofullständig journal" }}
+      {% if trace.cost_usd is not none %} · {{ '%.6f' | format(trace.cost_usd) }} USD{% endif %}</p>
+    <ul>{% for tool in trace.tools %}<li>{{ tool.skill }} · {{ tool.status }}</li>{% endfor %}</ul>
+  {% else %}<p>Journalen saknas.</p>{% endif %}
+</section>
+{% endblock %}

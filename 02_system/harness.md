@@ -79,7 +79,7 @@ Detta är en **daterad inventering**, inte en lista inbyggd i motorn. En paralle
 | Agentloop och budgetbok | Steg, väntan, fel, resultat och förbrukning | Teamens affärsberäkningar |
 | `RunStore` och körjournal | Händelser, referenser, status och skyddade återstartspunkter | Ersätta tjänstelagrets händelselogg |
 | Dokumentgateway | Säkra läshandtag och versionsbundna Markdown-utkast | Godkänna eller ändra gällande regler |
-| Fas 3c: delegeringsadapter och flödesmotor | Avgränsade barnuppdrag och deterministiska processer | Fri agentstyrd ordning i kritiska flöden |
+| Fas 3c: delegering och samordning | Avgränsade barnuppdrag och versionsbundna beslut | Fri agentstyrd verkställighet |
 
 Namnen på nya komponenter och fält nedan är **föreslagna kontrakt**. De finns ännu inte i `src/`.
 
@@ -347,7 +347,7 @@ Designen för Fas 3b använder en separat, snävt avgränsad dokumentgateway som
 
 Varje gateway utanför försäkringssystemet deklarerar ett eget litet kontrakt: in-/utdata, sidoeffektsklass, dataklass, tillåtna resurser och destinationer, ansvarigt team, eventuell versionsbunden policy och mänskligt godkännandesteg. Externa handlingar kräver alltid människa enligt §3.5, även om en intern policy medger handlingen. Interna utkast behöver den godkända fil-/körpolicyn; de behöver ingen påhittad produktregel. Ingen utökning med ett generellt policyregelverk krävs i `src/services/`.
 
-Harness använder samma kontrollordning och journalformat men skickar handlingen till rätt adapter. Respektive adapter måste även neka otillåten verkställighet vid direkt användning. Föreslagna externa förslag och deras godkännandereferenser sparas varaktigt av gatewayen eller flödesmotorn enligt §10; försäkringens `approval_requests` används endast för försäkringsoperationer. Operatörens UI kan samla väntande beslut utan att flytta deras ägarskap. Fram till dess att respektive gateway är byggd förbereder agenten underlag och människan utför handlingen manuellt med dokumenterat kvitto.
+Harness använder samma kontrollordning och journalformat men skickar handlingen till rätt adapter. Respektive adapter måste även neka otillåten verkställighet vid direkt användning. Föreslagna externa förslag och deras godkännandereferenser sparas varaktigt av gatewayen eller det beställande uppdraget enligt §10; försäkringens `approval_requests` används endast för försäkringsoperationer. Operatörens UI kan samla väntande beslut utan att flytta deras ägarskap. Fram till dess att respektive gateway är byggd förbereder agenten underlag och människan utför handlingen manuellt med dokumenterat kvitto.
 
 ## 5. Guardrails utöver verktygslistan
 
@@ -373,7 +373,7 @@ Tjänstelagret behöver skriva godkännande- och händelserader även vid vissa 
 
 **Första aggregattjänsten byggd i 3c-B (2026-10-25, B-035):** `estimate_parameter_change_impact` (`tjänstelager.md` §9.5) döljer celler med 1–9 individer, döljer vid behov fler så att en dold cell inte kan räknas fram ur totalen, och avrundar belopp till hela tusental kronor. Den skyddar varje enskilt svar. Skyddet mot differenser mellan upprepade anrop ligger i parametermandatet sedan 3c-T: i podden `bestand` får aktuarieagenten bara anropa den med exakt den parameter, det värde, den giltighetsdag och den horisont som uppdragets godkända förslag anger.
 
-**Aktuarieteamets roll (3c-V, förberett 2026-10-26):** `agent_aktuarie` (`AKTUARIE` i `src/utils/agent_roles.py`) får `SELECT` på `base_amounts`, `insured_persons`, `policies`, `policy_states` och `product_parameters` och `INSERT` på `operation_events` (för nekade försök), men inga löner, ärenden, arbetsgivare eller förslag i kön. Sedan OC-3a val D (2026-10-27) får rollen också kolumnbegränsad `SELECT` för ledningsaggregatet `get_company_metrics`: `policy_benefits` (`id`, `policy_id`) och `premium_transactions` (`benefit_id`, `transaction_type`, `status`, `paid_date`, `amount_sek`), inte pensionsgrundande lön eller beräkningsunderlag ([designstoppet](fragekedja_beslutsforslag.md) §4). Kolumnrätterna sätts i Lakebase först efter operatörens OK. Anslutningen heter `AGENT_AKTUARIE_DATABASE_URL` (`services.db.AGENT_ROLES`), och flödesmotorn kör varje agentsteg med sitt teams tjänstelager (`AgentRuntime.team_services`). Rättigheterna är provade mot isolerad Postgres (`tests/test_agents_postgres_aktuarie.py`). Operatören skapar rollen i Lakebase; därefter `grant_agent_role.py --team aktuarie --apply` efter OK (AGENTS.md §4.5). Sedan A4 (B-042) har rollen också `SELECT` på `valuation_bases`. Rättigheterna, inklusive kolumnrätterna, sattes i Lakebase 2026-10-31 efter backup och operatörens OK.
+**Aktuarieteamets roll (3c-V, förberett 2026-10-26):** `agent_aktuarie` (`AKTUARIE` i `src/utils/agent_roles.py`) får `SELECT` på `base_amounts`, `insured_persons`, `policies`, `policy_states` och `product_parameters` och `INSERT` på `operation_events` (för nekade försök), men inga löner, ärenden, arbetsgivare eller förslag i kön. Sedan OC-3a val D (2026-10-27) får rollen också kolumnbegränsad `SELECT` för ledningsaggregatet `get_company_metrics`: `policy_benefits` (`id`, `policy_id`) och `premium_transactions` (`benefit_id`, `transaction_type`, `status`, `paid_date`, `amount_sek`), inte pensionsgrundande lön eller beräkningsunderlag ([designstoppet](fragekedja_beslutsforslag.md) §4). Kolumnrätterna sätts i Lakebase först efter operatörens OK. Anslutningen heter `AGENT_AKTUARIE_DATABASE_URL` (`services.db.AGENT_ROLES`), och bolagsorkestratören använder aktuarieteamets tjänstelager för dess uppdrag. Rättigheterna är provade mot isolerad Postgres (`tests/test_agents_postgres_aktuarie.py`). Operatören skapar rollen i Lakebase; därefter `grant_agent_role.py --team aktuarie --apply` efter OK (AGENTS.md §4.5). Sedan A4 (B-042) har rollen också `SELECT` på `valuation_bases`. Rättigheterna, inklusive kolumnrätterna, sattes i Lakebase 2026-10-31 efter backup och operatörens OK.
 
 **Uttagsdelarna (paket B steg 1, B-048, 2026-11-14):** `agent_forsakring` och `agent_aktuarie` får också `SELECT` på `payout_parts` och `payout_part_states`, så att försäkringsagenten ser pensionsförloppet i översikten och aktuarieagenten får uttagslägena i beståndet. `agent_compliance` får ingen rätt; med den rollen redovisas pensionsförloppet som ej läst. Sätts med `grant_agent_role.py --team forsakring --apply` och `--team aktuarie --apply` efter `migrate_payout_parts.py` (`databasschema.md` §7b och §12). **Satt i Lakebase 2026-11-14** efter backup `backups/20261114T150341Z` och Karls OK; verifierat med rollernas egna anslutningar (läser, nekas skrivning; `agent_compliance` nekas).
 
@@ -750,7 +750,7 @@ Ett väntande barn returnerar run-/approval-referenser och propagagerar väntan 
 
 ### 10.3 Flödesmotor och regeländringshantering
 
-**Operatörens förtydligande 2026-10-25:** flödesmotorn byggs för återanvändbara
+**Historisk beskrivning från 2026-10-25:** flödesmotorn byggs för återanvändbara
 verksamhetsflöden i det hypotetiska AI-native företaget (MASTER_CONTEXT §1).
 Regeländringen nedan är en målbild för sådan verksamhet; berörda steg avgörs av
 ändringens konsekvenser. B-035:s avgränsade parameterändring och demostöd beskriver
@@ -782,14 +782,17 @@ Detta behåller agentekosystemets fem steg. Aktuariell/metodmässig förhandsval
 
 Föreslagna stegresultat är `InterpretationProposal`, `ProductRuleProposal`, `ReleaseEvidence`, `PortfolioImpactResult` och `CommunicationDraft`. De bär versioner och referenser, inte gissade nya operationer. Exempelvis behöver insikten låst basbestånd, definierat scenario, beräkningsmotor/-version och saknade mått. Framtida regelversion per affärshändelse och release-/aktiveringsmarkör saknas på 0a8227c; det är tjänste-/domänberoenden till flaggskeppet.
 
-I Fas 3c behövs persisterade flöden, steg och **grindbeslut** (`flows`, `flow_steps`, `flow_gate_decisions`, byggda i 3c-2: `src/agents/flows/`, `databasschema.md` §9i). För försäkringsförslag länkas befintliga `approval_requests`; övriga gateways har egna versionsbundna handlingsförslag och kvitton, med godkännandet knutet till deras handling. UI och körjournal använder ett gemensamt referensformat med område, förslags-id och status. Det ger en samlad beslutsvy utan en extra kö för löne-/fribrevförslag och utan att myndighetsrapporter eller releaser registreras i försäkringstjänstelagret. Tabeller dokumenteras och databaskörningar samordnas innan de byggs.
+### Fria bolagsuppdrag
 
-**Bolagsfrågor (OC-3a, B-041, byggt 2026-10-27).** Flödestypen `company_question` i samma motor:
-aktuariens svar (`CompanyAnswer`), rapport, operatörens granskning och leverans
-([designstoppet](fragekedja_beslutsforslag.md) §5). Den drivs av en egen adapter
-(`src/agents/flows/questions.py`) och visas inte i `/floden`. Ett systemsteg kan sedan dess
-avsluta med ett kontrollerat fel (`SystemOutcome.error`), t.ex. en export som inte skrev något:
-steget och flödet blir `failed` i stället för `reconciliation_required`.
+[Bolagsorkestratören](bolagsorkestrator_pilot.md) tar emot fritext och väljer team
+ur den interna agentteamskatalogen. Teamen använder egna behörigheter.
+Uppdragets versioner, resultat och beslut sparas med källreferenser,
+körspår och en gemensam budget. Försäkringsförslag kan länka
+`approval_requests`. Andra gateways äger sina versionsbundna beslut och
+kvitton, såsom en beställning till Utveckling.
+
+Tidigare fasta agentflöden kan läsas i uppdragsarkivet
+([databasschema §9i](databasschema.md#9i-tabeller-flows-flow_steps-och-flow_gate_decisions--uppdragsarkivet)).
 
 ### 10.4 Återstart utan dubbel handling
 

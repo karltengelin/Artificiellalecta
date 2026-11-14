@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Bolagsuppdrag BO-{{ mission.id }}{% endblock %}
+{% macro form_fields() %}
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+<input type="hidden" name="revision" value="{{ mission.revision }}">
+{% endmacro %}
+{% macro receipt(task) %}
+{% if task.receipt %}
+  {% if task.kind == "prepare_development" %}
+    <a href="/central/utveckling/{{ task.receipt }}">Öppna ändringsärendet och kodgranskningen</a>
+    {% if task.observed.code %}<p>Kodversion <code>{{ task.observed.code }}</code> · Testbevis <code>{{ task.observed.tests }}</code></p>{% endif %}
+  {% else %}
+    <a href="/godkannanden?status=alla#arende-{{ task.receipt }}">Öppna aktiveringsförslaget i godkännandekön</a>
+    {% if task.observed.effect %}<p>{{ "Verifierad schemaläggning" if task.observed.effect.verified else "Schemaläggningen kräver avstämning" }}</p>{% endif %}
+  {% endif %}
+{% endif %}
+{% if task.status == "verified" and task.kind == "prepare_development" %}<p>Verifierat införande i projekt 11:s demo.</p>{% endif %}
+{% if task.status == "rejected" %}<p>Aktiveringsförslaget avslogs.</p>{% endif %}
+{% endmacro %}
+{% block content %}
+<p><a href="{{ base }}">Fråga bolaget · lokal pilot</a></p>
+<section class="panel panel--standalone">
+  <h1>Bolagsuppdrag</h1>
+  <p><span class="pill">{{ statuses.get(state.status, state.status) }}</span> · <code>BO-{{ mission.id }}</code></p>
+  <p>{{ state.briefs[0].goal }}</p>
+  <p class="muted small">Beställt av {{ mission.owner }} · {{ mission.dataset }} · version {{ mission.revision }}
+    · känd kostnad {{ '%.6f' | format(known_cost) }} USD{% if unresolved_cost %} · körkostnad kan saknas{% endif %}</p>
+  {% if state.stop %}<p role="status">{{ state.stop }}</p>{% endif %}
+  {% if state.briefs | length > 1 %}
+    <details open><summary>Preciseringar</summary>
+      <ol>{% for brief in state.briefs[1:] %}<li>{{ brief.goal }}</li>{% endfor %}</ol>
+    </details>
+  {% endif %}
+  {% if enabled and can_process and (state.status != "reconciliation_required" or state.external) %}
+    <form method="post" action="{{ base }}/{{ mission.id }}/kor">{{ form_fields() }}
+      <button type="submit">{{ "Läs domänstatus och kvitton" if state.external else "Kör nästa del av uppdraget" }}</button>
+    </form>
+  {% elif state.status == "running" %}
+    <form method="post" action="{{ base }}/{{ mission.id }}/avbrott">{{ form_fields() }}
+      <button class="secondary" type="submit">Markera avbrott efter att processen har stoppats</button>
+    </form>
+  {% endif %}
+  {% if state.external and not state.external.receipt %}
+    <p class="small">{{ "Ändringsärendet skapas när du kör nästa del." if development_wait else "Aktiveringsförslaget läggs i godkännandekön när du kör nästa del." }}</p>
+  {% endif %}
+</section>
+
+{% if review %}
+<section class="panel panel--standalone">
+  <h2>{{ review_labels[review.kind] }}</h2>
+  <p>Underlag <a href="#uppdrag-{{ basis.id }}">{{ basis.id[:8] }}</a>
+    {% if review.effect %} och <a href="#uppdrag-{{ review.effect }}">beståndsanalysen</a>{% endif %}
+    · kontrollsumma <code>{{ review.hash[:16] }}</code></p>
+  <form method="post" action="{{ base }}/{{ mission.id }}/granska">{{ form_fields() }}
+    <input type="hidden" name="seen" value="{{ review.hash }}">
+    {% if review.kind != "approve_interpretation" %}
+      <label for="rule_version">Regelversion</label><input id="rule_version" name="rule_version" placeholder="1.1">
+      <label for="valid_from">Giltighetsdag</label><input id="valid_from" type="date" name="valid_from" value="{{ basis.result.output.result.effective_on or '' }}">
+      <label for="decision_number">Beslutsnummer, om loggat</label><input id="decision_number" name="decision_number" placeholder="B-000">
+      {% if review.kind == "prepare_development" %}
+        <label for="rule_id">Berörd regel</label>
+        <select id="rule_id" name="rule_id">{% for rule in basis.result.output.result.affected_rules %}<option>{{ rule }}</option>{% endfor %}</select>
+        <label for="code_reason">Motivering för kodändring</label>
+        <textarea id="code_reason" name="code_reason" maxlength="1500">{{ basis.result.output.result.code_dependency }}</textarea>
+        <label for="affected_system">Berört system</label><input id="affected_system" name="affected_system" maxlength="160">
+        <label for="expected_effect">Effekt som Utveckling ska verifiera</label><textarea id="expected_effect" name="expected_effect" maxlength="1500"></textarea>
+      {% else %}
+        <label for="commit">Commit med införd regeltext och parameterregister</label><input id="commit" name="commit" maxlength="40">
+      {% endif %}
+    {% endif %}
+    <label for="note">Kommentar eller skäl vid avslag</label><input id="note" name="note" maxlength="500">
+    {% if enabled or review.kind == "approve_interpretation" %}
+      <button type="submit" name="verdict" value="approved">Godkänn underlaget</button>
+    {% endif %}
+    <button class="danger" type="submit" name="verdict" value="rejected">Avslå</button>
+  </form>
+</section>
+{% endif %}
+
+{% if state.messages %}
+<section class="panel panel--standalone">
+  <h2>Orkestratörens svar</h2>
+  {% for message in state.messages | reverse %}
+    <article class="request">
+      <p>{{ message.answer.summary }}</p>
+      {% if message.answer.output %}
+        {% for source in message.answer.output.evidence.sources %}
+          <p class="small">{{ source.handle }} · {{ source.title }} · {{ source.sha256 }}</p>
+        {% endfor %}
+        {% for ref in message.answer.output.result.assignment_refs %}<a href="#uppdrag-{{ ref }}">Deluppdrag {{ ref[:8] }}</a> {% endfor %}
+      {% endif %}
+      <p class="small">Beställning v{{ message.brief }} · <a href="{{ base }}/{{ mission.id }}/spar/{{ message.run }}">Körspår</a></p>
+    </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if state.assignments %}
+<section class="panel panel--standalone">
+  <h2>Deluppdrag</h2>
+  {% for item in state.assignments.values() %}
+    <article class="request" id="uppdrag-{{ item.id }}">
+      <h3>{{ teams[item.team] }} · {{ {'interpret_rule': "Regeltolkning", 'estimate_premium_effect': "Premieeffekt"}[item.capability] }}</h3>
+      <p>{{ statuses.get(item.status, item.status) }} · Beställning v{{ item.brief }}{% if item.inputs.goal %} · {{ item.inputs.goal }}{% endif %}</p>
+      {% if item.run %}<a href="{{ base }}/{{ mission.id }}/spar/{{ item.run }}">Körspår</a>{% endif %}
+      {% if item.result %}
+        <p>{{ item.result.summary }}</p>
+        {% if item.result.uncertainties %}<ul>{% for note in item.result.uncertainties %}<li>{{ note }}</li>{% endfor %}</ul>{% endif %}
+        {% if item.result.output %}
+          {% set evidence = item.result.output.evidence %}
+          {% for src in evidence.sources %}
+            <p class="small">{{ src.handle }} · {{ src.title }} · {{ src.sha256 }}{% if src.fictional %} · fiktiv{% endif %}</p>
+          {% endfor %}
+          {% for draft in evidence.drafts %}
+            <a href="{{ base }}/{{ mission.id }}/utkast/{{ item.id }}/{{ draft.name }}">{{ draft.title }} (Markdown)</a>
+          {% endfor %}
+          {% if evidence.estimate %}
+            <p>Premieeffekt för {{ evidence.estimate.period_from }} till {{ evidence.estimate.period_to }},
+              basversion {{ evidence.estimate.current_version }} · {{ evidence.estimate.totals_status }}</p>
+            {% if evidence.estimate.extra_premium_volume_total_sek is not none %}
+              <p>Beräknad förändring {{ evidence.estimate.extra_premium_volume_total_sek | sek }} kr.</p>
+            {% endif %}
+            <ul>{% for note in evidence.estimate.assumptions %}<li>{{ note }}</li>{% endfor %}</ul>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if state.decisions or state.external or state.effects %}
+<section class="panel panel--standalone">
+  <h2>Beslut och verkställighet</h2>
+  {% for decision in state.decisions %}
+    <p id="beslut-{{ decision.id }}"><a href="#uppdrag-{{ decision.basis }}">{{ review_labels[decision.kind] }}</a> ·
+      {{ "Godkänt" if decision.decision == "approved" else "Avslaget" }} av {{ decision.by }}
+      · {{ decision.at }} · underlag {{ decision.basis_hash[:16] }}
+      {% if decision.details %} · antagen version {{ decision.details.rule_version }} från {{ decision.details.valid_from }}{% endif %}
+      {% if decision.note %} · {{ decision.note }}{% endif %}</p>
+  {% endfor %}
+  {% if state.external %}{{ receipt(state.external) }}{% endif %}
+  {% for task in state.effects %}{{ receipt(task) }}{% endfor %}
+</section>
+{% endif %}
+
+{% if enabled and not state.external and state.status not in ["running", "reconciliation_required", "taken_over"] %}
+<section class="panel panel--standalone">
+  <h2>Precisera eller ställ en följdfråga</h2>
+  <form method="post" action="{{ base }}/{{ mission.id }}/precisera">{{ form_fields() }}
+    <input type="hidden" name="key" value="{{ follow_key }}">
+    <label for="follow_goal">Ny information eller fråga</label>
+    <textarea id="follow_goal" name="goal" maxlength="3200" rows="3" required></textarea>
+    <button type="submit">Spara och köa</button>
+  </form>
+</section>
+{% endif %}
+{% if state.status not in ["running", "taken_over", "answered", "rejected"] %}
+<section class="panel panel--standalone">
+  <h2>Ta över uppdraget</h2>
+  <form method="post" action="{{ base }}/{{ mission.id }}/ta-over">{{ form_fields() }}
+    <label for="takeover_note">Skäl</label><input id="takeover_note" name="note" maxlength="500" required>
+    <button class="secondary" type="submit">Ta över</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

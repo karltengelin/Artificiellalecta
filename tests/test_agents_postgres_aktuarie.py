@@ -30,6 +30,7 @@ from agents import (
 )
 from agents.gateways import DraftGateway, RegulatoryGateway
 from models import OperationEventRecord
+from models.flow import ArchiveBase
 from services import (
     Actor,
     OperationContext,
@@ -78,6 +79,8 @@ def db():
             pytest.fail(f"Testrollens anslutning får inte vara {env} (beståndet)")
     with isolated_schema() as schema:
         create_demo_database(schema.engine, with_proposals=False)
+        # Äldre databaser har kvar historiken. Agentrollen ska sakna åtkomst.
+        ArchiveBase.metadata.create_all(schema.engine)
         agent_engine = create_engine(AKTUARIE_URL, connect_args={"options": f"-csearch_path={schema.name}"})
         with agent_engine.connect() as conn:
             login = conn.exec_driver_sql("SELECT current_user").scalar_one()

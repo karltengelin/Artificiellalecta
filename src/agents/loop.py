@@ -240,7 +240,7 @@ def run_agent(
         "run_started", task_id=request.task_id, goal=text_ref(request.goal), scope_ref=request.execution_scope_ref,
         case_id=request.case_id, model_role=profile.model_role, versions=_versions(profile),
         limits=profile.limits.model_dump(), root_limits=root_limits.model_dump(),
-        flow_id=request.flow_id, flow_step_id=request.flow_step_id, parameter_change_ref=request.parameter_change_ref,
+        parameter_change_ref=request.parameter_change_ref,
         depth=request.depth, delegation_targets=list(profile.delegation_targets),
         delegation_root_limits=delegator.ledger.limits.model_dump(exclude_none=True) if delegator else None,
     )

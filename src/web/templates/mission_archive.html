@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Uppdragsarkiv{% endblock %}
+{% block content %}
+<p><a href="/central/fragor">Fråga bolaget</a></p>
+<section class="panel panel--standalone">
+  <h1>Uppdragsarkiv</h1>
+  {% if record %}
+    <p><a href="{{ base }}">Alla arkiverade uppdrag</a></p>
+    <h2>{{ titles.get(record.flow_type, record.flow_type) }} · {{ record.flow_id }}</h2>
+    <p>{{ record.status }} · Beställt av {{ record.created_by }} · {{ record.created_at | iso_date }}</p>
+    <p>Sparad version {{ record.version }} · tidigare definition {{ record.definition_version }}</p>
+    {% if record.note %}<p>{{ record.note }}</p>{% endif %}
+    {% if receipt %}
+      <p>{% for name in receipt.files %}<a href="{{ base }}/{{ record.flow_id }}/leverans/{{ receipt.version }}/{{ name }}">{{ name }}</a> {% endfor %}</p>
+    {% endif %}
+    {% if decisions %}
+      <h3>Sparade beslut</h3>
+      <ul>{% for decision in decisions %}
+        <li>{{ decision.decision }} av {{ decision.decided_by }} · {{ decision.step_key }} · {{ decision.created_at | iso_date }}
+          {% if decision.note %} · {{ decision.note }}{% endif %}
+          <br>Underlag <code>{{ decision.bound_hash }}</code></li>
+      {% endfor %}</ul>
+    {% endif %}
+    <details><summary>Sparad beställning</summary><pre>{{ record.input | pretty_json }}</pre></details>
+    {% for step in steps %}
+      <details id="steg-{{ step.step_key }}">
+        <summary>{{ step.title }} · {{ step.status }}</summary>
+        {% if step.approval_id %}<p><a href="/godkannanden?status=alla#arende-{{ step.approval_id }}">Tjänstelagrets godkännande</a></p>{% endif %}
+        {% if step.run_id %}<p><a href="{{ base }}/{{ record.flow_id }}/steg/{{ step.step_key }}/journal">Körspår</a></p>{% endif %}
+        {% if step.result and step.result.change_request_id %}
+          <p><a href="/central/utveckling/{{ step.result.change_request_id }}">Ändringsärende</a></p>
+        {% endif %}
+        {% for ref in step.artifact_refs or [] if ref.startswith('utkast:') %}
+          {% set name = ref.rsplit('/', 1)[-1] %}
+          <p><a href="{{ base }}/{{ record.flow_id }}/steg/{{ step.step_key }}/utkast/{{ name }}">{{ name }}</a></p>
+        {% endfor %}
+        {% if step.result %}<pre>{{ step.result | pretty_json }}</pre>{% endif %}
+      </details>
+    {% endfor %}
+  {% else %}
+    <ul>{% for item in records %}
+      <li><a href="{{ base }}/{{ item.flow_id }}">{{ titles.get(item.flow_type, item.flow_type) }} · {{ item.flow_id }}</a> · {{ item.status }}</li>
+    {% else %}<li>Inga arkiverade uppdrag i miljön.</li>{% endfor %}</ul>
+  {% endif %}
+</section>
+{% endblock %}
