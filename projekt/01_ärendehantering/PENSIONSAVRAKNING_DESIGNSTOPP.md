@@ -146,10 +146,10 @@ historik. Läget `terminated` används inte för nya avslut (PB10).
 - `create_premium_from_salary_report` väljer premiens mottagare bland ej startade
   delar. Finns flera, används vikterna i PR-015; finns ingen, blockeras premien med ärende.
 
-**Byggt i steg 1 (2026-11-14, branch `claude/paket-b-steg1-193c87`, ej infört i Lakebase):**
+**Byggt i steg 1 (2026-11-14, ej infört i Lakebase):**
 tabellerna `payout_parts` och `payout_part_states` ([databasschema §7b](../../02_system/databasschema.md#7b-tabeller-payout_parts-och-payout_part_states--uttagsdelar-och-pensionsförloppet)),
 övergången, de anpassade läsarna och `set_policy_paid_up` ([tjänstelager §9.14](../../02_system/tjänstelager.md#914-uttagsdelar-och-tre-förlopp-paket-b-steg-1-b-047--vad-som-stöds-och-vad-som-blockeras));
-fall 38 är verifierat lokalt och migrationen mot isolerad Postgres. Avvikelser att godkänna:
+fall 38 är verifierat lokalt och migrationen mot isolerad Postgres. Mergat till main 2026-11-14 (`86c3d6e`). Avvikelser, godkända av Karl i chatten samma dag (”Approve, merge it”):
 - *Flera ej startade delar* blockerar premien i stället för att fördela med vikterna i PR-015,
   eftersom ingen fördelningsinstruktion finns ännu. Ingen del blockerar premien med skäl, men
   utan nytt ärende – ett ärende för det fallet hör till steg 4, när start finns.
