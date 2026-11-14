@@ -6,9 +6,11 @@ försäkringen. Premieförloppet läses i `policy_states`; pensionsförloppet pe
 
 **Agentrollerna** har inga rättigheter på de nya tabellerna i första versionen (P1-PENSION-001
 §12). En läsning som körs med en agents begränsade databasroll får därför inte läsa dem:
-`payout_readable` svarar nej för en agentaktör vars roll i `utils/agent_roles.py` saknar
-SELECT på båda tabellerna, och läsningen redovisar då pensionsförloppet som ej läst i stället
-för att gissa. Ges rollerna rätten senare (eget beslut) öppnas läsningen utan kodändring.
+`payout_readable` svarar nej när sessionen ansluter med en roll – eller aktören är en agent
+vars teams roll – i `utils/agent_roles.py` saknar SELECT på båda tabellerna. Rollen avgör
+även för system- och människoaktörer på agentens anslutning (t.ex. harness när mandatet byggs).
+Läsningen redovisar då pensionsförloppet som ej läst i stället för att gissa. Ges rollerna
+rätten senare (eget beslut) öppnas läsningen utan kodändring.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ from sqlalchemy import and_, or_, select
 
 from models import PayoutPart, PayoutPartState, PolicyBenefit
 from services.contract import Actor
+from services.transaction import DB_ROLE_KEY
 from utils.agent_roles import ROLE_GRANTS
 
 PAYOUT_TABLES = (PayoutPart.__tablename__, PayoutPartState.__tablename__)
@@ -43,12 +46,18 @@ class PartView:
     valid_from: date | None
 
 
-def payout_readable(actor: Actor) -> bool:
-    """Får läsningen läsa uttagsdelarna? Människa och system ja; agent bara om rollen har rätten."""
-    if not actor.is_agent:
-        return True
-    grants = ROLE_GRANTS.get(actor.team or "")
+def _grants_payout(grants) -> bool:
     return grants is not None and set(PAYOUT_TABLES) <= set(grants.select)
+
+
+def payout_readable(actor: Actor, session=None) -> bool:
+    """Får läsningen läsa uttagsdelarna? Nej om sessionens roll eller agentens teamroll saknar rätten."""
+    role = session.info.get(DB_ROLE_KEY) if session is not None else None
+    if role is not None and not _grants_payout(next((g for g in ROLE_GRANTS.values() if g.role == role), None)):
+        return False
+    if actor.is_agent:
+        return _grants_payout(ROLE_GRANTS.get(actor.team or ""))
+    return True
 
 
 def create_initial_part(session, benefit: PolicyBenefit, *, valid_from: date | None = None,

@@ -146,7 +146,7 @@ def get_portfolio_snapshot(ctx: OperationContext, data: YearQuery) -> PortfolioS
     ).all()
     paid_up = set(session.scalars(select(PolicyState.policy_id).where(
         PolicyState.state == "paid_up", PolicyState.valid_from >= year_from, PolicyState.valid_from <= year_to)))
-    readable = payout_readable(ctx.actor)
+    readable = payout_readable(ctx.actor, session)
     parts = parts_by_policy(session, [r[0] for r in rows], on=today) if readable else {}
 
     states, cohorts, insured = Counter(), Counter(), set()

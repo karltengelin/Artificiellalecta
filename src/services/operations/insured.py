@@ -128,7 +128,7 @@ def get_insured_overview(ctx: OperationContext, data: InsuredLookup) -> InsuredO
         select(Policy).where(Policy.insured_person_id == person.id).order_by(Policy.start_date)
     ).all()
     capital = _capital_per_benefit(session, [b.id for p in policies for b in p.benefits])
-    readable = payout_readable(ctx.actor)
+    readable = payout_readable(ctx.actor, session)
     parts = parts_by_policy(session, [p.id for p in policies]) if readable else {}
 
     summaries = []

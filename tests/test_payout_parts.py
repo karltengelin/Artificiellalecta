@@ -248,6 +248,15 @@ class TestLasningarna:
         assert agent.policies[0].payout_parts is None and agent.payout_parts_note == NOT_READ_FOR_AGENT
         assert agent.policies[0].current_state.state == "paid_up"
 
+    def test_agentens_anslutning_laser_inte_delarna_ens_for_systemaktor(self, insurance_db):
+        # Harness bygger mandatet som systemaktör men på agentens begränsade anslutning (agents/scope.py)
+        service = ServiceLayer(session_factory=insurance_db.session_factory,
+                               validation_session_factory=insurance_db.session_factory,
+                               agent_role="agent_forsakring", events=MemoryEventLog())
+        system = OperationContext(actor=Actor.system("harness_scope"))
+        out = service.execute("get_insured_overview", system, {"policy_number": "AL-000001"}).output
+        assert out.policies[0].payout_parts is None and out.payout_parts_note == NOT_READ_FOR_AGENT
+
     def test_laget_vid_en_dag(self, insurance_db):
         from tests.conftest import start_payout
 
