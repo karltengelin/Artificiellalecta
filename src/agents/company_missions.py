@@ -75,7 +75,7 @@ class CompanyMissions:
                                     if trusted.register.path else None),
                 "contract": CONTRACT,
             })
-        self.teams = team_catalog(self.eco if ai is not None else Ecosystem.load())
+            self.teams = team_catalog(self.eco)
         self.team_services = {team: ServiceLayer(session_factory=factory, validation_session_factory=factory,
                              registry=trusted.registry, register=trusted.register, rules=trusted.rules,
                              agent_role=f"agent_{team}") for team in ("aktuarie", "compliance")}

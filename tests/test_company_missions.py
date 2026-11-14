@@ -267,8 +267,9 @@ def test_teamkatalogen_visar_profiler_och_pilotens_bestallningsvagar(demo):
     assert teams["utveckling"]["lead"] is None
     assert teams["forsakring"]["agent_count"] == 1 and teams["forsakring"]["company_intake"] is None
     assert teams["ekonomi"]["agent_count"] == 0
-    assert "Compliance · 1 agent" in demo.web.get(BASE).text
-    assert demo.web.get(BASE).context["team_catalog"] == teams
+    page = demo.web.get(BASE)
+    assert "Dina uppdrag" in page.text
+    assert "team_catalog" not in page.context and "Agentteam</h2>" not in page.text
     with pytest.raises(GatewayError, match="tar inte emot direkta beställningar"):
         coord.invoke(TEAM, "test-catalog", CoordinationInput(action="order", target_team="forsakring", key="forsakring"))
     assert not demo.state["assignments"]

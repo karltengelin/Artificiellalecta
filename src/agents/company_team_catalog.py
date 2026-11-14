@@ -1,4 +1,4 @@
-"""Agentteamskatalogen som operatören och orkestratören använder i demo."""
+"""Agentteamskatalog för bolagsorkestratörens interna samordning."""
 
 from agents.ecosystem import Ecosystem
 from management.telemetry import TEAM_NAMES

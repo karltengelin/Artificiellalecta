@@ -21,23 +21,6 @@
 </section>
 {% if operator_user %}
 <section class="panel panel--standalone">
-  <h2>Agentteam</h2>
-  {% for team in team_catalog.values() %}
-    <details>
-      <summary>{{ team.name }} · {{ team.agent_count }} {{ "agent" if team.agent_count == 1 else "agenter" }}</summary>
-      <p>{{ team.mandate }}</p>
-      {% if team.agents %}
-        <ul>{% for profile in team.agents %}
-          <li><strong>{{ profile.name }}</strong>{% if profile.lead %} · Teamledare{% endif %}
-            {% if profile.runtime == "project_11_demo" %} · Projekt 11:s demo{% endif %}
-            <p>{{ profile.description }}</p></li>
-        {% endfor %}</ul>
-      {% endif %}
-      <p>{{ team.company_intake if enabled and team.company_intake else "Ingen ansluten beställningsväg i piloten." }}</p>
-    </details>
-  {% endfor %}
-</section>
-<section class="panel panel--standalone">
   <h2>Dina uppdrag</h2>
   <ul>
   {% for mission in items %}

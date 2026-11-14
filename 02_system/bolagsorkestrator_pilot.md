@@ -40,14 +40,14 @@ Testet `test_company_missions.py` kör samma webbformulär som operatören.
 
 ## Uppdragskontrakt och gränser
 
-- Vyn **Agentteam** visar verksamhetsteamen i registret, deras uppdrag och de
-  konfigurerade agentprofilerna med namn, beskrivning och teamledare. Antalet
-  räknas från profilerna. Utvecklaragenten i projekt 11 visas med sin separata
-  demokörning. Team utan profiler visas med noll agenter.
-- Orkestratören läser samma katalog med `coordinate_company_work` och väljer
+- Teamkatalogen beskriver verksamhetsteamens uppdrag, profiler, teamledare
+  och antal konfigurerade agenter. Den anger projekt 11:s separata demokörning
+  för utvecklaragenten. Team utan profiler anges med noll agenter.
+- Orkestratören läser katalogen internt med `coordinate_company_work` och väljer
   mottagande team utifrån beställningens mål. Katalogen visar också vilken
   beställningsväg som är ansluten i piloten. Underlagskrav och granskningar
-  prövas i respektive beställnings- eller beslutsväg.
+  prövas i respektive beställnings- eller beslutsväg. **Fråga bolaget** visar
+  dina beställningar och vilket team som medverkar i varje uppdrag.
 - Tabellen `company_missions` ligger i den lokala demofilen. En rad innehåller
   ett versionsstämplat och storleksbegränsat uppdragsdokument. Beställaren är
   den autentiserade operatören. Miljö, dataset, kontrakt, policy, rotbudget,
