@@ -3,7 +3,8 @@
 Skapar `payout_parts` och `payout_part_states`, vidgar `ck_cases_type` med `payout_reconstruction`,
 ger varje ålderspensionsförmån uttagsdel 1 i läget `not_started`, flyttar eventuella gamla
 uttagslägen till delen med ett rekonstruktionsärende och smalnar `ck_policy_states_state` till
-premieförloppets två lägen. Allt i en transaktion. Agentrollerna får inga rättigheter.
+premieförloppets två lägen. Allt i en transaktion. Agentrollerna får inga rättigheter här; läsrätten
+enligt B-048 sätts därefter med scripts/setup/grant_agent_role.py (torrkörning först).
 
 Standard är torrkörning i en skrivskyddad transaktion: visar SQL, villkorens nuvarande
 definitioner, övergångens plan, schemaskillnader, hinder och radantal, och ändrar ingenting. En

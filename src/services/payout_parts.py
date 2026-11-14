@@ -4,13 +4,14 @@ Gemensamma läsningar och kontroller för operationerna som tidigare tolkade `in
 försäkringen. Premieförloppet läses i `policy_states`; pensionsförloppet per uttagsdel i
 `payout_part_states`. Inga operationer här – bara hjälpfunktioner i betrodd kod.
 
-**Agentrollerna** har inga rättigheter på de nya tabellerna i första versionen (P1-PENSION-001
-§12). En läsning som körs med en agents begränsade databasroll får därför inte läsa dem:
+**Agentrollerna:** `agent_forsakring` och `agent_aktuarie` har SELECT på båda tabellerna
+(B-048); `agent_compliance` har det inte. En läsning som körs med en roll utan rätten får inte
+läsa dem:
 `payout_readable` svarar nej när sessionen ansluter med en roll – eller aktören är en agent
 vars teams roll – i `utils/agent_roles.py` saknar SELECT på båda tabellerna. Rollen avgör
 även för system- och människoaktörer på agentens anslutning (t.ex. harness när mandatet byggs).
-Läsningen redovisar då pensionsförloppet som ej läst i stället för att gissa. Ges rollerna
-rätten senare (eget beslut) öppnas läsningen utan kodändring.
+Läsningen redovisar då pensionsförloppet som ej läst i stället för att gissa. Rätten styrs
+av `ROLE_GRANTS`, utan kodändring här.
 """
 
 from __future__ import annotations
@@ -29,10 +30,7 @@ from utils.agent_roles import ROLE_GRANTS
 
 PAYOUT_TABLES = (PayoutPart.__tablename__, PayoutPartState.__tablename__)
 #: Skäl som visas när pensionsförloppet inte läses med agentens roll
-NOT_READ_FOR_AGENT = (
-    "Uttagsdelarnas pensionsförlopp läses inte med agentens databasroll i första versionen "
-    "(P1-PENSION-001 §12)"
-)
+NOT_READ_FOR_AGENT = "Uttagsdelarnas pensionsförlopp läses inte med agentens databasroll (B-048)"
 
 
 @dataclass(frozen=True)
@@ -84,7 +82,7 @@ def parts_by_policy(session, policy_ids, on: date | None = None) -> dict:
         .join(PayoutPart, PayoutPart.benefit_id == PolicyBenefit.id)
         .outerjoin(PayoutPartState, and_(PayoutPartState.payout_part_id == PayoutPart.id, current))
         .where(PolicyBenefit.policy_id.in_(list(policy_ids)))
-        .order_by(PolicyBenefit.policy_id, PolicyBenefit.start_date, PayoutPart.part_number)
+        .order_by(PolicyBenefit.policy_id, PayoutPart.benefit_id, PayoutPart.part_number)
     ).all()
     found: dict = defaultdict(list)
     for policy_id, part, state in rows:

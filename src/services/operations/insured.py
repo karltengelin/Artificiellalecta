@@ -2,8 +2,8 @@
 
 Försäkringens läge har två delar sedan paket B steg 1 (B-047, P1-PENSION-001 §4):
 premieförloppet (`current_state`, ur `policy_states`) och pensionsförloppet per uttagsdel
-(`payout_parts`). Med en agents databasroll läses inte uttagsdelarna (§12); fältet är då
-None och `payout_parts_note` säger varför.
+(`payout_parts`). Med en databasroll utan rätt till uttagsdelarna (B-048: bara
+`agent_compliance`) läses de inte; fältet är då None och `payout_parts_note` säger varför.
 """
 
 from __future__ import annotations
