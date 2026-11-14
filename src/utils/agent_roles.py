@@ -70,6 +70,9 @@ FORSAKRING = RoleGrants(
         "cases",  # ärenden (B-033); kundscope verkställs i harness, inte i databasen
         "employers",
         "insured_persons",
+        # Uttagsdelarnas pensionsförlopp (paket B steg 1, B-048); kräver migrate_payout_parts.py först
+        "payout_part_states",
+        "payout_parts",
         "policies",
         "policy_benefits",
         "policy_states",
@@ -91,6 +94,9 @@ AKTUARIE = RoleGrants(
     select=(
         "base_amounts",
         "insured_persons",
+        # Uttagsdelarnas pensionsförlopp för beståndets lägen (B-048); kräver migrate_payout_parts.py först
+        "payout_part_states",
+        "payout_parts",
         "policies",
         "policy_states",
         "product_parameters",

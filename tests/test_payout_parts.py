@@ -234,10 +234,11 @@ class TestLasningarna:
 
     def test_agentroll_utan_ratt_laser_inte_uttagsdelarna(self):
         assert payout_readable(HUMAN.actor) and payout_readable(Actor.system("payout_transition"))
-        for team in ("forsakring", "aktuarie", "compliance", None):
+        assert payout_readable(Actor.agent("x", team="forsakring")) and payout_readable(Actor.agent("x", team="aktuarie"))
+        for team in ("compliance", None):  # B-048: bara försäkrings- och aktuarieteamen
             assert payout_readable(Actor.agent("x", team=team)) is False
 
-    def test_oversikten_visar_delarna_for_handlaggaren_men_inte_agenten(self, insurance_db):
+    def test_oversikten_visar_delarna_for_handlaggaren_och_forsakringsagenten(self, insurance_db):
         service = ServiceLayer(session_factory=insurance_db.session_factory, events=MemoryEventLog())
         human = service.execute("get_insured_overview", HUMAN, {"policy_number": "AL-000001"}).output
         (policy,) = human.policies
@@ -245,17 +246,21 @@ class TestLasningarna:
         assert (part.part_number, part.state, part.valid_from) == (1, "not_started", date(2015, 1, 1))
         assert human.payout_parts_note is None
         agent = service.execute("get_insured_overview", AGENT, {"policy_number": "AL-000001"}).output
-        assert agent.policies[0].payout_parts is None and agent.payout_parts_note == NOT_READ_FOR_AGENT
+        assert agent.policies[0].payout_parts == policy.payout_parts and agent.payout_parts_note is None  # B-048
         assert agent.policies[0].current_state.state == "paid_up"
 
-    def test_agentens_anslutning_laser_inte_delarna_ens_for_systemaktor(self, insurance_db):
+    @pytest.mark.parametrize(("role", "read"), [("agent_forsakring", True), ("agent_compliance", False)])
+    def test_anslutningens_roll_avgor_aven_for_systemaktor(self, insurance_db, role, read):
         # Harness bygger mandatet som systemaktör men på agentens begränsade anslutning (agents/scope.py)
         service = ServiceLayer(session_factory=insurance_db.session_factory,
                                validation_session_factory=insurance_db.session_factory,
-                               agent_role="agent_forsakring", events=MemoryEventLog())
+                               agent_role=role, events=MemoryEventLog())
         system = OperationContext(actor=Actor.system("harness_scope"))
         out = service.execute("get_insured_overview", system, {"policy_number": "AL-000001"}).output
-        assert out.policies[0].payout_parts is None and out.payout_parts_note == NOT_READ_FOR_AGENT
+        if read:
+            assert out.policies[0].payout_parts and out.payout_parts_note is None
+        else:
+            assert out.policies[0].payout_parts is None and out.payout_parts_note == NOT_READ_FOR_AGENT
 
     def test_laget_vid_en_dag(self, insurance_db):
         from tests.conftest import start_payout

@@ -8,7 +8,7 @@ Båda läser bara kolumner som rollen `agent_aktuarie` redan har (`utils/agent_r
 Försäkringens läge i `by_state` är sedan paket B steg 1 (P1-PENSION-001 §4) premieförloppet
 kompletterat med uttagsdelarnas pensionsförlopp: en försäkring med en del i utbetalning räknas
 som `in_payout`, med en pausad del som `payout_paused` och med alla delar avslutade som
-`terminated`. Rollen `agent_aktuarie` har inga rättigheter på uttagsdelarna (§12); med den
+`terminated`. Rollen `agent_aktuarie` läser uttagsdelarna (B-048); med en roll utan rätten
 räknas försäkringarna efter premieförloppet och de tre pensionscellerna redovisas som ej lästa.
 Monterade i podden `bestand`; produktrapporten (`agents/flows/definitions/product_report.py`)
 visar talen i avsnitt 2 och 3.

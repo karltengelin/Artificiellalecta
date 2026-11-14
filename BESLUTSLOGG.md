@@ -8,6 +8,46 @@
 
 ## Beslut
 
+### B-048 | 2026-11-14 | Paket B steg 1: agentrollernas läsrätt på uttagsdelarna och rekonstruktionsärendet
+
+**Beslut:** Operatören godkände de två förslagen från byggsteg 1 i paket B
+([P1-PENSION-001 §4](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md)) i chatten
+2026-11-14, direkt efter att de listats tillsammans med Lakebase-migrationen: ”då gör vi dom
+grejerna”. Svaret gavs i designstoppets session och förmedlades till byggsessionen.
+
+1. **Läsrätt för agentrollerna.** `agent_forsakring` och `agent_aktuarie` får `SELECT` på
+   `payout_parts` och `payout_part_states` (`src/utils/agent_roles.py`). Försäkringsagenten ser
+   uttagsdelarnas pensionsförlopp i översikten, och aktuarieagenten får beståndets lägen
+   `in_payout`, `payout_paused` och `terminated` räknade ur delarna. `agent_compliance` får
+   ingen rätt. Läsningen styrs av rollens rättigheter (`payout_readable`); en roll utan rätten
+   redovisar pensionsförloppet som ej läst. Inga skrivrättigheter.
+2. **Ärendetypen `payout_reconstruction`.** Övergången till uttagsdelar öppnar ett ärende av
+   den nya typen för varje uttag som flyttas från försäkringens läge till uttagsdel 1.
+   Ärendet skapas av systemaktören `system:payout_transition` i kanalen `system` och avgörs av
+   handläggaren, som rekonstruerar plan och utbetalningshistorik ur underlag. Ingen historik
+   konstrueras. Villkoret `ck_cases_type` vidgas av `migrate_payout_parts.py`.
+
+**Motivering:** Designstoppet §12 gav agentrollerna inga rättigheter på de nya tabellerna i
+första versionen. Utan läsrätt kan försäkringsagenten inte se att en försäkring betalas ut, och
+produktrapportens bestånd tappar uttagslägena, som tidigare lästes i `policy_states`. Läsrätten
+återställer det agenterna såg före steg 1 utan att ge mer: delarna har inga belopp eller
+personuppgifter utöver försäkringens koppling. Rekonstruktionsärendet gör ett uttag utan plan,
+garantidelar och månadsrätter synligt för handläggaren i stället för att historiken gissas.
+
+**Övervägda alternativ:** Att låta agentrollerna sakna rätten tills pensionsoperationerna finns
+(steg 4–6), med pensionsförloppet redovisat som ej läst. Att återanvända en befintlig ärendetyp
+för rekonstruktionen. Att konstruera David Dahls plan och utbetalningar i demon.
+
+**Konsekvenser:**
+- Rättigheterna sätts i Lakebase med `scripts/setup/grant_agent_role.py` efter
+  `migrate_payout_parts.py`, med torrkörning först och separat OK (AGENTS.md §4.5).
+- Läsningarna i `databasschema.md` §7b och `tjänstelager.md` §9.14 gäller agenterna med rätten.
+
+**Preciserar:** B-047 punkt 2 och designstoppets §12 (agentrollernas rättigheter), B-033 val C
+(nya ärendetyper med ny CHECK).
+
+---
+
 ### B-047 | 2026-11-14 | Paket B: pensions- och månadsavräkning
 
 **Beslut:** Operatören godkände designstoppet

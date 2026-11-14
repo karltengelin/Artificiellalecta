@@ -155,8 +155,9 @@ fall 38 är verifierat lokalt och migrationen mot isolerad Postgres. Mergat till
   utan nytt ärende – ett ärende för det fallet hör till steg 4, när start finns.
 - *Rekonstruktionsärendet* har den nya ärendetypen `payout_reconstruction`, skapad av
   systemaktören; villkoret `ck_cases_type` vidgas av migrationen.
-- *Agentrollernas läsningar:* rollerna saknar rätt på de nya tabellerna (§12). Översikten och
-  produktrapportens bestånd redovisar därför pensionsförloppet som ej läst med en agents roll.
+- *Agentrollernas läsningar:* en roll utan rätt på de nya tabellerna redovisar pensionsförloppet
+  som ej läst i översikten och produktrapportens bestånd. `agent_forsakring` och `agent_aktuarie`
+  får SELECT enligt **B-048**, som också loggar ärendetypen `payout_reconstruction`.
 - *Övergången stoppar* vid `terminated`, uttagslägen som inte ligger sist eller har glapp och
   fler än en ålderspensionsförmån per försäkring, i stället för att gissa.
 - *David Dahls premieförlopp* blir fribrev från 2024-05-01, dagen efter registrerat
@@ -480,7 +481,7 @@ Inget i detta designstopp skriver till Lakebase. När ett steg är verifierat lo
    kohorten (B-035 val K) eller ett märkt testfall införs bara efter eget beslut, eftersom
    det också ändrar S-04 och FTA-underlaget.
 
-Agentrollerna får inga rättigheter på de nya tabellerna i första versionen.
+Agentrollerna får inga rättigheter på de nya tabellerna i första versionen. Undantag: uttagsdelarna i steg 1, där `agent_forsakring` och `agent_aktuarie` får SELECT (B-048).
 
 ### Föreslagen byggordning (PB13)
 

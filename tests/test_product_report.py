@@ -79,23 +79,32 @@ class TestAggregat:
     def test_bestandet_summerar_och_saknar_personuppgifter(self, service):
         s = read(service, "get_portfolio_snapshot", 2026)
         shown = sum(c.policies or 0 for c in s.by_state)
-        # Aktuarieagentens roll läser inte uttagsdelarna (P1-PENSION-001 §12): pensionscellerna är ej lästa
-        assert s.payout_states_read is False
-        not_read = {c.key for c in s.by_state if c.hidden_reason == NOT_READ_FOR_AGENT}
-        assert not_read == {"in_payout", "payout_paused", "terminated"}
-        hidden = [c for c in s.by_state if c.policies is None and c.key not in not_read]
+        hidden = [c for c in s.by_state if c.policies is None]
+        # Aktuarierollen läser uttagsdelarna (B-048); David Dahls uttag ligger i en dold cell
+        assert s.payout_states_read is True
         # De dolda lägena omfattar tillsammans minst tio försäkringar, så ingen kan räknas fram ur totalen
         assert s.policies_total == 35 and (not hidden or s.policies_total - shown >= 10)
         assert {c.hidden_reason for c in hidden} <= {PRIMARY, COMPLEMENTARY}
-
-    def test_mansklig_lasare_ser_pensionsforloppet(self, service):
-        s = read(service, "get_portfolio_snapshot", 2026, ctx=HUMAN_CTX)
-        assert s.payout_states_read is True
-        assert NOT_READ_FOR_AGENT not in {c.hidden_reason for c in s.by_state}
         assert s.as_of_date == TODAY and s.min_cell_size == 10
         raw = s.model_dump_json()
         assert not any(ch.isdigit() and len(ch) == 12 for ch in raw.split('"'))  # inga personnummer
         assert "first_name" not in raw and "salary" not in raw
+
+    def test_roll_utan_ratt_redovisar_pensionscellerna_som_ej_lasta(self, service, monkeypatch):
+        from utils import agent_roles
+
+        without = agent_roles.RoleGrants(
+            role="agent_aktuarie",
+            select=tuple(t for t in agent_roles.AKTUARIE.select if not t.startswith("payout_")), insert=(),
+        )
+        monkeypatch.setitem(agent_roles.ROLE_GRANTS, "aktuarie", without)
+        s = read(service, "get_portfolio_snapshot", 2026)
+        assert s.payout_states_read is False
+        assert {c.key for c in s.by_state if c.hidden_reason == NOT_READ_FOR_AGENT} == {
+            "in_payout", "payout_paused", "terminated"}
+        human = read(service, "get_portfolio_snapshot", 2026, ctx=HUMAN_CTX)
+        assert human.payout_states_read is True
+        assert NOT_READ_FOR_AGENT not in {c.hidden_reason for c in human.by_state}
 
     def test_kohorter_doljs_med_kompletterande_doljning(self, service):
         cells = {c.key: c for c in read(service, "get_portfolio_snapshot", 2026).by_cohort}
