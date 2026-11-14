@@ -221,7 +221,7 @@ def test_fria_fragor_och_skrivskyddad_historik(demo, tmp_path):
     pending = demo.web.get(f"/floden/{waiting_id}")
     assert pending.status_code == 200
     assert "waiting_gate" in pending.text
-    assert re.findall(r'<form[^>]+action="([^"]+)"', pending.text) == ["/logga-ut"]
+    assert "<form" not in pending.text.split("<main", 1)[1]
     assert demo.web.post(f"/floden/{waiting_id}/grind", data={"decision": "approved"}).status_code == 404
     assert demo.web.post("/floden", data={"flow_type": "rule_change_parameter"}).status_code == 405
     assert demo.web.post("/team/aktuarie/rapporter", data={"month": "2026-10"}).status_code == 405

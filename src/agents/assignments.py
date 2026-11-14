@@ -4,15 +4,14 @@
     outcome = run_assignment(ai, eco, skills, service, request)
     outcome.result.output                   # InterpretationProposal med bevis (agents.results)
 
-    mandate = mandate_from_interpretation(outcome.result.output, ref="pc-FLOW-000001")
+    mandate = mandate_from_interpretation(outcome.result.output, ref="pc-premieandring")
     request = request_for_impact(mandate)
     outcome = run_assignment(ai, eco, skills, service, request, parameter_change=mandate)
 
 Mallarna är betrodd kod: mål, begränsningar, resultatschema och referenser kommer härifrån,
-aldrig från modellen. Uppdragstexten innehåller inga personuppgifter. Flödesmotorn (3c-2)
-kör stegen och binder grindarna; här finns bara uppdragen och körningen av ett steg.
+aldrig från modellen. Uppdragstexten innehåller inga personuppgifter.
 
-Aktuarieagenten får bara räkna på den ändring som grind 1 har godkänt. `mandate_from_interpretation`
+Aktuarieagenten får bara räkna på den ändring som operatören har godkänt. `mandate_from_interpretation`
 tar den ur den godkända tolkningen; dispatchern prövar varje anrop mot mandatet.
 """
 
@@ -54,7 +53,7 @@ IMPACT_CONSTRAINTS = (
 def request_for_interpretation(
     source_handle: str, *, task_id: str | None = None, limits: Limits | None = None, **links: Any
 ) -> RunRequest:
-    """Steg 1: compliance tolkar källan till produktregler och parametrar.
+    """Compliance tolkar källan till produktregler och parametrar.
 
     `links` binder körningen till uppdragets rot och beställande segment.
     """
@@ -68,7 +67,7 @@ def request_for_interpretation(
             "till ändrad regeltext som utkast."
         ),
         constraints=INTERPRETATION_CONSTRAINTS,
-        expected_output="Tolkning med källor och utkast för operatörens granskning i grind 1",
+        expected_output="Tolkning med källor och utkast för operatörens granskning",
         result_schema="InterpretationProposal",
         references=(source_handle,),
         limits=limits or Limits(),
@@ -81,7 +80,7 @@ def mandate_from_interpretation(
 ) -> ParameterChangeMandate:
     """Mandatet ur en godkänd tolkning (`RunResult.output` med schemat InterpretationProposal).
 
-    Betrodd kod anropar detta efter grind 1. Tolkningen ska föreslå minst en parameterändring;
+    Betrodd kod anropar detta efter operatörens godkännande. Tolkningen ska föreslå minst en parameterändring;
     `index` väljer vilken när den föreslår flera.
     """
     if output.get("schema") not in ("InterpretationProposal", "CompanyInterpretation"):
@@ -99,7 +98,7 @@ def mandate_from_interpretation(
 def request_for_impact(
     mandate: ParameterChangeMandate, *, task_id: str | None = None, limits: Limits | None = None, **links: Any
 ) -> RunRequest:
-    """Steg 2: aktuarien tar fram beståndsinsikten för den godkända ändringen."""
+    """Aktuarien tar fram beståndsinsikten för den godkända ändringen."""
     return RunRequest(
         task_id=task_id or f"task-insikt-{uuid.uuid4().hex[:8]}",
         target_team="aktuarie",
@@ -109,7 +108,7 @@ def request_for_impact(
             "de värdena, förklara vem som berörs, när och hur mycket, och skriv ett rapportutkast."
         ),
         constraints=IMPACT_CONSTRAINTS,
-        expected_output="Beståndsinsikt med antaganden och rapportutkast för operatörens beslut i grind 2",
+        expected_output="Beståndsinsikt med antaganden och rapportutkast för operatörens beslut",
         result_schema="PortfolioImpactResult",
         references=(mandate.ref,),
         parameter_change_ref=mandate.ref,
