@@ -77,6 +77,20 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | web | [set_operator_password.py](../scripts/web/set_operator_password.py) | Operatören sätter själv en lokal lösenfras för bolagsfrågor (OC-3a H–I) | Dold interaktiv inmatning; skriver operatörs-id och Argon2id-hash till `.env`, bevarar övrig konfiguration. Ingen databas, AI eller utskrift av lösenfras/hash; se [operatörsinloggning](operator_inloggning.md) |
 | web | [start_ui.py](../scripts/web/start_ui.py) | Starta handläggar-UI:t på 127.0.0.1 | `--db demo` (standard) skapar en lokal SQLite med demobestånd; `--db svc_test` ett eget schema i den isolerade testdatabasen; `--db lakebase` läser och skriver beståndet via tjänstelagret |
 
+## Körskript för operativa perioder (2026-11-14)
+
+Körningar av en verklig period i Lakebase versioneras i `scripts/simulation/<period>/`. Skripten är
+körprotokoll: de visar exakt vad som kördes och kan köras om för kontroll med bara läsning, men
+skrivande skript körs inte om. Utdata, simulerade filer och facit skrivs till huvudkatalogens
+`logs/simulation/`, som är gitignorerad, även när skriptet körs från en worktree (`common.py`).
+
+| Skript i `scripts/simulation/period_2026_10/` | Syfte | Sidoeffekt/beroende |
+|---|---|---|
+| [intake_and_invoicing.py](../scripts/simulation/period_2026_10/intake_and_invoicing.py) | Paket A steg 8: filintag, godkännande och fakturering för period 2026-10 (B-046) | Skriver Lakebase; stoppar på annat datum än 2026-11-08, då det kördes |
+| [verify_intake_and_invoicing.py](../scripts/simulation/period_2026_10/verify_intake_and_invoicing.py) | Kontroll av §7-fallen efter intag och fakturering | Bara läsning; kontrollerar läget före bankdelen, så tre kontroller faller efter 2026-11-14 |
+| [bank_payments.py](../scripts/simulation/period_2026_10/bank_payments.py) | Bankdelen: delbetalning, dubbelbetalning och samma händelser i en andra fil (fall 12, 13, 15) | Bara läsning utan `--skarp`; `--skarp` skriver Lakebase. Kördes skarpt 2026-11-14 |
+| [verify_bank_payments.py](../scripts/simulation/period_2026_10/verify_bank_payments.py) | Kontroll av bankdelen och avstämningen | Bara läsning |
+
 ## Aktuariedialogens körverktyg, tillbyggnad 2026-11-02
 
 | Skript | Syfte och gräns |

@@ -67,7 +67,8 @@ kört i Lakebase. Detaljer finns i [designstoppet](projekt/01_ärendehantering/P
    `allocate_unmatched_payment`.
 3. Från 2026-12-09: förfallobevakningen (fall 17) för SvenskIndustries resterande 15 362,24 kr.
 
-Underlag: skripten för perioden och kontrollen, bankdelens körlogg och kontroll, de simulerade filerna och facit ligger i huvudkatalogens
+Underlag: körskripten för perioden och kontrollerna ligger i `scripts/simulation/period_2026_10/`
+([skriptkatalogen](02_system/skriptkatalog.md)). Körloggar, simulerade filer och facit ligger i huvudkatalogens
 `logs/simulation/paket-a-2026-10/`. Karl godkände 2026-11-08 att kolumnerna i `premium_transactions` utgår och
 att steg 7:s avvikelser står kvar.
 
