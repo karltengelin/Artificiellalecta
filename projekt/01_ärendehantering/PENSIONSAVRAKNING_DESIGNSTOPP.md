@@ -146,7 +146,7 @@ historik. Läget `terminated` används inte för nya avslut (PB10).
 - `create_premium_from_salary_report` väljer premiens mottagare bland ej startade
   delar. Finns flera, används vikterna i PR-015; finns ingen, blockeras premien med ärende.
 
-**Byggt i steg 1 (2026-11-14, ej infört i Lakebase):**
+**Byggt i steg 1 (2026-11-14, infört i Lakebase samma dag efter backup `backups/20261114T150341Z` och Karls OK):**
 tabellerna `payout_parts` och `payout_part_states` ([databasschema §7b](../../02_system/databasschema.md#7b-tabeller-payout_parts-och-payout_part_states--uttagsdelar-och-pensionsförloppet)),
 övergången, de anpassade läsarna och `set_policy_paid_up` ([tjänstelager §9.14](../../02_system/tjänstelager.md#914-uttagsdelar-och-tre-förlopp-paket-b-steg-1-b-047--vad-som-stöds-och-vad-som-blockeras));
 fall 38 är verifierat lokalt och migrationen mot isolerad Postgres. Mergat till main 2026-11-14 (`86c3d6e`). Avvikelser, godkända av Karl i chatten samma dag (”Approve, merge it”):
@@ -155,8 +155,9 @@ fall 38 är verifierat lokalt och migrationen mot isolerad Postgres. Mergat till
   utan nytt ärende – ett ärende för det fallet hör till steg 4, när start finns.
 - *Rekonstruktionsärendet* har den nya ärendetypen `payout_reconstruction`, skapad av
   systemaktören; villkoret `ck_cases_type` vidgas av migrationen.
-- *Agentrollernas läsningar:* rollerna saknar rätt på de nya tabellerna (§12). Översikten och
-  produktrapportens bestånd redovisar därför pensionsförloppet som ej läst med en agents roll.
+- *Agentrollernas läsningar:* en roll utan rätt på de nya tabellerna redovisar pensionsförloppet
+  som ej läst i översikten och produktrapportens bestånd. `agent_forsakring` och `agent_aktuarie`
+  får SELECT enligt **B-048**, som också loggar ärendetypen `payout_reconstruction`.
 - *Övergången stoppar* vid `terminated`, uttagslägen som inte ligger sist eller har glapp och
   fler än en ålderspensionsförmån per försäkring, i stället för att gissa.
 - *David Dahls premieförlopp* blir fribrev från 2024-05-01, dagen efter registrerat
@@ -480,7 +481,7 @@ Inget i detta designstopp skriver till Lakebase. När ett steg är verifierat lo
    kohorten (B-035 val K) eller ett märkt testfall införs bara efter eget beslut, eftersom
    det också ändrar S-04 och FTA-underlaget.
 
-Agentrollerna får inga rättigheter på de nya tabellerna i första versionen.
+Agentrollerna får inga rättigheter på de nya tabellerna i första versionen. Undantag: uttagsdelarna i steg 1, där `agent_forsakring` och `agent_aktuarie` får SELECT (B-048).
 
 ### Föreslagen byggordning (PB13)
 
@@ -489,7 +490,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | Steg | Innehåll | Fall |
 |---|---|---|
 | 0 | Karl tar ställning till PB1–PB13. *Klart 2026-11-14: alla godkända* | – |
-| 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up`. *Byggt 2026-11-14 (§4), ej infört i Lakebase* | 38 |
+| 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up`. *Byggt och infört i Lakebase 2026-11-14 (§4): 499 delar nr 1, inga uttag att flytta; agentrollernas läsrätt enligt B-048* | 38 |
 | 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`) | 36, 37 |
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase** | 13, 15–17 |
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning | 1–12 |

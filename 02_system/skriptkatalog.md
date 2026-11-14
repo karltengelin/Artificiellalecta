@@ -94,6 +94,11 @@ skrivande skript körs inte om. Utdata, simulerade filer och facit skrivs till h
 | [salary_file_cases.py](../scripts/simulation/period_2026_10/salary_file_cases.py) | CASE-000009–000010: kompletterande fil, tilläggsfaktura och stängning | `--db demo` är ett generalprov i SQLite; utan flagga bara läsning i Lakebase; `--skarp` skriver. Kördes skarpt 2026-11-14 |
 | [verify_salary_file_cases.py](../scripts/simulation/period_2026_10/verify_salary_file_cases.py) | Kontroll av ärendena, den sena premien och avstämningen | Bara läsning |
 
+| Skript i `scripts/simulation/paket_b_steg1/` | Syfte | Sidoeffekt/beroende |
+|---|---|---|
+| [preflight.py](../scripts/simulation/paket_b_steg1/preflight.py) | Förkontroll före uttagsdelarnas migration: andra klientanslutningar, tabellerna, gamla uttagslägen och agentrollernas rättigheter (AGENTS.md §4.5) | Bara läsning (`READ ONLY`). Kördes 2026-11-14 före migrationen |
+| [verify.py](../scripts/simulation/paket_b_steg1/verify.py) | Kontroll efter migrationen mot backupens manifest; `--grants` prövar agentrollernas egna anslutningar (B-048) | Bara läsning; rollproven rullas tillbaka och anropar inga operationer, så inga loggrader skrivs |
+
 ## Aktuariedialogens körverktyg, tillbyggnad 2026-11-02
 
 | Skript | Syfte och gräns |
