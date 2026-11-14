@@ -24,13 +24,19 @@ from services import (
 
 # --- etiketter ---------------------------------------------------------------------------------
 
+#: Premieförloppet (policy_states, P1-PENSION-001 §4)
 POLICY_STATES = {
     "premium_paying": "Premiebetalande",
     "paid_up": "Fribrev",
-    "in_payout": "Utbetalning pågår",
-    "payout_paused": "Utbetalning pausad",
-    "terminated": "Avslutad",
 }
+#: Uttagsdelens pensionsförlopp (payout_part_states)
+PAYOUT_STATES = {
+    "not_started": "Ej startad",
+    "in_payout": "Utbetalning pågår",
+    "paused": "Utbetalning pausad",
+    "ended": "Avslutad",
+}
+END_REASONS = {"final_settlement": "slutavräknad", "death": "dödsfall"}
 PERSON_STATUS = {
     "active": "Aktiv",
     "terminated": "Anställningen avslutad",
@@ -46,7 +52,8 @@ APPROVAL_STATUS = {"pending": "Väntar", "approved": "Godkänd", "rejected": "Av
 ACTOR_TYPES = {"human": "Handläggare", "agent": "Agent", "system": "Skript"}
 OPERATION_KINDS = {"read": "Läsning", "compute": "Beräkning", "write": "Ändring", "external": "Extern"}
 CASE_TYPES = {"salary_report": "Löneunderlag", "salary_file_deviation": "Avvikelse i lönefil",
-              "payment_overdue": "Förfallen faktura", "payment_unmatched": "Oallokerad inbetalning"}
+              "payment_overdue": "Förfallen faktura", "payment_unmatched": "Oallokerad inbetalning",
+              "payout_reconstruction": "Rekonstruktion av uttag"}
 CASE_STATUS = {
     "open": "Öppet", "in_progress": "Pågår", "waiting_approval": "Väntar på godkännande",
     "waiting_info": "Väntar på komplettering", "closed": "Stängt",
@@ -76,6 +83,8 @@ RUN_STATUS = {
 
 LABELS = {
     "policy_state": POLICY_STATES,
+    "payout_state": PAYOUT_STATES,
+    "end_reason": END_REASONS,
     "person_status": PERSON_STATUS,
     "transaction_type": TRANSACTION_TYPES,
     "transaction_status": TRANSACTION_STATUS,

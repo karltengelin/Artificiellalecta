@@ -37,6 +37,10 @@ def case_form(**overrides):
     return {**data, **overrides}
 
 
+#: Demodatabasen har ett rekonstruktionsärende för David Dahls uttag (paket B steg 1, CASE-000001)
+DEMO_CASES = 1
+
+
 def cases_in_db(web) -> int:
     with web.session_factory() as s:
         return s.scalar(select(func.count()).select_from(Case))
@@ -71,7 +75,8 @@ class TestListaOchRegistrering:
     def test_meny_och_tom_lista(self, web):
         page = web.client.get("/arenden")
         assert page.status_code == 200
-        assert 'href="/arenden"' in page.text and "Inga ärenden i urvalet" in page.text
+        assert 'href="/arenden"' in page.text and "CASE-000001" in page.text
+        assert "Inga ärenden i urvalet" in web.client.get("/arenden?status=stangda").text
 
     def test_formularet_fylls_i_fran_den_forsakrade(self, web):
         page = web.client.get(f"/arenden/ny?pnr={ANNA}")
@@ -79,7 +84,7 @@ class TestListaOchRegistrering:
 
     def test_registrera_och_visa(self, web):
         number = create(web)
-        assert number == "CASE-000001"
+        assert number == "CASE-000002"
         page = web.client.get(f"/arenden/{number}")
         assert "Anna Andersson" in page.text and "47" in page.text and "LON-2026-10-ANNA" in page.text
         assert "Öppet" in page.text
@@ -90,11 +95,11 @@ class TestListaOchRegistrering:
         response = post(web, "/arenden", case_form(pensionable_salary_sek=""))
         assert response.status_code == 422
         assert "Ingenting har ändrats" in response.text or "ingenting" in response.text.lower()
-        assert cases_in_db(web) == 0
+        assert cases_in_db(web) == DEMO_CASES
 
     def test_formulartoken_kravs(self, web):
         assert post(web, "/arenden", case_form(), csrf=False).status_code == 403
-        assert cases_in_db(web) == 0
+        assert cases_in_db(web) == DEMO_CASES
 
 
 class TestAgenten:

@@ -13,7 +13,11 @@ påverkar åldern vid månadens första dag, aktuariell_grund.md §2).
   skattebelastning ur `product_parameters` (`services.parameters.capital_rates`). Premien tillförs vid
   mottagningsmånadens slut. Kapital före 2023 finns inte i beståndet och räknas inte.
 - **Ej beräknat:** försäkringar med påbörjat uttag (PR-009) eller negativ premierad (rättelse
-  enligt PR-019) listas med orsak och ingår inte i kollektivet.
+  enligt PR-019) listas med orsak och ingår inte i kollektivet. Sedan paket B steg 1
+  (P1-PENSION-001 §4) läses uttaget på uttagsdelarna: en del i utbetalning, en pausad del
+  eller enbart avslutade delar vid värderingsdagen ger samma orsaker som de tidigare lägena
+  `in_payout`, `payout_paused` och `terminated` på försäkringen. `state` i utdraget är
+  premieförloppets läge; för försäkringar utan startade delar blir utdraget oförändrat.
 
 Kontrollerna i §5.3 körs alltid; ett utdrag med en underkänd kontroll har `approved = False` och
 får inte värderas. Utdragets kontrollsumma är SHA-256 av dess kanoniska JSON, så samma bestånd,
@@ -46,6 +50,7 @@ from models import (
 from services import parameters
 from services import valuation_bases as vb
 from services.errors import ServiceError
+from services.payout_parts import parts_by_policy, summary_state
 from skills.calculation import actuarial_annuity as aa
 from skills.calculation.capital_rollforward import Month, RollforwardError, close_month
 
@@ -56,6 +61,8 @@ GUARANTEE_FAMILIES = ("SIM-HIST", "SIM-G")
 RETURN_FAMILY = "AVK-SIM"
 PREMIUM_TYPES = ("premium", "adjustment")
 CALCULATED_STATES = ("premium_paying", "paid_up")
+#: Uttagsdelarnas pensionsförlopp vid värderingsdagen → orsak i NOT_CALCULATED
+PAYOUT_REASONS = {"in_payout": "in_payout", "paused": "payout_paused", "ended": "terminated"}
 NOT_CALCULATED = {
     "in_payout": "Påbörjat uttag: pensionsbelopp och utbetalt kapital enligt PR-009 rekonstrueras inte i S-04",
     "payout_paused": "Pausat uttag: pensionsbelopp och utbetalt kapital enligt PR-009 rekonstrueras inte i S-04",
@@ -245,6 +252,8 @@ def build_extract(session: Session, valuation_date: date) -> ValuationExtract:
             .order_by(PremiumTransaction.paid_date, PremiumTransaction.id)):
         premiums[policy_id].append((str(tx_id), period, paid_date.replace(day=1), amount))
 
+    payout_parts = parts_by_policy(session, [policy_id for policy_id, _ in policies], on=valuation_date)
+
     problems: dict[str, list[str]] = defaultdict(list)
     calculated, not_calculated, parts_of, outside = {}, [], {}, 0
     for policy_id, pnr in policies:
@@ -255,6 +264,9 @@ def build_extract(session: Session, valuation_date: date) -> ValuationExtract:
         if born is None:
             problems["fullständiga uppgifter"].append(f"{key}: födelsedatum saknas")
             continue
+        payout = PAYOUT_REASONS.get(summary_state(payout_parts.get(policy_id, [])))
+        if payout is not None:  # uttag på någon del: premieförloppets läge avgör inte
+            found = [payout]
         if len(found) != 1:
             problems["fullständiga uppgifter"].append(f"{key}: {'inget läge' if not found else 'motstridiga lägen'}")
             continue

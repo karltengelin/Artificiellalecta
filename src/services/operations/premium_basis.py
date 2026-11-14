@@ -3,7 +3,8 @@
 Ordinarie premie beräknas en gång per person, arbetsgivare och månad ur den gällande
 versionen av löneunderlaget, med premiemånadens IBB och produktparametrar och utan
 premie utanför åldersfönstret (PR-ITP1-001, -013, -014). Premien går till personens
-enda ännu inte startade ålderspensionsförmån (PR-ITP1-015). Den sparas som en
+enda ännu inte startade uttagsdel (PR-ITP1-015, -025; paket B steg 1, P1-PENSION-001 §4):
+en del vars pensionsförlopp är `not_started` hela månaden. Den sparas som en
 `premium`-rad i `premium_transactions` med status `pending` – en kommande fordran,
 inte kapital. Noll premie sparas som underlag men ger ingen fakturarad.
 
@@ -18,7 +19,8 @@ Blockeras (manuell prövning):
 - premieperiod före 2026-10 – startluckan juli–september 2026 och den genererade
   historiken (PA1)
 - avliden försäkrad (PR-ITP1-010)
-- ingen eller flera möjliga mottagare – fördelningsinstruktion saknas (PR-ITP1-015)
+- ingen ej startad uttagsdel (alla delar startade eller avslutade – ny försäkring enligt PR-ITP1-025
+  är ett senare steg), eller flera – fördelningsinstruktion eller primär mottagare saknas (PR-ITP1-015)
 - månad med premie som inte bygger på registrerat löneunderlag, eller med justeringar
   utan länk
 - rättelse som skulle minska redan mottagen premie – återtag ingår inte (PR-ITP1-019 p.3)
@@ -33,18 +35,17 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 
-from models import BaseAmount, Employer, Policy, PolicyBenefit, PolicyState, PremiumTransaction, SalaryReport
+from models import BaseAmount, Employer, PayoutPart, Policy, PolicyBenefit, PremiumTransaction, SalaryReport
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import BlockedError, ConflictError, NotFoundError
 from services.operations import common
 from services.parameters import premium_parameters
+from services.payout_parts import receiving_parts
 from skills.calculation.calculate_itp1_premium import calculate_itp1_premium
 
 RULES = ["PR-ITP1-001", "PR-ITP1-013", "PR-ITP1-014", "PR-ITP1-015", "PR-ITP1-019"]
 #: Första operativa premieperiod enligt B-046 (PA1)
 FIRST_OPERATIVE_PERIOD = date(2026, 10, 1)
-#: Lägen där premiedelen har startat och inte längre tar emot ny premie (PR-ITP1-015)
-STARTED_STATES = ("in_payout", "payout_paused")
 RULE_PACKAGE = "PR-ITP1 v1.0"
 DESIGN_REF = "P1-PREMIE-001 §4.3"
 
@@ -71,6 +72,7 @@ class PremiumBasisResult(BaseModel):
     pensionable_salary_sek: Decimal
     income_base_amount_sek: Decimal
     in_age_window: bool
+    payout_part_number: int = Field(description="Uttagsdelen som tar emot premien (ej startad, PR-ITP1-015)")
     transaction_id: str | None = Field(description="Den nya raden; saknas när premien är oförändrad")
     transaction_type: str | None
     amount_sek: Decimal = Field(description="Den nya radens belopp (+ fordran, − kredit); 0 när oförändrad")
@@ -125,7 +127,7 @@ def create_premium_from_salary_report(ctx: OperationContext, data: PremiumBasisI
     if base is None:
         raise NotFoundError(f"Inkomstbasbelopp saknas för {month.year} (tabellen base_amounts)")
     ibb = Decimal(base.income_base_amount_sek)
-    benefit, policy = _recipient(session, person, month)
+    benefit, policy, part = _recipient(session, person, month)
 
     calc = calculate_itp1_premium(
         report.pensionable_salary_sek, ibb, birth_date=common.birth_date(person.personal_id_number),
@@ -139,7 +141,7 @@ def create_premium_from_salary_report(ctx: OperationContext, data: PremiumBasisI
     common_fields = dict(
         period_month=month, policy_number=policy.policy_number, salary_report_id=str(report.id),
         salary_report_version=report.version, pensionable_salary_sek=report.pensionable_salary_sek,
-        income_base_amount_sek=ibb, in_age_window=bool(calc.in_age_window),
+        income_base_amount_sek=ibb, in_age_window=bool(calc.in_age_window), payout_part_number=part.part_number,
     )
 
     if not month_rows:
@@ -149,7 +151,8 @@ def create_premium_from_salary_report(ctx: OperationContext, data: PremiumBasisI
             status="pending",
             calculation_basis={
                 **calc.calculation_basis, "salary_report": report_ref, "employer_org_number": employer.org_number,
-                "rule_package": RULE_PACKAGE, "design": DESIGN_REF, "recipient": "enda ej startade förmån, vikt 1",
+                "rule_package": RULE_PACKAGE, "design": DESIGN_REF, "recipient": "enda ej startade uttagsdel, vikt 1",
+                "payout_part": part.part_number,
             },
         )
         session.add(row)
@@ -209,8 +212,8 @@ def create_premium_from_salary_report(ctx: OperationContext, data: PremiumBasisI
     )
 
 
-def _recipient(session, person, month: date) -> tuple[PolicyBenefit, Policy]:
-    """PR-ITP1-015: personens enda ålderspensionsförmån som ännu inte har startat utbetalning."""
+def _recipient(session, person, month: date) -> tuple[PolicyBenefit, Policy, PayoutPart]:
+    """PR-ITP1-015: personens enda uttagsdel som inte har startat utbetalning under månaden."""
     month_end = month.replace(day=28) + timedelta(days=4)
     month_end = month_end - timedelta(days=month_end.day)
     candidates = session.execute(
@@ -223,26 +226,17 @@ def _recipient(session, person, month: date) -> tuple[PolicyBenefit, Policy]:
             (PolicyBenefit.end_date.is_(None)) | (PolicyBenefit.end_date >= month),
         )
     ).all()
-    eligible = []
-    for benefit, policy in candidates:
-        started = session.scalar(
-            select(PolicyState.id).where(
-                PolicyState.policy_id == policy.id,
-                PolicyState.state.in_(STARTED_STATES),
-                PolicyState.valid_from <= month_end,
-                (PolicyState.valid_to.is_(None)) | (PolicyState.valid_to >= month),
-            ).limit(1)
-        )
-        if started is None:
-            eligible.append((benefit, policy))
+    parts = receiving_parts(session, [b.id for b, _ in candidates], month, month_end)
+    eligible = [(benefit, policy, part) for benefit, policy in candidates for part in parts.get(benefit.id, [])]
     if not eligible:
         raise BlockedError(
-            f"Ingen ålderspensionsförmån kan ta emot premie för {month:%Y-%m} – utbetalning har startat eller "
-            "förmån saknas (PR-ITP1-015, -025). Manuell prövning"
+            f"Ingen ej startad uttagsdel kan ta emot premie för {month:%Y-%m} – utbetalning har startat, delen är "
+            "avslutad eller förmån saknas. Ny försäkring för premien (PR-ITP1-025) är ett senare steg; "
+            "manuell prövning (PR-ITP1-015)"
         )
     if len(eligible) > 1:
         raise BlockedError(
-            f"{len(eligible)} förmåner kan ta emot premie för {month:%Y-%m}. Fördelning kräver en "
+            f"{len(eligible)} ej startade uttagsdelar kan ta emot premie för {month:%Y-%m}. Fördelning kräver en "
             "fördelningsinstruktion eller uttrycklig primär mottagare (PR-ITP1-015) – stöds inte ännu"
         )
     return eligible[0]

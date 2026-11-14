@@ -3,9 +3,10 @@
 För varje försäkrad med ITP1-startdatum (som inte slutade före ITP1-start):
   1. Försäkring i `policies` (produktkod ITP1, tecknad = ikraftträdande)
   2. Förmån `retirement_dc` i `policy_benefits`
-  3. Lägeshistorik i `policy_states`:
+  3. Premieförloppet i `policy_states`:
        - `premium_paying` från start; öppen om personen är aktiv
        - annars stängd vid anställningens slut, följd av öppet `paid_up` (fribrev)
+     och uttagsdel 1 i `payout_parts` med läget `not_started` (paket B steg 1, B-047)
   4. En `premium`-transaktion per kalendermånad på förmånen, från
      max(ITP1-start, anställningsstart, HISTORY_START) t.o.m. HISTORY_END,
      begränsad av anställningens slut och åldersfönstret 25–66.
@@ -34,9 +35,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from sqlalchemy import select  # noqa: E402
+from sqlalchemy import select
 
-from models import (  # noqa: E402
+from models import (
     BaseAmount,
     InsuredPerson,
     Policy,
@@ -44,10 +45,11 @@ from models import (  # noqa: E402
     PolicyState,
     PremiumTransaction,
 )
-from skills.calculation.calculate_itp1_premium import (  # noqa: E402
+from services.payout_parts import create_initial_part
+from skills.calculation.calculate_itp1_premium import (
     calculate_itp1_premium,
 )
-from utils.db import make_engine, session_scope  # noqa: E402
+from utils.db import make_engine, session_scope
 
 #: Historikfönster. Start styrs av basbeloppshistoriken (base_amounts fr. 2023).
 HISTORY_START = date(2023, 1, 1)
@@ -209,6 +211,7 @@ def main() -> None:
                     session.add(benefit)
                     session.add_all(states)
                     session.flush()  # ger policy.id och benefit.id
+                    create_initial_part(session, benefit)
                 n_new_policies += 1
 
             if person.monthly_salary_sek is None:

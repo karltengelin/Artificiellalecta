@@ -55,6 +55,7 @@
     <dt>Premieperiod stängd</dt><dd>{{ r.closed_period.state | label('policy_state') }} {{ r.closed_period.valid_from | iso_date }} – {{ r.closed_period.valid_to | iso_date }}</dd>
     <dt>Ny period</dt><dd>{{ r.new_period.state | label('policy_state') }} från {{ r.new_period.valid_from | iso_date }}</dd>
     <dt>Personens status</dt><dd>{{ r.person_status_before | label('person_status') }} → {{ r.person_status_after | label('person_status') }}</dd>
+    <dt>Uttagsdelar (oförändrade)</dt><dd>{% for d in r.payout_parts %}del {{ d.part_number }} {{ d.state | label('payout_state') if d.state else "läge saknas" }}{% if not loop.last %}, {% endif %}{% else %}inga{% endfor %}</dd>
   </dl>
   <p><a href="/forsakringar/{{ r.policy_number }}">Till översikten</a></p>
 

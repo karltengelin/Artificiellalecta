@@ -16,7 +16,7 @@ from fastapi.responses import RedirectResponse, Response
 
 from services import ServiceError
 from web.handler import read, render, render_error
-from web.presenters import POLICY_STATES, ErrorView, clean_month
+from web.presenters import PAYOUT_STATES, POLICY_STATES, ErrorView, clean_month
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -66,10 +66,12 @@ def search(request: Request, q: str = ""):
 @router.get("/forsakrade")
 def insured_list(
     request: Request, q: str = "", employer_org_number: str = "", policy_state: str = "",
-    page: int = 1, page_size: int = 25,
+    payout_state: str = "", page: int = 1, page_size: int = 25,
 ):
-    filters = {"q": q, "employer_org_number": employer_org_number, "policy_state": policy_state, "page_size": page_size}
-    context = {"filters": filters, "states": {**POLICY_STATES, "no_policy": "Utan försäkring"}}
+    filters = {"q": q, "employer_org_number": employer_org_number, "policy_state": policy_state,
+               "payout_state": payout_state, "page_size": page_size}
+    context = {"filters": filters, "states": {**POLICY_STATES, "no_policy": "Utan försäkring"},
+               "payout_states": PAYOUT_STATES}
     try:
         result = read(request, "list_insured_persons", {**filters, "page": page})
         employers = read(request, "list_employers", {"status": None})

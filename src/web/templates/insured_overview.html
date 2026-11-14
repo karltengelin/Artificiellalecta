@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% macro payout_parts(parts) %}{% if parts is none %}<span class="muted small">Uttagsdelar ej lästa</span>{% else %}{% for d in parts %}
+          <div class="small">Del {{ d.part_number }}: {% if d.state %}<span class="state state--{{ d.state }}">{{ d.state | label('payout_state') }}</span>{% if d.end_reason %} ({{ d.end_reason | label('end_reason') }}){% endif %} <span class="muted">från {{ d.valid_from | iso_date }}</span>{% else %}<span class="muted">läge saknas</span>{% endif %}</div>
+          {% else %}<span class="muted small">Ingen uttagsdel</span>{% endfor %}{% endif %}{% endmacro %}
 {% block title %}{{ o.first_name }} {{ o.last_name }}{% endblock %}
 {% block content %}
 {% include "partials/insured_header.html" %}
@@ -15,7 +18,7 @@
   {% if o.policies %}
   <table class="table">
     <thead>
-      <tr><th>Försäkring</th><th>Produkt</th><th>Tecknad</th><th>Läge</th><th>Förmåner</th><th class="num">Kapital</th><th></th></tr>
+      <tr><th>Försäkring</th><th>Produkt</th><th>Tecknad</th><th>Premieförlopp</th><th>Uttagsdelar</th><th>Förmåner</th><th class="num">Kapital</th><th></th></tr>
     </thead>
     <tbody>
       {% for p in o.policies %}
@@ -27,8 +30,9 @@
           {% if p.current_state %}
           <span class="state state--{{ p.current_state.state }}">{{ p.current_state.state | label('policy_state') }}</span>
           <span class="muted small">från {{ p.current_state.valid_from | iso_date }}</span>
-          {% else %}<span class="muted">Inget pågående läge</span>{% endif %}
+          {% else %}<span class="muted">Inget pågående premieläge</span>{% endif %}
         </td>
+        <td>{{ payout_parts(p.payout_parts) }}</td>
         <td>
           {% for b in p.benefits %}
           {{ b.benefit_type | label('benefit_type') }} <span class="muted small">{{ b.start_date | iso_date }}{% if b.end_date %}–{{ b.end_date | iso_date }}{% endif %}</span>{% if not loop.last %}<br>{% endif %}

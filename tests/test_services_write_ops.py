@@ -19,7 +19,7 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
 from models import (
@@ -27,6 +27,8 @@ from models import (
     Employer,
     InsuredPerson,
     OperationEventRecord,
+    PayoutPart,
+    PayoutPartState,
     Policy,
     PolicyBenefit,
     PolicyState,
@@ -49,6 +51,16 @@ from services import (
 from services.operations import common
 from services.rules import default_rules_dir
 from skills.calculation.calculate_itp1_premium import calculate_itp1_premium
+from tests.conftest import add_retirement_benefit, start_payout
+
+
+def part_states(db, policy_id) -> list[tuple]:
+    """Uttagsdelarnas hela tidslinje för försäkringen."""
+    with db.session_factory() as s:
+        found = s.execute(select(PayoutPartState.state, PayoutPartState.valid_from, PayoutPartState.valid_to)
+                          .join(PayoutPart).join(PolicyBenefit).where(PolicyBenefit.policy_id == policy_id)
+                          .order_by(PayoutPart.part_number, PayoutPartState.valid_from)).all()
+    return [tuple(r) for r in found]
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
 
@@ -94,8 +106,7 @@ def seed_active(insurance_db):
                         signed_date=date(2020, 1, 1), start_date=date(2020, 1, 1))
         s.add(policy)
         s.flush()
-        benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2020, 1, 1))
-        s.add(benefit)
+        benefit = add_retirement_benefit(s, policy.id, date(2020, 1, 1))
         s.add(PolicyState(policy_id=policy.id, state="premium_paying", valid_from=date(2020, 1, 1)))
         s.flush()
         rows = {}
@@ -383,18 +394,37 @@ class TestFribrev:
             )
         self.assert_unchanged(db)
 
-    def test_pension_startad_blockeras_och_uttagslaget_rors_inte(self, db):
-        with db.session_factory() as s:
-            state = s.scalar(select(PolicyState).where(PolicyState.policy_id == db.active_policy))
-            state.valid_to = date(2026, 5, 31)
-            s.flush()
+    @pytest.mark.parametrize("payout", ["in_payout", "paused"])
+    def test_fall_38_fribrev_under_pagaende_eller_pausad_pension(self, db, payout):
+        """P1-PENSION-001 fall 38: premieförloppet stängs, uttagsdelens pension fortsätter oförändrad."""
+        start_payout(db, db.active_policy, date(2026, 6, 1), state=payout)
+        parts_before = part_states(db, db.active_policy)
+        out = make_service(db).execute(
+            "set_policy_paid_up", HUMAN, {"policy_number": "AL-000002", "employment_end_date": "2026-09-30"}
+        ).output
+        assert (out.closed_period.state, out.new_period.state, out.paid_up_from) == (
+            "premium_paying", "paid_up", date(2026, 10, 1))
+        assert [(p.part_number, p.state, p.valid_from) for p in out.payout_parts] == [(1, payout, date(2026, 6, 1))]
+        assert part_states(db, db.active_policy) == parts_before
+        assert [(st, f, t) for st, f, t in parts_before] == [
+            ("not_started", date(2020, 1, 1), date(2026, 5, 31)), (payout, date(2026, 6, 1), None)]
+        overview = make_service(db).execute("get_insured_overview", HUMAN, {"personal_id_number": ACTIVE}).output
+        (policy,) = overview.policies
+        assert policy.current_state.state == "paid_up"
+        assert [(d.part_number, d.state) for d in policy.payout_parts] == [(1, payout)]
+
+    def test_gammalt_uttagslage_i_premieforloppet_blockeras(self, db):
+        with db.session_factory() as s:  # en databas där övergången inte körts (villkoret kringgås i testet)
+            s.execute(text("UPDATE policy_states SET valid_to = '2026-05-31' WHERE policy_id = :p"),
+                      {"p": db.active_policy.hex})
+            s.execute(text("PRAGMA ignore_check_constraints = ON"))
             s.add(PolicyState(policy_id=db.active_policy, state="in_payout", valid_from=date(2026, 6, 1)))
-        with pytest.raises(BlockedError, match="uttag"):
+            s.commit()
+            s.execute(text("PRAGMA ignore_check_constraints = OFF"))
+        with pytest.raises(BlockedError, match="övergången till uttagsdelar"):
             make_service(db).execute(
                 "set_policy_paid_up", HUMAN, {"policy_number": "AL-000002", "employment_end_date": "2026-09-30"}
             )
-        open_state = rows(db, PolicyState, PolicyState.policy_id == db.active_policy, PolicyState.valid_to.is_(None))
-        assert [s.state for s in open_state] == ["in_payout"]
 
     def test_annat_registrerat_slutdatum_ar_en_konflikt(self, db):
         with db.session_factory() as s:
@@ -571,8 +601,7 @@ class TestPremierattelse:
                            signed_date=date(2024, 1, 1), start_date=date(2024, 1, 1))
             s.add(other)
             s.flush()
-            benefit = PolicyBenefit(policy_id=other.id, benefit_type="retirement_dc", start_date=date(2024, 1, 1))
-            s.add(benefit)
+            benefit = add_retirement_benefit(s, other.id, date(2024, 1, 1))
             s.flush()
             amount, basis = premium("45000", "83400", date(2026, 6, 1))
             s.add(PremiumTransaction(benefit_id=benefit.id, period_month=date(2026, 6, 1), transaction_type="premium",

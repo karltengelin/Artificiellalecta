@@ -1,7 +1,8 @@
 """Anslutning av en ny anställd (Fas 4 S5, PR-ITP1-012/013, villkor §2–3).
 
 Skapar i en transaktion den försäkrade, en försäkring (nästa `AL-NNNNNN`),
-förmånen ålderspension och läget `premium_paying` från den dokumenterade
+förmånen ålderspension med uttagsdel 1 i läget `not_started` (paket B steg 1,
+P1-PENSION-001 §4) och premieförloppets läge `premium_paying` från den dokumenterade
 ITP1-tillhörigheten. Försäkringens `signed_date` och `start_date` är
 tillhörighetsdagen (databasen kräver start ≥ tecknad, så registreringsdagen kan
 inte vara tecknad vid retroaktiv anslutning – den står i händelseloggen).
@@ -37,6 +38,7 @@ from services.contract import OperationContext, OperationKind, operation
 from services.errors import BlockedError, ConflictError, NotFoundError
 from services.operations import common
 from services.parameters import premium_parameters
+from services.payout_parts import create_initial_part
 
 EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 PHONE_PATTERN = r"^\+?[0-9 ()-]{6,30}$"
@@ -195,7 +197,10 @@ def enroll_insured_person(ctx: OperationContext, data: EnrollmentInput) -> Enrol
     )
     session.add(policy)
     session.flush()
-    session.add(PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=data.itp1_start_date))
+    benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=data.itp1_start_date)
+    session.add(benefit)
+    session.flush()
+    create_initial_part(session, benefit, note="Uttagsdel 1 vid anslutningen, ej startad (P1-PENSION-001 §4)")
     session.add(
         PolicyState(
             policy_id=policy.id, state="premium_paying", valid_from=data.itp1_start_date,

@@ -17,7 +17,6 @@ from models import (
     Employer,
     InsuredPerson,
     Policy,
-    PolicyBenefit,
     PolicyState,
     PremiumTransaction,
     SalaryFile,
@@ -34,6 +33,7 @@ from services import (
 )
 from services.operations import common
 from services.operations.salary_files import file_checksum
+from tests.conftest import add_retirement_benefit
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
 
@@ -69,7 +69,7 @@ def _person(s, employer, pnr, policy_number, end=None):
                     signed_date=date(2020, 1, 1), start_date=date(2020, 1, 1))
     s.add(policy)
     s.flush()
-    s.add(PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2020, 1, 1)))
+    add_retirement_benefit(s, policy.id, date(2020, 1, 1))
     s.add(PolicyState(policy_id=policy.id, state="premium_paying", valid_from=date(2020, 1, 1), valid_to=end))
     if end:
         s.flush()
@@ -297,7 +297,7 @@ class TestAnstallning:
                            signed_date=date(2026, 1, 1), start_date=date(2026, 1, 1))
             s.add(extra)
             s.flush()
-            s.add(PolicyBenefit(policy_id=extra.id, benefit_type="retirement_dc", start_date=date(2026, 1, 1)))
+            add_retirement_benefit(s, extra.id, date(2026, 1, 1))
             s.commit()
         view = import_file(db, full_october())
         active = view.rows[0]

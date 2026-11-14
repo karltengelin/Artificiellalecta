@@ -8,10 +8,16 @@
   <h2>Avanmälan och fribrev{% if policy %} – {{ policy.policy_number }}{% endif %}</h2>
   {% include "partials/error_box.html" %}
   {% if policy %}
-  <p>Nuvarande läge:
+  <p>Premieförloppet i dag:
     {% if policy.current_state %}<span class="state state--{{ policy.current_state.state }}">{{ policy.current_state.state | label('policy_state') }}</span>
     från {{ policy.current_state.valid_from | iso_date }}{% else %}inget pågående läge{% endif %}.
   </p>
+  {% if policy.payout_parts %}
+  <p>Uttagsdelarna i dag:
+    {% for d in policy.payout_parts %}del {{ d.part_number }} {{ d.state | label('payout_state') if d.state else "läge saknas" }}{% if not loop.last %}, {% endif %}{% endfor %}.
+    Fribrevet stänger bara premieförloppet; en pågående eller pausad pension fortsätter oförändrad.
+  </p>
+  {% endif %}
   {% if policy.current_state and policy.current_state.state != "premium_paying" %}
   <div class="alert alert--info"><p class="alert__message">Fribrev registreras bara från premiebetalande läge. Tjänstelagret prövar ändå anropet och visar skälet om det stoppas.</p></div>
   {% endif %}

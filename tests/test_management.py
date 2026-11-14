@@ -11,11 +11,12 @@ from sqlalchemy import create_engine, select
 
 from management.metrics import DEFINITIONS, observation
 from management.telemetry import read_telemetry
-from models import Base, InsuredPerson, Policy, PolicyBenefit, PremiumTransaction
+from models import Base, InsuredPerson, Policy, PremiumTransaction
 from services import Actor, MemoryEventLog, OperationContext, ServiceLayer
 from services.db import session_factory_for
 from services.errors import InvalidInputError
 from services.operations import common
+from tests.conftest import add_retirement_benefit
 from utils.demo_data import create_demo_database
 
 TODAY = date(2026, 10, 27)
@@ -34,8 +35,7 @@ def company(insurance_db, monkeypatch):
             policy = Policy(policy_number=f"AL-{i + 20:06d}", insured_person_id=person.id,
                             signed_date=date(2020, 1, 1), start_date=date(2020, 1, 1))
             s.add(policy); s.flush()
-            benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2020, 1, 1))
-            s.add(benefit); s.flush()
+            benefit = add_retirement_benefit(s, policy.id, date(2020, 1, 1))
             s.add(PremiumTransaction(benefit_id=benefit.id, period_month=date(2025, 11, 1),
                                      amount_sek=Decimal(100), status="paid", paid_date=date(2025, 11, 3)))
         s.add(PremiumTransaction(benefit_id=insurance_db.ids.benefit, period_month=date(2025, 11, 1),

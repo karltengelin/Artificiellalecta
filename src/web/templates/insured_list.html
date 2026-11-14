@@ -21,11 +21,20 @@
     </select>
   </div>
   <div>
-    <label for="policy_state">Nuvarande försäkringsläge</label>
+    <label for="policy_state">Premieförlopp i dag</label>
     <select id="policy_state" name="policy_state">
       <option value="">Alla lägen</option>
       {% for value, text in states.items() %}
       <option value="{{ value }}"{% if value == filters.policy_state %} selected{% endif %}>{{ text }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="payout_state">Uttagsdel i dag</label>
+    <select id="payout_state" name="payout_state">
+      <option value="">Alla lägen</option>
+      {% for value, text in payout_states.items() %}
+      <option value="{{ value }}"{% if value == filters.payout_state %} selected{% endif %}>{{ text }}</option>
       {% endfor %}
     </select>
   </div>
@@ -42,13 +51,13 @@
     <a href="/forsakrade/ny">Anslut ny försäkrad</a>
   </div>
 </form>
-<p class="muted small">Namnsökning söker på alla angivna namndelar, oavsett ordning. Försäkringsläge matchar minst en av personens försäkringar. Alla personens försäkringar visas.</p>
+<p class="muted small">Namnsökning söker på alla angivna namndelar, oavsett ordning. Premieförlopp matchar minst en av personens försäkringar och uttagsdel minst en av deras uttagsdelar. Alla personens försäkringar visas.</p>
 <p role="status"><strong>{{ result.total|number }} {{ "träff" if result.total == 1 else "träffar" }}</strong> av {{ result.total_in_database|number }} försäkrade.</p>
 {% if result.persons %}
 <div class="table-wrap">
 <table class="table">
   <caption>Försäkrade i valt urval</caption>
-  <thead><tr><th scope="col">Namn och personnummer</th><th scope="col">Arbetsgivare</th><th scope="col">Försäkringar och nuvarande läge</th></tr></thead>
+  <thead><tr><th scope="col">Namn och personnummer</th><th scope="col">Arbetsgivare</th><th scope="col">Försäkringar: premieförlopp och uttag</th></tr></thead>
   <tbody>
   {% for person in result.persons %}
   <tr>
@@ -56,7 +65,7 @@
       <div>{{ person.personal_id_number|pnr }}</div><div class="muted small">{{ person.status|label("person_status") }}</div></td>
     <td>{{ person.employer.name }}<div class="muted small">{{ person.employer.org_number }}</div></td>
     <td>{% for policy in person.policies %}
-      <div><a href="/forsakringar/{{ policy.policy_number }}">{{ policy.policy_number }}</a> · {{ policy.current_state|label("policy_state") if policy.current_state else "Läge saknas" }}</div>
+      <div><a href="/forsakringar/{{ policy.policy_number }}">{{ policy.policy_number }}</a> · {{ policy.current_state|label("policy_state") if policy.current_state else "Premieläge saknas" }}{% if policy.payout_state %} · uttag: {{ policy.payout_state|label("payout_state") }}{% endif %}</div>
       {% else %}<span class="muted">Ingen försäkring</span>{% endfor %}</td>
   </tr>
   {% endfor %}

@@ -20,6 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 if TYPE_CHECKING:
+    from .payout_part import PayoutPart
     from .policy import Policy
     from .premium_transaction import PremiumTransaction
 
@@ -69,8 +70,13 @@ class PolicyBenefit(Base):
         JSON().with_variant(JSONB(), "postgresql"), nullable=True  # JSONB i Lakebase, JSON i tester
     )
 
-    policy: Mapped["Policy"] = relationship(back_populates="benefits")
-    premium_transactions: Mapped[list["PremiumTransaction"]] = relationship(
+    policy: Mapped[Policy] = relationship(back_populates="benefits")
+    #: Uttagsdelarna (paket B steg 1, B-047): minst del 1 för en ålderspensionsförmån
+    payout_parts: Mapped[list[PayoutPart]] = relationship(
+        back_populates="benefit",
+        order_by="PayoutPart.part_number",
+    )
+    premium_transactions: Mapped[list[PremiumTransaction]] = relationship(
         back_populates="benefit",
         order_by="PremiumTransaction.period_month",
     )

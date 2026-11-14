@@ -49,7 +49,12 @@ from services.events import (
     default_event_log,
 )
 from services.rules import ProductRuleCatalog
-from services.transaction import SessionFactory, guard_operation, transaction
+from services.transaction import (
+    DB_ROLE_KEY,
+    SessionFactory,
+    guard_operation,
+    transaction,
+)
 
 
 class ResultStatus(StrEnum):
@@ -167,6 +172,8 @@ class ServiceLayer:
             raise ApprovalError("Operationen kan inte läggas som förslag med nuvarande aktör och mandat")
 
         with transaction(self._session_factory) as tx:
+            if self.agent_role and tx.session is not None:
+                tx.session.info[DB_ROLE_KEY] = self.agent_role  # läsningar som rollen saknar rätt till hoppas över
             output = self._call(op, ctx, validated, tx.session)
             if op.kind.changes_state or op.pii:
                 # Ett nyskapat ärende har sitt nummer först i resultatet (create_case)
