@@ -2,8 +2,7 @@
 
 Rättigheterna i `utils.agent_roles.COMPLIANCE` ska räcka för parameterläsningen och
 förhandsberäkningen, med loggrad för nekade försök, och inget mer: ingen individdata,
-inga förslag i kön och inga ändringar. Aktiveringsförslaget i parameterflödet läggs
-av motorn med den betrodda anslutningen, aldrig med teamets roll.
+inga förslag i kön och inga ändringar. Aktiveringsförslaget läggs via den betrodda anslutningen.
 
 Rollen `agent_compliance` skapas av operatören. Finns SERVICES_TEST_COMPLIANCE_POSTGRES_URL
 provas den; annars ges samma rättigheter till rollen i SERVICES_TEST_AGENT_POSTGRES_URL,
@@ -29,7 +28,14 @@ from agents import (
 )
 from agents.gateways import DraftGateway, RegulatoryGateway
 from models import OperationEventRecord
-from services import Actor, OperationContext, ProductRuleCatalog, ServiceLayer, default_registry
+from models.flow import ArchiveBase
+from services import (
+    Actor,
+    OperationContext,
+    ProductRuleCatalog,
+    ServiceLayer,
+    default_registry,
+)
 from services.db import session_factory_for
 from services.operations import common
 from tests.flow_helpers import SOURCE, flow_client
@@ -70,6 +76,8 @@ def db():
             pytest.fail(f"Testrollens anslutning får inte vara {env} (beståndet)")
     with isolated_schema() as schema:
         create_demo_database(schema.engine, with_proposals=False)
+        # Äldre databaser har kvar historiken. Agentrollen ska sakna åtkomst.
+        ArchiveBase.metadata.create_all(schema.engine)
         agent_engine = create_engine(COMPLIANCE_URL, connect_args={"options": f"-csearch_path={schema.name}"})
         with agent_engine.connect() as conn:
             login = conn.exec_driver_sql("SELECT current_user").scalar_one()

@@ -1,4 +1,4 @@
-"""Beståndsöversikt och premieflöden för produktrapporten (A2, B-042).
+"""Aggregerad beståndsöversikt och betalmarkerade premier (A2, B-042).
 
 `get_portfolio_snapshot` och `get_premium_flows` läser individrader i betrodd kod och lämnar
 bara aggregat: inga personnummer, namn, födelsedatum eller löner. Celler med 1–9 försäkringar
@@ -10,8 +10,7 @@ kompletterat med uttagsdelarnas pensionsförlopp: en försäkring med en del i u
 som `in_payout`, med en pausad del som `payout_paused` och med alla delar avslutade som
 `terminated`. Rollen `agent_aktuarie` läser uttagsdelarna (B-048); med en roll utan rätten
 räknas försäkringarna efter premieförloppet och de tre pensionscellerna redovisas som ej lästa.
-Monterade i podden `bestand`; produktrapporten (`agents/flows/definitions/product_report.py`)
-visar talen i avsnitt 2 och 3.
+Båda läsoperationerna ingår i podden `bestand`.
 """
 
 from __future__ import annotations

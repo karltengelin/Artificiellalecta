@@ -1,5 +1,8 @@
 # Regeländringsflöde – tekniskt nuläge och framtida visningsscenario
 
+> **Historisk beskrivning.** De fasta bolagsuppdragen har avvecklats. Se
+> [Fråga bolaget och uppdragsarkivet](bolagsorkestrator_pilot.md) för aktuella ingångar.
+
 > **Historiskt beslut:** Underlaget godkändes av operatören 2026-10-25 med valen A–L i §9 och loggades som **B-035**. Den ursprungliga byggplanen finns i §11. Fortsatt arbete följer **B-037**; aktuellt tekniskt nuläge anges nedan.
 > **Datum:** 2026-10-25, på `main` `fe4be6a` (Fas 5 F5-1–F5-4 klar, F5-5 halvklar, Digital klarhet i handläggar-UI:t).
 > **Underlag:** MASTER_CONTEXT §1 (flaggskeppsscenariot); `02_system/agentekosystem.md` §5.4, §6.2 och §12; `02_system/harness.md` §4.2–4.3, §5.1–5.2, §9.2–9.3 och §10; `02_system/Agentsystem/regelförändringsflöde.md`; `04_regulatoriskt/03_bevakning/kallandringar.md`; PR-ITP1-001, -013, -016 och -032; `01_domän/parametrar/PARAMETERREGISTER.md`; `src/skills/calculation/calculate_itp1_premium.py`; `src/analytics/premium_impact.py`.

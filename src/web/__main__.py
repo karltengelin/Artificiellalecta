@@ -25,10 +25,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Handläggar-UI:t (Fas 4)")
     parser.add_argument("--db", choices=list(DATABASES), help="Databas (överstyr HANDLAGGARE_DB, standard demo)")
     parser.add_argument("--port", type=int, help="Port (Lakebase 8765, test 8766, demo 8767)")
-    parser.add_argument("--company-questions", action="store_true", help="Anslut OC-3a med konfigurerad AI-klient och aktuarieteam")
-    parser.add_argument("--actuary-workspace", action="store_true", help="Anslut aktuariens teamyta och rapporter med konfigurerad AI-klient")
-    parser.add_argument("--rule-change-flows", action="store_true",
-                        help="Anslut regeländringsflöden i demo med konfigurerad AI-klient och operatörsinloggning")
+    parser.add_argument("--actuary-workspace", action="store_true", help="Anslut aktuariedialogen med konfigurerad AI-klient")
+    parser.add_argument("--company-orchestrator", action="store_true",
+                        help="Öppna bolagspiloten i demo med konfigurerad AI-klient och operatörsinloggning")
     parser.add_argument("--report-font-dir", type=Path, default=Path("tmp/pdfs/fonts"), help="Lokala statiska DM Sans-filer för A4-export")
     parser.add_argument(
         "--reset-demo", action="store_true",
@@ -39,36 +38,33 @@ def main() -> None:
     settings = WebSettings.from_env()
     if args.db:
         settings = replace(settings, database=args.db)
-    rule_flow_ai = None
-    if args.rule_change_flows:
+    company_ai = None
+    if args.company_orchestrator:
         if settings.database != "demo" or settings.operator_password_hash is None:
-            parser.error("--rule-change-flows kräver demo och konfigurerad operatörsinloggning")
+            parser.error("--company-orchestrator kräver demo och konfigurerad operatörsinloggning")
         from ai import AIClient
 
-        rule_flow_ai = AIClient()
+        company_ai = AIClient()
     port = args.port if args.port is not None else DEFAULT_PORTS[settings.database]
     if args.reset_demo:
         if settings.database != "demo":
             parser.error("--reset-demo gäller bara demodatabasen")
         settings.demo_path.unlink(missing_ok=True)
         DemoDelivery(settings.demo_path).path.unlink(missing_ok=True)
-    if args.company_questions or args.actuary_workspace:
+    if args.actuary_workspace:
+        from agents.actuarial_dialogue import ActuarialDialogue
         from ai import AIClient
-        from reporting import render_report
         from reporting.template import register_dm_sans
-        from web.database import build_actuary_services
+        from web.database import build_actuary_service, build_services
 
         register_dm_sans(args.report_font_dir)
-        service, agent, questions, reports = build_actuary_services(settings, ai=AIClient(), renderer=render_report)
-        from agents.actuarial_dialogue import ActuarialDialogue
-
-        dialogue = ActuarialDialogue(service, questions.engine.runtime.service, questions.engine.runtime.ai,
+        service, agent = build_services(settings)
+        dialogue = ActuarialDialogue(service, build_actuary_service(settings, service), AIClient(),
                                      environment_id=settings.database, dataset_ref=settings.dataset_ref)
         app = create_app(service=service, settings=settings, case_agent=agent,
-                         question_console=questions, product_report_console=reports,
-                         actuarial_dialogue_console=dialogue, rule_flow_ai=rule_flow_ai)
+                         actuarial_dialogue_console=dialogue, company_ai=company_ai)
     else:
-        app = create_app(settings=settings, rule_flow_ai=rule_flow_ai)
+        app = create_app(settings=settings, company_ai=company_ai)
     print(f"Handläggar-UI: http://{HOST}:{port}  ·  {settings.database_label}  ·  handläggare {settings.handler_id}", flush=True)
     uvicorn.run(app, host=HOST, port=port, access_log=False, proxy_headers=False)
 

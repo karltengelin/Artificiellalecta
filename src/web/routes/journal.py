@@ -39,7 +39,13 @@ def decision_context(request, form, approval_id):
     console = getattr(request.app.state, "case_workspace", None)
     work_id = console.work_for_approval(approval_id) if console else None
     session = current_session(request)
-    if work_id or (session and form.get("csrf_token") == session.csrf_token):
+    pilot_proposal = False
+    if getattr(request.app.state, "company_missions", None) is not None:
+        from agents.company_decisions import is_pilot_activation
+
+        proposal = service(request).approvals.get(approval_id)
+        pilot_proposal = proposal is not None and is_pilot_activation(proposal.operation, proposal.input)
+    if work_id or pilot_proposal or (session and form.get("csrf_token") == session.csrf_token):
         actor = operator_action(request, dict(form))
         return replace(handler_ctx(request), actor=actor), work_id
     check_csrf(request, form)
