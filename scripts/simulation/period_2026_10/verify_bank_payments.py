@@ -1,4 +1,8 @@
-"""Skrivskyddad kontroll av bankdelen för period 2026-10 i Lakebase (paket A steg 8, fall 12, 13 och 15)."""
+"""Skrivskyddad kontroll av bankdelen för period 2026-10 i Lakebase (paket A steg 8, fall 12, 13 och 15).
+
+Gav 18 av 18 2026-11-14. Kontrollen av öppna fordringar räknar med läget före INV-000003 (den sena premien från
+`salary_file_cases.py`), så den faller efter det. Ärendena kontrolleras med `verify_salary_file_cases.py`.
+"""
 from __future__ import annotations
 
 import argparse
