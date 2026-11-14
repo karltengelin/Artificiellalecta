@@ -726,8 +726,11 @@ Se [villkor och spårbarhet](arendedialog_och_automation.md#granskningspolicy-oc
 **Tillägg 2026-11-03:** [avstämd syntetisk FTA-månad](avstamd_fta_manad.md)
 har fem tjänsteoperationer för fryst underlag, mottagning, stängning, läsning
 och mänsklig analysgranskning. APPROVAL gäller mottagningen; ingen ny
-handläggaragentmontering. A6 och arbetsbänken återanvänds. Tabellerna är inte
-införda i Lakebase; separat samordnat OK krävs före databasskrivning.
+handläggaragentmontering. A6 och arbetsbänken återanvänds. De tre
+journaltabellerna infördes tomma i Lakebase 2026-11-03 efter separat OK och
+backup `backups/20261103T212124Z`
+([databasschema](databasschema.md), [Lakebase-gränsen](avstamd_fta_manad.md#tabeller-och-lakebase-gräns));
+varje ny databasskrivning kräver fortfarande separat samordnat OK.
 
 - **B-017** – människa som fullständig operatör (samma operationer och samma spår för människor och agenter)
 - **B-020** – handläggar-UI före kundportal, backend för två klienter
