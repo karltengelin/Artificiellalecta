@@ -33,6 +33,7 @@ from models import ValuationBasis
 from services import parameters
 from services import valuation_bases as vb
 from services.errors import ServiceError
+from services.ledger_extract import build_ledger_extract
 from services.valuation_extract import (
     ExtractError,
     ValuationExtract,
@@ -49,12 +50,16 @@ CODE_FILES = (
     "skills/calculation/capital_rollforward.py",
     "skills/calculation/fta_valuation.py",
     "services/valuation_extract.py",
+    "services/capital_ledger.py",
+    "services/ledger_extract.py",
     "services/valuation.py",
 )
+Source = Literal["reconstructed_s04", "ledger"]
 SOURCE_NOTE = {
     "reconstructed_s04": "Rekonstruerat startbestånd S-04 (B-042 val L): garantidelar och kapital räknade ur "
                          "premiehistoriken. Ersätts när paket B finns och får inte lämnas som FI-underlag utan märkningen.",
-    "ledger": "Journalförda underlag; ursprungets rekonstruerade och syntetiska märkning följer journalmanifestet. "
+    "ledger": "Den operativa kapital- och garantijournalen (paket B, B-047). Ingående läge är S-04 per 2026-10-31, "
+              "märkt reconstructed_s04 per garantidel och spår; nya premier kommer ur paket A:s allokeringar. "
               "Ingen tillgångssida eller huvudbok intygas av märkningen.",
 }
 QUANTITIES = {
@@ -170,8 +175,12 @@ def policy_inputs(extract: ValuationExtract) -> list[fv.PolicyInput]:
 
 def compute_valuation(session: Session, valuation_date: date, purpose: Purpose = "base", *,
                       basis_code: str | None = None, curve_code: str | None = None,
-                      extract: ValuationExtract | None = None) -> Computation:
-    """Bygger utdraget och värderar beståndet. Sparar ingenting."""
+                      extract: ValuationExtract | None = None, source: Source = "reconstructed_s04") -> Computation:
+    """Bygger utdraget och värderar beståndet. Sparar ingenting.
+
+    `source` väljer utdragets källa: S-04 rekonstruerat ur premiehistoriken (standard) eller den
+    operativa journalen (`ledger`, paket B steg 2), som bara har stängda lägen.
+    """
     if valuation_date != month_end(valuation_date):
         raise ValuationError("Värderingsdatumet ska vara ett månadsslut")
     if purpose == "base" and not is_quarter_end(valuation_date):
@@ -180,7 +189,9 @@ def compute_valuation(session: Session, valuation_date: date, purpose: Purpose =
     curve = _basis(session, basis.assumptions["curve_family"], valuation_date, purpose, curve_code)
     s_y, tax_label = _tax(session, valuation_date, basis.assumptions["tax"])
     try:
-        if extract is None:
+        if extract is None and source == "ledger":
+            extract = build_ledger_extract(session, valuation_date)
+        elif extract is None:
             extract = build_extract(session, valuation_date)
         elif (purpose != "scenario" or extract.valuation_date != valuation_date
               or extract.checksum != extract_checksum(extract) or extract.not_calculated):
@@ -214,5 +225,6 @@ def compute_valuation(session: Session, valuation_date: date, purpose: Purpose =
         segments=fv.by_segment(values, cohort_of), checks=checks, result_checksum=vb.checksum(payload))
 
 
-__all__ = ["CODE_FILES", "QUANTITIES", "SOURCE_NOTE", "BasisRef", "Check", "Computation", "ValuationError", "code_version",
+__all__ = ["CODE_FILES", "QUANTITIES", "SOURCE_NOTE", "BasisRef", "Check", "Computation", "Source", "ValuationError",
+           "code_version",
            "compute_valuation", "is_quarter_end", "policy_inputs"]

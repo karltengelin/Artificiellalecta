@@ -91,6 +91,10 @@ kollektivets ören bevaras. Ett kapitalspår kan bli noll utan att G försvinner
 Journalen och dess mottagningar är källa efter stoppunkten. De läggs aldrig
 ovanpå en andra S-04-rekonstruktion av samma premier. `ledger` betyder här
 journalfört underlag med bevarad ursprungsmärkning, inte verifierad huvudbok.
+Det är inte den operativa kapital- och garantijournalen i paket B (B-047,
+[databasschema §7c](databasschema.md#7c-tabeller-ledger_batches-ledger_guarantee_parts-ledger_capital_entries-och-ledger_controls--kapital--och-garantijournalen)).
+När journalens ingående läge finns läser exporten och öppningen IB ur den i stället
+för ur S-04 (tjänstelager §9.15), och scenariot skriver aldrig tillbaka.
 
 ## Arbetsbänk, rapport och granskning
 

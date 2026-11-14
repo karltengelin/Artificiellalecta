@@ -255,6 +255,25 @@ och värderingar som aldrig låses. Paket B ändrar inte det. Två regler förhi
 Paket A:s överlämning (`export_premium_month`, PA7) får därmed en operativ mottagare.
 Kontraktet `ReceiptInput` och allokeringsprovet i ören återanvänds oförändrade.
 
+**Byggt i steg 2 (2026-11-14, mergat till main efter Karls OK; ej infört i Lakebase):**
+- **Var det finns:** journalens fyra tabeller ([databasschema §7c](../../02_system/databasschema.md#7c-tabeller-ledger_batches-ledger_guarantee_parts-ledger_capital_entries-och-ledger_controls--kapital--och-garantijournalen)), övergången från S-04, A6-källan `ledger` och paket A som premiekälla ([tjänstelager §9.15](../../02_system/tjänstelager.md#915-kapital--och-garantijournalen-paket-b-steg-2-b-047--vad-som-stöds-och-vad-som-blockeras)).
+- **Verifierat:** fall 36 och 37 lokalt, och migrationen och övergången mot isolerad Postgres.
+- **På en återställd kopia av Lakebase-backupen `backups/20261114T150341Z`:**
+  - S-04 har hashen `023946…3fefa`;
+  - journalen bevarar 492 försäkringar och 15 097 garantidelar med C 42 087 223,57 kr och G 119 195,6502916268 kr/mån, exakt per försäkring;
+  - A6 ger samma FTA, VÅ och U ur båda källorna;
+  - november 2026 ger 51 623,90 kr, varav SvenskIndustries 15 362,24 kr, utan avstämningskontots 36 261,66 kr.
+
+Avvikelser, godkända av Karl i chatten 2026-11-14 (”Godkänn avvikelserna”):
+- *Ingående saldo:* en IB-post per kapitalspår med den nya orsaken `opening` (vald av Karl 2026-11-14). §6.1:s orsakslista hade inget ingående saldo.
+- *Fall 37 i steg 2:* premiekällan och dess kontroll är byggda (`preview_ledger_premiums`), men bokningen vid månadsslut sker i månadsstängningen i steg 3 (vald av Karl 2026-11-14). Fall 37 är därmed verifierat som källa och belopp; tillförseln provas igen i steg 3.
+- *Övergången är ett eget ingrepp,* operationen `open_capital_ledger` (`HUMAN_ONLY`), efter migrationen. Det följer §12 punkt 2–3.
+- *Det ingående lägets S-04-utdrag sparas* i `valuation_extracts`, och verifikationen pekar på det. Ledger-utdraget stämmer sitt kapital mot det.
+- *Ej överförda:* en försäkring med startad uttagsdel förs inte över och redovisas, som i S-04. I Lakebase finns inga.
+- *Verifikationens slag* är bara `opening_s04`. Steg 3 vidgar villkoret med stängning och rättelse. Kontona och orsakerna i §6.1 finns redan i villkoren.
+- *A6:s standardkälla* förblir S-04. `ledger` gäller bara datum journalen täcker, i steg 2 bara 2026-10-31.
+- *P6-MANAD-001:* när det ingående läget finns blir IB:s kontrollsumma ledger-utdragets, och ursprungsspåren läses ur journalen. Ett paket som redan frysts mot S-04:s hash kräver då ny export. Scenariots egen stängning märker fortfarande sitt UB `ledger`; det är en namnlikhet, inte den operativa journalen.
+
 ## 7. Månadsstängningen (PB5)
 
 ### 7.1 Ordning
@@ -491,7 +510,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 |---|---|---|
 | 0 | Karl tar ställning till PB1–PB13. *Klart 2026-11-14: alla godkända* | – |
 | 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up`. *Byggt och infört i Lakebase 2026-11-14 (§4): 499 delar nr 1, inga uttag att flytta; agentrollernas läsrätt enligt B-048* | 38 |
-| 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`) | 36, 37 |
+| 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`). *Byggt 2026-11-14 (§6), verifierat lokalt, mot `svc_test` och på en kopia av Lakebase-backupen; ej infört i Lakebase* | 36, 37 |
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase** | 13, 15–17 |
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd | 14, 35 |

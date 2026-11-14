@@ -1,6 +1,9 @@
 """Skrivskyddad förberedelse av novemberförsöket. Inga nya grunder antas här.
 
 `opening` och `assemble` används också av överlämningen från paket A (`premium_month_export`).
+Sedan paket B steg 2 läser försöket den operativa kapital- och garantijournalen som IB när
+övergången från S-04 är gjord (P1-PENSION-001 §6.3): scenariot utgår från journalen och skriver
+aldrig tillbaka till den. Utan journal används S-04 som förut.
 """
 
 from datetime import date
@@ -18,7 +21,7 @@ from models import (
     ProductParameter,
     ValuationBasis,
 )
-from services import parameters
+from services import capital_ledger, parameters
 from services import valuation_bases as vb
 from services.premium_month_inputs import (
     BasisSnapshot,
@@ -51,9 +54,13 @@ def snapshot_parameters(session) -> list[dict]:
 
 
 def opening(session):
-    """IB per oktober 2026: värdering av S-04-utdraget. Gemensam för syntetiskt underlag och paket A."""
+    """IB per oktober 2026: värdering av journalen (`ledger`) när den är öppnad, annars av S-04-utdraget.
+
+    Gemensam för syntetiskt underlag och paket A.
+    """
+    source = "ledger" if capital_ledger.opening_batch(session) is not None else "reconstructed_s04"
     c = compute_valuation(session, OPENING_DATE, "scenario", basis_code="SIM-V-2026-01",
-                          curve_code="FI-SIM-2026-10")
+                          curve_code="FI-SIM-2026-10", source=source)
     if not c.checks_passed:
         raise ValueError("IB:s värderingskontroller är underkända")
     return c
