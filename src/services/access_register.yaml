@@ -71,7 +71,7 @@ operations:
   # Skrivningar (Fas 1f T3). PR-ITP1 v1.0 är infört (B-031) men gäller först från 2026-11-01;
   # till dess ger regelgolvet HUMAN_ONLY för agenter oavsett nivån här – se 02_system/tjänstelager_operationer.md.
   register_salary_report: APPROVAL       # löneunderlag per månad, ny rapport eller rättelse (PR-ITP1-014)
-  set_policy_paid_up: APPROVAL           # avanmälan + fribrev, ej startad pension (PR-ITP1-013)
+  set_policy_paid_up: APPROVAL           # avanmälan + fribrev, även under pågående pension (PR-ITP1-013, fall 38)
   create_premium_from_salary_report: HUMAN_ONLY  # premieunderlag ur löneunderlag; nya skrivoperationer i paket A är HUMAN_ONLY (B-046)
   import_salary_file: HUMAN_ONLY      # löneunderlagsfil tas emot och valideras, registrerar inget (B-046)
   approve_salary_file: HUMAN_ONLY     # hashbundet godkännande: löneunderlag, premieunderlag och avvikelseärenden (B-046)

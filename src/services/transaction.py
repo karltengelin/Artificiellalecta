@@ -34,6 +34,10 @@ class Transaction:
         self._undo.append(undo)
 
 
+#: Nyckel i `session.info` för den begränsade databasroll sessionen ansluter som (sätts av ServiceLayer)
+DB_ROLE_KEY = "agent_role"
+
+
 @contextmanager
 def transaction(session_factory: SessionFactory | None) -> Iterator[Transaction]:
     """En transaktion: commit om blocket lyckas, annars rollback av allt."""

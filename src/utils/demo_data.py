@@ -13,7 +13,14 @@ Demobeståndet (personnummer är fiktiva men Luhn-giltiga):
 | 198505151236   | Anna Andersson   | aktiv, premiebetalande AL-000001               |
 | 197203034561   | Bertil Berg      | aktiv, lön över 7,5 IBB, premiebetalande AL-000002 |
 | 199001017897   | Cecilia Carlsson | anställningen slutade 2025-12-31, fribrev AL-000003 |
-| 195904202461   | David Dahl       | pensionerad, utbetalning pågår AL-000004       |
+| 195904202461   | David Dahl       | pensionerad, fribrev AL-000004 med uttagsdel 1 i utbetalning sedan 2024-05 |
+
+Varje ålderspensionsförmån har uttagsdel 1 (paket B steg 1, B-047). David Dahls uttag
+fanns i den tidigare modellen som läget `in_payout` på försäkringen, utan plan,
+garantidelar eller månadsrätter. Det ligger nu på uttagsdelen, premieförloppet är
+fribrev från dagen efter anställningens slut, och ett rekonstruktionsärende
+(`payout_reconstruction`) ligger hos handläggaren – samma utfall som övergången
+(`services/payout_transition.py`) ger en befintlig demofil. Ingen historik konstrueras.
 
 Därtill en **äldre kohort** för flaggskeppsdemon (B-035 val K): 31 aktiva,
 premiebetalande försäkrade födda 1959–1962 (`OLDER_COHORT`, AL-000005 och framåt), så
@@ -45,6 +52,8 @@ from models import (
     BaseAmount,
     Employer,
     InsuredPerson,
+    PayoutPart,
+    PayoutPartState,
     Policy,
     PolicyBenefit,
     PolicyState,
@@ -54,6 +63,8 @@ from services import Actor, OperationContext, ProductRuleCatalog, ServiceError, 
 from services.db import session_factory_for
 from services.operations.common import luhn_valid
 from services.parameters import add_missing_defaults as add_missing_parameters
+from services.payout_parts import create_initial_part
+from services.payout_transition import MovedPayout, apply_transition, open_reconstruction_case, plan_transition
 from services.parameters import default_rows as default_parameter_rows
 from services.valuation_bases import add_missing_defaults as add_missing_bases
 from services.valuation_bases import default_rows as default_basis_rows
@@ -85,9 +96,18 @@ PERSONS = [
      (date(2025, 1, 1), date(2025, 12, 1)), date(2025, 12, 1)),
     ("195904202461", "David", "Dahl", "5560000002", date(2001, 9, 1), date(2024, 4, 30), "61000", "retired",
      date(2001, 9, 1),
-     [("premium_paying", date(2001, 9, 1), date(2024, 4, 30)), ("in_payout", date(2024, 5, 1), None)],
+     [("premium_paying", date(2001, 9, 1), date(2024, 4, 30)), ("paid_up", date(2024, 5, 1), None)],
      (date(2024, 1, 1), date(2024, 4, 1)), date(2024, 4, 1)),
 ]
+#: Pensionsförlopp som avviker från uttagsdel 1 `not_started` från förmånens start: personnummer →
+#: lägen (läge, från, till) och premieförloppet som det härleddes vid övergången (P1-PENSION-001 §4)
+PAYOUT_PARTS = {
+    "195904202461": (
+        [("not_started", date(2001, 9, 1), date(2024, 4, 30)), ("in_payout", date(2024, 5, 1), None)],
+        [("in_payout", date(2024, 5, 1), None)],
+        "fribrev från 2024-05-01, dagen efter registrerat anställningsslut 2024-04-30",
+    ),
+}
 
 #: Äldre kohort (B-035 val K): födelseår och antal. Födda 1961–1962 har födelsemånad
 #: februari–december, så att varje berört år 2027–2029 får minst 10 berörda vid 67 år.
@@ -165,7 +185,7 @@ def create_demo_database(
         )
     Base.metadata.create_all(engine)
     session_factory = session_factory_for(engine)
-    seed_demo_stock(session_factory, with_older_cohort=with_older_cohort, born_from=born_from)
+    seed_demo_stock(session_factory, with_older_cohort=with_older_cohort, born_from=born_from, today=today)
     if with_proposals:
         add_demo_proposals(session_factory, today=today)
 
@@ -173,17 +193,25 @@ def create_demo_database(
 def add_missing_demo_tables(engine: Engine) -> None:
     """Skapar tabeller som saknas i en befintlig demo- eller testdatabas (t.ex. `cases`, Fas 5).
 
-    Befintliga tabeller och rader rörs inte, och inget bestånd läggs till. Bara för
-    demo- och testdatabaserna – Lakebase-schemat ändras med migrationsskripten.
+    Befintliga tabeller rörs inte, och inget bestånd läggs till. Bara för demo- och
+    testdatabaserna – Lakebase-schemat ändras med migrationsskripten. En demofil från före
+    paket B steg 1 får uttagsdelarna genom samma övergång som migrationen
+    (`services/payout_transition.py`): del 1 per förmån och flyttade uttagslägen med
+    rekonstruktionsärende. Villkoret på `policy_states` byts inte i en befintlig SQLite-fil.
     """
     Base.metadata.create_all(engine)
     # Produktparametrarna (B-035) i en demo- eller testdatabas som skapades före 3c-P1
     with session_factory_for(engine)() as s:
         if add_missing_parameters(s) + add_missing_bases(s):  # antagandebiblioteket (A4, B-042)
             s.commit()
+    with session_factory_for(engine)() as s:
+        if not plan_transition(s).nothing_to_do:
+            apply_transition(s, date.today())
+            s.commit()
 
 
-def seed_demo_stock(session_factory, *, with_older_cohort: bool = True, born_from: int | None = None) -> None:
+def seed_demo_stock(session_factory, *, with_older_cohort: bool = True, born_from: int | None = None,
+                    today: date | None = None) -> None:
     with session_factory() as s:
         s.add_all(BaseAmount(year=y, income_base_amount_sek=Decimal(v)) for y, v in IBB.items())
         s.add_all(default_parameter_rows())
@@ -217,6 +245,7 @@ def seed_demo_stock(session_factory, *, with_older_cohort: bool = True, born_fro
             s.flush()
             for state, valid_from, valid_to in states:
                 s.add(PolicyState(policy_id=policy.id, state=state, valid_from=valid_from, valid_to=valid_to))
+            _add_payout_part(s, benefit, person, policy, today or date.today())
             _add_premiums(s, benefit.id, pnr, Decimal(salary), prem_from, prem_to, last_paid)
 
         if with_older_cohort:
@@ -248,7 +277,29 @@ def _add_older_cohort(s, employers: list[Employer], born_from: int | None = None
         s.add(benefit)
         s.flush()
         s.add(PolicyState(policy_id=policy.id, state="premium_paying", valid_from=itp1_from, valid_to=None))
+        create_initial_part(s, benefit)
         _add_premiums(s, benefit.id, person.personal_id_number, person.monthly_salary_sek, *COHORT_PREMIUMS)
+
+
+def _add_payout_part(s, benefit, person, policy, today: date) -> None:
+    """Uttagsdel 1; ett uttag från den tidigare modellen får sitt läge och ett rekonstruktionsärende."""
+    if person.personal_id_number not in PAYOUT_PARTS:
+        create_initial_part(s, benefit)
+        return
+    from services.operations.cases import _next_case_number
+
+    part_states, legacy_rows, premium_course = PAYOUT_PARTS[person.personal_id_number]
+    part = PayoutPart(benefit_id=benefit.id, part_number=1)
+    s.add(part)
+    s.flush()
+    for state, valid_from, valid_to in part_states:
+        s.add(PayoutPartState(payout_part_id=part.id, state=state, valid_from=valid_from, valid_to=valid_to,
+                              note="Demobestånd: uttag från modellen med ett läge per försäkring"))
+    s.flush()
+    entry = MovedPayout(policy_id=policy.id, policy_number=policy.policy_number, person_id=person.id,
+                        benefit_id=benefit.id, rows=legacy_rows, part_states=part_states,
+                        premium_course=premium_course, premium_action="paid_up")
+    open_reconstruction_case(s, entry, today, _next_case_number(s))
 
 
 def _add_premiums(s, benefit_id, pnr: str, salary_2026: Decimal, first: date, last: date, last_paid: date) -> None:

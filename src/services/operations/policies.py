@@ -5,17 +5,16 @@ registrerar arbetsgivarens avanmälan – anställningens sista dag – och sät
 försäkringen i fribrev från dagen efter, i samma transaktion. Lön under
 avslutsmånaden ingår utan dagproportionering (PR-ITP1-013).
 
-Befintlig modell: ett läge per försäkring i `policy_states`. Den kan inte
-uttrycka fribrev samtidigt med pågående eller pausad pension (fribrev är
-upphörd premie, inte ett pensionsläge – UTTAG_GEMENSAMT), så operationen gäller
-bara försäkringar vars pension inte har startat. Den ersätter aldrig
-`in_payout`/`payout_paused`.
+Sedan paket B steg 1 (B-047 punkt 2, P1-PENSION-001 §4) bär `policy_states` bara
+premieförloppet, och pensionsförloppet ligger per uttagsdel. Fribrev är upphörd premie,
+inte ett pensionsläge (UTTAG_GEMENSAMT), så operationen stänger premieförloppet även när
+en uttagsdel betalas ut eller är pausad. Uttagsdelarnas lägen rörs inte (fall 38); de
+redovisas oförändrade i resultatet.
 
-Blockeras (manuell prövning): uttagsläge i tidslinjen, framtida fribrevsdag
-(läsningen tolkar den öppna raden som dagens läge), fler premiebetalande
-försäkringar för personen, premie eller löneunderlag för månader efter
-slutdagen (slutlön/bonus prövas manuellt), avliden eller pensionerad person,
-och fribrev av andra skäl än avslutad anställning (t.ex. 66 år – frivillig
+Blockeras (manuell prövning): framtida fribrevsdag (läsningen tolkar den öppna raden som
+dagens läge), fler premiebetalande försäkringar för personen, premie eller löneunderlag
+för månader efter slutdagen (slutlön/bonus prövas manuellt), avliden eller pensionerad
+person, och fribrev av andra skäl än avslutad anställning (t.ex. 66 år – frivillig
 fortsättning enligt PR-ITP1-016 kan inte prövas i modellen).
 """
 
@@ -28,11 +27,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from models import InsuredPerson, Policy, PolicyState, PremiumTransaction, SalaryReport
+from models.policy_state import POLICY_STATES
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import BlockedError, ConflictError, NotFoundError
 from services.operations import common
-
-PAYOUT_STATES = ("in_payout", "payout_paused", "terminated")
+from services.payout_parts import parts_by_policy
 
 
 class PaidUpInput(BaseModel):
@@ -48,6 +47,12 @@ class StatePeriod(BaseModel):
     valid_to: date | None
 
 
+class PayoutPartState(BaseModel):
+    part_number: int
+    state: str | None
+    valid_from: date | None
+
+
 class PaidUpResult(BaseModel):
     policy_number: str
     employment_end_date: date
@@ -57,13 +62,17 @@ class PaidUpResult(BaseModel):
     employment_end_registered: bool = Field(description="Sant om anställningens slut registrerades nu")
     person_status_before: str
     person_status_after: str
+    payout_parts: list[PayoutPartState] = Field(
+        description="Uttagsdelarnas pensionsläge, oförändrat av fribrevet (P1-PENSION-001 §4, fall 38)"
+    )
 
 
 @operation(
     name="set_policy_paid_up",
     description=(
         "Registrerar anställningens slut (avanmälan) och sätter försäkringen i fribrev från dagen efter "
-        "(PR-ITP1-013). Bara premiebetalande försäkring vars pension inte har startat; ingen framtidsdatering."
+        "(PR-ITP1-013). Stänger premieförloppet även under pågående eller pausad pension; uttagsdelarna "
+        "rörs inte. Ingen framtidsdatering."
     ),
     kind=OperationKind.WRITE,
     rules=["PR-ITP1-013"],
@@ -89,10 +98,10 @@ def set_policy_paid_up(ctx: OperationContext, data: PaidUpInput) -> PaidUpResult
     if len(open_states) != 1:
         raise BlockedError("Försäkringens lägeshistorik har inget eller flera öppna lägen – manuell utredning")
     current = open_states[0]
-    if any(s.state in PAYOUT_STATES for s in states):
+    if any(s.state not in POLICY_STATES for s in states):
         raise BlockedError(
-            "Försäkringen har haft uttag eller är avslutad. Fribrev under uttag kräver att premieläget "
-            "skiljs från pensionsläget (UTTAG_GEMENSAMT) – stöds inte i nuvarande modell"
+            "Premieförloppet har ett läge från modellen med ett läge per försäkring – kör övergången till "
+            "uttagsdelar först (P1-PENSION-001 §4)"
         )
     if current.state == "paid_up":
         raise ConflictError(f"Försäkringen är redan fribrev från {current.valid_from}")
@@ -114,6 +123,7 @@ def set_policy_paid_up(ctx: OperationContext, data: PaidUpInput) -> PaidUpResult
         )
     _check_other_policies(session, person.id, policy.id)
     _check_nothing_after(session, person.id, end)
+    parts_before = _part_states(session, policy.id)
 
     closed = StatePeriod(state=current.state, valid_from=current.valid_from, valid_to=end)
     current.valid_to = end
@@ -131,6 +141,8 @@ def set_policy_paid_up(ctx: OperationContext, data: PaidUpInput) -> PaidUpResult
         person.status = "terminated"
     session.flush()
     _validate_timeline(_states(session, policy.id))
+    if _part_states(session, policy.id) != parts_before:  # premieförloppet får aldrig röra pensionen
+        raise BlockedError("Uttagsdelarnas läge ändrades av fribrevet – avbrutet")
 
     return PaidUpResult(
         policy_number=policy.policy_number,
@@ -141,7 +153,13 @@ def set_policy_paid_up(ctx: OperationContext, data: PaidUpInput) -> PaidUpResult
         employment_end_registered=registered,
         person_status_before=status_before,
         person_status_after=person.status,
+        payout_parts=parts_before,
     )
+
+
+def _part_states(session, policy_id) -> list[PayoutPartState]:
+    return [PayoutPartState(part_number=p.part_number, state=p.state, valid_from=p.valid_from)
+            for p in parts_by_policy(session, [policy_id])[policy_id]]
 
 
 def _states(session, policy_id) -> list[PolicyState]:

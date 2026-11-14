@@ -2,7 +2,8 @@
 
 `insurance_db` – en testdatabas i minnet (SQLite) med samma modeller som Lakebase
 (modellerna är portabla, se 02_system/databasschema.md) och ett litet bestånd:
-en försäkrad med en försäkring som gått från premiebetalande till fribrev.
+en försäkrad med en försäkring som gått från premiebetalande till fribrev, med
+uttagsdel 1 som inte har startat (paket B steg 1).
 
 `insurance_file_db` – samma bestånd i en SQLite-fil där varje session får en egen
 anslutning och varje transaktion börjar med BEGIN IMMEDIATE. Används för tester
@@ -14,7 +15,7 @@ tests/test_services_postgres.py.
 (src/utils/demo_data.py) i en SQLite-databas i minnet.
 """
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -34,8 +35,35 @@ from models import (
 )
 from services.db import session_factory_for
 from services.parameters import default_rows as default_parameter_rows
+from services.payout_parts import create_initial_part
 
 pytest_plugins = ["testing.pytest_plugin"]
+
+
+def add_retirement_benefit(s, policy_id, start: date) -> PolicyBenefit:
+    """Ålderspensionsförmån med uttagsdel 1 i läget `not_started` – som anslutningen skapar (paket B steg 1)."""
+    benefit = PolicyBenefit(policy_id=policy_id, benefit_type="retirement_dc", start_date=start)
+    s.add(benefit)
+    s.flush()
+    create_initial_part(s, benefit)
+    return benefit
+
+
+def start_payout(db, policy_id, start: date, state: str = "in_payout") -> None:
+    """Testhjälp: uttagsdel 1 på försäkringen går från `not_started` till `state` från dagen `start`."""
+    from sqlalchemy import select
+
+    from models import PayoutPart, PayoutPartState
+
+    with db.session_factory() as s:
+        part = s.scalar(select(PayoutPart).join(PolicyBenefit).where(PolicyBenefit.policy_id == policy_id,
+                                                                    PayoutPart.part_number == 1))
+        current = s.scalar(select(PayoutPartState).where(PayoutPartState.payout_part_id == part.id,
+                                                         PayoutPartState.valid_to.is_(None)))
+        current.valid_to = start - timedelta(days=1)
+        s.flush()
+        s.add(PayoutPartState(payout_part_id=part.id, state=state, valid_from=start))
+        s.commit()
 
 
 def seed_insurance(session_factory) -> SimpleNamespace:
@@ -75,6 +103,7 @@ def seed_insurance(session_factory) -> SimpleNamespace:
         benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2015, 1, 1))
         s.add(benefit)
         s.flush()
+        create_initial_part(s, benefit)  # uttagsdel 1, ej startad (paket B steg 1)
         s.add_all(
             [
                 PolicyState(policy_id=policy.id, state="premium_paying",

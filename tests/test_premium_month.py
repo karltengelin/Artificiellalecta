@@ -13,7 +13,6 @@ from models import (
     Employer,
     InsuredPerson,
     Policy,
-    PolicyBenefit,
     PolicyState,
     PremiumTransaction,
 )
@@ -43,6 +42,7 @@ from skills.calculation.premium_origin_ledger import (
     reconstruct_origins,
     roll_origins,
 )
+from tests.conftest import add_retirement_benefit
 
 
 @pytest.fixture
@@ -67,8 +67,7 @@ def month_db(tmp_path):
                             start_date=date(2020, 1, 1), signed_date=date(2020, 1, 1))
             s.add(policy)
             s.flush()
-            benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2020, 1, 1))
-            s.add(benefit)
+            benefit = add_retirement_benefit(s, policy.id, date(2020, 1, 1))
             s.add(PolicyState(policy_id=policy.id, state="premium_paying", valid_from=date(2020, 1, 1)))
             s.flush()
             for month, amount in ((1, "10000.00"), (2, "5000.00")):
