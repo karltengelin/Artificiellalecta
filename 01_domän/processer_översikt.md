@@ -136,8 +136,8 @@ projekt 6 för ekonomiskt underlag; gränssnitt mot projekt 5 för kassaflöden.
 
 ### B. Pensions- och månadsavräkning
 
-*2026-11-14:* föreslaget avgränsat i [designstoppet P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md),
-som väntar på Karls ställningstagande.
+*2026-11-14:* avgränsat i [designstoppet P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md),
+med valen PB1–PB13 godkända av Karl samma dag.
 
 **Samordningsförslag:** projekt 1 och 6 för försäkringsoperationer och beräkningar,
 projekt 5 för avkastning/likviditet. Projekt 3 använder sedan samma tjänsteoperationer.

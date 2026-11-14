@@ -1,16 +1,17 @@
 # Designstopp – paket B: pensions- och månadsavräkning
 
 > **ID:** P1-PENSION-001 | **Version:** 0.1 | **Datum:** 2026-11-14
-> **Status:** Förslag. Valen PB1–PB13 väntar på Karls ställningstagande i chatten.
-> Inget byggs, migreras eller körs mot Lakebase förrän valen är godkända, och varje
-> Lakebase-ingrepp kräver därefter eget OK (§12).
+> **Status:** PB1–PB13 godkända enligt rekommendationerna av Karl i chatten
+> 2026-11-14: ”Godkänn alla”. Byggstart enligt byggordningen i §12 är därmed godkänd,
+> med separat OK före varje Lakebase-ingrepp. De öppna frågorna i §13 avgörs vid
+> respektive byggsteg. Beslutsloggsposten är föreslagen men inte införd.
 > **Uppdrag:** [ATT_GORA, paket B](../../ATT_GORA.md#-månadssimulering--byggluckor-och-samordning);
 > gap V-04–06 och V-11 i [processöversikten](../../01_domän/processer_översikt.md#3-gap-i-verksamhetsförmågorna).
 > Beställt 2026-11-14 efter att paket A:s första operativa period (2026-10) körts i Lakebase.
 > **Utgångspunkt:** `main` vid `fd3c336`, arbetsbranch `claude/nervous-antonelli-fcac7f`.
 > **Mall:** [P1-PREMIE-001](PREMIEFLODE_DESIGNSTOPP.md) (paket A, B-046).
 
-## 1. Förslag att godkänna
+## 1. Godkända val
 
 Bygg bolagets ordinarie månadsavräkning för ålderspension, ett led i taget:
 
@@ -23,7 +24,7 @@ Allt räknas i befintliga motorer: `close_month`, `roll_origins`, `allocate_cent
 bankdagskalendern. Paket B bygger en operativ journal och de verksamhetsoperationer
 som saknas. Det bygger ingen andra FTA-motor, avkastningsmodell eller agentloop.
 
-| Val | Rekommendation |
+| Val | Godkänt 2026-11-14 |
 |---|---|
 | **PB1: omfattning i första versionen** | Start från 66 år: ordinarie livsvarig start enligt PR-025, kundvald senare start (uppskov), tidsbegränsad plan med minst 60 rättigheter, paus och återstart, förlängning, deluttag i högst tre delar, dödsfall, arvsvinst och slutavräkning. **Tidigt uttag före 66** (PR-002 och PR-024:s pensioneringsprövning) blockeras med ärende och blir ett senare steg |
 | **PB2: uttagsdel och tre förlopp** | Ny uttagsdel under förmånen. Varje garantidel, kapitalpost och månadsrätt tillhör exakt en del. `policy_states` blir enbart premieförloppet; pensionsförloppet ligger per uttagsdel och betalningsförloppet per månadsrätt (§4) |
@@ -37,7 +38,7 @@ som saknas. Det bygger ingen andra FTA-motor, avkastningsmodell eller agentloop.
 | **PB10: slutavräkning och `terminate_policy`** | Slutavräkning görs i stängningen för den tidsbegränsade delens sista rätt (PR-027). En del avslutas bara genom slutavräkning eller dödsfall. `terminate_policy` byggs inte som egen operation; försäkringens avslut härleds när alla delar är avslutade och skulderna reglerade |
 | **PB11: bolagskapital och garantifinansiering** | Journalen får ett bolagskonto. Karl registrerar en dokumenterad startinsättning innan första stängning med utbetalning (PR-028). Bolagsstöd förs från bolagskontot med motpost. Räcker kontot inte blir anspråket ej finansierat, körningen ekonomiskt blockerad och ärendet eskaleras |
 | **PB12: befogenheter och kanaler** | Alla nya skrivande operationer är `HUMAN_ONLY`. Agenter får läsa aggregat. Operationerna tar kanal och verifierad aktör, så att kundportalen senare använder samma operationer med en ny aktörstyp |
-| **PB13: start, testbestånd, byggordning och Lakebase** | Byggordningen i §11. Verifiering i demo och `svc_test` med demobeståndets äldre kohort. Första operativa stängning i Lakebase blir november 2026 för sparandet, när steg 3 är byggt och en antagen AVK för månaden finns. Separat OK före varje Lakebase-ingrepp (§12) |
+| **PB13: start, testbestånd, byggordning och Lakebase** | Byggordningen i §12. Verifiering i demo och `svc_test` med demobeståndets äldre kohort. Första operativa stängning i Lakebase blir november 2026 för sparandet, när steg 3 är byggt och en antagen AVK för månaden finns. Separat OK före varje Lakebase-ingrepp (§12) |
 
 Valen ändrar inga produktregler. PR-ITP1-002–011 och 020–028 är godkända sedan
 2026-11-01 (B-031). Där en regel lämnar ett tillämpningsval öppet anges det i §13.
@@ -141,7 +142,7 @@ historik. Läget `terminated` används inte för nya avslut (PB10).
 - `set_policy_paid_up` får sätta fribrev även när en uttagsdel är pågående eller
   pausad, eftersom premieförloppet nu är skilt från pensionen.
 - Läsare som tolkar `in_payout` på försäkringen (översikt, listning, produktrapport,
-  S-04, webbens presentation) läser i stället uttagsdelens läge. Listan finns i §11 steg 1.
+  S-04, webbens presentation) läser i stället uttagsdelens läge. Det görs i byggordningens steg 1 (§12).
 - `create_premium_from_salary_report` väljer premiens mottagare bland ej startade
   delar. Finns flera, används vikterna i PR-015; finns ingen, blockeras premien med ärende.
 
@@ -471,7 +472,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 
 | Steg | Innehåll | Fall |
 |---|---|---|
-| 0 | Karl tar ställning till PB1–PB13. Inget kodarbete före det | – |
+| 0 | Karl tar ställning till PB1–PB13. *Klart 2026-11-14: alla godkända* | – |
 | 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up` | 38 |
 | 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`) | 36, 37 |
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase** | 13, 15–17 |
@@ -504,10 +505,11 @@ Steg 6 kan byggas parallellt med steg 7 först när anspråkskontraktet i steg 5
 - **Agentens roll:** handläggaragenten kan senare förbereda `payout_request`-ärenden. Det
   kräver eget beslut om ärendepolicyn, som B-043 för löneunderlag.
 
-**Förslag till post i `BESLUTSLOGG.md`, först efter Karls godkännande (ej införd):**
+**Förslag till post i `BESLUTSLOGG.md`, förs in först efter Karls OK till loggningen (ej införd):**
 
-> **B-047 | 2026-11-?? | Paket B: pensions- och månadsavräkning**
-> Operatören godkände designstoppet P1-PENSION-001 med valen PB1–PB13. (1) Uttagsdel under
+> **B-047 | 2026-11-14 | Paket B: pensions- och månadsavräkning**
+> Operatören godkände designstoppet P1-PENSION-001 med valen PB1–PB13 enligt
+> rekommendationerna i chatten 2026-11-14: ”Godkänn alla”. (1) Uttagsdel under
 > förmånen med tre oberoende förlopp; `policy_states` bär bara premieförloppet. (2) En
 > operativ kapital- och garantijournal med S-04 per 2026-10-31 som märkt ingående läge och
 > paket A:s allokeringar som enda premiekälla; P6-MANAD-001 förblir scenarioverktyg och A6
