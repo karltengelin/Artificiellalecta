@@ -89,7 +89,9 @@ skrivande skript körs inte om. Utdata, simulerade filer och facit skrivs till h
 | [intake_and_invoicing.py](../scripts/simulation/period_2026_10/intake_and_invoicing.py) | Paket A steg 8: filintag, godkännande och fakturering för period 2026-10 (B-046) | Skriver Lakebase; stoppar på annat datum än 2026-11-08, då det kördes |
 | [verify_intake_and_invoicing.py](../scripts/simulation/period_2026_10/verify_intake_and_invoicing.py) | Kontroll av §7-fallen efter intag och fakturering | Bara läsning; kontrollerar läget före bankdelen, så tre kontroller faller efter 2026-11-14 |
 | [bank_payments.py](../scripts/simulation/period_2026_10/bank_payments.py) | Bankdelen: delbetalning, dubbelbetalning och samma händelser i en andra fil (fall 12, 13, 15) | Bara läsning utan `--skarp`; `--skarp` skriver Lakebase. Kördes skarpt 2026-11-14 |
-| [verify_bank_payments.py](../scripts/simulation/period_2026_10/verify_bank_payments.py) | Kontroll av bankdelen och avstämningen | Bara läsning |
+| [verify_bank_payments.py](../scripts/simulation/period_2026_10/verify_bank_payments.py) | Kontroll av bankdelen och avstämningen | Bara läsning; räknar med fordringarna före INV-000003, så den kontrollen faller efter 2026-11-14 |
+| [salary_file_cases.py](../scripts/simulation/period_2026_10/salary_file_cases.py) | CASE-000009–000010: kompletterande fil, tilläggsfaktura och stängning | `--db demo` är ett generalprov i SQLite; utan flagga bara läsning i Lakebase; `--skarp` skriver. Kördes skarpt 2026-11-14 |
+| [verify_salary_file_cases.py](../scripts/simulation/period_2026_10/verify_salary_file_cases.py) | Kontroll av ärendena, den sena premien och avstämningen | Bara läsning |
 
 ## Aktuariedialogens körverktyg, tillbyggnad 2026-11-02
 
