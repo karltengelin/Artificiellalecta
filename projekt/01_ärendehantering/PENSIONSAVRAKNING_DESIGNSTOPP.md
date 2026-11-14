@@ -255,7 +255,7 @@ och värderingar som aldrig låses. Paket B ändrar inte det. Två regler förhi
 Paket A:s överlämning (`export_premium_month`, PA7) får därmed en operativ mottagare.
 Kontraktet `ReceiptInput` och allokeringsprovet i ören återanvänds oförändrade.
 
-**Byggt i steg 2 (2026-11-14, mergat till main efter Karls OK; ej infört i Lakebase):**
+**Byggt i steg 2 (2026-11-14, mergat till main efter Karls OK; infört i Lakebase 2026-11-15 efter backup `backups/20261114T231325Z` och Karls OK, [databasschema §12](../../02_system/databasschema.md)):**
 - **Var det finns:** journalens fyra tabeller ([databasschema §7c](../../02_system/databasschema.md#7c-tabeller-ledger_batches-ledger_guarantee_parts-ledger_capital_entries-och-ledger_controls--kapital--och-garantijournalen)), övergången från S-04, A6-källan `ledger` och paket A som premiekälla ([tjänstelager §9.15](../../02_system/tjänstelager.md#915-kapital--och-garantijournalen-paket-b-steg-2-b-047--vad-som-stöds-och-vad-som-blockeras)).
 - **Verifierat:** fall 36 och 37 lokalt, och migrationen och övergången mot isolerad Postgres.
 - **På en återställd kopia av Lakebase-backupen `backups/20261114T150341Z`:**
@@ -510,7 +510,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 |---|---|---|
 | 0 | Karl tar ställning till PB1–PB13. *Klart 2026-11-14: alla godkända* | – |
 | 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up`. *Byggt och infört i Lakebase 2026-11-14 (§4): 499 delar nr 1, inga uttag att flytta; agentrollernas läsrätt enligt B-048* | 38 |
-| 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`). *Byggt 2026-11-14 (§6), verifierat lokalt, mot `svc_test` och på en kopia av Lakebase-backupen; ej infört i Lakebase* | 36, 37 |
+| 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`). *Byggt 2026-11-14 (§6), verifierat lokalt, mot `svc_test` och på en kopia av Lakebase-backupen. Infört i Lakebase 2026-11-15: tabellerna och det ingående läget per 2026-10-31 (492 försäkringar, 15 097 garantidelar); `verify.py` 16 av 16* | 36, 37 |
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase** | 13, 15–17 |
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd | 14, 35 |

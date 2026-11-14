@@ -16,7 +16,7 @@
 | `policy_states` | Premieförloppet – premiebetalande eller fribrev per försäkring, som tidsperioder (§6) | 🟢 I drift i Lakebase; importerad historik och tjänsteoperationer. Paket B steg 1 (B-047): villkoret smalnat till `premium_paying` och `paid_up` i Lakebase 2026-11-14 (§12) |
 | `policy_benefits` | Försäkringsförmåner – förmåner inom en försäkring | 🟢 I drift i Lakebase; förmånen ålderspension |
 | `payout_parts` / `payout_part_states` | Uttagsdelar under en förmån och deras pensionsförlopp (§7b) | 🟢 Paket B steg 1 (B-047, P1-PENSION-001 §4): skapade i Lakebase 2026-11-14 efter backup `backups/20261114T150341Z` och Karls OK, med uttagsdel 1 `not_started` för alla 499 förmåner (§12). `agent_forsakring` och `agent_aktuarie` har SELECT (B-048) |
-| `ledger_batches` / `ledger_guarantee_parts` / `ledger_capital_entries` / `ledger_controls` | Den operativa kapital- och garantijournalen: verifikationer, garantidelar, kapitalposter per konto och spår, och kontrollposter (§7c) | 🟡 Paket B steg 2 (B-047, P1-PENSION-001 §6): modeller, övergången från S-04, migration och tester; verifierade mot isolerad Postgres. Ej införda i Lakebase; agentrollerna får inga rättigheter |
+| `ledger_batches` / `ledger_guarantee_parts` / `ledger_capital_entries` / `ledger_controls` | Den operativa kapital- och garantijournalen: verifikationer, garantidelar, kapitalposter per konto och spår, och kontrollposter (§7c) | 🟢 Paket B steg 2 (B-047, P1-PENSION-001 §6): modeller, övergången från S-04, migration och tester; verifierade mot isolerad Postgres. Införda i Lakebase 2026-11-15 efter backup `backups/20261114T231325Z` och Karls OK, med det ingående läget per 2026-10-31 bokat (§12); agentrollerna har inga rättigheter |
 | `premium_transactions` | Premietransaktioner (en rad per förmån och månad) | 🟢 I drift i Lakebase med importerad premiehistorik; `corrects_transaction_id` migrerad 2026-10-11 |
 | `salary_reports` | Löneunderlag – pensionsmedförande lön per person, arbetsgivare och månad, versionerat | 🟢 Skapad i Lakebase 2026-10-11 (§8b); registrering verifierad i S6 2026-10-12 |
 | `bank_events` / `payment_allocations` | Inbetalningar enligt banken och deras fördelning på fakturarader eller avstämningskontot (§8e) | 🟢 Paket A steg 4 (B-046): modeller, operationer och lokala tester. Skapade tomma i Lakebase 2026-11-08 med `migrate_premium_flow.py` (§12) efter backup `backups/20261108T075712Z` och Karls OK; agentrollerna har inga rättigheter |
@@ -243,7 +243,7 @@ Delens **pensionsförlopp** som tidsperioder, på samma sätt som `policy_states
 > **Status:** Paket B steg 2 (B-047 punkt 4, [P1-PENSION-001 §6](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md), PB4).
 > - **Var koden finns:** modeller i `src/models/capital_ledger.py`; övergången och läsningarna i `src/services/capital_ledger.py`; A6-källan `ledger` i `src/services/ledger_extract.py`; månadens premier ur paket A i `src/services/ledger_premiums.py`; migrationen i `scripts/migrations/migrate_capital_ledger.py` (§12).
 > - **Verifierat:** lokalt och mot isolerad Postgres. Fall 36 och 37 är också verifierade på en återställd kopia av Lakebase-backupen `backups/20261114T150341Z`.
-> - **Ej infört i Lakebase.** Migrationen och övergången kräver var sitt OK från Karl. Agentrollerna har inga rättigheter på tabellerna.
+> - **Infört i Lakebase 2026-11-15** efter backup `backups/20261114T231325Z`: migrationen och övergången med var sitt OK från Karl. Det ingående läget per 2026-10-31 är bokat (492 försäkringar, 15 097 garantidelar och kapitalspår). Agentrollerna har inga rättigheter på tabellerna (§12).
 
 **Domän:**
 - Journalen är **bolagets enda källa** för pensionskapitalet C och garantin G efter övergången från S-04.
@@ -1082,7 +1082,17 @@ ingenting. Erfarenhetsdata importeras separat, aldrig från fabricerade modellut
   - **Övergången är ett eget ingrepp efter migrationen** (designstoppet §12 punkt 3): `scripts/simulation/paket_b_steg2/open_ledger.py` granskar som standard och bokar med `--apply --backup --reviewed-checksum` genom operationen `open_capital_ledger`. `verify.py` i samma mapp kontrollerar fall 36 och 37 skrivskyddat.
   - **På en återställd kopia av backupen `backups/20261114T150341Z`** gav S-04 per 2026-10-31 den frysta hashen `023946…3fefa`. Övergången bevarade 492 försäkringar och 15 097 garantidelar, med C 42 087 223,57 kr och G 119 195,6502916268 kr/mån exakt per försäkring. Sju försäkringar ligger utanför populationen. A6 med källan `ledger` gav samma FTA, VÅ och U som S-04, och `verify.py` gav 15 av 15.
   - **Ordning i Lakebase:** backup → torrkörning → `--apply` → `open_ledger.py` (granskning) → `open_ledger.py --apply` → `verify.py --backup`. Varje skarpt steg kräver Karls separata OK och samordning enligt AGENTS.md §4.5.
-  - **Kodens beroende:** koden fungerar utan tabellerna. Värderingen och P6-MANAD-001 läser då S-04 som förut, och journalens operationer blockeras med hänvisning till migrationen. **Ej körd mot Lakebase**
+  - **Kodens beroende:** koden fungerar utan tabellerna. Värderingen och P6-MANAD-001 läser då S-04 som förut, och journalens operationer blockeras med hänvisning till migrationen.
+  - **Införd i Lakebase 2026-11-15** efter backup `backups/20261114T231325Z` (36 tabeller), med Karls OK för varje skarpt steg:
+    - **Torrkörningen** visade de fyra tabellerna med index och villkor. Den visade inga schemaskillnader och inga hinder.
+    - **`--apply`** gick igenom med radantalen i övriga tabeller oförändrade. En ny torrkörning ger `already_applied`.
+    - **Granskningen** (`open_ledger.py`, `READ ONLY`) gav nio av nio kontroller och den frysta S-04-hashen `023946…3fefa`. Granskningssumman var `d209f58c…02b50`. Den skiljer sig från kopians, eftersom uttagsdelarna har andra id i Lakebase; beloppen är identiska.
+    - **Bokningen** gav verifikationen `f42b3e82-4e0a-596d-9c9e-0f5bedffc049`: 492 försäkringar och 15 097 garantidelar och kapitalspår, C 42 087 223,57 kr och G 119 195,6502916268 kr/mån. Sju försäkringar ligger utanför populationen, och ingen försäkring lämnades utan att föras över.
+    - **Kontrollen** `verify.py --backup` gav 16 av 16 med bara läsning:
+      - fall 36: A6 ur journalen gav FTA 15 895 579,24, VÅ 26 232 775,02 och U 41 130,68 kr, samma som S-04;
+      - fall 37: november gav 51 623,90 kr, utan avstämningskontots 36 261,66 kr, och inget är bokat;
+      - inga agenträttigheter;
+      - övriga radantal som i backupen, utom S-04-utdraget i `valuation_extracts` (0 → 1) och övergångens loggrad i `operation_events` (225 → 226).
 
 ---
 
