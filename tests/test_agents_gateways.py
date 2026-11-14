@@ -65,6 +65,7 @@ class TestRegelverkIRepot:
         source = docs["K-SIM-ITP-2027"]
         assert source.fictional and source.kind == "bevakning" and source.version == "1.0"
         assert docs["K-SIM-KOD-2027"].fictional
+        assert docs["K-SIM-PARAM-2027"].fictional
         assert not any(d.fictional for h, d in docs.items() if not h.startswith("K-SIM-"))
         assert docs["PR-ITP1-013"].version == "1.0" and len(docs["PR-ITP1-013"].sha256) == 16
 

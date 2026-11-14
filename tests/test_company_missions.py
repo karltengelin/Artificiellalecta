@@ -34,8 +34,6 @@ from services.development_demo import Candidate, Evidence
 from services.errors import AccessDeniedError, ApprovalError, ConflictError
 from services.operations import common
 from tests.flow_helpers import (
-    CHANGE,
-    SOURCE,
     call,
     flow_client,
     impact_script,
@@ -46,6 +44,9 @@ from web.config import WebSettings
 from web.routes.company_missions import BASE
 
 OPERATOR = Actor.human("karl")
+SOURCE = "K-SIM-PARAM-2027"
+CHANGE = {"key": "premium_rate_low", "current_value": "0.045", "new_value": "0.05",
+          "valid_from": "2027-01-01", "rule_id": "PR-ITP1-001", "rationale": "Den nya fiktiva premiesatsen"}
 CODE_SOURCE = "K-SIM-KOD-2027"
 ORIGIN = {"Origin": "https://testserver"}
 PASSWORD = "ett fiktivt operatörslösenord för test"
@@ -67,7 +68,8 @@ def order(key="tolkning", source=SOURCE, goal="Utred källans regeländring"):
 
 
 def interpretation(source=SOURCE, kind="parameter"):
-    runs = interpretation_script(source)
+    change = CHANGE if kind != "code" else {**CHANGE, "rule_id": "PR-ITP1-013"}
+    runs = interpretation_script(source, change)
     result = json.loads(runs[-1].text)
     result.update(change_kind=kind, effective_on="2027-02-01" if kind == "code" else "2027-01-01",
                   code_dependency="")
@@ -200,7 +202,7 @@ def test_parameter_via_webb_med_omstart_och_avstamning(demo, monkeypatch):
                           review["hash"], "approved", {})
     demo.decide()
     demo.process(tool("catalog"), tool("order", capability=IMPACT, key="premie", basis=item["id"]), answer())
-    demo.process(*impact_script())
+    demo.process(*impact_script(CHANGE))
     assert demo.state["assignments"]["premie"]["result"]["output"]["evidence"]["estimate"]["key"] == CHANGE["key"]
     demo.process(tool("status"), tool("review", capability=ACTIVATE, basis=item["id"]), answer())
     demo.decide(rule_version="1.1", valid_from=CHANGE["valid_from"], commit="abcdef1")

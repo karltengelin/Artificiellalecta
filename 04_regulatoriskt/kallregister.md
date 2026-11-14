@@ -78,6 +78,7 @@ verkliga, ingår inte i produktpaketet PR-ITP1 v1.0 och får inte citeras som ve
 |---|---|---|
 | K-SIM-ITP-2027 | [Fiktiv avtalsändring: höjd premieålder](03_bevakning/K-SIM-ITP-2027-premiealder.md), version 1.0, 2026-10-25 | Punkt 1–3: premie t.o.m. månaden före 67 år för lönemånader från januari 2027, med övergång. Flaggskeppsdemon (B-035). Tillagd 2026-10-25 utan att paketet ändras |
 | K-SIM-KOD-2027 | [Fiktiv övergångsregel för premierättelser](03_bevakning/K-SIM-KOD-2027-premierattelse.md), version 1.0 | Lokalt provunderlag för bolagspiloten. Jämförelse med den ursprungliga lönemånaden. |
+| K-SIM-PARAM-2027 | [Fiktiv ändring av ordinarie premiesats](03_bevakning/K-SIM-PARAM-2027-premiesats.md), version 1.0 | Lokalt provunderlag för bolagspiloten. En ny sats från januari 2027. |
 
 ## Aktualitet och reproducerbarhet
 

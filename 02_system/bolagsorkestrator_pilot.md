@@ -15,12 +15,14 @@ Testet `test_company_missions.py` kör samma webbformulär som operatören.
    körspår. En följdfråga visas som ny beställningsversion.
 2. Ange *Utred den här nya regeln, visa premieeffekten om den behövs för
    beslutet och förbered genomförandet.* Lägg till fiktiva bevakningskällan
-   `K-SIM-ITP-2027`. Kör en del i taget. Läs Compliance-utkastet, granska
+   `K-SIM-PARAM-2027`. Kör en del i taget. Läs Compliance-utkastet, granska
    tolkningen, kontrollera aktuariens beräkning och granska regelbeslutet.
    Ange verifierad regeltextreferens före förslaget till schemaläggning.
    Avgör förslaget i godkännandekön. Läs sedan domänkvitton i bolagsuppdraget.
    En schemalagd framtida parameter är verifierad när registrets versioner
-   på båda sidor av giltighetsdagen motsvarar beslutet.
+   på båda sidor av giltighetsdagen motsvarar beslutet. Den äldre
+   `K-SIM-ITP-2027` innehåller även en övergångsfråga om återupptagen
+   premiebetalning som kan kräva en separat bedömning.
 3. Upprepa med `K-SIM-KOD-2027`. Läs tolkning och utkast, välj berörd regel,
    ange version, giltighet och verifierbar effekt. Nästa körning registrerar
    beställningen i projekt 11. Följ U5:s demogranskning från ändringsärendet.
