@@ -17,6 +17,7 @@ from sqlalchemy.dialects import postgresql
 from models import Base, LedgerBatch, LedgerCapitalEntry, LedgerGuaranteePart
 from services import Actor, OperationContext, ProductRuleCatalog, ServiceLayer
 from services import capital_ledger as cl
+from services import valuation_bases as vb
 from services.ledger_extract import build_ledger_extract
 from services.valuation_extract import build_extract
 from tests.conftest import seed_insurance
@@ -34,7 +35,11 @@ needs_postgres = pytest.mark.skipif(not TEST_URL, reason="SERVICES_TEST_POSTGRES
 def _lakebase_like(schema):
     tables = [t for t in Base.metadata.sorted_tables if t.name not in NOT_IN_LAKEBASE]
     Base.metadata.create_all(schema.engine, tables=tables)
-    return seed_insurance(schema.session_factory)
+    ids = seed_insurance(schema.session_factory)
+    with schema.session_factory() as s:  # grunderna S-04 räknar på, som i Lakebase sedan A4–A5
+        vb.add_missing_defaults(s)
+        s.commit()
+    return ids
 
 
 def test_migrationen_kraver_postgres():
@@ -81,7 +86,7 @@ def test_delvis_inford_journal_och_saknad_forutsattning_stoppar():
             migrate_capital_ledger(schema.engine, dry_run=False)
     with isolated_schema() as schema:
         tables = [t for t in Base.metadata.sorted_tables
-                  if t.name not in NOT_IN_LAKEBASE | {"valuation_extracts", "valuation_runs", "valuation_decisions"}]
+                  if t.name not in NOT_IN_LAKEBASE | {"valuation_extracts", "valuation_runs", "valuation_results"}]
         Base.metadata.create_all(schema.engine, tables=tables)
         with pytest.raises(RuntimeError, match="valuation_extracts"):
             migrate_capital_ledger(schema.engine)

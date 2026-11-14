@@ -30,7 +30,7 @@ from utils.migration_premium_flow import (
 )
 
 #: Tabeller som finns i modellerna men inte i Lakebase före migrationen
-NOT_IN_LAKEBASE = {*TABLES, "portfolios", "portfolio_holdings", "trades"}
+NOT_IN_LAKEBASE = {*TABLES, "portfolios", "portfolio_holdings", "trades", "ledger_batches", "ledger_guarantee_parts", "ledger_capital_entries", "ledger_controls"}  # journalen: paket B
 #: Villkoren på cases som de infördes i Lakebase 2026-10-24 (F5-1, före paket A)
 OLD_CASE_CHECKS = CASE_CHECKS_BEFORE
 
