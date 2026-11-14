@@ -51,9 +51,13 @@ TABLES = tuple(m.__tablename__ for m in MODELS)
 REQUIRED_TABLES = ("employers", "insured_persons", "policies", "policy_benefits", "premium_transactions",
                    "salary_reports", "cases")
 CASES = Case.__tablename__
+#: Ärendetyperna när paket A infördes. Senare typer (t.ex. paket B:s `payout_reconstruction`) förs in
+#: av sina egna migrationer, så att en införd premieflödesmigration förblir `already_applied`.
+PACKAGE_A_CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue", "payment_unmatched")
+assert set(PACKAGE_A_CASE_TYPES) <= set(CASE_TYPES)
 #: Villkoren på cases som paket A vidgar, med de värden som ska finnas i det införda villkoret
 CASE_CHECKS: dict[str, tuple[str, ...]] = {
-    "ck_cases_type": tuple(f"'{v}'" for v in CASE_TYPES),
+    "ck_cases_type": tuple(f"'{v}'" for v in PACKAGE_A_CASE_TYPES),
     "ck_cases_channel": tuple(f"'{v}'" for v in CASE_CHANNELS),
     "ck_cases_subject": ("'payment_unmatched'",),
 }

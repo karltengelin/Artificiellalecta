@@ -20,7 +20,6 @@ from models import (
     InsuredPerson,
     Invoice,
     Policy,
-    PolicyBenefit,
     PolicyState,
     PremiumTransaction,
 )
@@ -34,6 +33,7 @@ from services import (
 )
 from services.operations import common
 from services.operations.salary_files import file_checksum
+from tests.conftest import add_retirement_benefit
 from utils.bank_calendar import invoice_due_date
 from utils.ocr import valid_ocr
 
@@ -60,7 +60,7 @@ def _person(s, employer, pnr, policy_number):
                     signed_date=date(2020, 1, 1), start_date=date(2020, 1, 1))
     s.add(policy)
     s.flush()
-    s.add(PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2020, 1, 1)))
+    add_retirement_benefit(s, policy.id, date(2020, 1, 1))
     s.add(PolicyState(policy_id=policy.id, state="premium_paying", valid_from=date(2020, 1, 1)))
     s.flush()
 

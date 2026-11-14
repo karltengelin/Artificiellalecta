@@ -146,6 +146,22 @@ historik. Läget `terminated` används inte för nya avslut (PB10).
 - `create_premium_from_salary_report` väljer premiens mottagare bland ej startade
   delar. Finns flera, används vikterna i PR-015; finns ingen, blockeras premien med ärende.
 
+**Byggt i steg 1 (2026-11-14, branch `claude/paket-b-steg1-193c87`, ej infört i Lakebase):**
+tabellerna `payout_parts` och `payout_part_states` ([databasschema §7b](../../02_system/databasschema.md#7b-tabeller-payout_parts-och-payout_part_states--uttagsdelar-och-pensionsförloppet)),
+övergången, de anpassade läsarna och `set_policy_paid_up` ([tjänstelager §9.14](../../02_system/tjänstelager.md#914-uttagsdelar-och-tre-förlopp-paket-b-steg-1-b-047--vad-som-stöds-och-vad-som-blockeras));
+fall 38 är verifierat lokalt och migrationen mot isolerad Postgres. Avvikelser att godkänna:
+- *Flera ej startade delar* blockerar premien i stället för att fördela med vikterna i PR-015,
+  eftersom ingen fördelningsinstruktion finns ännu. Ingen del blockerar premien med skäl, men
+  utan nytt ärende – ett ärende för det fallet hör till steg 4, när start finns.
+- *Rekonstruktionsärendet* har den nya ärendetypen `payout_reconstruction`, skapad av
+  systemaktören; villkoret `ck_cases_type` vidgas av migrationen.
+- *Agentrollernas läsningar:* rollerna saknar rätt på de nya tabellerna (§12). Översikten och
+  produktrapportens bestånd redovisar därför pensionsförloppet som ej läst med en agents roll.
+- *Övergången stoppar* vid `terminated`, uttagslägen som inte ligger sist eller har glapp och
+  fler än en ålderspensionsförmån per försäkring, i stället för att gissa.
+- *David Dahls premieförlopp* blir fribrev från 2024-05-01, dagen efter registrerat
+  anställningsslut – samma läge som `set_policy_paid_up` hade gett.
+
 **Delning (PR-024):** högst tre delar per ursprunglig försäkring. Ny del och kvarvarande
 del minst 10 % av kapitalet vid delningen, prövat som andel även när C = 0 men G finns.
 C delas i ören med största bråkrest och varje G_j proportionellt i hög precision.
@@ -473,7 +489,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | Steg | Innehåll | Fall |
 |---|---|---|
 | 0 | Karl tar ställning till PB1–PB13. *Klart 2026-11-14: alla godkända* | – |
-| 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up` | 38 |
+| 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up`. *Byggt 2026-11-14 (§4), ej infört i Lakebase* | 38 |
 | 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`) | 36, 37 |
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase** | 13, 15–17 |
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning | 1–12 |

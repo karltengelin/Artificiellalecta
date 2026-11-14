@@ -20,6 +20,8 @@ from models import (
     Base,
     Employer,
     InsuredPerson,
+    PayoutPart,
+    PayoutPartState,
     Policy,
     PolicyBenefit,
     PolicyState,
@@ -39,6 +41,7 @@ from services.valuation_extract import (
     extract_checksum,
 )
 from skills.calculation import actuarial_annuity as aa
+from tests.conftest import add_retirement_benefit
 
 MARCH = date(2023, 3, 31)
 SIM_HIST, _ = aa.basis_from_assumptions(
@@ -54,8 +57,17 @@ def _person(s, employer, pnr: str, number: str, state: str, premiums=()) -> Poli
                     start_date=date(2015, 1, 1))
     s.add(policy)
     s.flush()
-    benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2015, 1, 1))
-    s.add(benefit)
+    if state == "in_payout":  # uttag på del 1 hela tiden; premieförloppet fribrev (paket B steg 1)
+        benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2015, 1, 1))
+        s.add(benefit)
+        s.flush()
+        part = PayoutPart(benefit_id=benefit.id, part_number=1)
+        s.add(part)
+        s.flush()
+        s.add(PayoutPartState(payout_part_id=part.id, state="in_payout", valid_from=date(2015, 1, 1)))
+        state = "paid_up"
+    else:
+        benefit = add_retirement_benefit(s, policy.id, date(2015, 1, 1))
     s.add(PolicyState(policy_id=policy.id, state=state, valid_from=date(2015, 1, 1)))
     s.flush()
     for period, tx_type, amount, status, paid in premiums:

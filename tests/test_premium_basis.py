@@ -13,7 +13,14 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import select
 
-from models import Employer, InsuredPerson, OperationEventRecord, Policy, PolicyBenefit, PolicyState, PremiumTransaction
+from models import (
+    Employer,
+    InsuredPerson,
+    OperationEventRecord,
+    Policy,
+    PolicyState,
+    PremiumTransaction,
+)
 from services import (
     Actor,
     AgentAccess,
@@ -25,6 +32,7 @@ from services import (
     ServiceLayer,
 )
 from services.operations import common
+from tests.conftest import add_retirement_benefit, start_payout
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
 
@@ -53,7 +61,7 @@ def _person(s, employer, pnr, born_policy="AL-000010"):
                     signed_date=date(2020, 1, 1), start_date=date(2020, 1, 1))
     s.add(policy)
     s.flush()
-    s.add(PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2020, 1, 1)))
+    add_retirement_benefit(s, policy.id, date(2020, 1, 1))
     s.add(PolicyState(policy_id=policy.id, state="premium_paying", valid_from=date(2020, 1, 1)))
     s.flush()
     return policy
@@ -191,12 +199,7 @@ class TestStopp:
 
     def test_utbetalning_startad(self, db):
         salary(db)
-        with db.session_factory() as s:
-            current = s.scalar(select(PolicyState).where(PolicyState.policy_id == db.active_policy))
-            current.valid_to = date(2026, 9, 30)
-            s.flush()
-            s.add(PolicyState(policy_id=db.active_policy, state="in_payout", valid_from=date(2026, 10, 1)))
-            s.commit()
+        start_payout(db, db.active_policy, date(2026, 10, 1))
         with pytest.raises(BlockedError, match="utbetalning har startat"):
             basis(db)
 
@@ -208,7 +211,7 @@ class TestStopp:
                            signed_date=date(2026, 1, 1), start_date=date(2026, 1, 1))
             s.add(extra)
             s.flush()
-            s.add(PolicyBenefit(policy_id=extra.id, benefit_type="retirement_dc", start_date=date(2026, 1, 1)))
+            add_retirement_benefit(s, extra.id, date(2026, 1, 1))
             s.commit()
         with pytest.raises(BlockedError, match="fördelningsinstruktion"):
             basis(db)

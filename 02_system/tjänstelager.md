@@ -248,8 +248,8 @@ Modellbehov och avgränsning stämdes av med operatören 2026-10-11 (**B-030**).
 - *Blockeras:* annan arbetsgivare än den försäkrades nuvarande (anställningshistorik saknas i modellen), månad före ITP1-tillhörighet eller anställning, månad efter anställningens slut (slutlön/bonus prövas manuellt, PR-ITP1-013), framtida månad, mottagningsdag i framtiden eller före månaden, avliden försäkrad, och ny rapport för en månad som redan har premie från premiehistoriken.
 
 **`set_policy_paid_up`** (befintlig `policy_states`) – arbetsgivarens avanmälan: anställningens sista dag registreras på den försäkrade (status `terminated`) och försäkringen går över i fribrev dagen efter (PR-ITP1-013).
-- *Stöds:* försäkring med öppet `premium_paying` och utan uttagsläge i tidslinjen; slutdagen senast i går (fribrev från senast i dag). Premieperioden stängs, `paid_up` öppnas och hela tidslinjen valideras (ett öppet läge, inga överlapp).
-- *Blockeras:* pension startad eller avslutad (ett läge per försäkring kan inte uttrycka fribrev samtidigt med pågående eller pausad pension – det kräver att premieläget skiljs från pensionsläget, UTTAG_GEMENSAMT), framtidsdatering (läsningen tolkar den öppna raden som dagens läge), fler premiebetalande försäkringar för personen, premie eller löneunderlag för månader efter slutdagen, avliden eller pensionerad person, och fribrev av andra skäl än avslutad anställning (t.ex. 66 år, där frivillig fortsättning enligt PR-ITP1-016 inte kan prövas). Ett redan registrerat annat slutdatum är en konflikt.
+- *Stöds:* försäkring med öppet `premium_paying`; slutdagen senast i går (fribrev från senast i dag). Premieperioden stängs, `paid_up` öppnas och hela tidslinjen valideras (ett öppet läge, inga överlapp). Sedan paket B steg 1 (§9.14) bär `policy_states` bara premieförloppet, så fribrevet registreras även när en uttagsdel betalas ut eller är pausad (fall 38). Uttagsdelarnas pensionsläge ändras inte och redovisas oförändrat i resultatet (`payout_parts`); ändras det ändå avbryts operationen.
+- *Blockeras:* ett gammalt uttagsläge (`in_payout`, `payout_paused`, `terminated`) i premieförloppet – övergången till uttagsdelar ska köras först (§9.14), framtidsdatering (läsningen tolkar den öppna raden som dagens läge), fler premiebetalande försäkringar för personen, premie eller löneunderlag för månader efter slutdagen, avliden eller pensionerad person, och fribrev av andra skäl än avslutad anställning (t.ex. 66 år, där frivillig fortsättning enligt PR-ITP1-016 inte kan prövas). Ett redan registrerat annat slutdatum är en konflikt.
 
 **`correct_premium_transaction`** (ny kolumn `premium_transactions.corrects_transaction_id`, `databasschema.md` §8) – lönerättelse av en premierad (PR-ITP1-019 p.1–2). Ursprungsraden ändras aldrig; en länkad `adjustment`-rad med differensen och fullt underlag skapas med status `pending`.
 - *Stöds:* ej mottagen premie (`pending`/`invoiced`) – kredit eller tillägg på fordran; mottagen premie där rättad premie är minst det mottagna – tilläggspremie som ny fordran (kapital och garanti först när den tas emot, PR-ITP1-018). Omräkning med premiemånadens IBB (PR-ITP1-032) och trappan (PR-ITP1-001). Upprepade rättelser bygger på varandra; samma rättelse två gånger avvisas (differens noll).
@@ -505,12 +505,12 @@ Beslutat i **B-046** och [P1-PREMIE-001](../projekt/01_ärendehantering/PREMIEFL
 |---|---|---|---|---|
 | `create_premium_from_salary_report` | `write` | Ja | `HUMAN_ONLY` | Beräknar ordinarie premie ur den gällande versionen av löneunderlaget för person, arbetsgivare och månad och sparar en `premium`-rad med status `pending`. Rättat underlag ger en länkad `adjustment`-rad med differensen |
 
-**Beräkning:** premiemånadens IBB och produktparametrar, noll utanför åldersfönstret (PR-ITP1-001, -013). Mottagare är personens enda ålderspensionsförmån som inte har börjat betalas ut (PR-ITP1-015). `calculation_basis` bär löneunderlagets id, version, källa och källreferens, arbetsgivaren, PR-paketet och parameterversionerna. Noll premie sparas men markeras som inte fakturerbar. Raden är en kommande fordran, inte kapital.
+**Beräkning:** premiemånadens IBB och produktparametrar, noll utanför åldersfönstret (PR-ITP1-001, -013). Mottagare är personens enda uttagsdel som inte har startat under någon del av månaden (PR-ITP1-015, -025; sedan paket B steg 1, §9.14). Resultatet och `calculation_basis.recipient` anger delens nummer; vikten är 1. `calculation_basis` bär löneunderlagets id, version, källa och källreferens, arbetsgivaren, PR-paketet och parameterversionerna. Noll premie sparas men markeras som inte fakturerbar. Raden är en kommande fordran, inte kapital.
 
 **Rättelse:** högre version av underlaget räknas om för samma månad. Differensen mot premieraden och dess länkade rättelser blir en ny `pending`-rad, märkt `unreceived_claim` eller `additional_premium`. Samma premie efter rättelsen ger ingen ny rad (`unchanged`). Hur rättelsen faktureras står i §9.11.
 
 **Spärras:**
-- *Blockeras:* premieperiod före 2026-10 (startluckan, PA1), avliden försäkrad, ingen eller flera möjliga mottagare, en månad vars premie inte bygger på registrerat löneunderlag, justeringar utan länk och en rättelse som skulle minska redan mottagen premie.
+- *Blockeras:* premieperiod före 2026-10 (startluckan, PA1), avliden försäkrad, ingen ej startad uttagsdel (utbetalningen har startat), flera ej startade uttagsdelar – på flera försäkringar eller efter en delning – eftersom ingen fördelningsinstruktion finns (PR-ITP1-015), en månad vars premie inte bygger på registrerat löneunderlag, justeringar utan länk och en rättelse som skulle minska redan mottagen premie.
 - *Finns inte:* inget registrerat löneunderlag för månaden; en saknad rapport ger ingen premie (PR-ITP1-017).
 - *Konflikt:* premien bygger redan på den gällande versionen.
 
@@ -630,6 +630,32 @@ Indata är `{period_month, scenario_id, expected_opening_checksum}`. Svaret inne
 - *Konflikt i journalen:* samma `scenario_id` med ändrat innehåll. En senare export med nya mottagningar kräver ett nytt `scenario_id`.
 
 **Röktest:** `smoke_test_premium_chain.py` slutar i journalen: export, `open_premium_month`, mottagning i journalens ordning, jämförelse med paket A:s allokeringar och en andra export utan ny effekt. Demobeståndet byggs där med `born_from=1961`, utan David Dahl (pågående utbetalning) och kohortens födda 1959–1960 (planstart 2026-11), eftersom journalens första försök inte tar emot dem. Valet gäller bara röktestet.
+
+### 9.14 Uttagsdelar och tre förlopp (paket B steg 1, B-047) – vad som stöds och vad som blockeras
+
+Beslutat i **B-047** punkt 2 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §4 (PB2). Kod: `src/models/payout_part.py`, `src/services/payout_parts.py` och `src/services/payout_transition.py`. Tabellerna `payout_parts` och `payout_part_states` och migrationen står i [databasschema §7b och §12](databasschema.md#7b-tabeller-payout_parts-och-payout_part_states--uttagsdelar-och-pensionsförloppet). **Inga nya operationer och inga nya agentbefogenheter.** Plan, garantidelar, månadsrätter, journal och utbetalning byggs i senare steg.
+
+En försäkring har tre förlopp: **premieförloppet** i `policy_states` (`premium_paying`, `paid_up`), **pensionsförloppet** per uttagsdel (`not_started`, `in_payout`, `paused`, `ended` med orsak `final_settlement` eller `death`) och betalningsförloppet (månadsrätter, steg 5). En framtida plan är inget läge.
+
+**Läsningar som tidigare tolkade `in_payout` på försäkringen:**
+
+| Operation | Förändring |
+|---|---|
+| `get_insured_overview` | `current_state` är premieförloppet. Nytt fält `payout_parts` per försäkring: delens nummer, andel, läge i dag, orsak och giltighetsdag |
+| `list_insured_persons` | `policy_state` filtrerar på premieförloppet (`premium_paying`, `paid_up`, `no_policy`). Nytt filter `payout_state` (`not_started`, `in_payout`, `paused`, `ended`); varje försäkring i listan har `payout_state` sammanfattat över delarna – en del i utbetalning före pausad, före ej startad, före avslutad |
+| `get_portfolio_snapshot` | `in_payout`, `payout_paused` och `terminated` i `by_state` räknas ur delarnas läge i dag. Nytt fält `payout_states_read` |
+| S-04-utdraget (`services/valuation_extract.py`) | En försäkring med en startad eller avslutad del vid värderingsdagen redovisas som ej beräknad med samma skäl som förut; övriga försäkringar och utdragets kontrollsumma ändras inte |
+| `set_policy_paid_up` | Tillåts under pågående eller pausad pension (fall 38, §9.1) |
+| `create_premium_from_salary_report` | Väljer mottagare bland uttagsdelar som inte startat (§9.9) |
+| `enroll_insured_person` | Ger den nya förmånen uttagsdel 1 i läget `not_started` från förmånens start |
+
+**Agentroller:** rollerna har inga rättigheter på de nya tabellerna i första versionen (designstoppet §12). Läsningar som körs med en agents begränsade databasroll läser därför inte delarna: `get_insured_overview` ger `payout_parts = None` med förklaring i `payout_parts_note`, och `get_portfolio_snapshot` räknar försäkringarna efter premieförloppet och redovisar de tre pensionscellerna som ej lästa (`payout_states_read = false`). Kontrollen är datadriven (`payout_readable`): ges rollerna SELECT senare öppnas läsningen utan kodändring. `list_insured_persons` och `set_policy_paid_up` provkörs med den betrodda anslutningen och påverkas inte.
+
+**Övergången** (`plan_transition`, `apply_transition`) ger varje ålderspensionsförmån del 1 i `not_started` utan ekonomisk effekt, flyttar gamla `in_payout`- och `payout_paused`-rader till delen och öppnar ett ärende `payout_reconstruction` per flyttat uttag, skapat av systemaktören `system:payout_transition`. Ärendet anger flyttade lägen, delens lägen, premieförloppet och vad som saknas (plan, garantidelar, månadsrätter och betalningsskuld, utbetalningar); ingen historik konstrueras. Den används av migrationen och av demo- och testdatabaserna. I demon gäller det David Dahl: premiebetalande till anställningens slut 2024-04-30, fribrev från 2024-05-01 och del 1 i utbetalning från samma dag.
+
+**Spärras:**
+- *Blockeras i övergången:* `terminated` (avslut sker bara genom slutavräkning eller dödsfall, PB10), uttagslägen som inte ligger sist i tidslinjen eller har glapp, försäkringar med fler än en ålderspensionsförmån och premieförlopp som inte slutar dagen före uttaget. Allt stoppar utan att något skrivs.
+- *Finns inte i steg 1:* start, paus, återupptagande, delning och avslut av en uttagsdel. De byggs i steg 4 och 6, och nya skrivande operationer blir `HUMAN_ONLY`.
 
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation

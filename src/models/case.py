@@ -35,7 +35,10 @@ _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgres
 #: salary_file_deviation: avvikelse i löneunderlagsfil som handläggaren avgör (B-046, P1-PREMIE-001 §4.2)
 #: payment_overdue: obetald faktura efter förfallodagen, eskaleras efter 30 dagar (B-046, P1-PREMIE-001 §4.5)
 #: payment_unmatched: inbetalning på avstämningskontot – överskott, okänd referens eller fel betalare (§4.6)
-CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue", "payment_unmatched")
+#: payout_reconstruction: pågående eller pausat uttag från modellen med ett läge per försäkring, utan
+#: plan, garantidelar eller månadsrätter – rekonstrueras av handläggaren (B-047, P1-PENSION-001 §4)
+CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue", "payment_unmatched",
+              "payout_reconstruction")
 CASE_STATUSES = ("open", "in_progress", "waiting_approval", "waiting_info", "closed")
 CASE_OUTCOMES = ("approved", "rejected", "supplement_requested", "manual_review", "no_action")
 #: system: betrodd bevakning som upptäcker ärendet själv, t.ex. förfallen faktura (B-046)

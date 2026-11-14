@@ -4,6 +4,12 @@
 bara aggregat: inga personnummer, namn, födelsedatum eller löner. Celler med 1–9 försäkringar
 eller personer döljs, med kompletterande döljning mot totalen (`analytics.portfolio_snapshot`).
 Båda läser bara kolumner som rollen `agent_aktuarie` redan har (`utils/agent_roles.py`).
+
+Försäkringens läge i `by_state` är sedan paket B steg 1 (P1-PENSION-001 §4) premieförloppet
+kompletterat med uttagsdelarnas pensionsförlopp: en försäkring med en del i utbetalning räknas
+som `in_payout`, med en pausad del som `payout_paused` och med alla delar avslutade som
+`terminated`. Rollen `agent_aktuarie` har inga rättigheter på uttagsdelarna (§12); med den
+räknas försäkringarna efter premieförloppet och de tre pensionscellerna redovisas som ej lästa.
 Monterade i podden `bestand`; produktrapporten (`agents/flows/definitions/product_report.py`)
 visar talen i avsnitt 2 och 3.
 """
@@ -23,6 +29,7 @@ from models import InsuredPerson, Policy, PolicyBenefit, PolicyState, PremiumTra
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import InvalidInputError
 from services.operations import common
+from services.payout_parts import NOT_READ_FOR_AGENT, parts_by_policy, payout_readable, summary_state
 
 #: Första år med premiehistorik i beståndet (genererad historik från 2023-01)
 FIRST_YEAR = 2023
@@ -36,6 +43,8 @@ STATE_LABELS = {
     "unknown": "Läge saknas",
 }
 IN_FORCE = ("premium_paying", "paid_up", "in_payout", "payout_paused")
+#: Lägen i by_state som kommer ur uttagsdelarnas pensionsförlopp
+PAYOUT_KEYS = {"in_payout": "in_payout", "paused": "payout_paused", "ended": "terminated"}
 TRANSFER_NOTE = "Flytt till eller från andra bolag stöds inte i produkten (försäkringsvillkor v2.0)."
 FLOW_DEFINITION = (
     "Betalmarkerade ordinarie premier och premiejusteringar med betaldag i månaden, som i ledningsmåttet. "
@@ -67,6 +76,9 @@ class PortfolioSnapshot(BaseModel):
                                                    "summan är policies_in_force")
     entered_in_year: int | None = Field(description="Försäkringar med startdag under året, till och med läsdagen")
     paid_up_in_year: int | None = Field(description="Försäkringar som blev fribrev under året, till och med läsdagen")
+    payout_states_read: bool = Field(
+        default=True, description="Om uttagsdelarnas pensionsförlopp ingår; annars räknas lägena efter premieförloppet"
+    )
     min_cell_size: int
 
 
@@ -134,11 +146,13 @@ def get_portfolio_snapshot(ctx: OperationContext, data: YearQuery) -> PortfolioS
     ).all()
     paid_up = set(session.scalars(select(PolicyState.policy_id).where(
         PolicyState.state == "paid_up", PolicyState.valid_from >= year_from, PolicyState.valid_from <= year_to)))
+    readable = payout_readable(ctx.actor)
+    parts = parts_by_policy(session, [r[0] for r in rows], on=today) if readable else {}
 
     states, cohorts, insured = Counter(), Counter(), set()
     entered = 0
     for policy_id, person_id, start, state, pnr in rows:
-        state = state or "unknown"
+        state = PAYOUT_KEYS.get(summary_state(parts.get(policy_id, [])), state) or "unknown"
         states[state] += 1
         if state in IN_FORCE:
             cohorts[cohort_of(birth_year(pnr))] += 1
@@ -146,13 +160,16 @@ def get_portfolio_snapshot(ctx: OperationContext, data: YearQuery) -> PortfolioS
         entered += year_from <= start <= year_to
     state_keys = [*IN_FORCE, "terminated"] + (["unknown"] if states.get("unknown") else [])
     by_state, total = _cells(states, state_keys)
+    if not readable:
+        by_state = [cell.model_copy(update={"policies": None, "hidden_reason": NOT_READ_FOR_AGENT})
+                    if cell.key in PAYOUT_KEYS.values() else cell for cell in by_state]
     by_cohort, in_force = _cells(cohorts, sorted(cohorts))
     return PortfolioSnapshot(
         read_at=datetime.now(UTC), as_of_date=today, year=data.year,
         policies_total=_visible(total), policies_in_force=_visible(in_force), insured_in_force=_visible(len(insured)),
         by_state=by_state, by_cohort=by_cohort,
         entered_in_year=_visible(entered), paid_up_in_year=_visible(len(paid_up)),
-        min_cell_size=MIN_CELL,
+        payout_states_read=readable, min_cell_size=MIN_CELL,
     )
 
 

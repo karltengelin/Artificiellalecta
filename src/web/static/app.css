@@ -158,8 +158,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .badge, .state, .txstatus, .pill { display: inline-block; padding: .05rem .55rem; border-radius: 1rem; font-size: .8rem; font-weight: var(--font-weight-label); background: var(--color-background); border: 1px solid var(--color-border); }
 .badge--active, .state--premium_paying, .txstatus--paid, .pill--executed, .pill--approved { background: var(--status-success-bg); border-color: var(--status-success-line); color: var(--status-success-text); }
 .badge--terminated, .state--paid_up, .txstatus--invoiced, .pill--proposed, .pill--pending { background: var(--status-warning-bg); border-color: var(--status-warning-line); color: var(--status-warning-text); }
-.badge--retired, .state--in_payout, .state--payout_paused { background: var(--color-accent-soft); border-color: var(--brand-line); color: var(--color-link); }
-.badge--deceased, .state--terminated, .txstatus--cancelled, .pill--denied, .pill--rejected { background: var(--status-error-bg); border-color: var(--status-error-line); color: var(--status-error-text); }
+.badge--retired, .state--in_payout, .state--paused { background: var(--color-accent-soft); border-color: var(--brand-line); color: var(--color-link); }
+.badge--deceased, .state--terminated, .state--ended, .txstatus--cancelled, .pill--denied, .pill--rejected { background: var(--status-error-bg); border-color: var(--status-error-line); color: var(--status-error-text); }
 
 /* felrutor och resultat – varning för stopp, krock och väntande förslag; fel för nekat */
 .alert { border: 1px solid; border-left-width: 4px; border-radius: var(--radius-control); padding: var(--space-3) var(--space-4); margin: var(--space-4) 0; }

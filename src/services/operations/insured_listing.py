@@ -1,4 +1,8 @@
-"""Beståndslista för handläggare: en rad per försäkrad, filtrering och sidindelning."""
+"""Beståndslista för handläggare: en rad per försäkrad, filtrering och sidindelning.
+
+Försäkringens läge visas som två förlopp (paket B steg 1, P1-PENSION-001 §4): premieförloppet
+ur `policy_states` och pensionsförloppet sammanfattat över uttagsdelarna. Båda kan filtreras.
+"""
 
 from __future__ import annotations
 
@@ -9,15 +13,29 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import and_, func, or_, select
 
-from models import Employer, InsuredPerson, Policy, PolicyState
+from models import (
+    Employer,
+    InsuredPerson,
+    PayoutPart,
+    PayoutPartState,
+    Policy,
+    PolicyBenefit,
+    PolicyState,
+)
 from services.contract import OperationContext, OperationKind, operation
 from services.operations.insured import EmployerInfo
+from services.payout_parts import parts_by_policy, summary_state
 
 
 class InsuredQuery(BaseModel):
     q: str = Field(default="", max_length=200, description="Namn, personnummer eller försäkringsnummer; även delar")
     employer_org_number: str | None = Field(default=None, pattern=r"^\d{10}$")
-    policy_state: Literal["premium_paying", "paid_up", "in_payout", "payout_paused", "terminated", "no_policy"] | None = None
+    policy_state: Literal["premium_paying", "paid_up", "no_policy"] | None = Field(
+        default=None, description="Premieförloppets läge i dag, eller personer utan försäkring"
+    )
+    payout_state: Literal["not_started", "in_payout", "paused", "ended"] | None = Field(
+        default=None, description="Personer med minst en uttagsdel i detta pensionsläge i dag"
+    )
     page: int = Field(default=1, ge=1, le=100000)
     page_size: int = Field(default=25, ge=1, le=100)
 
@@ -26,7 +44,7 @@ class InsuredQuery(BaseModel):
     def _clean_query(cls, value):
         return " ".join(value.split()) if isinstance(value, str) else value
 
-    @field_validator("employer_org_number", "policy_state", mode="before")
+    @field_validator("employer_org_number", "policy_state", "payout_state", mode="before")
     @classmethod
     def _blank_is_none(cls, value):
         return value.strip() or None if isinstance(value, str) else value
@@ -34,7 +52,10 @@ class InsuredQuery(BaseModel):
 
 class ListedPolicy(BaseModel):
     policy_number: str
-    current_state: str | None
+    current_state: str | None = Field(description="Premieförloppets läge i dag")
+    payout_state: str | None = Field(
+        default=None, description="Pensionsförloppet över uttagsdelarna: in_payout, paused, not_started eller ended"
+    )
 
 
 class InsuredRow(BaseModel):
@@ -62,7 +83,8 @@ def _fold_name(column):
 
 @operation(
     name="list_insured_persons",
-    description="Listar försäkrade med namnsökning, person-/försäkringsnummer, arbetsgivare, nuvarande försäkringsläge och sidindelning.",
+    description="Listar försäkrade med namnsökning, person-/försäkringsnummer, arbetsgivare, premieförloppets och "
+                "uttagsdelarnas läge i dag och sidindelning.",
     kind=OperationKind.READ,
     pii=True,
 )
@@ -92,6 +114,15 @@ def list_insured_persons(ctx: OperationContext, data: InsuredQuery) -> InsuredLi
         query = query.where(select(Policy.id).join(PolicyState, PolicyState.policy_id == Policy.id).where(
             Policy.insured_person_id == InsuredPerson.id, PolicyState.valid_to.is_(None), PolicyState.state == data.policy_state,
         ).exists())
+    if data.payout_state:
+        query = query.where(
+            select(Policy.id).join(PolicyBenefit, PolicyBenefit.policy_id == Policy.id)
+            .join(PayoutPart, PayoutPart.benefit_id == PolicyBenefit.id)
+            .join(PayoutPartState, PayoutPartState.payout_part_id == PayoutPart.id)
+            .where(Policy.insured_person_id == InsuredPerson.id, PayoutPartState.valid_to.is_(None),
+                   PayoutPartState.state == data.payout_state)
+            .exists()
+        )
 
     total_in_database = session.scalar(select(func.count()).select_from(InsuredPerson))
     total = session.scalar(select(func.count()).select_from(query.subquery()))
@@ -106,12 +137,16 @@ def list_insured_persons(ctx: OperationContext, data: InsuredQuery) -> InsuredLi
 
     policies_by_person = {row.id: [] for row in rows}
     if rows:
-        for person_id, number, state in session.execute(select(
-            Policy.insured_person_id, Policy.policy_number, PolicyState.state,
+        listed = session.execute(select(
+            Policy.id, Policy.insured_person_id, Policy.policy_number, PolicyState.state,
         ).outerjoin(PolicyState, and_(PolicyState.policy_id == Policy.id, PolicyState.valid_to.is_(None))).where(
             Policy.insured_person_id.in_(policies_by_person),
-        ).order_by(Policy.policy_number)):
-            policies_by_person[person_id].append(ListedPolicy(policy_number=number, current_state=state))
+        ).order_by(Policy.policy_number)).all()
+        parts = parts_by_policy(session, [policy_id for policy_id, *_ in listed])
+        for policy_id, person_id, number, state in listed:
+            policies_by_person[person_id].append(ListedPolicy(
+                policy_number=number, current_state=state, payout_state=summary_state(parts.get(policy_id, [])),
+            ))
     return InsuredList(
         persons=[InsuredRow(
             personal_id_number=row.personal_id_number, first_name=row.first_name, last_name=row.last_name, status=row.status,

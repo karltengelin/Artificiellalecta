@@ -6,7 +6,14 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import event
 
-from models import Employer, InsuredPerson, Policy, PolicyState
+from models import (
+    Employer,
+    InsuredPerson,
+    PayoutPartState,
+    Policy,
+    PolicyBenefit,
+    PolicyState,
+)
 from services import (
     AccessDeniedError,
     Actor,
@@ -15,6 +22,7 @@ from services import (
     OperationContext,
     ServiceLayer,
 )
+from services.payout_parts import create_initial_part
 
 HUMAN = OperationContext(actor=Actor.human("karl"))
 
@@ -36,10 +44,10 @@ def bestand(insurance_db):
                 employment_rate=Decimal(100), itp1_start_date=date(2020, 1, 1), status="active",
             ))
         session.flush()
-        for number, pnr, state in [
-            ("AL-000002", "199002021234", "premium_paying"),
-            ("AL-000003", "199002021234", "paid_up"),
-            ("AL-000004", "199003031234", "in_payout"),
+        for number, pnr, state, payout in [
+            ("AL-000002", "199002021234", "premium_paying", None),
+            ("AL-000003", "199002021234", "paid_up", None),
+            ("AL-000004", "199003031234", "paid_up", "in_payout"),
         ]:
             person = session.query(InsuredPerson).filter_by(personal_id_number=pnr).one()
             policy = Policy(policy_number=number, insured_person_id=person.id,
@@ -47,6 +55,14 @@ def bestand(insurance_db):
             session.add(policy)
             session.flush()
             session.add(PolicyState(policy_id=policy.id, state=state, valid_from=date(2020, 1, 1)))
+            benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2020, 1, 1))
+            session.add(benefit)
+            session.flush()
+            part = create_initial_part(session, benefit)
+            if payout:
+                (first,) = part.states
+                first.valid_to = date(2024, 12, 31)
+                session.add(PayoutPartState(payout_part_id=part.id, state=payout, valid_from=date(2025, 1, 1)))
     return ServiceLayer(session_factory=insurance_db.session_factory, events=MemoryEventLog())
 
 
@@ -74,10 +90,22 @@ def test_filter_matchar_nuvarande_lage_inte_historiskt(bestand):
     result = listing(bestand, policy_state="premium_paying")
     assert [p.personal_id_number for p in result.persons] == ["199002021234"]
     assert {p.policy_number for p in result.persons[0].policies} == {"AL-000002", "AL-000003"}
-    assert listing(bestand, policy_state="paid_up").total == 2
+    assert listing(bestand, policy_state="paid_up").total == 3  # även fribrevet under utbetalning (fall 38)
     assert listing(bestand, q="Test", policy_state="premium_paying").total == 0
-    assert listing(bestand, policy_state="in_payout", employer_org_number="5560000002").total == 1
-    assert listing(bestand, policy_state="in_payout", employer_org_number="5560000001").total == 0
+    assert listing(bestand, payout_state="in_payout", employer_org_number="5560000002").total == 1
+    assert listing(bestand, payout_state="in_payout", employer_org_number="5560000001").total == 0
+
+
+def test_premieforlopp_och_pensionsforlopp_ar_skilda_urval(bestand):
+    # Fall 38: fribrev under pågående utbetalning – båda förloppen syns och filtreras var för sig
+    both = listing(bestand, policy_state="paid_up", payout_state="in_payout")
+    assert [p.personal_id_number for p in both.persons] == ["199003031234"]
+    (policy,) = both.persons[0].policies
+    assert (policy.current_state, policy.payout_state) == ("paid_up", "in_payout")
+    assert {p.personal_id_number for p in listing(bestand, payout_state="not_started").persons} == {"199001011234", "199002021234"}
+    assert listing(bestand, payout_state="paused").total == 0
+    with pytest.raises(InvalidInputError):
+        listing(bestand, policy_state="in_payout")
 
 
 def test_flera_forsakringar_blir_en_person_och_utan_forsakring_ar_med(bestand):
@@ -134,6 +162,6 @@ def test_antal_databasfragor_vaxer_inte_med_raderna(bestand, insurance_db):
         first_count = len(queries)
         queries.clear()
         listing(bestand, page_size=100)
-        assert len(queries) == first_count == 4
+        assert len(queries) == first_count == 5  # + uttagsdelarnas läge
     finally:
         event.remove(insurance_db.engine, "before_cursor_execute", record)

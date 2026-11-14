@@ -13,8 +13,9 @@
 | `employers` | Försäkringstagare (arbetsgivare med ITP-avtal) | 🟢 I drift (seedad) |
 | `insured_persons` | Försäkrade (anställda som omfattas av ITP1) | 🟢 I drift (seedad) |
 | `policies` | Försäkringar (flera per försäkrad möjliga) | 🟢 I drift i Lakebase enligt Fas 1e-modellen (B-022) |
-| `policy_states` | Försäkringslägen – tillståndshistorik per försäkring | 🟢 I drift i Lakebase; importerad historik och tjänsteoperationer |
+| `policy_states` | Premieförloppet – premiebetalande eller fribrev per försäkring, som tidsperioder (§6) | 🟢 I drift i Lakebase; importerad historik och tjänsteoperationer. Paket B steg 1 (B-047) smalnar villkoret till `premium_paying` och `paid_up` – 🟡 migrationen är inte körd i Lakebase |
 | `policy_benefits` | Försäkringsförmåner – förmåner inom en försäkring | 🟢 I drift i Lakebase; förmånen ålderspension |
+| `payout_parts` / `payout_part_states` | Uttagsdelar under en förmån och deras pensionsförlopp (§7b) | 🟡 Paket B steg 1 (B-047, P1-PENSION-001 §4): modeller, övergång, migration och tester; verifierade mot isolerad Postgres. Ej skapade i Lakebase – kräver Karls separata OK; agentrollerna får inga rättigheter |
 | `premium_transactions` | Premietransaktioner (en rad per förmån och månad) | 🟢 I drift i Lakebase med importerad premiehistorik; `corrects_transaction_id` migrerad 2026-10-11 |
 | `salary_reports` | Löneunderlag – pensionsmedförande lön per person, arbetsgivare och månad, versionerat | 🟢 Skapad i Lakebase 2026-10-11 (§8b); registrering verifierad i S6 2026-10-12 |
 | `bank_events` / `payment_allocations` | Inbetalningar enligt banken och deras fördelning på fakturarader eller avstämningskontot (§8e) | 🟢 Paket A steg 4 (B-046): modeller, operationer och lokala tester. Skapade tomma i Lakebase 2026-11-08 med `migrate_premium_flow.py` (§12) efter backup `backups/20261108T075712Z` och Karls OK; agentrollerna har inga rättigheter |
@@ -31,7 +32,7 @@
 | `valuation_bases` | Antagandebiblioteket: aktuariella grunder och diskonteringskurvor med oföränderligt innehåll (§9j) | 🟡 A4 (B-042): modell, operationer, startgrunder och tester; 🟢 skapad och seedad i Lakebase 2026-10-31 efter backup `backups/20261031T124616Z` och operatörens OK; läsrätt för `agent_aktuarie` satt |
 | `valuation_extracts` / `valuation_runs` / `valuation_results` | Värderingsmotorn: sparade datautdrag S-04, värderingskörningar med FTA, villkorad återbäring och underskott, och resultat per segment (§9k) | 🟡 A6 (B-042): modeller, operationer, migration och tester; verifierade mot isolerad Postgres. 🟢 Skapade tomma i Lakebase 2026-10-31 efter backup `backups/20261031T173353Z` och operatörens OK; läsrätt för `agent_aktuarie` på körningar och resultat |
 
-**Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för försäkringens läge. Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
+**Kedjan för uppslag:** person → `policies` (personens försäkringar) → `policy_benefits` (förmåner per försäkring) → `premium_transactions` (premier per förmån), med `policy_states` som parallell tidsaxel för premieförloppet och `payout_parts` → `payout_part_states` för pensionsförloppet per uttagsdel (§7b). Alla kopplingar är FK:er så varje fråga "vad hade person X för läge/förmåner/premier vid tidpunkt T" är en join-kedja.
 
 **Planerade tabeller (ej i denna omgång):** Kapitalets kassaflödesjournal och premiekoppling byggs senare; se §9d.
 
@@ -141,37 +142,32 @@ indexeras för listning. `status` börjar som `new` och `created_at` lagras i UT
 
 ---
 
-## 6. Tabell: `policy_states` – Försäkringslägen
+## 6. Tabell: `policy_states` – Premieförloppet
 
-**Domän:** Tillståndshistorik per försäkring som **tidsperioder**: varje rad säger "försäkringen var i läge X från `valid_from` till `valid_to`". Öppen rad (`valid_to IS NULL`) = nuvarande läge. Frågan "vilket läge hade försäkringen 2024-03-15?" = raden där datumet ligger i intervallet.
+**Domän:** Försäkringens **premieförlopp** som **tidsperioder**: varje rad säger "försäkringen var premiebetalande (eller fribrev) från `valid_from` till `valid_to`". Öppen rad (`valid_to IS NULL`) = nuvarande läge. Frågan "vilket premieläge hade försäkringen 2024-03-15?" = raden där datumet ligger i intervallet.
+
+Sedan paket B steg 1 (B-047 punkt 2, P1-PENSION-001 §4) har en försäkring tre skilda förlopp: **premieförloppet** här, **pensionsförloppet** per uttagsdel i `payout_part_states` (§7b) och betalningsförloppet (månadsrätter, byggs i steg 5). Uttagslägena `in_payout` och `payout_paused` och läget `terminated` från B-022 finns inte längre i tabellen; övergången flyttar uttagslägena till uttagsdel 1 (§12).
 
 | Kolumn | Datatyp | Constraints | Beskrivning |
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
 | `policy_id` | `UUID` | NOT NULL, FK → `policies(id)` ON DELETE RESTRICT | Försäkringen |
-| `state` | `VARCHAR(20)` | NOT NULL, CHECK in (`'premium_paying'`, `'paid_up'`, `'in_payout'`, `'payout_paused'`, `'terminated'`) | Läge, speglar villkoren (se nedan) |
+| `state` | `VARCHAR(20)` | NOT NULL, CHECK in (`'premium_paying'`, `'paid_up'`) | Premieläge, speglar villkoren (se nedan) |
 | `valid_from` | `DATE` | NOT NULL | Lägets första giltighetsdag |
 | `valid_to` | `DATE` | NULL, CHECK (NULL eller ≥ `valid_from`) | Sista giltighetsdag. NULL = pågående |
 | `note` | `VARCHAR(255)` | NULL | Orsak/kommentar, t.ex. "Anställning upphörde" |
 | `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
 
-**Lägen** (befintlig implementation; hänvisningar till `01_domän/försäkringsvillkor.md` v2.0):
+**Lägen** (hänvisningar till `01_domän/försäkringsvillkor.md` v2.0):
 
 - `premium_paying` – premiebetalande (villkor §3)
-- `paid_up` – fribrev (villkor §7)
-- `in_payout` – uttag pågår (villkor §8–11)
-- `payout_paused` – uttag pausat (villkor §10)
-- `terminated` – avslutad
+- `paid_up` – fribrev (villkor §7); kan gälla samtidigt som en uttagsdel betalas ut eller är pausad (fall 38)
 
-Produktpaket PR-ITP1 v1.0 skiljer premie-, pensions- och betalningsförlopp
-och medger flera uttagsdelar. Tabellen ovan beskriver fortfarande den
-befintliga modellen, som inte redan implementerar hela paketet. Kraven
-för nästa byggsession finns i [UTTAG_GEMENSAMT](../01_domän/produktregler/UTTAG_GEMENSAMT.md).
-Denna hänvisningsuppdatering ändrar inget schema eller någon kod.
+Att utbetalningen startat, pausats eller avslutats står per uttagsdel i `payout_part_states` (§7b). Avslut i rättighetshänseende sker bara genom slutavräkning eller dödsfall (PB10) och är ett läge på uttagsdelen, inte på försäkringen. Kraven finns i [UTTAG_GEMENSAMT](../01_domän/produktregler/UTTAG_GEMENSAMT.md) och [designstoppet för paket B](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md).
 
 **Integritet:** Partiellt unikt index på `policy_id` där `valid_to IS NULL` – max ett öppet läge per försäkring. Att perioder inte överlappar valideras på applikationsnivå (Postgres EXCLUDE-constraint kräver btree_gist-extension – utvärderas senare). Index på `(policy_id, valid_from)`.
 
-**Ändras via tjänstelagret (Fas 1f T3):** `set_policy_paid_up` stänger den öppna `premium_paying`-perioden och öppnar `paid_up` dagen efter anställningens slut, och validerar hela tidslinjen (en öppen rad, inga överlapp). Bara för försäkringar vars pension inte har startat – ett läge per försäkring kan inte uttrycka fribrev samtidigt med pågående eller pausad pension (UTTAG_GEMENSAMT). Framtida giltighetsdagar skapas inte: läsningen tolkar den öppna raden som dagens läge.
+**Ändras via tjänstelagret (Fas 1f T3, paket B steg 1):** `set_policy_paid_up` stänger den öppna `premium_paying`-perioden och öppnar `paid_up` dagen efter anställningens slut, och validerar hela tidslinjen (en öppen rad, inga överlapp). Sedan steg 1 gäller det även när en uttagsdel betalas ut eller är pausad (fall 38); uttagsdelarnas pensionsförlopp ändras inte. Framtida giltighetsdagar skapas inte: läsningen tolkar den öppna raden som dagens läge. Anslutningen (`enroll_insured_person`) öppnar `premium_paying` och ger förmånen uttagsdel 1 i läget `not_started`.
 
 ---
 
@@ -180,7 +176,53 @@ Denna hänvisningsuppdatering ändrar inget schema eller någon kod.
 **Domän:** En förmån inom en försäkring. Endast premiebestämd ITP1 ålderspension (`retirement_dc`) ingår i beslutat produktscope. TGL och familjeskydd är tekniskt förberedda som typer enligt B-022, men får användas som produkter först om scope utökas genom ett nytt uttryckligt beslut och villkoren uppdateras. Förberedelsen innebär att dessa typer då kan läggas till som ytterligare rader med egna premier och parametrar, utan schemaändring.
 
 | Kolumn | Datatyp | Constraints | Beskrivning |
+|---
+
+## 7b. Tabeller: `payout_parts` och `payout_part_states` – Uttagsdelar och pensionsförloppet
+
+> **Status:** Paket B steg 1 (B-047 punkt 2, [P1-PENSION-001 §4](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md), PB2). Modeller i `src/models/payout_part.py`, läsningar i `src/services/payout_parts.py`, övergången i `src/services/payout_transition.py` och migrationen `scripts/migrations/migrate_payout_parts.py` (§12). Verifierade lokalt och mot isolerad Postgres. **Ej skapade i Lakebase** – kräver Karls separata OK. Agentrollerna har inga rättigheter på tabellerna i första versionen (designstoppet §12).
+
+**Domän:** En **uttagsdel** är den enhet under en förmån som får egen start, form, plan, garantidelar och månadsrätter (PR-ITP1-024). Varje ålderspensionsförmån har minst del 1. En delning – byggs i steg 4 – ger högst tre delar per ursprunglig förmån, med vald andel och länk till delen den delades från. Garantidelar, kapitalposter och månadsrätter knyts till exakt en del i steg 2 och 5.
+
+### `payout_parts`
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
 |--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Surrogatnyckel |
+| `benefit_id` | `UUID` | NOT NULL, FK → `policy_benefits(id)` ON DELETE RESTRICT, index | Förmånen delen tillhör |
+| `part_number` | `INTEGER` | NOT NULL, CHECK 1–3, UNIQUE med `benefit_id` (`uq_payout_parts_benefit_number`) | Delens nummer; del 1 är den ursprungliga |
+| `share_of_origin` | `NUMERIC(11,10)` | NOT NULL, CHECK > 0 och ≤ 1, default 1 | Delens andel av den ursprungliga rätten, fastställd vid delningen; marknadsutveckling ändrar den inte |
+| `split_from_part_id` | `UUID` | NULL, FK → `payout_parts(id)` ON DELETE RESTRICT, index | Delen som delades |
+| `split_date` | `DATE` | NULL | Delningens dag |
+| `split_share` | `NUMERIC(11,10)` | NULL, CHECK 0,1–0,9 | Vald andel av den delade delens kapital (minst 10 %, och minst 10 % kvar) |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
+
+**Integritet:** CHECK `ck_payout_parts_split` – del 1 har inga delningsfält; del 2 och 3 har alla tre (länk, dag och andel).
+
+### `payout_part_states`
+
+Delens **pensionsförlopp** som tidsperioder, på samma sätt som `policy_states` bär premieförloppet.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Surrogatnyckel |
+| `payout_part_id` | `UUID` | NOT NULL, FK → `payout_parts(id)` ON DELETE RESTRICT | Uttagsdelen |
+| `state` | `VARCHAR(20)` | NOT NULL, CHECK in (`'not_started'`, `'in_payout'`, `'paused'`, `'ended'`) | Pensionsläget |
+| `end_reason` | `VARCHAR(20)` | CHECK: `final_settlement` eller `death` exakt när `state = 'ended'`, annars NULL | Varför delen är avslutad (PB10) |
+| `valid_from` | `DATE` | NOT NULL | Lägets första giltighetsdag |
+| `valid_to` | `DATE` | NULL, CHECK (NULL eller ≥ `valid_from`) | Sista giltighetsdag. NULL = pågående |
+| `note` | `VARCHAR(255)` | NULL | Orsak/kommentar |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL, default `now()` | Standardtidsstämplar |
+
+**Lägen:** `not_started` (delen tar emot premie), `in_payout` (utbetalning pågår), `paused` (utbetalningen är pausad) och `ended` (slutligt, alltid öppet, med orsak). **En framtida plan är inget läge** – den blir en planversion i steg 4.
+
+**Integritet:** Partiellt unikt index `uq_payout_part_states_one_open` på `payout_part_id` där `valid_to IS NULL` – max ett öppet läge per del. CHECK `ck_payout_part_states_ended_open`: `ended` har ingen slutdag. Index på `(payout_part_id, valid_from)`. Överlapp och glapp valideras på applikationsnivå, som för `policy_states`.
+
+**Skrivs av:** anslutningen och premiehistorikens generator (del 1 i `not_started` från förmånens start), övergången (§12) och demodatan. Ingen tjänsteoperation startar, pausar eller avslutar en del i steg 1 – det byggs i steg 4 och 6, och en ny skrivande operation blir `HUMAN_ONLY`.
+
+**Läses av:** `get_insured_overview` och handläggarsidan (delarnas läge per försäkring), `list_insured_persons` (filtret `payout_state`), `get_portfolio_snapshot` (lägena `in_payout`, `payout_paused` och `terminated` räknas ur delarna), S-04-utdraget (en försäkring med en startad eller avslutad del värderas inte, som tidigare) och premieunderlaget (`create_premium_from_salary_report` väljer mottagare bland delar som inte startat under månaden). Med en agents databasroll läses delarna inte: läsningen redovisar pensionsförloppet som ej läst (`services/payout_parts.py`, `payout_readable`).
+
+--------|---------|-------------|-------------|
 | `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
 | `policy_id` | `UUID` | NOT NULL, FK → `policies(id)` ON DELETE RESTRICT | Försäkringen |
 | `benefit_type` | `VARCHAR(30)` | NOT NULL, CHECK in (`'retirement_dc'`, `'tgl'`, `'family_protection'`) | Tekniskt tillåtna typer; endast `retirement_dc` ingår i beslutat produktscope |
@@ -191,7 +233,7 @@ Denna hänvisningsuppdatering ändrar inget schema eller någon kod.
 
 **Integritet:** Unikt index på `(policy_id, benefit_type)` där `end_date IS NULL` – max en pågående förmån av varje typ per försäkring. Historiska (avslutade) förmåner av samma typ tillåts.
 
-**Relationer:** `policy_benefits.id` ← `premium_transactions.benefit_id` (förmånens premier).
+**Relationer:** `policy_benefits.id` ← `premium_transactions.benefit_id` (förmånens premier) och ← `payout_parts.benefit_id` (förmånens uttagsdelar, §7b).
 
 ---
 
@@ -626,7 +668,7 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
 | `case_number` | `VARCHAR(20)` | NOT NULL, UNIQUE, CHECK form `CASE-NNNNNN` | Ärendenumret; står i `case_id` i kö och logg |
-| `case_type` | `VARCHAR(40)` | NOT NULL, CHECK in (`'salary_report'`, `'salary_file_deviation'`, `'payment_overdue'`, `'payment_unmatched'`) | Ärendetyp. Fler typer läggs till med ny CHECK (B-033 val C). `salary_file_deviation` (paket A steg 2) är en avvikelse i en löneunderlagsfil, `payment_overdue` (steg 3) en förfallen faktura och `payment_unmatched` (steg 4) en inbetalning på avstämningskontot; alla avgörs av människa. CHECK-villkoret byttes i Lakebase av premieflödets migration 2026-11-08 (§12, paket A steg 8) |
+| `case_type` | `VARCHAR(40)` | NOT NULL, CHECK in (`'salary_report'`, `'salary_file_deviation'`, `'payment_overdue'`, `'payment_unmatched'`, `'payout_reconstruction'`) | Ärendetyp. Fler typer läggs till med ny CHECK (B-033 val C). `salary_file_deviation` (paket A steg 2) är en avvikelse i en löneunderlagsfil, `payment_overdue` (steg 3) en förfallen faktura och `payment_unmatched` (steg 4) en inbetalning på avstämningskontot; alla avgörs av människa. CHECK-villkoret byttes i Lakebase av premieflödets migration 2026-11-08 (§12, paket A steg 8). `payout_reconstruction` (paket B steg 1) skapas av övergången för varje uttag som flyttats från försäkringens läge till uttagsdel 1; handläggaren rekonstruerar plan och utbetalningshistorik ur underlag. Villkoret byts av uttagsdelarnas migration (§12), ej körd i Lakebase |
 | `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`open`, `in_progress`, `waiting_approval`, `waiting_info`, `closed`), default `open` | Aktuell status |
 | `outcome` | `VARCHAR(20)` | NULL, CHECK in (`approved`, `rejected`, `supplement_requested`, `manual_review`, `no_action`) | Utfall; satt exakt när ärendet är stängt |
 | `insured_person_id` | `UUID` | NULL, FK → `insured_persons(id)` ON DELETE RESTRICT | Den försäkrade ärendet gäller |
@@ -909,6 +951,13 @@ ingenting. Erfarenhetsdata importeras separat, aldrig från fabricerade modellut
 - **A6 (2026-10-31) – värderingsmotorns tabeller (§9k, B-042):** skapas med `scripts/migrations/migrate_valuation_runs.py` (`utils/migration_valuation_runs.py`) enligt samma mönster: bara `valuation_extracts`, `valuation_runs` och `valuation_results` med index, tomma, i en transaktion; torrkörning som standard, `--apply` kräver `--backup`, radantalen i övriga tabeller kontrolleras. `valuation_bases` ska finnas. Finns bara en del av tabellerna stoppar migrationen. Verifierat mot isolerad Postgres 2026-10-31 (`tests/test_valuation_runs.py`). **Ordning i Lakebase:** uppgraderingen av `product_parameters` (A5, kapitalets nycklar) först, eftersom värderingen läser skatteavdraget där (införd 2026-10-31); sedan backup → torrkörning → `--apply` → `grant_agent_role.py --team aktuarie --apply`. **Körd mot Lakebase 2026-10-31** efter backup `backups/20261031T173353Z` och torrkörning, med operatörens OK: de tre tabellerna och två index skapade tomma, radantalen i övriga 19 tabeller oförändrade och en andra körning gjorde ingenting. Därefter fick `agent_aktuarie` SELECT på `valuation_runs` och `valuation_results`. Verifierat med rollens egen anslutning: `list_valuation_runs` och läsning av båda tabellerna fungerar; SELECT på `valuation_extracts` samt INSERT, UPDATE och DELETE nekas
 - **Paket A steg 8 (2026-11-08) – premieflödet (§8c–8e, §9g, B-046, P1-PREMIE-001 §11):** införs med `scripts/migrations/migrate_premium_flow.py` (`utils/migration_premium_flow.py`) i **en** transaktion: `salary_files`, `invoices`, `invoice_lines`, `bank_events` och `payment_allocations` skapas tomma med index och villkor, och tre CHECK-villkor på `cases` byts mot modellens – `ck_cases_type` (ärendetyperna `salary_file_deviation`, `payment_overdue`, `payment_unmatched`), `ck_cases_channel` (kanalen `system`) och `ck_cases_subject` (`payment_unmatched` får sakna försäkrad och arbetsgivare). Villkoren vidgas bara, så befintliga ärenden uppfyller dem. Tabellerna och villkoren förs in tillsammans, eftersom handläggarsidan slutar visa notisen om saknade tabeller när tabellerna finns. `premium_transactions` ändras inte. Torrkörningen är standard och körs i en `READ ONLY`-transaktion; den visar SQL, villkorens nuvarande definitioner, schemaskillnader mellan modellerna och databasens befintliga tabeller (kolumner, typer, CHECK-namn och index) och hinder, t.ex. standardrättigheter som skulle ge en agentroll åtkomst. `--apply` kräver `--backup`. Den skarpa körningen kontrollerar i samma transaktion modellens kolumner, de bytta villkoren, tomma tabeller, oförändrade radantal och att ingen agentroll har rättigheter på de nya tabellerna; minsta avvikelse rullar tillbaka allt. Delvis infört stoppar. Verifierat mot isolerad Postgres 2026-11-08 (`tests/test_migration_premium_flow.py`): från Lakebase-läget med villkoren från F5-1 blir de fem tabellerna och `cases` identiska med `create_all`, idempotent, och ett `payment_unmatched`-ärende utan försäkrad och arbetsgivare nekas före och godtas efter. Premiekedjan körd på ett migrerat schema med `smoke_test_premium_chain.py --db svc_test_migrerad`: 26 av 26 kontroller, och bara kedjans tabeller ändrades. **Torrkörd mot Lakebase 2026-11-08** efter backup `backups/20261108T075712Z`: 24 satser, de tre villkoren i F5-1:s form, inga schemaskillnader, inga hinder, radantalen i 29 tabeller lästa (bl.a. 15 097 premietransaktioner och 8 ärenden). **Införd i Lakebase 2026-11-08** efter Karls separata OK (§11 punkt 2) och samordning enligt AGENTS.md §4.5 (inga andra klientanslutningar, radantalen lika med backupen): 24 satser i en transaktion. Kontrollerat efteråt med bara läsning: de fem tabellerna finns och är tomma, inga gamla villkor kvar, ingen schemaskillnad mot modellerna för de fem tabellerna och `cases`, inga rättigheter eller standardrättigheter för `agent_forsakring`, `agent_aktuarie` och `agent_compliance`, radantalen i de 29 befintliga tabellerna lika med backupen, och en ny torrkörning ger `already_applied`. **Första operativa perioden 2026-10 (punkt 3), filintag och fakturering, 2026-11-08** efter ytterligare OK: SvenskIndustries AB #02 (en saknad rad, en nolla, en okänd person) och TeknikNorden AB #01 (utan avvikelser), verklig kalender, simulatorns seed 2026, backup `backups/20261108T094751Z`. Två filer godkända, 28 löneunderlag och 28 premierader, fakturorna INV-000001 (30 724,48 kr) och INV-000002 (36 261,66 kr) daterade 2026-11-08 med förfallodag 2026-12-08, och två öppna ärenden `salary_file_deviation` (CASE-000009 okänd person, CASE-000010 saknad rapport). Bara kedjans tabeller ändrades. Skrivskyddad kontroll av §7: 31 av 31 (fall 1–7 och 18 samt spårbarhet, fakturasummor, förfallodag och OCR). **Bankdelen (fall 12, 13 och 15), 2026-11-14** efter Karls OK: backup `backups/20261114T085221Z`, simulatorns seed 2026 och bankdag 2026-11-09, dagen efter fakturadagen. SvenskIndustries delbetalade hälften, 15 362,24 kr; lika mycket står kvar som öppen fordran och de tolv premieraderna förblir `invoiced` (fall 12). TeknikNorden betalade 36 261,66 kr två gånger; fakturan är betald, de 15 premieraderna är `paid` med betalningsdag 2026-11-09 och den andra betalningen ligger på avstämningskontot med ärendet CASE-000011 `payment_unmatched` (fall 13). Samma händelser igen, i samma fil och i en andra fil med egen referens, gav inga nya händelser eller allokeringar (fall 15). Skrivskyddad kontroll: 18 av 18, med inbetalt 87 885,56 kr = fördelat 51 623,90 kr + avstämningskonto 36 261,66 kr och fakturerat − fördelat = 15 362,24 kr i öppna fordringar. Bara `bank_events`, `payment_allocations`, `cases` och `operation_events` fick fler rader. Fall 14 är verifierat lokalt men inte kört i Lakebase. CASE-000011 står öppet hos handläggaren; återbetalning ingår inte i första versionen (PA5). Körskripten för perioden finns i `scripts/simulation/period_2026_10/`. Förfallobevakningen (fall 17) kräver verkliga datum efter förfallodagen, tidigast 2026-12-09; fall 8–11, 14, 16, 19 och 20 är verifierade i `svc_test` men inte körda i Lakebase. **Kolumnerna i `premium_transactions`** (designstoppet §5): inte införda, godkänt av Karl 2026-11-08: fakturaraden pekar redan på premieraden och löneunderlaget står i `calculation_basis`. **Ärendena CASE-000009–000010, 2026-11-14,** efter Karls OK, backup `backups/20261114T091438Z` och kontroll att inga andra klienter var anslutna: SvenskIndustries kompletterande fil `SIM1-5553972661-202610-S2026-K1` har exakt den saknade raden (lön 30 936,00 kr). Den godkändes, och premien 1 392,12 kr fakturerades på INV-000003 med förfallodag 2026-12-14. Intag, godkännande och fakturering är gjorda med ärendenumret, och CASE-000010 är stängt som `approved`. CASE-000009 (okänd person) är stängt som `no_action`, eftersom raden aldrig registrerades. Skrivskyddad kontroll: 15 av 15. Avstämningen går fortfarande ihop: inbetalt 87 885,56 kr är oförändrat och öppna fordringar är 16 754,36 kr (resten av INV-000001 plus INV-000003).
 
+- **Paket B steg 1 (2026-11-14) – uttagsdelar och tre förlopp (§6, §7b, §9g, B-047, P1-PENSION-001 §4):** införs med `scripts/migrations/migrate_payout_parts.py` (`utils/migration_payout_parts.py`) i **en** transaktion:
+  1. `payout_parts` och `payout_part_states` skapas med index och villkor, och `ck_cases_type` vidgas med `payout_reconstruction`;
+  2. övergången (`services/payout_transition.py`) ger varje ålderspensionsförmån uttagsdel 1 i läget `not_started` från förmånens start – utan ekonomisk effekt – och flyttar eventuella `in_payout`- och `payout_paused`-rader till delen (som `in_payout` och `paused`) med ett rekonstruktionsärende per uttag. Premieförloppet behåller sina rader: ett fribrev före uttaget öppnas igen, och ett premiebetalande läge som slutar samma dag som den registrerade anställningen följs av `paid_up` dagen efter. Mönster som inte går att flytta entydigt (`terminated`, uttagslägen som inte ligger sist, glapp, flera ålderspensionsförmåner) stoppar migrationen;
+  3. sist smalnas `ck_policy_states_state` till `premium_paying` och `paid_up`.
+
+  Torrkörningen är standard och körs `READ ONLY`; den visar SQL, villkorens nuvarande definitioner, övergångens plan, schemaskillnader, hinder och radantal. `--apply` kräver `--backup`. Den skarpa körningen kontrollerar modellens kolumner, de bytta villkoren, exakt del 1 med ett öppet läge per förmån, att inga gamla uttagslägen finns kvar, att radantalen i övriga tabeller är oförändrade – utom `policy_states` och `cases` med exakt övergångens rörelser – och att ingen agentroll har rättigheter på de nya tabellerna. Minsta avvikelse rullar tillbaka allt. Idempotent; delvis infört stoppar. Verifierat mot isolerad Postgres (`tests/test_migration_payout_parts.py`): från Lakebase-läget före steg 1 blir de två tabellerna, `cases` och `policy_states` identiska med `create_all`, och ett gammalt uttagsläge flyttas med rekonstruktionsärende. I Lakebase finns inga uttagslägen, så där skapas bara delarna. Demo- och testdatabaser får samma övergång genom `add_missing_demo_tables`; David Dahl i demon har uttaget på del 1 och ett öppet rekonstruktionsärende. **Ordning:** migrationen ska vara körd innan koden från steg 1 används mot Lakebase, eftersom läsningarna och premieunderlaget läser uttagsdelarna. **Ej körd mot Lakebase** – kräver backup, samordning enligt AGENTS.md §4.5 och Karls separata OK.
+
 ---
 
 ## 12b. Ärendeuppdragens schemaändring
@@ -936,9 +985,10 @@ En andra körning gör ingenting. Webbstart och en tom engångskörning av arbet
 - **B-015** – mappstruktur och namnkonvention (engelska i kod, svenska i dokumentation)
 - **B-021** – produktförenklingar (kapitalavgift som `fee`-transaktion m.m.)
 - **B-022** – försäkringsmodell: flera försäkringar per person, förmåner och tillståndsperioder (ersätter B-021:s ett-avtal-regel)
+- **B-047** – paket B, pensions- och månadsavräkning: tre förlopp och uttagsdelar (punkt 2; §6 och §7b)
 - **B-003/B-019** – simulerad kapitalförvaltning; modellval i `projekt/05_kapitalförvaltning/DATAMODELL_BESLUTSFORSLAG.md`, tillämpade inom operatörens mandat 2026-10-24, ingen ny beslutsloggspost
 - **MASTER_CONTEXT §6** – dataarki­tektur (övergripande)
 - Domänregler: `01_domän/ITP1_regelverk.md` (premietrappa, åldersfönster), `01_domän/försäkringsvillkor.md` (livscykel, fakturering)
-- SQLAlchemy-modeller: `src/models/employer.py`, `insured_person.py`, `policy.py`, `policy_state.py`, `policy_benefit.py`, `premium_transaction.py`, `salary_report.py`, `base_amount.py`, `operation_event.py`, `approval_request.py`, `portfolio.py`, `portfolio_holding.py`, `trade.py`
+- SQLAlchemy-modeller: `src/models/employer.py`, `insured_person.py`, `policy.py`, `policy_state.py`, `policy_benefit.py`, `payout_part.py`, `premium_transaction.py`, `salary_report.py`, `base_amount.py`, `operation_event.py`, `approval_request.py`, `portfolio.py`, `portfolio_holding.py`, `trade.py`
 - Mockdatagenerering: `scripts/demo/generate_mock_data.py`
 - Databas-seed: `scripts/demo/seed_mock_data.py` *(seedar Lakebase via `DATABASE_URL`)*

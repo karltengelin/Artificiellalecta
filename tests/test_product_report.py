@@ -28,6 +28,7 @@ from services import Actor, MemoryEventLog, OperationContext, OperationKind, Ser
 from services.db import session_factory_for
 from services.errors import InvalidInputError
 from services.operations import common
+from services.payout_parts import NOT_READ_FOR_AGENT
 from utils.demo_data import create_demo_database
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
@@ -35,6 +36,7 @@ pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SA
 TODAY = date(2026, 10, 27)
 KARL = Actor.human("karl")
 AGENT = OperationContext(actor=Actor.agent("actuary_agent", team="aktuarie"))
+HUMAN_CTX = OperationContext(actor=Actor.human("karl"))
 
 
 def ai_client(fake) -> AIClient:
@@ -77,10 +79,19 @@ class TestAggregat:
     def test_bestandet_summerar_och_saknar_personuppgifter(self, service):
         s = read(service, "get_portfolio_snapshot", 2026)
         shown = sum(c.policies or 0 for c in s.by_state)
-        hidden = [c for c in s.by_state if c.policies is None]
+        # Aktuarieagentens roll läser inte uttagsdelarna (P1-PENSION-001 §12): pensionscellerna är ej lästa
+        assert s.payout_states_read is False
+        not_read = {c.key for c in s.by_state if c.hidden_reason == NOT_READ_FOR_AGENT}
+        assert not_read == {"in_payout", "payout_paused", "terminated"}
+        hidden = [c for c in s.by_state if c.policies is None and c.key not in not_read]
         # De dolda lägena omfattar tillsammans minst tio försäkringar, så ingen kan räknas fram ur totalen
         assert s.policies_total == 35 and (not hidden or s.policies_total - shown >= 10)
         assert {c.hidden_reason for c in hidden} <= {PRIMARY, COMPLEMENTARY}
+
+    def test_mansklig_lasare_ser_pensionsforloppet(self, service):
+        s = read(service, "get_portfolio_snapshot", 2026, ctx=HUMAN_CTX)
+        assert s.payout_states_read is True
+        assert NOT_READ_FOR_AGENT not in {c.hidden_reason for c in s.by_state}
         assert s.as_of_date == TODAY and s.min_cell_size == 10
         raw = s.model_dump_json()
         assert not any(ch.isdigit() and len(ch) == 12 for ch in raw.split('"'))  # inga personnummer

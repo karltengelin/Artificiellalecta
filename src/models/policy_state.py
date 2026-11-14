@@ -1,9 +1,15 @@
-"""SQLAlchemy-modell för försäkringslägen (tillståndsperioder).
+"""SQLAlchemy-modell för försäkringens premieförlopp (tillståndsperioder).
 
 Se 02_system/databasschema.md §6. Varje rad = "försäkringen var i läge X
 från valid_from till valid_to". Öppen rad (valid_to IS NULL) = nuläget.
 Max ett öppet läge per försäkring (partiellt unikt index). Att perioder
 inte överlappar valideras på applikationsnivå.
+
+Sedan paket B steg 1 (B-047 punkt 2, P1-PENSION-001 §4) bär tabellen bara
+premieförloppet: `premium_paying` och `paid_up`. Pensionsförloppet ligger per
+uttagsdel i `payout_part_states` (models/payout_part.py). De tidigare lägena
+`in_payout` och `payout_paused` flyttas av övergången (services/payout_transition.py);
+`terminated` används inte för nya avslut (PB10).
 """
 
 from __future__ import annotations
@@ -21,24 +27,23 @@ from .base import Base
 if TYPE_CHECKING:
     from .policy import Policy
 
-#: Lägen, mappade mot 01_domän/försäkringsvillkor.md (databasschema §6)
+#: Premieförloppets lägen, mappade mot 01_domän/försäkringsvillkor.md §3 och §7 (databasschema §6)
 POLICY_STATES = (
     "premium_paying",
     "paid_up",
-    "in_payout",
-    "payout_paused",
-    "terminated",
 )
+#: Lägen i modellen med ett läge per försäkring (B-022) före paket B steg 1. Bara övergången läser dem.
+LEGACY_PAYOUT_STATES = ("in_payout", "payout_paused")
+LEGACY_STATES = (*POLICY_STATES, *LEGACY_PAYOUT_STATES, "terminated")
 
 
 class PolicyState(Base):
-    """Försäkringsläge – ett tillstånd med giltighetsperiod."""
+    """Premieförloppets läge – ett tillstånd med giltighetsperiod."""
 
     __tablename__ = "policy_states"
     __table_args__ = (
         CheckConstraint(
-            "state IN ('premium_paying', 'paid_up', 'in_payout', "
-            "'payout_paused', 'terminated')",
+            "state IN ('premium_paying', 'paid_up')",
             name="ck_policy_states_state",
         ),
         CheckConstraint(

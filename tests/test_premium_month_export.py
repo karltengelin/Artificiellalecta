@@ -36,7 +36,6 @@ from models import (
     InvoiceLineRecord,
     PaymentAllocation,
     Policy,
-    PolicyBenefit,
     PolicyState,
     PremiumReceipt,
     PremiumTransaction,
@@ -64,6 +63,7 @@ from services.premium_month_export import (
 from services.premium_month_inputs import InvoiceInput, MonthInputs, receipt_key
 from services.premium_month_preparation import bound_source
 from services.valuation_extract import build_extract
+from tests.conftest import add_retirement_benefit
 
 pytestmark = pytest.mark.filterwarnings("ignore:Dialect sqlite:sqlalchemy.exc.SAWarning")
 
@@ -94,8 +94,7 @@ def _person(s, employer, pnr, number):
                     signed_date=date(2020, 1, 1), start_date=date(2020, 1, 1))
     s.add(policy)
     s.flush()
-    benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=date(2020, 1, 1))
-    s.add(benefit)
+    benefit = add_retirement_benefit(s, policy.id, date(2020, 1, 1))
     s.add(PolicyState(policy_id=policy.id, state="premium_paying", valid_from=date(2020, 1, 1)))
     s.flush()
     # Mottagen historik gör att försäkringen ingår i IB-populationen per 2026-10-31

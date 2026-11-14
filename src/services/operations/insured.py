@@ -1,4 +1,10 @@
-"""Läsoperationer för försäkrade (Fas 1f, T2)."""
+"""Läsoperationer för försäkrade (Fas 1f, T2).
+
+Försäkringens läge har två delar sedan paket B steg 1 (B-047, P1-PENSION-001 §4):
+premieförloppet (`current_state`, ur `policy_states`) och pensionsförloppet per uttagsdel
+(`payout_parts`). Med en agents databasroll läses inte uttagsdelarna (§12); fältet är då
+None och `payout_parts_note` säger varför.
+"""
 
 from __future__ import annotations
 
@@ -11,6 +17,7 @@ from sqlalchemy import func, select
 from models import Employer, InsuredPerson, Policy, PolicyState, PremiumTransaction
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import NotFoundError
+from services.payout_parts import NOT_READ_FOR_AGENT, parts_by_policy, payout_readable
 
 ZERO = Decimal("0.00")
 
@@ -42,6 +49,14 @@ class StateInfo(BaseModel):
     valid_from: date
 
 
+class PayoutPartSummary(BaseModel):
+    part_number: int
+    share_of_origin: Decimal = Field(description="Delens andel av den ursprungliga rätten (PR-ITP1-024)")
+    state: str | None = Field(description="Pensionsläget i dag: not_started, in_payout, paused eller ended")
+    end_reason: str | None = Field(default=None, description="final_settlement eller death när delen är avslutad")
+    valid_from: date | None
+
+
 class BenefitSummary(BaseModel):
     benefit_type: str
     start_date: date
@@ -54,7 +69,12 @@ class PolicySummary(BaseModel):
     product_code: str
     signed_date: date
     start_date: date
-    current_state: StateInfo | None = Field(description="Pågående läge (öppen rad), om något")
+    current_state: StateInfo | None = Field(
+        description="Premieförloppets pågående läge (öppen rad): premium_paying eller paid_up, om något"
+    )
+    payout_parts: list[PayoutPartSummary] | None = Field(
+        description="Uttagsdelarnas pensionsförlopp i dag; None = läses inte med agentens roll"
+    )
     benefits: list[BenefitSummary]
     capital_sek: Decimal
 
@@ -75,13 +95,15 @@ class InsuredOverview(BaseModel):
     itp1_start_date: date | None
     policies: list[PolicySummary]
     total_capital_sek: Decimal
+    payout_parts_note: str | None = Field(default=None, description="Varför uttagsdelarna inte lästs, om de inte gjort det")
 
 
 @operation(
     name="get_insured_overview",
     description=(
-        "Visar en försäkrad med kontaktuppgifter, anställning, lön, försäkringar, pågående läge per "
-        "försäkring och kapital per förmån. Sök på personnummer eller försäkringsnummer."
+        "Visar en försäkrad med kontaktuppgifter, anställning, lön, försäkringar, premieförloppets läge och "
+        "uttagsdelarnas pensionsläge per försäkring samt kapital per förmån. Sök på personnummer eller "
+        "försäkringsnummer."
     ),
     kind=OperationKind.READ,
     pii=True,
@@ -106,6 +128,8 @@ def get_insured_overview(ctx: OperationContext, data: InsuredLookup) -> InsuredO
         select(Policy).where(Policy.insured_person_id == person.id).order_by(Policy.start_date)
     ).all()
     capital = _capital_per_benefit(session, [b.id for p in policies for b in p.benefits])
+    readable = payout_readable(ctx.actor)
+    parts = parts_by_policy(session, [p.id for p in policies]) if readable else {}
 
     summaries = []
     for policy in policies:
@@ -134,6 +158,11 @@ def get_insured_overview(ctx: OperationContext, data: InsuredLookup) -> InsuredO
                     if open_state
                     else None
                 ),
+                payout_parts=[
+                    PayoutPartSummary(part_number=v.part_number, share_of_origin=v.share_of_origin, state=v.state,
+                                      end_reason=v.end_reason, valid_from=v.valid_from)
+                    for v in parts.get(policy.id, [])
+                ] if readable else None,
                 benefits=benefits,
                 capital_sek=sum((b.capital_sek for b in benefits), ZERO),
             )
@@ -155,6 +184,7 @@ def get_insured_overview(ctx: OperationContext, data: InsuredLookup) -> InsuredO
         itp1_start_date=person.itp1_start_date,
         policies=summaries,
         total_capital_sek=sum((p.capital_sek for p in summaries), ZERO),
+        payout_parts_note=None if readable else NOT_READ_FOR_AGENT,
     )
 
 
