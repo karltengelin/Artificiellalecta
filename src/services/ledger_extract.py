@@ -9,12 +9,13 @@ rekonstruera S-04 ur premiehistoriken (P1-PENSION-001 §6, PB4). Utdraget har sa
   referens är premieraden för S-04 och allokeringen för paket A.
 - **Historik:** månadssummor och flöden före övergången kommer ur det sparade S-04-utdraget som
   verifikationen pekar ut; ingen historik bokas om. Månader efter övergången kommer ur journalens
-  stängningar (steg 3).
+  stängningar (steg 3): månadssummorna ur varje månads gällande version och flödena ur kapitalposterna.
+  Avkastningsgrunden är den sist stängda månadens AVK.
 - **Ej beräknat:** försäkringarna som inte fördes över, med S-04:s orsak, och försäkringar vars
   uttagsdel har startat vid dagen (pensionsdelen värderas när steg 4–7 finns).
 
-Journalen ger ett utdrag bara för en dag den har ett stängt läge för: i steg 2 det ingående läget
-per 2026-10-31. Andra dagar blockeras tills månadsstängningen finns (steg 3).
+Journalen ger ett utdrag bara för en dag den har ett stängt läge för: det ingående läget per
+2026-10-31 och varje stängd månads slut (steg 3). Andra dagar blockeras.
 """
 
 from __future__ import annotations
@@ -29,6 +30,7 @@ from sqlalchemy.orm import Session
 from analytics.portfolio_snapshot import birth_date
 from models import (
     InsuredPerson,
+    LedgerCapitalEntry,
     LedgerGuaranteePart,
     Policy,
     PolicyState,
@@ -46,6 +48,7 @@ from services.valuation_extract import (
     ExtractError,
     ExtractPolicy,
     GuaranteePart,
+    MonthTotals,
     NotCalculated,
     Plan,
     QualityCheck,
@@ -60,9 +63,39 @@ ZERO = Decimal("0.00")
 
 
 def covered_dates(session: Session) -> list[date]:
-    """Dagarna journalen har ett stängt läge för. I steg 2: det ingående läget."""
+    """Dagarna journalen har ett stängt läge för: det ingående läget och de stängda månaderna."""
     batch = cl.opening_batch(session)
-    return [batch.period_end] if batch is not None else []
+    return [batch.period_end, *cl.closed_month_ends(session)] if batch is not None else []
+
+
+def _closed_months(session: Session, valuation_date: date) -> list[dict]:
+    """De stängda månadernas gällande sammanställningar till och med dagen, i ordning."""
+    return [cl.effective_batch(session, end).content for end in cl.closed_month_ends(session)
+            if end <= valuation_date]
+
+
+def _month_totals(content: dict) -> MonthTotals:
+    t = content["totals"]
+    return MonthTotals(month=date.fromisoformat(content["month"]), rate=Decimal(content["return_basis"]["rate"]),
+                       fee_rate=Decimal(content["parameters"]["fee_rate"]),
+                       tax_rate=Decimal(content["parameters"]["tax_rate"]), opening=Decimal(t["opening_sek"]),
+                       returns=Decimal(t["returns_sek"]), fees=Decimal(t["fees_sek"]), taxes=Decimal(t["taxes_sek"]),
+                       fees_waived=Decimal(t["fees_waived_sek"]), taxes_waived=Decimal(t["taxes_waived_sek"]),
+                       premiums=Decimal(t["premiums_sek"]), closing=Decimal(t["closing_sek"]))
+
+
+def _flows_after(session: Session, opening_end: date, valuation_date: date) -> dict:
+    """Kapitalflöden per försäkring ur journalens poster efter det ingående läget, till och med dagen."""
+    rows = session.execute(
+        select(LedgerCapitalEntry.payout_part_id, LedgerCapitalEntry.reason, func.sum(LedgerCapitalEntry.amount_sek))
+        .where(LedgerCapitalEntry.account == cl.CUSTOMER, LedgerCapitalEntry.month > opening_end,
+               LedgerCapitalEntry.month <= valuation_date.replace(day=1))
+        .group_by(LedgerCapitalEntry.payout_part_id, LedgerCapitalEntry.reason)).all()
+    policy_of = cl.policy_of_parts(session, {part for part, _, _ in rows})
+    out: dict = defaultdict(lambda: defaultdict(lambda: ZERO))
+    for part, reason, total in rows:
+        out[policy_of[part]][reason] += Decimal(total).quantize(Decimal("0.01"))
+    return out
 
 
 def _opening_extract(session: Session, batch) -> ValuationExtract:
@@ -113,6 +146,8 @@ def build_ledger_extract(session: Session, valuation_date: date) -> ValuationExt
     payout = parts_by_policy(session, [p for p, _ in policies], on=valuation_date)
     payout = {str(k): v for k, v in payout.items()}
     flows_before = {p.policy_id: p.flows for p in opening.policies}
+    closed_months = _closed_months(session, valuation_date)
+    flows_after = _flows_after(session, batch.period_end, valuation_date)
     not_transferred = [NotCalculated.model_validate(n) for n in batch.content["not_transferred"]]
 
     problems, out, not_calculated = [], [], list(not_transferred)
@@ -126,7 +161,9 @@ def build_ledger_extract(session: Session, valuation_date: date) -> ValuationExt
             continue
         reason = PAYOUT_REASONS.get(summary_state(payout.get(key, [])))
         if reason is not None:
-            not_calculated.append(NotCalculated(policy_id=key, reason=NOT_CALCULATED[reason]))
+            # En försäkring som inte fördes över men senare fått premie på en ej startad del redovisas en gång
+            if key not in {n.policy_id for n in not_transferred}:
+                not_calculated.append(NotCalculated(policy_id=key, reason=NOT_CALCULATED[reason]))
             continue
         found = states.get(key, [])
         if len(found) != 1 or found[0] not in CALCULATED_STATES:
@@ -138,6 +175,10 @@ def build_ledger_extract(session: Session, valuation_date: date) -> ValuationExt
                                    received_month=r.received_month, premium=r.premium_sek, basis=r.basis_code,
                                    factor=r.factor, guarantee=r.guarantee_sek_per_month) for r in rows]
         flows = flows_before.get(key, CapitalFlows(premiums=ZERO, returns=ZERO, fees=ZERO, taxes=ZERO))
+        if key in flows_after:  # avgift och skatt är negativa poster i journalen men positiva flöden i utdraget
+            after = flows_after[key]
+            flows = CapitalFlows(premiums=flows.premiums + after["premium"], returns=flows.returns + after["return"],
+                                 fees=flows.fees - after["fee"], taxes=flows.taxes - after["tax"])
         out.append(ExtractPolicy(policy_id=key, birth_month=f"{born:%Y-%m}", born_on_first=born.day == 1,
                                  state=found[0], plan=Plan(kind="reference_lifelong",
                                                            start=aa.reference_start(model_birth, valuation_date)),
@@ -146,19 +187,27 @@ def build_ledger_extract(session: Session, valuation_date: date) -> ValuationExt
     outside = len(db_ids - journal_policies - {n.policy_id for n in not_transferred})
 
     used = sorted({(r.basis_code, r.basis_checksum) for r in parts})
-    bases = {code: digest for code, digest in opening.bases.items() if vb.family_of(code) == "AVK-SIM"}
+    if closed_months:
+        avk = closed_months[-1]["return_basis"]
+        bases = {avk["code"]: avk["checksum"]}
+    else:
+        bases = {code: digest for code, digest in opening.bases.items() if vb.family_of(code) == "AVK-SIM"}
     bases.update(dict(used))
-    checks = _checks(session, batch, valuation_date, opening, out, not_calculated, outside, problems, used,
+    months = [*opening.months, *(_month_totals(c) for c in closed_months)]
+    versions = {name: sorted({*opening.parameters.get(name, []),
+                              *(v for c in closed_months for v in c["parameters"][name])})
+                for name in ("capital_fee_rate", "customer_tax_rate")}
+    checks = _checks(session, batch, valuation_date, months, out, not_calculated, outside, problems, used,
                      len(policies), found_tracks)
     extract = ValuationExtract(valuation_date=valuation_date, source=SOURCE, bases=dict(sorted(bases.items())),
-                               parameters=opening.parameters, policies=out, not_calculated=not_calculated,
-                               outside_population=outside, months=opening.months, checks=checks,
+                               parameters=versions, policies=out, not_calculated=not_calculated,
+                               outside_population=outside, months=months, checks=checks,
                                approved=all(c.passed for c in checks))
     extract.checksum = extract_checksum(extract)
     return extract
 
 
-def _checks(session, batch, valuation_date, opening, out, not_calculated, outside, problems, used, db_policies,
+def _checks(session, batch, valuation_date, months, out, not_calculated, outside, problems, used, db_policies,
             found_tracks) -> list[QualityCheck]:
     accounted = len(out) + len(not_calculated) + outside + len(problems)
     checks = [
@@ -189,16 +238,18 @@ def _checks(session, batch, valuation_date, opening, out, not_calculated, outsid
     # §6.2 p. 5: en premie får aldrig ge både ett S-04-ursprung och ett ursprung ur paket A
     s04 = select(LedgerGuaranteePart.premium_transaction_id).where(LedgerGuaranteePart.origin_kind == "s04_premium")
     double = session.scalar(select(func.count()).select_from(LedgerGuaranteePart).where(
-        LedgerGuaranteePart.origin_kind == "payment_allocation", LedgerGuaranteePart.premium_transaction_id.in_(s04)))
+        LedgerGuaranteePart.origin_kind == "payment_allocation", LedgerGuaranteePart.value_date <= valuation_date,
+        LedgerGuaranteePart.premium_transaction_id.in_(s04)))
     checks.append(QualityCheck(name="en källa per premie", passed=not double,
                                detail=f"{double} premierader har både S-04-ursprung och allokering" if double else
                                "Ingen premie finns både som S-04-ursprung och som allokering i paket A"))
     final = sum((x.capital for x in out), ZERO)
-    closing = opening.months[-1].closing if opening.months else ZERO
+    closing = months[-1].closing if months else ZERO
     excluded = sum((t.balance for t in found_tracks if t.policy_id not in {x.policy_id for x in out}), ZERO)
-    ok = final + excluded == closing if valuation_date == batch.period_end else True
+    ok = final + excluded == closing
+    what = "S-04:s utgående" if valuation_date == batch.period_end else "månadsstängningens utgående"
     checks.append(QualityCheck(name="kapitalavstämning", passed=ok,
-                               detail=f"ΣC = {final} kr ur journalens spår mot S-04:s utgående {closing} kr" if ok
+                               detail=f"ΣC = {final + excluded} kr ur journalens spår mot {what} {closing} kr" if ok
                                else f"ΣC {final} kr + {excluded} kr utanför utdraget avviker från {closing} kr"))
     return checks
 

@@ -15,6 +15,7 @@ from services.operations import (  # noqa: F401
     invoices,
     journal,
     management,
+    month_close,
     payments,
     persons,
     policies,

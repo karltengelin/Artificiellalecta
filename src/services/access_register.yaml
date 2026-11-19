@@ -23,6 +23,9 @@ operations:
   preview_ledger_opening: HUMAN_ONLY   # granskning av övergången från S-04 till kapitaljournalen (paket B steg 2, B-047)
   open_capital_ledger: HUMAN_ONLY      # journalens ingående läge per 2026-10-31; bara människa (PB12)
   preview_ledger_premiums: HUMAN_ONLY  # månadens premier ur paket A som journalens tillskott; individrader (PB4)
+  prepare_month_close: HUMAN_ONLY      # granskning av månadsstängning eller rättelse för sparandet (paket B steg 3, B-047)
+  close_policy_month: HUMAN_ONLY       # hashbunden månadsstängning; bara människa i steg 3 (PB12, S7)
+  get_month_close: HUMAN_ONLY          # stängd månads versioner; agentmontering prövas när ett uppdrag behöver den
   get_premium_month: HUMAN_ONLY        # månadsstatus; agenten använder avgränsad analysgateway
   approve_premium_month: HUMAN_ONLY    # mänsklig analysgranskning, aldrig baslås
   register_actuarial_dataset: HUMAN_ONLY  # observerat utfall; människa/betrodd dataproducent

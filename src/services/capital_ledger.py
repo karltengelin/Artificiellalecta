@@ -88,6 +88,44 @@ def opening_batch(session: Session) -> LedgerBatch | None:
     return session.scalar(select(LedgerBatch).where(LedgerBatch.kind == OPENING_KIND))
 
 
+#: Månadsstängningens verifikationer (paket B steg 3): en stängning per månad och rättelser i en rak kedja
+CLOSE_KIND = "month_close"
+CORRECTION_KIND = "month_correction"
+
+
+def month_close_present(session: Session) -> bool:
+    """Är steg 3:s migration körd (kolumnen `supersedes_id`)? Före den kan ingen månad stängas."""
+    if not journal_present(session):
+        return False
+    return "supersedes_id" in {c["name"] for c in inspect(session.connection()).get_columns(LedgerBatch.__tablename__)}
+
+
+def closed_month_ends(session: Session) -> list[date]:
+    """Månadsslut som har en stängning, i ordning. Tom lista om journalen saknas eller ingen månad är stängd."""
+    if not journal_present(session):
+        return []
+    return sorted(session.scalars(select(LedgerBatch.period_end).where(LedgerBatch.kind == CLOSE_KIND)))
+
+
+def month_chain(session: Session, period_end: date) -> list[LedgerBatch]:
+    """Stängningen för månadsslutet och dess rättelser i ordning; den sista gäller. Tom om månaden är öppen."""
+    rows = list(session.scalars(select(LedgerBatch).where(
+        LedgerBatch.period_end == period_end, LedgerBatch.kind.in_((CLOSE_KIND, CORRECTION_KIND)))))
+    by_previous = {r.supersedes_id: r for r in rows if r.kind == CORRECTION_KIND}
+    chain = [r for r in rows if r.kind == CLOSE_KIND]
+    while chain and chain[-1].id in by_previous:
+        chain.append(by_previous[chain[-1].id])
+    if len(chain) != len(rows):
+        raise LedgerError(f"Verifikationerna för {period_end} bildar ingen rak kedja från stängningen")
+    return chain
+
+
+def effective_batch(session: Session, period_end: date) -> LedgerBatch | None:
+    """Den gällande versionen av månadens stängning: stängningen eller dess senaste rättelse."""
+    chain = month_chain(session, period_end)
+    return chain[-1] if chain else None
+
+
 @dataclass(frozen=True)
 class Control:
     step: str
@@ -447,6 +485,32 @@ def opening_origins(session: Session, extract: ValuationExtract) -> tuple[list[O
     return sorted(origins, key=lambda o: o.id), batch.checksum
 
 
-__all__ = ["CUSTOMER", "METHOD", "OPENING_DATE", "OPENING_KIND", "Control", "LedgerConflict", "LedgerError",
-           "OpeningPlan", "Track", "apply_opening", "guarantee_parts", "journal_present", "opening_batch",
-           "opening_origins", "origin_ref", "plan_opening", "policy_of_parts", "stable_id", "store_extract", "tracks", "verify_opening"]
+__all__ = [
+    "CLOSE_KIND",
+    "CORRECTION_KIND",
+    "CUSTOMER",
+    "METHOD",
+    "OPENING_DATE",
+    "OPENING_KIND",
+    "Control",
+    "LedgerConflict",
+    "LedgerError",
+    "OpeningPlan",
+    "Track",
+    "apply_opening",
+    "closed_month_ends",
+    "effective_batch",
+    "guarantee_parts",
+    "journal_present",
+    "month_chain",
+    "month_close_present",
+    "opening_batch",
+    "opening_origins",
+    "origin_ref",
+    "plan_opening",
+    "policy_of_parts",
+    "stable_id",
+    "store_extract",
+    "tracks",
+    "verify_opening",
+]

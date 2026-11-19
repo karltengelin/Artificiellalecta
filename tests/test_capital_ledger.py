@@ -232,11 +232,12 @@ class TestFall37:
                 assert part.benefit_id == tx.benefit_id
                 assert part.part_number == tx.calculation_basis["payout_part"]
 
-    def test_december_tar_hansyn_till_novembers_fordelning(self, chain):
+    def test_december_vantar_pa_att_november_stangs(self, chain):
+        """Stoppunkten (steg 3, S3): en månads premier tas fram först när föregående månad är stängd.
+        Decembers 250,00 kr efter novembers stängning prövas i `test_month_close`."""
         open_ledger(chain)
-        with chain.factory() as s:
-            december = premium_intake(s, date(2026, 12, 1))
-        assert december.summary["premium_sek"] == "250.00" and december.summary["receipts"] == 1
+        with chain.factory() as s, pytest.raises(IntakeError, match="inte stängd"):
+            premium_intake(s, date(2026, 12, 1))
 
     def test_samma_lage_ger_samma_kontrollsumma(self, chain):
         open_ledger(chain)
@@ -273,7 +274,7 @@ class TestEnKallaPerPremie:
     def test_frammande_rad_i_ingaende_laget_stoppar_utdraget(self, chain):
         """En premie får aldrig ge både ett S-04-ursprung och ett ursprung ur paket A (§6.2 p. 5). I steg 2 finns
         bara det ingående läget, så en sådan rad kan bara hamna där – och verifikationen fångar den. Kontrollen
-        "en källa per premie" i ledger-utdraget prövas mot månadsverifikationerna när de finns (steg 3)."""
+        "en källa per premie" i ledger-utdraget mot månadsstängningarna prövas i `test_month_close`."""
         open_ledger(chain)
         with chain.factory() as s:
             s04 = s.scalars(select(LedgerGuaranteePart)).first()

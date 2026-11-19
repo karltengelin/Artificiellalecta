@@ -17,8 +17,13 @@ Kontraktet mot paket A är detsamma som överlämningen till P6-MANAD-001 (`prem
 Allokeringsprovet i ören (`allocate_receipt`) körs i mottagningsordning, med tidigare månaders
 allokeringar på samma faktura som redan fördelade, och ska ge exakt paket A:s fördelning.
 
-**Stoppunkt:** en allokering hör till månaden då bankhändelsen mottogs. Mottagningar efter månadsslutet
-hör till nästa månad och redovisas som utanför.
+**Stoppunkt (Karls val S3 2026-11-19, paket B steg 3):** en månads premier är paket A:s allokeringar på
+fakturarader som är registrerade när månaden stängs, har mottagningsdag senast månadsslutet och inte redan
+är bokade i journalen. En inbetalning med mottagningsdag i en stängd månad som registreras senare bokas
+därför i nästa öppna månad, med den månadens värdedag och grund – inte som rättelse av den stängda
+månaden. Mottagningar efter månadsslutet hör till en senare månad och redovisas som utanför. Månaden
+kan bara tas emot när föregående månad är stängd (eller är det ingående läget), och en stängd månad tar
+inte emot fler premier.
 """
 
 from __future__ import annotations
@@ -122,6 +127,14 @@ def premium_intake(session: Session, month: date) -> PremiumIntake:
     if end <= batch.period_end:
         raise IntakeError(f"{month:%Y-%m} ligger i S-04:s ingående läge per {batch.period_end}; nya premier tas "
                           f"emot från {aa.first_month_after(batch.period_end):%Y-%m}")
+    closed = cl.closed_month_ends(session)
+    if end in closed:
+        raise IntakeError(f"{month:%Y-%m} är stängd; sena mottagningar bokas i nästa öppna månad (stoppunkten)")
+    previous = month_end(aa.add_months(month, -1))
+    if previous != batch.period_end and previous not in closed:
+        raise IntakeError(f"Föregående månad {previous:%Y-%m} är inte stängd – månaderna tas emot i ordning")
+    booked_ids = set(session.scalars(select(LedgerGuaranteePart.payment_allocation_id).where(
+        LedgerGuaranteePart.payment_allocation_id.is_not(None))))
     rows = session.execute(
         select(PaymentAllocation, BankEvent, Invoice, InvoiceLineRecord)
         .join(BankEvent, BankEvent.id == PaymentAllocation.bank_event_id)
@@ -137,7 +150,7 @@ def premium_intake(session: Session, month: date) -> PremiumIntake:
     prior: dict[uuid.UUID, dict[str, Decimal]] = defaultdict(lambda: defaultdict(Decimal))
     groups: dict[tuple, dict] = {}
     for allocation, event, invoice, line in rows:
-        if event.received_date < month:  # tidigare månad: redan fördelad på fakturans rader
+        if allocation.id in booked_ids:  # redan bokad i en stängd månad: fördelad på fakturans rader
             prior[invoice.id][line_key(line)] += allocation.amount_sek
             continue
         group = groups.setdefault((event.received_date, event.id, invoice.id),
@@ -183,10 +196,7 @@ def premium_intake(session: Session, month: date) -> PremiumIntake:
         additions_src.extend((allocation, event, invoice, line) for allocation, line in group["allocations"])
 
     additions = _additions(session, month, end, additions_src)
-    booked = set(session.scalars(select(LedgerGuaranteePart.payment_allocation_id).where(
-        LedgerGuaranteePart.payment_allocation_id.in_([a.payment_allocation_id for a in additions]))))
-    if booked:
-        raise IntakeError(f"{len(booked)} allokeringar är redan bokade i journalen – månaden är redan stängd")
+    late = {allocation.id for allocation, event, _, _ in additions_src if event.received_date < month}
     in_month = (BankEvent.received_date >= month, BankEvent.received_date <= end)
     suspense = session.execute(
         select(PaymentAllocation.amount_sek, PaymentAllocation.basis)
@@ -203,6 +213,9 @@ def premium_intake(session: Session, month: date) -> PremiumIntake:
         "opening_batch": batch.checksum, "receipts": len(receipts), "allocations": len(additions),
         "policies": len({a.policy_id for a in additions}), "payout_parts": len({a.payout_part_id for a in additions}),
         "premium_sek": _money(sum((a.premium_sek for a in additions), ZERO)),
+        # Mottagna i en redan stängd månad men registrerade efter dess stängning (stoppunkten)
+        "late_allocations": len(late),
+        "late_sek": _money(sum((a.premium_sek for a in additions if a.payment_allocation_id in late), ZERO)),
         "guarantee_sek_per_month": str(sum((a.guarantee_sek_per_month for a in additions), Decimal(0))),
         "by_employer": {org: _money(v) for org, v in sorted(by_employer.items())},
         "bases": sorted({a.basis_code for a in additions}),

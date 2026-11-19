@@ -664,7 +664,7 @@ Beslutat i **B-047** punkt 4 och [P1-PENSION-001](../projekt/01_ärendehantering
 - **Kod:** `src/services/capital_ledger.py` (övergången, verifikationen och läsningarna), `src/services/ledger_extract.py` (A6-källan `ledger`), `src/services/ledger_premiums.py` (månadens premier ur paket A) och `src/services/operations/capital_ledger.py` (operationerna).
 - **Tabeller och migration:** se [databasschema §7c och §12](databasschema.md#7c-tabeller-ledger_batches-ledger_guarantee_parts-ledger_capital_entries-och-ledger_controls--kapital--och-garantijournalen).
 - **Befogenheter:** tre nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter.
-- **Avgränsning:** månadsstängning, plan och utbetalning byggs i steg 3 och senare.
+- **Avgränsning:** månadsstängningen finns i steg 3 (§9.16); plan och utbetalning byggs senare.
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
@@ -688,6 +688,7 @@ Beslutat i **B-047** punkt 4 och [P1-PENSION-001](../projekt/01_ärendehantering
 
 **Paket A som premiekälla (§6.2 p. 4):**
 - `preview_ledger_premiums` läser paket A:s allokeringar på fakturarader för en mottagningsmånad efter det ingående läget, aldrig status `paid`. Därför kommer delbetalningar med.
+- **Stoppunkten (steg 3, val S3):** en månad tas fram först när föregående månad är stängd, och aldrig för en stängd månad. Allokeringar som redan är bokade i journalen räknas som tidigare fördelning. En allokering som registrerats sent, med mottagningsdag i en stängd månad, kommer med i nästa öppna månad och redovisas som `late_allocations` och `late_sek`.
 - Allokeringarna prövas mot `allocate_receipt` i ören, i mottagningsordning.
 - Avstämningskontot och mottagningar efter månadsslutet följer inte med; de redovisas i sammanställningen.
 - Uttagsdelen är den premien räknades för (`calculation_basis.payout_part`).
@@ -700,12 +701,60 @@ Beslutat i **B-047** punkt 4 och [P1-PENSION-001](../projekt/01_ärendehantering
 - *Blockeras:*
   - journalens operationer innan migrationen är körd;
   - ett andra ingående läge;
-  - källan `ledger` för andra datum än 2026-10-31 (journalen har inget stängt läge förrän månadsstängningen finns, steg 3) och utan ingående läge;
-  - månadens premier före det ingående läget, för oktober 2026 och tidigare, för en uttagsdel som har startat (PR-ITP1-025) och för en premie som redan har ett S-04-ursprung;
+  - källan `ledger` för andra datum än det ingående lägets och de stängda månadernas slut (steg 3), och utan ingående läge;
+  - månadens premier före det ingående läget, för oktober 2026 och tidigare, för en stängd månad, när föregående månad inte är stängd, för en uttagsdel som har startat (PR-ITP1-025) och för en premie som redan har ett S-04-ursprung;
   - allokeringar som journalens fördelning inte återskapar i ören.
 - *Konflikt:* en granskningssumma som inte stämmer, eller ett ingående läge med annat innehåll.
 - *Nekas:* agenter i alla tre operationerna. `open_capital_ledger` nekas också för systemaktören.
-- *Finns inte i steg 2:* bokning av månadens premier, avkastning, avgift, skatt och rättelser. De bokas av månadsstängningen i steg 3.
+- *Finns inte i steg 2:* bokning av månadens premier, avkastning, avgift, skatt och rättelser. De bokas av månadsstängningen i steg 3 (§9.16).
+
+### 9.16 Månadsstängningen för sparandet (paket B steg 3, B-047) – vad som stöds och vad som blockeras
+
+Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §7 (PB5), med Karls val S1–S7 2026-11-19.
+- **Kod:** `src/services/month_close.py` (granskning, bokning, rättelse och kontroll), `src/services/operations/month_close.py` (operationerna) och läsningarna av versionskedjan i `src/services/capital_ledger.py`.
+- **Tabeller och migration:** verifikationsslagen `month_close` och `month_correction` och kolumnen `supersedes_id` i `ledger_batches`, se [databasschema §7c och §12](databasschema.md#7c-tabeller-ledger_batches-ledger_guarantee_parts-ledger_capital_entries-och-ledger_controls--kapital--och-garantijournalen).
+- **Befogenheter:** tre nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter (S7).
+- **Avgränsning:** PR-ITP1-020 steg 1–4 och 8 för sparandet. Månadsrätt, dödsfall och arvsvinst (steg 5–7) byggs senare.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `prepare_month_close` | `read` | Nej | `HUMAN_ONLY` | Räknar månadens stängning för hela kollektivet, eller rättelsen av en stängd månad, utan att skriva. Visar öppningskapital, AVK, parametrar, premierna ur paket A, summor, kontroller och hinder, och ger `review_checksum`. Status `open`, `correction` eller `closed` (oförändrad) |
+| `close_policy_month` | `write` | Nej | `HUMAN_ONLY` | Bokar stängningen eller rättelsen med den granskade summan i en transaktion med ett transaktionsbundet lås. Bara en människa, även systemaktören nekas |
+| `get_month_close` | `read` | Nej | `HUMAN_ONLY` | Visar en stängd månads gällande version och versionskedja med sammanställning och kontroller, utan individrader |
+
+**Stängningen (§7.1):**
+- **Steg 1:** öppningskapitalet är föregående lägets kapitalspår: det ingående läget eller förra månadens stängning. Ägarnas levandestatus och uttagsdelarnas lägen prövas.
+- **Steg 2–3:** avkastning enligt den antagna AVK:n för månaden (PR-ITP1-021). Kapitalavgift och skattebelastning tas ut på öppningsbasen med månadens parameterversioner, satsen delad med 12 (PR-ITP1-022, PR-ITP1-023). Beräkningen görs med `close_month` och `roll_origins` per uttagsdel och fördelas på spåren i ören. Belopp som inte kunde tas ut syns bara i sammanställningen.
+- **Steg 4:** månadens premier ur paket A (§9.15) blir en garantidel och ett nytt kapitalspår per allokering, med värdedag vid månadsslutet och utan avkastning denna månad.
+- **Steg 8:** elva kontrollposter, bland dem föregående läge, kapital per spår och totalt, garanti, premier och avstämningskontot.
+- **Fall 13:** C0 = 100 000,00 kr och r = 1 % ger +1 000,00, −16,67 och −29,50 kr, alltså C1 = 100 953,83 kr.
+
+**Granskning, idempotens och rättelse (§7.2):**
+- Granskningssumman är SHA-256 av sammanställningen, och den binder också radernas kontrollsumma. Ändrat underlag mellan granskning och bokning ger konflikt.
+- Samma innehåll igen ger ingen ny effekt (fall 16).
+- En stängd månad ändras aldrig. Med ändrad AVK eller parameter ger granskningen status `correction`. Rättelsen är en ny verifikation med nettodifferensen per spår och orsak som motposter, och den pekar på versionen den ersätter (S2).
+- Bara den senast stängda månaden kan rättas. En ändrad, redan bokad allokering i paket A blockerar och prövas manuellt (S3).
+
+**A6 och P6:**
+- Ledger-utdraget (§9.15) täcker varje stängd månads slut. Månadssummorna kommer ur den gällande versionen och flödena ur kapitalposterna. AVK är den sist stängda månadens.
+- P6-MANAD-001 läser fortfarande det ingående läget som IB och skriver aldrig i journalen.
+
+**Spärras:**
+- *Blockeras:*
+  - operationerna innan migrationen är körd;
+  - en månad som inte har tagit slut;
+  - en månad före eller i det ingående läget;
+  - en öppen föregående månad;
+  - saknad eller bara föreslagen AVK för månaden (fall 17);
+  - saknad parameterversion;
+  - en uttagsdel med kapital som har startat, pausats eller avslutats;
+  - en ägare registrerad som avliden eller utan födelsedag (S4);
+  - en kontroll som inte går ihop.
+  - En blockerad månad skriver ingenting.
+- *Redovisas utan att blockera:* ej startade delar vars ägare fyllt 66 utan plan. De stängs för sparandet, och startmånaden flyttas inte (kontrollen *standardstart väntar på steg 4*).
+- *Konflikt:* en granskningssumma som inte stämmer, eller en stängd månad med annat innehåll.
+- *Nekas:* agenter i alla tre operationerna. `close_policy_month` nekas också för systemaktören.
+- **Lakebase:** körskripten finns i `scripts/simulation/paket_b_steg3/`, med ordningen enligt S6 ([databasschema §12](databasschema.md#12-migrationer-och-versionering)).
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.
