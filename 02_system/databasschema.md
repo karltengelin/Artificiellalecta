@@ -29,7 +29,8 @@
 | `case_work` / `case_messages` / `case_work_days` | Varaktiga ärendeuppdrag, skyddad dialog och daglig budgetbok (§12b) | 🟢 Skapade tomma i Lakebase 2026-10-31 efter backup och operatörens OK; inga direkta agenträttigheter. Schema är avstängt |
 | `product_parameters` | Versionerade premieåldrar, premiesatser och brytpunkter, samt kapitalavgift och skattebelastning per år (§9h) | 🟢 Skapad och seedad i Lakebase 2026-10-25; agentrollens läsrätt satt. Förändringsoperationer finns; komplett flödesverifiering återstår i 3c-V. 🟢 Kapitalets nycklar (A5) införda i Lakebase 2026-10-31 efter backup `backups/20261031T172901Z` och operatörens OK |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
-| `flows` / `flow_steps` / `flow_gate_decisions` | Flödesmotorn i harness: flöden, steg och grindbeslut (§9i) | 🟡 Fas 3c 3c-2: modeller, motor och tester; migrationen verifierad mot isolerad Postgres; 🟢 skapade i Lakebase 2026-10-26 efter backup `backups/20261026T200423Z` och operatörens OK (tomma, inga agenträttigheter) |
+| `flows` / `flow_steps` / `flow_gate_decisions` | Uppdragsarkiv för den avvecklade flödesmotorns uppdrag, steg och grindbeslut (§9i) | Skrivskyddad historik i befintliga databaser. Skapades tomma i Lakebase 2026-10-26 efter backup `backups/20261026T200423Z` och operatörens OK. Agentrollerna fick inga rättigheter. Tabellerna ligger utanför schemat för nya databaser |
+| `company_missions` | Fråga bolaget: versionerade uppdrag, deluppdrag, granskningar och kvitton | Lokal SQLite-demo. Skapas när bolagsorkestratörens pilot aktiveras. [Pilotens uppdragskontrakt](bolagsorkestrator_pilot.md#uppdragskontrakt-och-gränser) |
 | `valuation_bases` | Antagandebiblioteket: aktuariella grunder och diskonteringskurvor med oföränderligt innehåll (§9j) | 🟡 A4 (B-042): modell, operationer, startgrunder och tester; 🟢 skapad och seedad i Lakebase 2026-10-31 efter backup `backups/20261031T124616Z` och operatörens OK; läsrätt för `agent_aktuarie` satt |
 | `valuation_extracts` / `valuation_runs` / `valuation_results` | Värderingsmotorn: sparade datautdrag S-04, värderingskörningar med FTA, villkorad återbäring och underskott, och resultat per segment (§9k) | 🟡 A6 (B-042): modeller, operationer, migration och tester; verifierade mot isolerad Postgres. 🟢 Skapade tomma i Lakebase 2026-10-31 efter backup `backups/20261031T173353Z` och operatörens OK; läsrätt för `agent_aktuarie` på körningar och resultat |
 
@@ -866,9 +867,14 @@ Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma 
 
 ## 9i. Tabeller: `flows`, `flow_steps` och `flow_gate_decisions` – Uppdragsarkivet
 
-> **Status:** Historiska uppdrag och beslut enligt B-035. Tabellerna infördes i Lakebase 2026-10-26. Befintliga tabeller läses av uppdragsarkivet och ligger utanför det schema som skapas för nya databaser.
+> **Status:** Skrivskyddat arkiv för uppdrag från den tidigare flödesmotorn enligt B-035. Tabellerna infördes i Lakebase 2026-10-26. Befintliga tabeller läses av uppdragsarkivet och ligger utanför det schema som skapas för nya databaser.
 
 **Domän:** sparad beställning, resultat, rapportkvitton, agenternas körjournaler och operatörens beslut. `flow_steps.run_id` pekar till JSONL-journalen i `logs/agent_runs/` och `flow_steps.approval_id` till tjänstelagrets godkännandekö.
+
+Nya uppdrag i Fråga bolaget sparas av bolagsorkestratören i
+`company_missions` i den lokala SQLite-demon. Varje rad har en beställare,
+miljö, dataset och revision samt ett JSON-dokument med uppdragets tillstånd.
+[Pilotens uppdragskontrakt](bolagsorkestrator_pilot.md#uppdragskontrakt-och-gränser)
 
 ### `flows`
 
@@ -879,8 +885,8 @@ Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma 
 | `definition_version` | `VARCHAR(20)` | NOT NULL | Definitionens version när flödet startades |
 | `status` | `VARCHAR(30)` | NOT NULL, CHECK in (`running`, `waiting_gate`, `waiting_manual`, `waiting_approval`, `completed`, `rejected`, `cancelled`, `failed`, `reconciliation_required`) | Flödets läge |
 | `input` | `JSONB` | NOT NULL | Indata, validerade mot definitionens modell |
-| `current_step` | `VARCHAR(60)` | NULL | Stegnyckeln som står på tur; NULL när flödet är klart |
-| `version` | `INTEGER` | NOT NULL, CHECK ≥ 1 | Version för optimistisk låsning: varje ändring är en villkorlig UPDATE på den lästa versionen |
+| `current_step` | `VARCHAR(60)` | NULL | Sparad nyckel för det aktuella steget |
+| `version` | `INTEGER` | NOT NULL, CHECK ≥ 1 | Sparad radversion som användes för optimistisk låsning |
 | `created_by` | `VARCHAR(100)` | NOT NULL | Operatören som startade flödet |
 | `finished_at` | `TIMESTAMPTZ` | NULL | Satt exakt när flödet är avslutat (`completed`, `rejected`, `cancelled`, `failed`) |
 | `note` | `TEXT` | NULL | Skälet vid avslag, avbrott eller fel |
@@ -890,17 +896,17 @@ Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma 
 
 | Kolumn | Datatyp | Constraints | Beskrivning |
 |--------|---------|-------------|-------------|
-| `id` | `UUID` | PK | Stegets id; står i `RunRequest.flow_step_id` och körjournalen |
+| `id` | `UUID` | PK | Stegets interna id |
 | `flow_id` | `VARCHAR(20)` | NOT NULL, FK → `flows(flow_id)` ON DELETE RESTRICT | Flödet |
 | `step_key` / `position` | `VARCHAR(60)` / `INTEGER` | NOT NULL, unika per flöde, position ≥ 1 | Stegnyckeln och ordningen enligt definitionen |
 | `kind` | `VARCHAR(20)` | NOT NULL, CHECK in (`agent`, `gate`, `manual`, `system`) | Stegets slag |
 | `title` | `VARCHAR(200)` | NOT NULL | Stegets rubrik |
 | `team` / `agent` | `VARCHAR` | NULL | Team och agent för agentsteg |
 | `status` | `VARCHAR(30)` | NOT NULL, CHECK in (`pending`, `running`, `completed`, `waiting`, `rejected`, `failed`, `skipped`, `reconciliation_required`) | Stegets läge |
-| `run_id` | `VARCHAR(100)` | NULL | Agentkörningen; journal i `logs/agent_runs/<run_id>.jsonl`. Sätts innan körningen startar |
+| `run_id` | `VARCHAR(100)` | NULL | Sparat kör-id för agentstegets journal i `logs/agent_runs/<run_id>.jsonl` |
 | `result` | `JSONB` | NULL | Stegets resultat: för agentsteg körningens status och det prövade resultatschemat (`agents.results`), för grindar beslutet, för manuella steg operatörens uppgifter |
 | `result_hash` | `VARCHAR(64)` | CHECK satt när steget är `completed` | sha256 av resultatet i kanonisk JSON – det grindarna binder |
-| `approval_id` | `VARCHAR(64)` | NULL | Förslaget i `approval_requests` som systemsteget väntar på |
+| `approval_id` | `VARCHAR(64)` | NULL | Förslaget i `approval_requests` som systemsteget väntade på |
 | `artifact_refs` | `JSONB` | NULL | Utkastreferenser (`utkast:<team>/<run_id>/<namn>`) |
 | `started_at` / `finished_at` | `TIMESTAMPTZ` | NULL | Tider |
 | `completed_by` | `VARCHAR(100)` | NULL | Operatören vid grindar och manuella steg, godkännaren vid ett förslag i kön |
@@ -908,7 +914,7 @@ Unikt på `(key, valid_from)`, index på `key`. Två giltiga versioner av samma 
 
 ### `flow_gate_decisions`
 
-Append-only: ett beslut är en ny rad, ingen rad ändras.
+Den tidigare motorn sparade varje grindbeslut som en egen rad.
 
 | Kolumn | Datatyp | Constraints | Beskrivning |
 |--------|---------|-------------|-------------|
@@ -922,7 +928,10 @@ Append-only: ett beslut är en ny rad, ingen rad ändras.
 | `bound_hash` | `VARCHAR(64)` | NOT NULL | Hashen av stegens resultathashar vid beslutet |
 | `created_at` | `TIMESTAMPTZ` | NOT NULL | Beslutstiden |
 
-**Regler i motorn:** ett steg tas med en villkorlig UPDATE på `flows.version`, så att två klick inte kör samma steg två gånger. Grindbeslutet kräver att operatörens hash är densamma som underlagets just då. Innan ett senare steg tas räknas varje godkänd grind om, och ändrat underlag stoppar flödet. Ett steg som var `running` när motorn startade om blir `reconciliation_required` och avgörs av operatören.
+**Arkivvisning:** Uppdragsarkivet visar uppdragets sparade läge, även för
+uppdrag som väntade på ett steg eller beslut. Operatören kan läsa
+underlag, beslut och körspår samt öppna rapportfiler som stämmer med den
+sparade kontrollsumman. Äldre länkar med `FLOW-`-id öppnar samma arkiv.
 
 **Personuppgifter:** inga. Stegens resultat är strukturerat underlag och aggregat (`agents.results`); uppdragstexterna innehåller inga personuppgifter.
 
