@@ -345,11 +345,13 @@ gitignorerad `.env` utan värden avgränsade den från huvudkatalogens
 Postgres-konfiguration, som annars gav fel i ett prov av testkörarens
 miljöval. Ändringsurvalet pekade inte ut några Postgres-prov.
 
-## Förslag till beslut
+## Beslut
 
-Behåll den lokala loopen för ordinarie drift. Den hostade loopen kan driva
+Bolagsorkestratören behåller den lokala loopen för ordinarie drift enligt
+B-049, godkänt av operatören den 19 november 2026. Den hostade loopen kan driva
 samordningssegmenten och använda bolagets befintliga verktyg, men provet
 visar behovet av lokal verifiering även av svar som kommer efter ett
 korrekt genomförandekvitto. Ett eventuellt byte bör bygga på upprepade
 godkända uppdrag, varaktigt återspel efter processavbrott och en uppmätt
 minskning av egen drift eller kod som behöver förvaltas.
+[B-049 i beslutsloggen](../BESLUTSLOGG.md#b-049--2026-11-19--fråga-bolaget-behåller-den-lokala-agentloopen)

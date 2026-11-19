@@ -190,8 +190,11 @@ mandat och budget. Domänbeslut ligger hos behörig beslutsfattare.
 
 [Den lokala piloten](../../02_system/bolagsorkestrator_pilot.md) använder
 `/central/fragor`. Tidigare beställningar och beslut kan läsas i
-`/central/uppdragsarkiv`. Inför ordinarie drift återstår verifiering av
-modellval, lagringskontrakt och miljö.
+`/central/uppdragsarkiv`. Bolagsorkestratören behåller den lokala
+agentloopen för ordinarie drift enligt B-049. Modellkörningen är verifierad
+för parameterfallet i SQLite-demo. Inför ordinarie drift återstår bredare
+verifiering av modellval, lagringskontrakt och miljö.
+[Modellprovet och beslutet](../../02_system/bolagsorkestrator_modellprov.md#beslut)
 
 ## Ansvar och samordning
 
