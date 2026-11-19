@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import sys
+from contextlib import nullcontext
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -164,6 +165,12 @@ def finish(probe):
           and before["value"] == Decimal("0.045") and after["value"] == Decimal("0.05")
           and after["rule_version"] == "1.1" and after["decision_ref"] == task["request"]["decision_ref"],
           "Tjänstelagret bekräftar inte datumgränsen eller beslutet")
+    for month, amount in (("2026-12-01", Decimal("2025")), ("2027-01-01", Decimal("2250"))):
+        preview = trusted.execute(
+            "calculate_premium_preview", OperationContext(actor=Actor.system("modellprov")),
+            {"monthly_salary_sek": "45000", "period_month": month, "latest_base_amount": True},
+        ).output
+        check(preview.total_premium_sek == amount, f"Premiemotorn använder fel sats för {month}")
     read_source = call("read_regulatory_document", {"handle": SOURCE, "section": None, "offset": 0}, "finish")
     probe.segment(read_source, tool("status"), answer("answered", sources=[SOURCE],
                   assignments=[item["id"], impact["id"]],
@@ -188,18 +195,21 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--scripted", action="store_true")
     mode.add_argument("--run-model", action="store_true")
+    mode.add_argument("--managed", action="store_true", help="Claude Managed Agents för enbart bolagsorkestratören")
     parser.add_argument("--env-file", type=Path, help="Befintlig .env för modellnycklar och modellkonfiguration")
     args = parser.parse_args()
+    mode_name = "scripted" if args.scripted else "managed" if args.managed else "model"
     directory = args.output_dir.resolve()
     checkpoint = directory / "restart.json"
     if args.phase == "start":
         directory.mkdir(parents=True, exist_ok=False)
     else:
         saved = json.loads(checkpoint.read_text(encoding="utf-8"))
-        check(saved["scripted"] == args.scripted, "Fortsätt med samma modelläge som vid starten")
+        saved_mode = saved.get("mode") or ("scripted" if saved["scripted"] else "model")
+        check(saved_mode == mode_name, "Fortsätt med samma modelläge som vid starten")
         check(saved["pid"] != os.getpid(), "Fortsätt i en ny process")
     live, roles = None, {}
-    if args.run_model:
+    if not args.scripted:
         env = {**(dotenv_values(args.env_file) if args.env_file else {}), **os.environ, "AI_LOG_CONTENT": "false"}
         live = AIClient(sink=JsonlTraceSink(directory / "ai_calls.jsonl"), environ=env)
         for role in ("standard", "deep"):
@@ -208,15 +218,20 @@ def main():
                            "max_output_tokens": resolution.max_output_tokens}
     if args.phase == "finish":
         check(saved["roles"] == roles, "Fortsätt med samma modellroller som vid starten")
+    runner = nullcontext()
+    if args.managed:
+        from testing.managed_company_orchestrator import ManagedCompanyOrchestrator
+
+        runner = patch("agents.company_missions.run_assignment", ManagedCompanyOrchestrator(live, env, directory))
     began = perf_counter()
     outcome = "avbrutet"
-    with patch.object(common, "today", return_value=AS_OF):
+    with patch.object(common, "today", return_value=AS_OF), runner:
         probe = Probe(directory, live)
         try:
             if args.phase == "start":
                 start(probe)
                 checkpoint.write_text(json.dumps({"url": probe.url, "revision": probe.row["revision"],
-                                                  "pid": os.getpid(), "scripted": args.scripted, "roles": roles}),
+                                                  "pid": os.getpid(), "mode": mode_name, "roles": roles}),
                                       encoding="utf-8")
             else:
                 probe.url = saved["url"]
@@ -226,7 +241,7 @@ def main():
             outcome = "godkänt"
         finally:
             if probe.url:
-                protocol = {"phase": args.phase, "mode": "scripted" if args.scripted else "model",
+                protocol = {"phase": args.phase, "mode": mode_name,
                             "simulated_operator": OPERATOR.id, "domain_today": AS_OF.isoformat(),
                             "elapsed_seconds": round(perf_counter() - began, 3), "outcome": outcome,
                             "pid": os.getpid(), "url": probe.url, "roles": roles, "state": probe.state}

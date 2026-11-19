@@ -73,7 +73,8 @@ demo kör `python scripts/testing/run_tests.py --suite orchestration --run`.
   områden utanför katalogen kan utredas och lämnas för mänsklig bedömning.
   Pilotkatalogen har ännu ingen beståndsrapportadapter. Demodata och
   skriptade modeller bevisar körvägar och kontroller. Verksamhetsbedömning av
-  nya tolkningar och verkligt modellval ingår i nästa granskning.
+  nya tolkningar och verkligt modellval prövas i
+  [jämförelsen med riktig modell och hostad agentloop](bolagsorkestrator_modellprov.md).
 
 ## Tidigare uppdrag
 
