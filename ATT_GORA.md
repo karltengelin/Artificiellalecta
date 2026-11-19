@@ -45,6 +45,23 @@ Se [MASTER_CONTEXT §1](MASTER_CONTEXT.md#1-vision-och-syfte) och
 
 ## 🔴 Hög prioritet – grunden
 
+### 📅 Från 2026-12-01: novembers månadsstängning i Lakebase (paket B steg 3, B-050)
+
+Migrationen är införd sedan 2026-11-19. Kvar är tre steg, var och en efter Karls separata OK, med backup och
+samordning enligt AGENTS.md §4.5. Läs först att novembers sista bankfil är inläst. En påminnelse är schemalagd
+till 2026-12-01 kl. 09.00 ("Novembers stängning i Lakebase"); den kör bara granskningarna.
+
+- [ ] **AVK för november:** granska med `python scripts/simulation/paket_b_steg3/adopt_avk.py`. Kontrollsumman ska
+  vara `b75912c4…ef13`. Anta sedan med `--apply --backup backups/<mapp> --reviewed-checksum <summa>`.
+- [ ] **Stängningen:** granska med `python scripts/simulation/paket_b_steg3/close_month.py`. Läs avkastning, avgift,
+  skattebelastning och premierna (väntat 51 623,90 kr plus det som betalats efter 2026-11-19). Boka sedan med
+  `--apply --backup backups/<mapp> --reviewed-checksum <summa>`.
+- [ ] **Kontrollen:** `python scripts/simulation/paket_b_steg3/verify.py --backup backups/<mapp>` (bara läsning).
+  Skriv in utfallet i `databasschema.md` §12 och designstoppet §7.
+- [ ] **AVK för december** behövs före decembers stängning (P1-PENSION-001 §13). Den är inte bestämd än.
+
+Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/RAPPORT.md).
+
 ### Paket A steg 8: period 2026-10 – kvar att följa upp
 
 Första operativa perioden 2026-10 är körd i Lakebase med verklig kalender: filintag och fakturering 2026-11-08,
