@@ -235,12 +235,20 @@ def inputs_checksum(inputs: MonthInputs) -> str:
 def extended_returns(inputs: MonthInputs) -> dict:
     """Innehåll för nytt AVK-förslag; antar eller ändrar aldrig en registrerad grund."""
     old = next(b for b in inputs.bases if b.code == "AVK-SIM-2026-01")
-    assumptions = vb.normalize("return_series", old.assumptions)
+    return november_returns(old.assumptions, inputs.november_return)
+
+
+def november_returns(avk_2026_01: dict, rate: Decimal) -> dict:
+    """AVK-SIM-2026-02 enligt P6-MANAD-001 D5: AVK-SIM-2026-01:s historik oförändrad plus november 2026.
+
+    Samma innehåll används när paket B steg 3 antar grunden i Lakebase (P1-PENSION-001 §12, Karls val S5).
+    """
+    assumptions = vb.normalize("return_series", avk_2026_01)
     if date.fromisoformat(assumptions["months"][-1]["month"]) != date(2026, 10, 1):
         raise ValueError("Startserien ska sluta i oktober 2026")
     return vb.normalize("return_series", {**assumptions,
         "description": "Syntetisk S-04-bana, historik bevarad; november enligt godkänt P6-MANAD-001 D5.",
-        "months": [*assumptions["months"], {"month": "2026-11-01", "rate": str(inputs.november_return)}]})
+        "months": [*assumptions["months"], {"month": "2026-11-01", "rate": str(rate)}]})
 
 
 def reference_plan_unchanged(inputs: MonthInputs) -> bool:

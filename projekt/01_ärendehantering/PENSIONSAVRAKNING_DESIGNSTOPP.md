@@ -307,6 +307,40 @@ samma sätt. Mottagningar efter stoppunkten hör till nästa månad.
 avgift eller skattebelastning, öppen föregående månad, ospårbar garantidel och en
 kontroll som inte går ihop. En blockerad månad skapar inga anspråk.
 
+**Byggt i steg 3 (2026-11-19, branch `claude/paket-b-steg3-595bc8`; inte mergat och inte infört i Lakebase):**
+- **Var det finns:**
+  - stängningen och rättelsen i `src/services/month_close.py`;
+  - operationerna `prepare_month_close`, `close_policy_month` och `get_month_close`, alla `HUMAN_ONLY` ([tjänstelager §9.16](../../02_system/tjänstelager.md));
+  - verifikationsslagen och versionskedjan i `ledger_batches` med migrationen `migrate_month_close.py` ([databasschema §7c och §12](../../02_system/databasschema.md));
+  - körskripten för Lakebase i `scripts/simulation/paket_b_steg3/`.
+- **Steg 1–4 och 8** för sparandet. Avkastning, avgift och skattebelastning räknas per kapitalspår med `close_month` och `roll_origins`, på samma sätt som S-04. Månadens premier ur paket A bokas vid månadsslut med garantidel och utan avkastning. Elva kontrollposter. Steg 5–7 byggs i steg 5–7 i byggordningen.
+- **Verifierat:**
+  - lokalt: fall 13, 15, 16, 17 och fall 37 i stängningen (`tests/test_month_close.py`);
+  - Postgres-proven för migrationen och novemberstängningen med låset (`tests/test_migration_month_close.py`) är skrivna men inte körda: `svc_test`-endpointen var avstängd 2026-11-19. De ska köras med `--postgres` före merge;
+  - körskripten hela vägen, från granskning till kontroll, på en lokal kopia.
+- **Ledger-utdraget och A6** täcker varje stängd månads slut. Månadssummorna kommer ur stängningarna, flödena ur kapitalposterna och AVK ur den sist stängda månaden.
+
+Karls val S1–S7, godkända i chatten 2026-11-19 (”Godkänn alla”):
+- **S1 Verifikationer:** slagen `month_close` och `month_correction`, och kolumnen `supersedes_id` som pekar på versionen en rättelse ersätter. Villkoren ger en stängning per månad och en rak versionskedja.
+- **S2 Rättelse:** motposterna är nettodifferensen per kapitalspår och orsak mot den gällande versionen. Ökningar bokas först, så att inget saldo blir negativt. Oförändrat underlag ger ingen rättelse.
+- **S3 Stoppunkt:** det som är registrerat i paket A när månaden stängs.
+  - En betalning som registreras sent, med mottagningsdag i en stängd månad, bokas i nästa öppna månad. Den redovisas som `late_allocations` och `late_sek`, och den ger ingen rättelse.
+  - En rättelse gäller ändrad AVK eller parameter.
+  - En ändrad redan bokad allokering i paket A blockerar och prövas manuellt.
+  - Bara den senast stängda månaden kan rättas.
+  - Premiekällan tar fram en månad först när föregående månad är stängd.
+- **S4 Pensionsförloppet:**
+  - En startad, pausad eller avslutad uttagsdel med kapital blockerar. Det gör också ett registrerat dödsfall. Månadsrätt, slutavräkning och dödsfall byggs i steg 5–7.
+  - En ej startad del vars ägare fyllt 66 utan plan stängs för sparandet. Den redovisas i kontrollen *standardstart väntar på steg 4*; startmånaden flyttas inte.
+  - En startad del utan kapital i journalen ligger utanför stängningen.
+- **S5 AVK för november:** AVK-SIM-2026-02 har AVK-SIM-2026-01:s historik och november +0,20 %, exakt som P6-MANAD-001 D5 (§13). Den föreslås och antas genom A4 från 2026-11-01 med Karl som aktör, av `adopt_avk.py` efter separat OK.
+- **S6 Ordning i Lakebase:** migrationen kan införas när steg 3 är mergat. AVK, granskning och stängning görs tidigast 2026-12-01, efter novembers sista bankfil. Ordningen är backup → torrkörning → migration (OK) → AVK (OK) → granskning → stängning (OK) → skrivskyddad kontroll.
+- **S7 Befogenheter:** alla tre operationerna är `HUMAN_ONLY`. Systemaktören nekas stängningen, agenterna får inga rättigheter, och granskningen är bunden till kontrollsumman. Avgift och skatt som inte kunde tas ut syns bara i sammanställningen.
+
+Avvikelser från §7.2:
+- *Sammanställningen* har inga planer eller dödsfall att visa. Planerna byggs i steg 4; dödsfall blockerar enligt S4.
+- *Testdatabasen:* saldovillkoret på kapitalposterna prövas på halva ören i SQLite, eftersom SQLite räknar `NUMERIC` som flyttal. Postgres-DDL:en är oförändrad.
+
 ## 8. Skatt, utbetalning och bankkvitto (PB7, PB8)
 
 ### 8.1 Preliminär skatt (PR-026)
@@ -511,7 +545,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 0 | Karl tar ställning till PB1–PB13. *Klart 2026-11-14: alla godkända* | – |
 | 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up`. *Byggt och infört i Lakebase 2026-11-14 (§4): 499 delar nr 1, inga uttag att flytta; agentrollernas läsrätt enligt B-048* | 38 |
 | 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`). *Byggt 2026-11-14 (§6), verifierat lokalt, mot `svc_test` och på en kopia av Lakebase-backupen. Infört i Lakebase 2026-11-15: tabellerna och det ingående läget per 2026-10-31 (492 försäkringar, 15 097 garantidelar); `verify.py` 16 av 16* | 36, 37 |
-| 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase** | 13, 15–17 |
+| 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase.** *Byggt 2026-11-19 (§7, val S1–S7), verifierat lokalt; Postgres-proven väntar på att `svc_test` slås på igen. Körskript i `scripts/simulation/paket_b_steg3/`. Inte infört i Lakebase: migrationen efter merge, novembers stängning tidigast 2026-12-01* | 13, 15–17 |
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd | 14, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida | 18–25 |
@@ -536,6 +570,7 @@ Steg 6 kan byggas parallellt med steg 7 först när anspråkskontraktet i steg 5
   och individuella beslut betalas ut.
 - **AVK för november och december 2026:** antar Karl syntetiska versioner i A4 för den
   operativa stängningen, som i P6-MANAD-001 (+0,20 % i november)? Det är beroendet mot projekt 5.
+  *November avgjord 2026-11-19 (S5, §7.2): AVK-SIM-2026-02 enligt P6-MANAD-001 D5. December står öppen.*
 - **Bolagskapitalets startinsättning:** beloppet bestäms med aktuariens E_min. För dagens
   bestånd utan pågående pension är likviditetsdelen noll; stressgapet återstår att räkna.
 - **Agentens roll:** handläggaragenten kan senare förbereda `payout_request`-ärenden. Det

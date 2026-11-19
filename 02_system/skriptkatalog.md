@@ -52,6 +52,7 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | migrations | [migrate_valuation_runs.py](../scripts/migrations/migrate_valuation_runs.py) | Skapa värderingsmotorns tabeller `valuation_extracts`, `valuation_runs` och `valuation_results` tomma (A6, B-042) | Torrkörning som standard; `--apply` kräver `--backup`. Kräver `valuation_bases`; därefter `grant_agent_role.py --team aktuarie`. Samordna enligt AGENTS.md §4.5 |
 | migrations | [migrate_premium_flow.py](../scripts/migrations/migrate_premium_flow.py) | Inför premieflödet (paket A steg 8, B-046): fem tomma tabeller och tre vidgade CHECK-villkor på `cases`, i en transaktion | Torrkörning som standard, i en skrivskyddad transaktion: visar SQL, villkorens nuvarande definitioner, schemaskillnader, hinder och radantal. `--apply` kräver `--backup`. Inga agenträttigheter. Separat OK från Karl och samordning enligt AGENTS.md §4.5 |
 | migrations | [migrate_payout_parts.py](../scripts/migrations/migrate_payout_parts.py) | Inför uttagsdelar och tre förlopp (paket B steg 1, B-047): två tabeller, uttagsdel 1 per förmån, flyttade uttagslägen med rekonstruktionsärende och två bytta CHECK-villkor, i en transaktion | Torrkörning som standard, i en skrivskyddad transaktion: visar SQL, villkoren, övergångens plan, schemaskillnader, hinder och radantal. `--apply` kräver `--backup`. Inga agenträttigheter. Separat OK från Karl och samordning enligt AGENTS.md §4.5 |
+| migrations | [migrate_month_close.py](../scripts/migrations/migrate_month_close.py) | Vidgar kapitaljournalen för månadsstängning (paket B steg 3, B-047): `ledger_batches.supersedes_id`, slagen `month_close` och `month_correction` och versionskedjans villkor, i en transaktion | Torrkörning som standard, i en skrivskyddad transaktion: visar SQL, läget per del, hinder och radantal. `--apply` kräver `--backup`. Inga rader ändras, inga agenträttigheter. Separat OK från Karl och samordning enligt AGENTS.md §4.5 |
 | migrations/legacy | [rebuild_insurance_tables.py](../scripts/migrations/legacy/rebuild_insurance_tables.py) | Historisk ombyggnad för B-022 | Tar bort tabeller/data; inte dagens uppgraderingsväg |
 | diagnostics | [test_db_connection.py](../scripts/diagnostics/test_db_connection.py) | Verifiera anslutning med SELECT 1 | Läser databasen; namnet betyder manuell diagnos, inte pytest-test |
 | diagnostics | [smoke_test_ai.py](../scripts/diagnostics/smoke_test_ai.py) | Prova leverantörer, strukturerade svar och verktygsloop | Riktiga API-anrop, kostnad och anropslogg |
@@ -94,6 +95,13 @@ skrivande skript körs inte om. Utdata, simulerade filer och facit skrivs till h
 |---|---|---|
 | [preflight.py](../scripts/simulation/paket_b_steg1/preflight.py) | Förkontroll före uttagsdelarnas migration: andra klientanslutningar, tabellerna, gamla uttagslägen och agentrollernas rättigheter (AGENTS.md §4.5) | Bara läsning (`READ ONLY`). Kördes 2026-11-14 före migrationen |
 | [verify.py](../scripts/simulation/paket_b_steg1/verify.py) | Kontroll efter migrationen mot backupens manifest; `--grants` prövar agentrollernas egna anslutningar (B-048) | Bara läsning; rollproven rullas tillbaka och anropar inga operationer, så inga loggrader skrivs |
+
+| Skript i `scripts/simulation/paket_b_steg3/` | Syfte | Sidoeffekt/beroende |
+|---|---|---|
+| [common.py](../scripts/simulation/paket_b_steg3/common.py) | Sökvägar, väntade Lakebase-värden och ordningen i Lakebase (Karls val S6) | Ingen |
+| [adopt_avk.py](../scripts/simulation/paket_b_steg3/adopt_avk.py) | AVK-SIM-2026-02 för november enligt P6-MANAD-001 D5, föreslagen och antagen genom A4 med Karl som aktör (S5) | Bara läsning utan `--apply`; `--apply` kräver `--backup`, granskningssumman och tidigast 2026-12-01. Inte körd |
+| [close_month.py](../scripts/simulation/paket_b_steg3/close_month.py) | Månadsstängningen för sparandet: granskning och bokning med `close_policy_month` | Bara läsning (`READ ONLY`) utan `--apply`; `--apply` kräver `--backup` och granskningssumman. Inte körd |
+| [verify.py](../scripts/simulation/paket_b_steg3/verify.py) | Kontroll efter novembers stängning: versionskedjan, AVK, fall 16 och 37, ledger-utdraget och A6 per 2026-11-30, agenträttigheter och radantal mot backupen | Bara läsning |
 
 ## Aktuariedialogens körverktyg, tillbyggnad 2026-11-02
 

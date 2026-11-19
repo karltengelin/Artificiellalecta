@@ -15,10 +15,10 @@ tests = ["tests/test_premium_month.py", "tests/test_calculate_itp1_premium.py", 
 dependents = ["services", "agents", "web", "insights", "data", "tooling"]
 
 [suites.pensions]
-description = "Pensionsplaner, garanti och kapitalavräkning; den operativa kapital- och garantijournalen med övergången från S-04 finns"
+description = "Pensionsplaner, garanti och kapitalavräkning; den operativa kapital- och garantijournalen med övergången från S-04 och månadsstängningen för sparandet finns"
 status = "partial"
 # payments och economy läggs till som beroenden när de får tester (paket B steg 3 och senare)
-tests = ["tests/test_capital_ledger.py", "tests/test_migration_capital_ledger.py"]
+tests = ["tests/test_capital_ledger.py", "tests/test_migration_capital_ledger.py", "tests/test_month_close.py", "tests/test_migration_month_close.py"]
 dependents = ["risk", "simulation", "reporting"]
 
 [suites.payments]
@@ -42,7 +42,7 @@ dependents = ["reporting"]
 [suites.risk]
 description = "Reserv, FTA, ALM och finansieringskontroller; beräkningsmotorn, datautdraget S-04 och FTA-värderingen med kontrollfallen finns"
 status = "partial"
-tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_actuarial_annuity.py", "tests/test_capital_rollforward.py", "tests/test_valuation_extract.py", "tests/test_fta_valuation.py", "tests/test_valuation_runs.py", "tests/test_capital_ledger.py"]
+tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_actuarial_annuity.py", "tests/test_capital_rollforward.py", "tests/test_valuation_extract.py", "tests/test_fta_valuation.py", "tests/test_valuation_runs.py", "tests/test_capital_ledger.py", "tests/test_month_close.py"]
 dependents = ["reporting"]
 
 [suites.reporting]
@@ -60,7 +60,7 @@ dependents = ["services", "tooling"]
 [suites.simulation]
 description = "Frysta premie-/betalningsunderlag, avstämd syntetisk FTA-månad, motpartssimulatorn och överlämningen från paket A"
 status = "partial"
-tests = ["tests/test_premium_month.py", "tests/test_counterparty_simulation.py", "tests/test_premium_month_export.py", "tests/test_capital_ledger.py"]
+tests = ["tests/test_premium_month.py", "tests/test_counterparty_simulation.py", "tests/test_premium_month_export.py", "tests/test_capital_ledger.py", "tests/test_month_close.py"]
 dependents = []
 
 [suites.compliance]
@@ -108,7 +108,7 @@ dependents = ["tooling"]
 [suites.data]
 description = "Datamodeller, backup och migrationer"
 status = "active"
-tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_capital_ledger.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
+tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_capital_ledger.py", "tests/test_migration_month_close.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
 dependents = []
 
 [suites.design]
@@ -145,8 +145,11 @@ postgres = [
   "tests/test_migration_capital_ledger.py::test_migrationen_infor_journalen_och_blir_identisk_med_create_all",
   "tests/test_migration_capital_ledger.py::test_delvis_inford_journal_och_saknad_forutsattning_stoppar",
   "tests/test_migration_capital_ledger.py::test_overgangen_fran_s04_mot_postgres",
+  "tests/test_migration_month_close.py::test_migrationen_vidgar_verifikationerna_och_blir_identisk_med_create_all",
+  "tests/test_migration_month_close.py::test_delvis_inford_migration_stoppar",
+  "tests/test_migration_month_close.py::test_novemberstangningen_mot_postgres",
 ]
-integration = ["tests/test_company_missions.py", "tests/test_web_actuary.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_capital_ledger.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py"]
+integration = ["tests/test_company_missions.py", "tests/test_web_actuary.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_capital_ledger.py", "tests/test_migration_month_close.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py"]
 security = ["tests/test_company_missions.py", "tests/test_web_actuary.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_auth.py", "tests/test_services_access.py", "tests/test_services_transactions.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_skills.py", "tests/test_agents_postgres_role.py", "tests/test_ai_boundaries.py", "tests/test_portfolio_impact.py::TestIngaIndividuppgifter", "tests/test_portfolio_impact.py::TestAtkomst", "tests/test_agents_teams.py::TestGatewayverktyg", "tests/test_agents_teams.py::TestParametermandatet"]
 
 # Alla matchande regler förenas. dependents utvidgar sedan kodändringens urval transitivt.
@@ -167,6 +170,10 @@ suites = ["premiums", "simulation"]
 [[rules]]
 paths = ["src/skills/calculation/actuarial_annuity.py", "src/skills/calculation/capital_rollforward.py", "src/skills/calculation/fta_valuation.py", "src/services/valuation_bases.py", "src/services/valuation_extract.py", "src/services/valuation.py", "src/services/operations/valuations.py", "01_domän/parametrar/DODLIGHET_SCB_2025.md", "01_domän/parametrar/PARAMETERREGISTER.md", "scripts/diagnostics/valuation_summary.py", "scripts/migrations/migrate_valuation_runs.py", "src/utils/migration_valuation_runs.py"]
 suites = ["risk"]
+
+[[rules]]
+paths = ["src/services/capital_ledger.py", "src/services/ledger_*.py", "src/services/month_close.py", "src/services/operations/capital_ledger.py", "src/services/operations/month_close.py", "src/utils/migration_capital_ledger.py", "src/utils/migration_month_close.py", "scripts/simulation/paket_b_*/**"]
+suites = ["pensions", "risk", "simulation"]
 
 [[rules]]
 paths = ["src/services/**"]
