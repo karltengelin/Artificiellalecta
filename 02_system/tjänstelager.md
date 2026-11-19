@@ -710,7 +710,7 @@ Beslutat i **B-047** punkt 4 och [P1-PENSION-001](../projekt/01_ärendehantering
 
 ### 9.16 Månadsstängningen för sparandet (paket B steg 3, B-047) – vad som stöds och vad som blockeras
 
-Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §7 (PB5), med Karls val S1–S7 2026-11-19.
+Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §7 (PB5), med Karls val S1–S7 2026-11-19 (**B-050**).
 - **Kod:** `src/services/month_close.py` (granskning, bokning, rättelse och kontroll), `src/services/operations/month_close.py` (operationerna) och läsningarna av versionskedjan i `src/services/capital_ledger.py`.
 - **Tabeller och migration:** verifikationsslagen `month_close` och `month_correction` och kolumnen `supersedes_id` i `ledger_batches`, se [databasschema §7c och §12](databasschema.md#7c-tabeller-ledger_batches-ledger_guarantee_parts-ledger_capital_entries-och-ledger_controls--kapital--och-garantijournalen).
 - **Befogenheter:** tre nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter (S7).

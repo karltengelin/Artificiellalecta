@@ -307,7 +307,7 @@ samma sätt. Mottagningar efter stoppunkten hör till nästa månad.
 avgift eller skattebelastning, öppen föregående månad, ospårbar garantidel och en
 kontroll som inte går ihop. En blockerad månad skapar inga anspråk.
 
-**Byggt i steg 3 (2026-11-19, mergat till main efter Karls OK (`b6b9ebb`); inte infört i Lakebase):**
+**Byggt i steg 3 (2026-11-19, mergat till main efter Karls OK (`b6b9ebb`); migrationen införd i Lakebase samma dag efter backup `backups/20261119T201517Z`, [databasschema §12](../../02_system/databasschema.md); novembers AVK och stängning tidigast 2026-12-01):**
 - **Var det finns:**
   - stängningen och rättelsen i `src/services/month_close.py`;
   - operationerna `prepare_month_close`, `close_policy_month` och `get_month_close`, alla `HUMAN_ONLY` ([tjänstelager §9.16](../../02_system/tjänstelager.md));
@@ -320,7 +320,7 @@ kontroll som inte går ihop. En blockerad månad skapar inga anspråk.
   - körskripten hela vägen, från granskning till kontroll, på en lokal kopia.
 - **Ledger-utdraget och A6** täcker varje stängd månads slut. Månadssummorna kommer ur stängningarna, flödena ur kapitalposterna och AVK ur den sist stängda månaden.
 
-Karls val S1–S7, godkända i chatten 2026-11-19 (”Godkänn alla”):
+Karls val S1–S7, godkända i chatten 2026-11-19 (”Godkänn alla”) och loggade som **B-050**:
 - **S1 Verifikationer:** slagen `month_close` och `month_correction`, och kolumnen `supersedes_id` som pekar på versionen en rättelse ersätter. Villkoren ger en stängning per månad och en rak versionskedja.
 - **S2 Rättelse:** motposterna är nettodifferensen per kapitalspår och orsak mot den gällande versionen. Ökningar bokas först, så att inget saldo blir negativt. Oförändrat underlag ger ingen rättelse.
 - **S3 Stoppunkt:** det som är registrerat i paket A när månaden stängs.
@@ -545,7 +545,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 0 | Karl tar ställning till PB1–PB13. *Klart 2026-11-14: alla godkända* | – |
 | 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up`. *Byggt och infört i Lakebase 2026-11-14 (§4): 499 delar nr 1, inga uttag att flytta; agentrollernas läsrätt enligt B-048* | 38 |
 | 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`). *Byggt 2026-11-14 (§6), verifierat lokalt, mot `svc_test` och på en kopia av Lakebase-backupen. Infört i Lakebase 2026-11-15: tabellerna och det ingående läget per 2026-10-31 (492 försäkringar, 15 097 garantidelar); `verify.py` 16 av 16* | 36, 37 |
-| 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase.** *Byggt 2026-11-19 (§7, val S1–S7), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg3/`. Inte infört i Lakebase: migrationen efter merge, novembers stängning tidigast 2026-12-01* | 13, 15–17 |
+| 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase.** *Byggt 2026-11-19 (§7, val S1–S7), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg3/`. Migrationen införd i Lakebase 2026-11-19 (B-050); novembers AVK och stängning tidigast 2026-12-01* | 13, 15–17 |
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd | 14, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida | 18–25 |

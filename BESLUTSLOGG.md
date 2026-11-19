@@ -8,6 +8,67 @@
 
 ## Beslut
 
+### B-050 | 2026-11-19 | Paket B steg 3: månadsstängningens verifikationer, rättelse och stoppunkt
+
+**Beslut:** Operatören godkände valen S1–S7 för byggsteg 3 i paket B
+([P1-PENSION-001 §7](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#7-månadsstängningen-pb5))
+enligt rekommendationerna i chatten 2026-11-19: ”Godkänn alla”. Loggningen godkändes
+samma dag: ”Lägg in i beslutsloggen”.
+
+1. **Verifikationer (S1).** `ledger_batches` får slagen `month_close` och `month_correction`
+   och kolumnen `supersedes_id`, som pekar på versionen en rättelse ersätter. Villkoren ger
+   en stängning per månad och en rak versionskedja.
+2. **Rättelse (S2).** En stängd månad ändras aldrig. En rättelse bokar nettodifferensen per
+   kapitalspår och orsak mot den gällande versionen som motposter. Ökningar bokas först,
+   och oförändrat underlag ger ingen rättelse.
+3. **Stoppunkt (S3).** Stängningen tar med det som är registrerat i paket A när den görs.
+   - En betalning som registreras efter stängningen, med mottagningsdag i den stängda
+     månaden, bokas i nästa öppna månad och redovisas som sen. Den ger ingen rättelse.
+   - En rättelse gäller ändrad AVK eller parameter.
+   - En ändrad redan bokad allokering i paket A blockerar och prövas manuellt.
+   - Bara den senast stängda månaden kan rättas.
+   - Månaderna stängs i ordning.
+4. **Pensionsförloppet (S4).** En startad, pausad eller avslutad uttagsdel med kapital
+   blockerar stängningen, liksom ett registrerat dödsfall, tills steg 5–7 finns.
+   - En ej startad del vars ägare fyllt 66 utan plan stängs för sparandet och redovisas i
+     kontrollen *standardstart väntar på steg 4*. Startmånaden flyttas inte.
+   - En startad del utan kapital i journalen ligger utanför stängningen.
+5. **AVK för november (S5).** AVK-SIM-2026-02 har AVK-SIM-2026-01:s historik och november
+   +0,20 %, exakt som P6-MANAD-001 D5. Den är uttryckligen syntetisk och antas genom A4 från
+   2026-11-01 med operatören som aktör.
+6. **Ordning i Lakebase (S6).** Ordningen är backup → torrkörning → migration → AVK →
+   granskning → stängning → skrivskyddad kontroll.
+   - AVK, granskning och stängning görs tidigast 2026-12-01, efter novembers sista bankfil.
+   - Varje skarpt steg kräver operatörens separata OK.
+7. **Befogenheter (S7).** `prepare_month_close`, `close_policy_month` och `get_month_close`
+   är `HUMAN_ONLY`.
+   - Systemaktören nekas stängningen, och agentrollerna får inga rättigheter.
+   - Bokningen är bunden till granskningens kontrollsumma.
+   - Avgift och skatt som inte kunde tas ut syns bara i sammanställningen.
+
+**Motivering:**
+- Journalen är bolagets enda källa för C och G (B-047). Därför får en stängd månad inte
+  skrivas om, och varje ändring ska synas som en egen granskad version.
+- Nettodifferensen per spår och orsak håller journalens bokningsvillkor och visar exakt vad
+  rättelsen ändrade.
+- En stoppunkt vid stängningen gör månaden reproducerbar. Sena registreringar i nästa månad
+  undviker att rättelser blandar ihop paket A:s fel med ändrade antaganden.
+- Steg 3 har ingen månadsrätt eller dödsfallsavräkning. Att blockera i stället för att
+  stänga utan dem hindrar att kapital bokas fel för pågående pensioner.
+- Kontrollerna och stängningen är bevisade lokalt och mot isolerad Postgres:
+  fall 13 och 15–17, och fall 37 i stängningen.
+
+**Konsekvenser:**
+- Migrationen `migrate_month_close.py` infördes i Lakebase 2026-11-19 efter backup
+  `backups/20261119T201517Z`.
+- Novembers AVK och stängning görs med `scripts/simulation/paket_b_steg3/` tidigast 2026-12-01.
+- AVK för december 2026 är fortfarande öppen och blockerar decembers stängning tills den finns.
+- Steg 4 (begäran, plan och standardstart) bygger vidare på kontrollen för 66 år.
+
+**Preciserar** B-047 punkt 3. **Bygger på** B-042 (A4 och källan `ledger`) och B-046 (paket A).
+
+---
+
 ### B-049 | 2026-11-19 | Fråga bolaget behåller den lokala agentloopen
 
 **Beslut:** Bolagsorkestratören i Fråga bolaget fortsätter att köras i

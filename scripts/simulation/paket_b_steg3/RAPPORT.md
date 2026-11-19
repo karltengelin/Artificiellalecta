@@ -1,7 +1,7 @@
 # Paket B steg 3 – månadsstängning för sparandet: rapport och körordning
 
 > **Design:** [P1-PENSION-001 §7](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#7-månadsstängningen-pb5), B-047 punkt 3, Karls val S1–S7 (2026-11-19, ”Godkänn alla”).
-> **Status 2026-11-19:** byggt och verifierat lokalt och mot `svc_test`, mergat till main efter Karls OK (`b6b9ebb`). **Inte infört i Lakebase**.
+> **Status 2026-11-19:** byggt och verifierat lokalt och mot `svc_test`, mergat till main efter Karls OK (`b6b9ebb`). **Migrationen införd i Lakebase 2026-11-19** efter backup `backups/20261119T201517Z`. AVK, stängning och kontroll återstår, tidigast 2026-12-01. Valen är loggade som B-050.
 
 ## Vad som är byggt
 
@@ -41,7 +41,7 @@ Körskripten är provade hela vägen på en lokal SQLite-kopia med dagen satt ti
 
 Varje skarpt steg kräver Karls separata OK i chatten och samordning enligt AGENTS.md §4.5.
 
-1. **Efter merge:**
+1. **Efter merge** (*gjort 2026-11-19:* backup `backups/20261119T201517Z`, sex satser, radantalen oförändrade och inga agenträttigheter):
    1. Ta en backup med `scripts/maintenance/backup_database.py`.
    2. Torrkör `python scripts/migrations/migrate_month_close.py`.
    3. Kör `--apply --backup backups/<mapp>` (**OK**).
@@ -63,4 +63,4 @@ Avkastning, avgift och skatt för november ger granskningen. Den ska läsas och 
 
 - **December:** AVK för december 2026 står öppen (§13). Utan den blockeras decembers stängning.
 - **Pensionsförloppet:** steg 4–7 återstår, alltså begäran och plan, månadsrätt, dödsfall och arvsvinst. Tills dess blockerar en startad del med kapital och ett registrerat dödsfall stängningen (S4).
-- **Beslutsloggen:** en post för S1–S7 är föreslagen men inte skriven.
+- **Beslutsloggen:** valen S1–S7 är loggade som B-050.
