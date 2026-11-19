@@ -4,9 +4,11 @@ Se 02_system/databasschema.md §7c och designstoppet P1-PENSION-001 §6 (PB4). J
 bolagets enda källa för pensionskapitalet C och garantin G efter övergången från S-04. Posterna
 är oföränderliga; en rättelse är en ny länkad post, aldrig en ändring.
 
-- `ledger_batches`: en verifikation per bokning – i steg 2 bara det ingående läget från S-04 per
-  2026-10-31 (`opening_s04`). Månadsstängningar och rättelser (steg 3) blir nya slag. Varje
-  kapitalpost, garantidel och kontrollpost pekar på sin verifikation.
+- `ledger_batches`: en verifikation per bokning – det ingående läget från S-04 per 2026-10-31
+  (`opening_s04`, steg 2), en månadsstängning per månad (`month_close`) och rättelser av en stängd
+  månad (`month_correction`, steg 3). En rättelse pekar på verifikationen den ersätter
+  (`supersedes_id`), och varje verifikation ersätts högst en gång, så versionerna bildar en rak kedja.
+  Varje kapitalpost, garantidel och kontrollpost pekar på sin verifikation.
 - `ledger_guarantee_parts`: en garantidel per ursprung och uttagsdel, med premien P_j, mottagning,
   värdedag, premieperiod, referensplan, grund med kontrollsumma, A_g och G_j i hög precision.
   Ursprunget är antingen en S-04-premierad (`s04_premium`) eller en allokering i paket A
@@ -47,8 +49,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
-#: Verifikationens slag. Steg 2 har bara det ingående läget; steg 3 lägger till stängning och rättelse
-BATCH_KINDS = ("opening_s04",)
+#: Verifikationens slag: ingående läge (steg 2), månadsstängning och rättelse av en stängd månad (steg 3)
+BATCH_KINDS = ("opening_s04", "month_close", "month_correction")
 #: Märkning av posternas ursprung, samma värden som värderingsmotorns källor (`valuation_runs.source`)
 SOURCES = ("reconstructed_s04", "ledger")
 #: Journalens konton (P1-PENSION-001 §6.1). Steg 2 använder bara kundkapitalet
@@ -86,6 +88,15 @@ class LedgerBatch(Base):
         # Högst ett ingående läge: övergången görs en gång
         Index("uq_ledger_batches_one_opening", "kind", unique=True,
               postgresql_where=text("kind = 'opening_s04'"), sqlite_where=text("kind = 'opening_s04'")),
+        # En rättelse och bara en rättelse pekar på verifikationen den ersätter (steg 3, Karls val S1)
+        CheckConstraint("(kind = 'month_correction') = (supersedes_id IS NOT NULL)",
+                        name="ck_ledger_batches_supersedes"),
+        # En stängning per månadsslut; senare versioner är rättelser
+        Index("uq_ledger_batches_one_close", "period_end", unique=True,
+              postgresql_where=text("kind = 'month_close'"), sqlite_where=text("kind = 'month_close'")),
+        # Varje verifikation ersätts högst en gång: versionerna bildar en rak kedja
+        Index("uq_ledger_batches_supersedes", "supersedes_id", unique=True,
+              postgresql_where=text("supersedes_id IS NOT NULL"), sqlite_where=text("supersedes_id IS NOT NULL")),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -102,6 +113,11 @@ class LedgerBatch(Base):
     #: SHA-256 av `content`; samma som granskningssumman operationen binder
     checksum: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     created_by: Mapped[str] = mapped_column(String(100), nullable=False)
+    #: Verifikationen som en rättelse ersätter (steg 3); NULL för ingående läge och stängning. Läses bara när
+    #: den behövs, så att journalens läsningar fungerar i en databas där steg 3:s migration inte är körd
+    supersedes_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ledger_batches.id", ondelete="RESTRICT"), nullable=True, deferred=True,
+    )
 
     def __repr__(self) -> str:
         return f"<LedgerBatch {self.kind} {self.period_end}>"
@@ -190,7 +206,11 @@ class LedgerCapitalEntry(Base):
         # Kundkapitalet förs per uttagsdel och kapitalspår (ursprungets garantidel)
         CheckConstraint("account <> 'customer_capital' OR (payout_part_id IS NOT NULL AND origin_id IS NOT NULL)",
                         name="ck_ledger_capital_entries_track"),
-        CheckConstraint("balance_after_sek = balance_before_sek + amount_sek", name="ck_ledger_capital_entries_balance"),
+        CheckConstraint("balance_after_sek = balance_before_sek + amount_sek",
+                        name="ck_ledger_capital_entries_balance").ddl_if(dialect="postgresql"),
+        # Samma regel i testdatabasen; SQLite räknar NUMERIC som flyttal, så likheten prövas på halva ören
+        CheckConstraint("abs(balance_after_sek - balance_before_sek - amount_sek) < 0.005",
+                        name="ck_ledger_capital_entries_balance").ddl_if(dialect="sqlite"),
         # Ingen del har negativt C (P1-PENSION-001 §11, acceptans)
         CheckConstraint("account <> 'customer_capital' OR (balance_before_sek >= 0 AND balance_after_sek >= 0)",
                         name="ck_ledger_capital_entries_non_negative"),
