@@ -307,7 +307,7 @@ samma sätt. Mottagningar efter stoppunkten hör till nästa månad.
 avgift eller skattebelastning, öppen föregående månad, ospårbar garantidel och en
 kontroll som inte går ihop. En blockerad månad skapar inga anspråk.
 
-**Byggt i steg 3 (2026-11-19, branch `claude/paket-b-steg3-595bc8`; inte mergat och inte infört i Lakebase):**
+**Byggt i steg 3 (2026-11-19, mergat till main efter Karls OK (`b6b9ebb`); inte infört i Lakebase):**
 - **Var det finns:**
   - stängningen och rättelsen i `src/services/month_close.py`;
   - operationerna `prepare_month_close`, `close_policy_month` och `get_month_close`, alla `HUMAN_ONLY` ([tjänstelager §9.16](../../02_system/tjänstelager.md));

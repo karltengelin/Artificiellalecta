@@ -1,7 +1,7 @@
 # Paket B steg 3 – månadsstängning för sparandet: rapport och körordning
 
 > **Design:** [P1-PENSION-001 §7](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#7-månadsstängningen-pb5), B-047 punkt 3, Karls val S1–S7 (2026-11-19, ”Godkänn alla”).
-> **Status 2026-11-19:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg3-595bc8`. Inte mergat och **inte infört i Lakebase**.
+> **Status 2026-11-19:** byggt och verifierat lokalt och mot `svc_test`, mergat till main efter Karls OK (`b6b9ebb`). **Inte infört i Lakebase**.
 
 ## Vad som är byggt
 
