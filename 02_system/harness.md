@@ -876,6 +876,11 @@ Trösklarna beslutas före testet och kan skärpas för kritiska processer. En b
 
 ## 12. Egen harness eller etablerat ramverk?
 
+Fråga bolaget behåller projektets lokala agentloop för ordinarie drift
+enligt B-049. Jämförelsen med Claude Managed Agents använde lokal SQLite-demo
+med samma källunderlag och specialistvägar. Den hostade bryggan används i
+diagnostikprovet. [Modellprovet och beslutet](bolagsorkestrator_modellprov.md#beslut)
+
 Dokumentation nedan **läst 2026-10-12**. Jämförelsen gäller den dokumenterade arkitekturen, inte genomförda integrationstester eller en utlovad paketversion. Paketversioner och beroenden ska låsas och verifieras om något ramverk väljs.
 
 | Alternativ | Vad det ger | Passning mot B-025 och våra kontrakt | Bedömning |

@@ -8,6 +8,33 @@
 
 ## Beslut
 
+### B-049 | 2026-11-19 | Fråga bolaget behåller den lokala agentloopen
+
+**Beslut:** Bolagsorkestratören i Fråga bolaget fortsätter att köras i
+projektets lokala Python-harness vid ordinarie drift. Operatören godkände att
+behålla den lokala loopen och logga beslutet i chatten den 19 november 2026.
+
+**Motivering:** Den lokala loopen slutförde det fiktiva parameteruppdraget
+med riktig modell, källbundet slutsvar och verifierad schemaläggning efter
+omstart. Claude Managed Agents gav samma verifierade verksamhetsutfall i
+två försök, men den lokala resultatverifieraren avvisade slutsvaren.
+Ett tredje försök stannade före godkännande på en blandad
+Compliance-tolkning. Den hostade loopen tog över inferens och
+kontexthantering för orkestratören. Verktygsbrygga, spårkoppling och
+avstämning behövdes fortfarande i bolagets kod.
+[Körprotokoll och jämförelse](02_system/bolagsorkestrator_modellprov.md)
+
+**Konsekvenser:** Den hostade bryggan används i det separata
+diagnostikprovet med syntetiska underlag. Uppdragsstatus, mandat,
+godkännanden, resultatverifiering och domänkvitton hanteras lokalt.
+Ett framtida underlag för byte bör visa upprepade godkända slutsvar,
+återupptagning efter processavbrott mitt i ett segment och mindre drift
+eller kod att förvalta.
+
+**Bygger på** B-025 och B-026.
+
+---
+
 ### B-048 | 2026-11-14 | Paket B steg 1: agentrollernas läsrätt på uttagsdelarna och rekonstruktionsärendet
 
 **Beslut:** Operatören godkände de två förslagen från byggsteg 1 i paket B
