@@ -51,16 +51,17 @@ def _as_after_step2(engine) -> None:
 def _lakebase_like(schema) -> ServiceLayer:
     Base.metadata.create_all(schema.engine, tables=[t for t in Base.metadata.sorted_tables
                                                     if t.name not in NOT_IN_LAKEBASE])
-    _as_after_step2(schema.engine)
     seed_insurance(schema.session_factory)
     with schema.session_factory() as s:
         vb.add_missing_defaults(s)
         s.commit()
     service = ServiceLayer(session_factory=schema.session_factory, rules=ProductRuleCatalog())
-    # Det ingående läget bokas på det gamla schemat: kolumnen supersedes_id läses inte förrän den behövs
+    # Som i Lakebase: det ingående läget bokades i steg 2, och därefter tas steg 3:s delar bort. Raden har
+    # supersedes_id NULL och uppfyller steg 2:s villkor.
     review = service.execute("preview_ledger_opening", HUMAN, {}).output.payload
     assert review["passed"], review["problems"]
     service.execute("open_capital_ledger", HUMAN, {"reviewed_checksum": review["review_checksum"]})
+    _as_after_step2(schema.engine)
     return service
 
 

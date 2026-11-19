@@ -1,7 +1,7 @@
 # Paket B steg 3 – månadsstängning för sparandet: rapport och körordning
 
 > **Design:** [P1-PENSION-001 §7](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#7-månadsstängningen-pb5), B-047 punkt 3, Karls val S1–S7 (2026-11-19, ”Godkänn alla”).
-> **Status 2026-11-19:** byggt och verifierat lokalt på branchen `claude/paket-b-steg3-595bc8`. Postgres-proven är inte körda: `svc_test`-endpointen var avstängd 2026-11-19. Inte mergat och **inte infört i Lakebase**.
+> **Status 2026-11-19:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg3-595bc8`. Inte mergat och **inte infört i Lakebase**.
 
 ## Vad som är byggt
 
@@ -27,10 +27,10 @@
 |---|---|---|
 | 13 | `tests/test_month_close.py` | C0 = 100 000,00 kr och r = 1 % ger +1 000,00, −16,67 och −29,50 kr, alltså C1 = 100 953,83 kr |
 | 15 | lokalt | En premie på en ej startad del medan en annan del på försäkringen pågår ger en egen garantidel med referensplan från 66-årsmånaden. Den får ingen avkastning, och den pågående delen rörs inte |
-| 16 | lokalt | Samma stängning igen ger ingen ny post. Ändrad AVK ger en rättelse med bara avkastningens motposter. Bara den senast stängda månaden kan rättas |
-| 17 | lokalt (Postgres-provet inte kört) | Saknad eller bara föreslagen AVK blockerar, och ingenting skrivs |
+| 16 | lokalt och `svc_test` | Samma stängning igen ger ingen ny post. Ändrad AVK ger en rättelse med bara avkastningens motposter. Bara den senast stängda månaden kan rättas |
+| 17 | lokalt och `svc_test` | Saknad eller bara föreslagen AVK blockerar, och ingenting skrivs |
 | 37 i stängningen | lokalt | Novembers premier bokas vid månadsslut. Avstämningskontot och mottagningar efter månadsslutet ger ingen effekt. En sen registrering bokas i nästa öppna månad |
-| Migrationen | `svc_test`, **inte kört än** | Provet ska visa att från Lakebase-läget efter steg 2 blir resultatet identiskt med `create_all`, att migrationen är idempotent, att delvis infört stoppar och att det ingående läget är orört. Lokalt är bara DDL:en och Postgres-kravet prövade |
+| Migrationen | `svc_test` | Från Lakebase-läget efter steg 2 blir resultatet identiskt med `create_all`. Den är idempotent, och delvis infört stoppar. Det ingående läget är orört, och novemberstängningen går igenom med låset |
 
 Körskripten är provade hela vägen på en lokal SQLite-kopia med dagen satt till 2026-12-01:
 - AVK-granskningen och antagandet;
