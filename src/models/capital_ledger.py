@@ -62,8 +62,9 @@ ENTRY_REASONS = ("opening", "premium", "return", "fee", "tax", "pension_debit", 
 GUARANTEE_ORIGINS = ("s04_premium", "payment_allocation")
 #: Varför en garantidelsversion finns: premien själv (version 1), delning eller omräkning (steg 4)
 GUARANTEE_REASONS = ("premium", "split", "recalculation")
-#: Referensplanen som A_g räknas på (aktuariell_grund.md §3)
-PLAN_KINDS = ("reference_lifelong",)
+#: Planen som A_g räknas på: referensplanen (aktuariell_grund.md §3) eller en beslutad uttagsplan
+#: (`plan`, paket B steg 4, V1) – då pekar `plan_id` på planversionen
+PLAN_KINDS = ("reference_lifelong", "plan")
 
 _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgresql")
 _MONEY = Numeric(14, 2)
@@ -141,6 +142,7 @@ class LedgerGuaranteePart(Base):
             name="ck_ledger_guarantee_parts_version",
         ),
         CheckConstraint(_in("plan_kind", PLAN_KINDS), name="ck_ledger_guarantee_parts_plan"),
+        CheckConstraint("(plan_kind = 'plan') = (plan_id IS NOT NULL)", name="ck_ledger_guarantee_parts_plan_id"),
         CheckConstraint(_in("source", SOURCES), name="ck_ledger_guarantee_parts_source"),
         CheckConstraint("premium_sek > 0", name="ck_ledger_guarantee_parts_premium"),
         CheckConstraint("factor > 0 AND guarantee_sek_per_month >= 0", name="ck_ledger_guarantee_parts_amounts"),
@@ -152,6 +154,7 @@ class LedgerGuaranteePart(Base):
         Index("uq_ledger_guarantee_parts_allocation", "payment_allocation_id", unique=True,
               postgresql_where=text("version = 1"), sqlite_where=text("version = 1")),
         Index("ix_ledger_guarantee_parts_supersedes", "supersedes_id"),
+        Index("ix_ledger_guarantee_parts_plan", "plan_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -177,6 +180,11 @@ class LedgerGuaranteePart(Base):
     value_date: Mapped[date] = mapped_column(Date, nullable=False)
     plan_kind: Mapped[str] = mapped_column(String(30), nullable=False)
     plan_start: Mapped[date] = mapped_column(Date, nullable=False)
+    #: Planversionen A_g räknas på när `plan_kind = 'plan'` (steg 4). Läses bara när den behövs och sätts
+    #: bara för planbaserade versioner, så att journalen fungerar där steg 4:s migration inte är körd
+    plan_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("payout_plans.id", ondelete="RESTRICT"), nullable=True, deferred=True,
+    )
     basis_code: Mapped[str] = mapped_column(String(30), nullable=False)
     basis_checksum: Mapped[str] = mapped_column(String(64), nullable=False)
     #: A_g vid värdedagen på referensplanen

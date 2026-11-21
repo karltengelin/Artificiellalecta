@@ -8,7 +8,8 @@ eller garantieffekt.
 `premium_intake` räknar månadens premiepost i PR-ITP1-020:s steg 4 utan att skriva: en garantidel och
 en kapitalpost per allokering på en fakturarad, på uttagsdelen som premien räknades för (steg 1), med
 G_j = P_j / A_g på referensplanen vid mottagningsmånadens slut och den garantigrund som gäller då. Den
-bokas av månadsstängningen i steg 3, efter avkastning, avgift och skattebelastning. Fall 37 (november
+bokas av månadsstängningen i steg 3, efter avkastning, avgift och skattebelastning. Har delen en beslutad
+uttagsplan som gäller månaden (paket B steg 4) räknas A_g i stället på planen och garantidelen pekar på den. Fall 37 (november
 2026 i Lakebase): 51 623,90 kr, varav SvenskIndustries delbetalning 15 362,24 kr; avstämningskontots
 36 261,66 kr ger ingen effekt.
 
@@ -51,6 +52,7 @@ from models import (
     PremiumTransaction,
 )
 from services import capital_ledger as cl
+from services import payout_plans
 from services import valuation_bases as vb
 from services.payout_parts import receiving_parts
 from services.premium_month_export import (
@@ -100,6 +102,9 @@ class PremiumAddition:
     basis_checksum: str
     factor: Decimal
     guarantee_sek_per_month: Decimal
+    #: Planen A_g räknas på: referensplanen, eller delens beslutade plan som gäller månaden (steg 4, V7)
+    plan_kind: str = "reference_lifelong"
+    plan_id: uuid.UUID | None = None
 
     def plain(self) -> dict:
         return {k: (str(v) if isinstance(v, (uuid.UUID, Decimal, date)) else v) for k, v in asdict(self).items()}
@@ -113,8 +118,8 @@ class PremiumIntake:
     checksum: str
 
 
-def _q(value: float) -> Decimal:
-    return Decimal(repr(value)).quantize(PRECISION)
+def _q(value: float | Decimal) -> Decimal:
+    return (value if isinstance(value, Decimal) else Decimal(repr(value))).quantize(PRECISION)
 
 
 def premium_intake(session: Session, month: date) -> PremiumIntake:
@@ -261,6 +266,8 @@ def _additions(session: Session, month: date, end: date, items: list) -> list[Pr
         basis = guarantee.basis_on(end)
     except ExtractError as exc:
         raise IntakeError(f"Garantigrunden vid {end} kan inte läsas: {exc}") from exc
+    # Steg 4: en premie på en ej startad del med beslutad plan får G_j direkt på planen (V7)
+    plans = payout_plans.plans_in_force(session, {p.id for ps in all_parts.values() for p in ps.values()}, month)
 
     out = []
     for allocation, event, invoice, line in items:
@@ -280,14 +287,23 @@ def _additions(session: Session, month: date, end: date, items: list) -> list[Pr
         if born is None:
             raise IntakeError(f"Födelsedatum saknas för försäkringen på {invoice.invoice_number} rad {line.line_number}")
         model_birth = born if born.day == 1 else born.replace(day=2)
-        code, factor, g = guarantee.part(model_birth, month, allocation.amount_sek)
+        plan = plans.get(part.id)
+        if plan is None:
+            code, factor, g = guarantee.part(model_birth, month, allocation.amount_sek)
+            plan_start = aa.reference_start(model_birth, end)
+        else:
+            schedule = payout_plans.schedule_of(plan)
+            code, plan_start = basis.code, schedule.first_right
+            factor = payout_plans.factor(guarantee.models[code], model_birth, end, schedule)
+            g = allocation.amount_sek / factor
         out.append(PremiumAddition(
             payment_allocation_id=allocation.id, bank_event_id=event.id, invoice_number=invoice.invoice_number,
             line_number=line.line_number, premium_transaction_id=line.premium_transaction_id,
             payout_part_id=part.id, policy_id=line.policy_id, employer_org_number=payers[invoice.id],
             premium_sek=allocation.amount_sek, period_month=line.period_month, received_month=month, value_date=end,
-            plan_start=aa.reference_start(model_birth, end), basis_code=code, basis_checksum=basis.checksum,
-            factor=_q(factor), guarantee_sek_per_month=_q(g)))
+            plan_start=plan_start, basis_code=code, basis_checksum=basis.checksum,
+            factor=_q(factor), guarantee_sek_per_month=_q(g),
+            plan_kind="plan" if plan is not None else "reference_lifelong", plan_id=plan.id if plan else None))
     return sorted(out, key=lambda a: (str(a.bank_event_id), a.invoice_number, a.line_number, str(a.payment_allocation_id)))
 
 

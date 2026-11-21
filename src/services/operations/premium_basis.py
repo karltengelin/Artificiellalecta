@@ -35,7 +35,16 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 
-from models import BaseAmount, Employer, PayoutPart, Policy, PolicyBenefit, PremiumTransaction, SalaryReport
+from models import (
+    BaseAmount,
+    Employer,
+    PayoutPart,
+    Policy,
+    PolicyBenefit,
+    PremiumTransaction,
+    SalaryReport,
+)
+from services import payout_plans
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import BlockedError, ConflictError, NotFoundError
 from services.operations import common
@@ -213,7 +222,10 @@ def create_premium_from_salary_report(ctx: OperationContext, data: PremiumBasisI
 
 
 def _recipient(session, person, month: date) -> tuple[PolicyBenefit, Policy, PayoutPart]:
-    """PR-ITP1-015: personens enda uttagsdel som inte har startat utbetalning under månaden."""
+    """PR-ITP1-015: personens enda uttagsdel som inte har startat utbetalning under månaden.
+
+    Har förmånen flera ej startade delar efter en delning väljs den primära premiemottagaren ur beslutet.
+    """
     month_end = month.replace(day=28) + timedelta(days=4)
     month_end = month_end - timedelta(days=month_end.day)
     candidates = session.execute(
@@ -235,6 +247,11 @@ def _recipient(session, person, month: date) -> tuple[PolicyBenefit, Policy, Pay
             "manuell prövning (PR-ITP1-015)"
         )
     if len(eligible) > 1:
+        # Steg 4: delningsbeslutet anger en primär premiemottagare med vikt 1 (PR-ITP1-015, V9)
+        receiver = payout_plans.premium_receiver(session, {b.id for b, _, _ in eligible}, month)
+        chosen = [e for e in eligible if receiver.get(e[0].id) == e[2].part_number]
+        if len(chosen) == 1:
+            return chosen[0]
         raise BlockedError(
             f"{len(eligible)} ej startade uttagsdelar kan ta emot premie för {month:%Y-%m}. Fördelning kräver en "
             "fördelningsinstruktion eller uttrycklig primär mottagare (PR-ITP1-015) – stöds inte ännu"

@@ -26,6 +26,11 @@ operations:
   prepare_month_close: HUMAN_ONLY      # granskning av månadsstängning eller rättelse för sparandet (paket B steg 3, B-047)
   close_policy_month: HUMAN_ONLY       # hashbunden månadsstängning; bara människa i steg 3 (PB12, S7)
   get_month_close: HUMAN_ONLY          # stängd månads versioner; agentmontering prövas när ett uppdrag behöver den
+  register_payout_request: HUMAN_ONLY  # kundens begäran med frist och kanal; skapar ärende (paket B steg 4, Karls val V1–V11)
+  preview_payout_plan: HUMAN_ONLY      # G, B, M och omräkning med granskningssumma; individrader (PB12)
+  decide_payout_plan: HUMAN_ONLY       # hashbunden planversion; bara människa, agenter föreslår inga planer (PB12)
+  split_payout_part: HUMAN_ONLY        # delning av ej startad del (PR-ITP1-024); bara människa
+  get_payout_part: HUMAN_ONLY          # delens planer och begäran; agentmontering prövas när ett uppdrag behöver den
   get_premium_month: HUMAN_ONLY        # månadsstatus; agenten använder avgränsad analysgateway
   approve_premium_month: HUMAN_ONLY    # mänsklig analysgranskning, aldrig baslås
   register_actuarial_dataset: HUMAN_ONLY  # observerat utfall; människa/betrodd dataproducent

@@ -169,6 +169,9 @@ def build_ledger_extract(session: Session, valuation_date: date) -> ValuationExt
         if len(found) != 1 or found[0] not in CALCULATED_STATES:
             problems.append(f"{key}: {'inget läge' if not found else 'motstridiga eller okända lägen'}")
             continue
+        if any(r.plan_kind == "plan" for r in g_by_policy.get(key, [])):
+            not_calculated.append(NotCalculated(policy_id=key, reason=NOT_CALCULATED["payout_plan"]))
+            continue
         model_birth = born if born.day == 1 else born.replace(day=2)
         rows = sorted(g_by_policy.get(key, []), key=lambda r: (r.received_month, cl.origin_ref(r)))
         guarantee = [GuaranteePart(premium_id=cl.origin_ref(r), period_month=r.period_month,

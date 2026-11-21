@@ -28,9 +28,18 @@ blockerar (återtag är ett senare steg). Sena registreringar bokas i nästa öp
 öppen, saknad eller ej antagen AVK för månaden (fall 17), saknad parameterversion, startad uttagsdel med
 kapital, registrerat dödsfall och en kontroll som inte går ihop. En blockerad månad skapar inga poster.
 
-**66-årsmånaden (Karls val S4).** En ej startad del vars ägare fyllt 66 senast i månaden och saknar plan
-stängs för sparandet och redovisas i kontrollposten *standardstart väntar på steg 4*. Startmånaden
-flyttas aldrig tyst; rätten räknas fram när steg 4 finns (PR-ITP1-025).
+**Planer och delningar (paket B steg 4, Karls val V2–V9).** Beslut om plan och delning skrivs av
+`payout_plans` utan bokning; ändringsmånadens stängning genomför dem i steg 1, på värderingen vid
+föregående månadsslut: delningen flyttar C i ören med största bråkrest och varje G_j proportionellt
+(orsaken `split`), och en ändrad plan räknar om varje G_j värdebevarande på sin historiska grund som ny
+version (`plan_kind = 'plan'`, länk till planen). En del med rätt under månaden enligt plan blockerar
+tills månadsrätten finns i steg 5 (V3).
+
+**66-årsmånaden (Karls val S4, V4–V6).** En ej startad del vars ägare fyllt 66 senast i månaden och
+saknar plan redovisas i kontrollposten *standardstart*. Verifierad ägare som fyller 66 i månaden visar
+standardplanen i granskningen och blockerar till steg 5; overifierat underlag och den som passerat 66
+utan plan får ett ärende `payout_review` en gång, och sparandet stängs. Startmånaden flyttas aldrig tyst
+(PR-ITP1-025). Utan steg 4:s tabeller beter sig stängningen som i steg 3.
 
 Avgift och skatt som inte kan dras (C för litet) avstås och redovisas bara i sammanställningen;
 bolagskontot kommer i steg 5. Ren beräkning: `compute_month` (fall 13).
@@ -49,6 +58,7 @@ from sqlalchemy.orm import Session
 
 from analytics.portfolio_snapshot import birth_date
 from models import (
+    Case,
     InsuredPerson,
     LedgerBatch,
     LedgerCapitalEntry,
@@ -56,11 +66,15 @@ from models import (
     LedgerGuaranteePart,
     PaymentAllocation,
     PayoutPart,
+    PayoutPartState,
+    PayoutPlan,
+    PayoutSplit,
     Policy,
     PolicyBenefit,
 )
 from services import capital_ledger as cl
 from services import parameters
+from services import payout_plans as pl
 from services import valuation_bases as vb
 from services.capital_ledger import (
     CLOSE_KIND,
@@ -75,6 +89,7 @@ from services.ledger_premiums import IntakeError, PremiumAddition, premium_intak
 from services.payout_parts import receiving_parts
 from services.valuation_extract import ExtractError, _returns, month_end
 from skills.calculation import actuarial_annuity as aa
+from skills.calculation import payout_plan as pp
 from skills.calculation.premium_origin_ledger import (
     Origin,
     origin_code_version,
@@ -115,6 +130,10 @@ class MonthPlan:
     problems: list[str] = field(default_factory=list)
     supersedes: LedgerBatch | None = None
     version: int = 1
+    #: Steg 4: garantidelsversioner (delning, omräkning), nya delar ur delning och ärenden att öppna
+    version_rows: list[dict] = field(default_factory=list)
+    split_parts: list[dict] = field(default_factory=list)
+    review_cases: list[dict] = field(default_factory=list)
 
     @property
     def kind(self) -> str:
@@ -192,13 +211,18 @@ def _chain_premiums(session: Session, chain: list[LedgerBatch], month: date) -> 
         .order_by(LedgerGuaranteePart.id)))
 
 
-def _booked_amounts(session: Session, chain: list[LedgerBatch]) -> dict[tuple[str, str], Decimal]:
-    """Månadens bokade belopp per (spår, orsak) över stängningen och dess rättelser."""
+def _booked_amounts(session: Session, chain: list[LedgerBatch], home: dict) -> dict[tuple[str, str], Decimal]:
+    """Månadens bokade belopp per (spår, orsak) över stängningen och dess rättelser.
+
+    Delningens poster (steg 4) räknas inte: delningen görs om på samma föregående månadsslut vid en rättelse.
+    """
     rows = session.execute(
-        select(LedgerCapitalEntry.origin_id, LedgerCapitalEntry.reason, func.sum(LedgerCapitalEntry.amount_sek))
-        .where(LedgerCapitalEntry.batch_id.in_([b.id for b in chain]), LedgerCapitalEntry.account == CUSTOMER)
-        .group_by(LedgerCapitalEntry.origin_id, LedgerCapitalEntry.reason)).all()
-    return {(str(o), r): Decimal(total).quantize(Decimal("0.01")) for o, r, total in rows}
+        select(LedgerCapitalEntry.payout_part_id, LedgerCapitalEntry.origin_id, LedgerCapitalEntry.reason,
+               func.sum(LedgerCapitalEntry.amount_sek))
+        .where(LedgerCapitalEntry.batch_id.in_([b.id for b in chain]), LedgerCapitalEntry.account == CUSTOMER,
+               LedgerCapitalEntry.reason != "split")
+        .group_by(LedgerCapitalEntry.payout_part_id, LedgerCapitalEntry.origin_id, LedgerCapitalEntry.reason)).all()
+    return {(_key(home, p, o), r): Decimal(total).quantize(Decimal("0.01")) for p, o, r, total in rows}
 
 
 def plan_month(session: Session, month: date, today: date) -> MonthPlan:
@@ -235,9 +259,34 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
         raise CloseError(str(exc)) from exc
     rate = rates[month]
 
-    # Steg 1: öppningskapitalet per kapitalspår
+    # Steg 1: öppningskapitalet per kapitalspår. Ett spår är (uttagsdel, ursprung): efter en delning bär två
+    # delar samma ursprung. Spårnyckeln är ursprunget på dess egen del (som i steg 3) och `ursprung@del` annars
+    steg4 = pl.plans_present(session)
+    home = _homes(session)
     opening_tracks = cl.tracks(session, previous_end)
-    origins = [Origin(str(t.origin_id), str(t.payout_part_id), t.balance) for t in opening_tracks]
+    origins = [Origin(_key(home, t.payout_part_id, t.origin_id), str(t.payout_part_id), t.balance)
+               for t in opening_tracks]
+    problems: list[str] = []
+
+    # Steg 1 (steg 4): delningar och planer med ändringsmånaden, genomförda på föregående månadsslut (V2, V9)
+    splits = pl.splits_in(session, month) if steg4 else []
+    effective_plans = _effective_plans(session, month) if steg4 else []
+    guarantees_before = cl.guarantee_parts(session, previous_end)
+    split_parts, split_entries, version_rows = [], [], []
+    for split in splits:
+        origins, rows, entries, new_part, problem = _split(session, month, split, origins, guarantees_before, home,
+                                                           book=current is None)
+        split_parts.append(new_part)
+        version_rows += rows
+        split_entries += entries
+        problems += problem
+    for plan in effective_plans:
+        rows, problem = _recalculation(month, plan, guarantees_before,
+                                       split_from={s.from_part_id for s in splits})
+        version_rows += rows if current is None else []
+        problems += problem
+    new_ids = {p["id"] for p in split_parts}
+    split_owner = {p["id"]: p["split_from_part_id"] for p in split_parts}
 
     # Steg 4: månadens premier – vid stängning ur paket A, vid rättelse de redan bokade
     intake_summary, additions_src, booked_parts = None, [], []
@@ -263,17 +312,20 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
                  if current is None else
                  [Origin(str(g.id), str(g.payout_part_id), g.premium_sek) for g in booked_parts])
 
-    # Steg 1: levandestatus och uttagslägen för delarna i stängningen (S4)
+    # Steg 1: levandestatus och uttagslägen för delarna i stängningen (S4). En ny del ur månadens delning
+    # finns inte ännu: den är ej startad och har den delade delens ägare
     parts = {uuid.UUID(o.policy_id) for o in [*origins, *additions]}
-    owners = _owners(session, parts)
-    benefit_of = _benefits(session, parts)
+    stored = parts - new_ids
+    owners = _owners(session, stored | set(split_owner.values()))
+    owners.update({new: owners.get(old, (None, "")) for new, old in split_owner.items()})
+    benefit_of = _benefits(session, stored)
     receiving = {p.id for ps in receiving_parts(session, set(benefit_of.values()), month, end).values() for p in ps}
+    receiving |= new_ids
     started = sorted(str(p) for p in parts if p not in receiving)
     deceased = sorted(str(p) for p in parts if owners.get(p, (None, ""))[1] == "deceased")
     unknown_birth = sorted(str(p) for p in parts if owners.get(p, (None, ""))[0] is None)
     pending_start = sorted(str(p) for p in parts if p in receiving and (born := owners.get(p, (None, ""))[0])
                            and date(born.year + PENSION_AGE, born.month, 1) <= month)
-    problems = []
     if started:
         problems.append(f"{len(started)} uttagsdelar med kapital har startat, pausats eller avslutats under "
                         f"{month:%Y-%m} (t.ex. {started[0]}); månadsrätt och slutavräkning byggs i paket B steg 5–7")
@@ -283,6 +335,19 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
     if unknown_birth:
         problems.append(f"{len(unknown_birth)} uttagsdelar saknar ägarens födelsedag (t.ex. {unknown_birth[0]})")
 
+    # Steg 1 (steg 4): rätt under månaden enligt plan blockerar (V3); standardstart och ärenden vid 66 (V4, V6)
+    pending_ids = {uuid.UUID(p) for p in pending_start}
+    start = (_standard_start(session, month, previous_end, (stored & pending_ids) - set(unknown_ids(owners)))
+             if steg4 else {"planned": [], "standard": [], "cases": []})
+    with_right = sorted(str(part) for part, plan in pl.plans_in_force(session, stored, month).items()
+                        if pl.schedule_of(plan).has_right(month)) if steg4 else []
+    if with_right:
+        problems.append(f"{len(with_right)} uttagsdelar har rätt under {month:%Y-%m} enligt beslutad plan (t.ex. "
+                        f"{with_right[0]}); månadsrätt byggs i paket B steg 5")
+    if start["standard"]:
+        problems.append(f"{len(start['standard'])} uttagsdelar får standardstart {month:%Y-%m} (PR-ITP1-025), t.ex. "
+                        f"{start['standard'][0]['payout_part_id']}; månadsrätt byggs i paket B steg 5")
+
     try:
         computed = compute_month(month, rate, fee_rate, tax_rate, origins, additions)
     except ValueError as exc:
@@ -290,9 +355,9 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
 
     opening_balance = {o.id: o.capital for o in origins}
     if current is None:
-        status, entry_rows = "open", _close_entries(month, origins, additions, computed)
+        status, entry_rows = "open", split_entries + _close_entries(month, origins, additions, computed)
     else:
-        booked = _booked_amounts(session, chain)
+        booked = _booked_amounts(session, chain, home)
         diff = {k: computed.amounts.get(k, ZERO) - booked.get(k, ZERO) for k in {*computed.amounts, *booked}}
         diff = {k: v for k, v in diff.items() if v != 0}
         if not diff:
@@ -302,19 +367,27 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
             raise CloseError(f"{month:%Y-%m} ger andra belopp än den stängda versionen, men en senare månad är "
                              "stängd. Bara den senast stängda månaden kan rättas i första versionen")
         status = "correction"
-        current_balance = {str(t.origin_id): t.balance for t in cl.tracks(session, end)}
+        current_balance = {_key(home, t.payout_part_id, t.origin_id): t.balance for t in cl.tracks(session, end)}
         entry_rows = _correction_entries(month, len(chain) + 1, diff, current_balance,
                                          {o.id: o.policy_id for o in additions + origins})
 
-    g_before = sum((g.guarantee_sek_per_month for g in cl.guarantee_parts(session, previous_end)), Decimal(0))
+    g_before = sum((g.guarantee_sek_per_month for g in guarantees_before), Decimal(0))
     g_added = sum((r["guarantee_sek_per_month"] for r in guarantee_rows), Decimal(0)) if current is None else \
         sum((g.guarantee_sek_per_month for g in booked_parts), Decimal(0))
+    versions = version_rows if current is None else _chain_versions(session, chain)
+    replaced = {g.id: g.guarantee_sek_per_month for g in guarantees_before}
+    g_change = (sum((r["guarantee_sek_per_month"] for r in versions), Decimal(0))
+                - sum((replaced.get(i, Decimal(0)) for i in {r["supersedes_id"] for r in versions}), Decimal(0)))
     controls = _controls(month, computed, origins, additions, opening_balance, avk, fee_label, tax_label,
                          intake_summary, started, deceased, pending_start, g_before, g_added, guarantee_rows,
-                         previous)
+                         previous, start=start if steg4 else None, g_change=g_change, splits=len(splits),
+                         plans=len(effective_plans), with_right=with_right)
     version = len(chain) + 1
     rows_digest = vb.checksum({"guarantee_parts": [_plain(r) for r in guarantee_rows],
-                               "entries": [_plain(r) for r in entry_rows]})
+                               "entries": [_plain(r) for r in entry_rows],
+                               **({"guarantee_versions": [_plain(r) for r in version_rows],
+                                   "payout_parts": [_plain(r) for r in split_parts]}
+                                  if version_rows or split_parts else {})})
     content = {
         "method": METHOD, "origin_method": origin_code_version(), "design": "P1-PENSION-001 §7, B-047",
         "kind": CORRECTION_KIND if status == "correction" else CLOSE_KIND, "version": version,
@@ -332,15 +405,174 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
                    "new_guarantee_parts": len(guarantee_rows),
                    "guarantee_opening_sek_per_month": str(g_before),
                    "guarantee_added_sek_per_month": str(g_added),
-                   "guarantee_closing_sek_per_month": str(g_before + g_added),
-                   "entries": len(entry_rows)},
+                   "guarantee_closing_sek_per_month": str(g_before + g_added + g_change),
+                   "entries": len(entry_rows),
+                   **({"guarantee_versions": len(version_rows), "guarantee_change_sek_per_month": str(g_change),
+                       "splits": len(splits), "plans": len(effective_plans)} if steg4 else {})},
         "standard_start_pending": pending_start,
+        **({"payout": {"plans": [str(p.id) for p in effective_plans], "splits": [str(s.id) for s in splits],
+                       "planned_parts": start["planned"], "standard_start": start["standard"],
+                       "review_cases": [{k: str(v) for k, v in c.items() if k != "person_id"}
+                                        for c in start["cases"]],
+                       "with_right": with_right}} if steg4 else {}),
         "rows_checksum": rows_digest,
         "controls": [c.as_dict() for c in controls],
     }
     return MonthPlan(month=month, period_end=end, status=status, content=content, checksum=vb.checksum(content),
                      guarantee_rows=guarantee_rows, entry_rows=entry_rows, controls=controls, problems=problems,
-                     supersedes=current, version=version)
+                     supersedes=current, version=version, version_rows=version_rows, split_parts=split_parts,
+                     review_cases=start["cases"] if current is None else [])
+
+
+def unknown_ids(owners: dict) -> list:
+    return [p for p, (born, _) in owners.items() if born is None]
+
+
+def _homes(session: Session) -> dict[uuid.UUID, uuid.UUID]:
+    """Ursprung (garantidel version 1) → uttagsdelen där ursprunget bildades."""
+    return dict(session.execute(select(LedgerGuaranteePart.id, LedgerGuaranteePart.payout_part_id)
+                                .where(LedgerGuaranteePart.version == 1)).all())
+
+
+def _key(home: dict, part, origin) -> str:
+    """Spårnyckeln: ursprunget på sin egen del (som i steg 3), annars `ursprung@del` efter delning."""
+    part, origin = uuid.UUID(str(part)), uuid.UUID(str(origin))
+    return str(origin) if home.get(origin, part) == part else f"{origin}@{part}"
+
+
+def _origin_of(key: str) -> str:
+    return key.split("@")[0]
+
+
+def _effective_plans(session: Session, month: date) -> list[PayoutPlan]:
+    return list(session.scalars(select(PayoutPlan).where(PayoutPlan.effective_month == month)
+                                .order_by(PayoutPlan.payout_part_id, PayoutPlan.version)))
+
+
+def _version_row(month: date, tag: str, source: LedgerGuaranteePart, part, reason: str, g: Decimal, *,
+                 plan: PayoutPlan | None = None, factor: Decimal | None = None) -> dict:
+    """En ny garantidelsversion som ersätter `source` från ändringsmånaden (delning eller omräkning)."""
+    row = {"id": stable_id(CLOSE_KIND, tag, str(source.id), str(part)), "payout_part_id": uuid.UUID(str(part)),
+           "origin_kind": source.origin_kind, "premium_transaction_id": source.premium_transaction_id,
+           "payment_allocation_id": source.payment_allocation_id, "premium_sek": source.premium_sek,
+           "period_month": source.period_month, "received_month": source.received_month,
+           # Versionen gäller från ändringsmånaden; föregående månadsslut visar den ersatta versionen
+           "value_date": month, "plan_kind": "plan" if plan is not None else source.plan_kind,
+           "plan_start": plan.first_right if plan is not None else source.plan_start,
+           "basis_code": source.basis_code, "basis_checksum": source.basis_checksum,
+           "factor": factor if factor is not None else source.factor, "guarantee_sek_per_month": g,
+           "version": source.version + 1, "reason": reason, "supersedes_id": source.id, "source": LEDGER}
+    if plan is not None:
+        row["plan_id"] = plan.id
+    return row
+
+
+def _split(session: Session, month: date, split: PayoutSplit, origins: list[Origin], guarantees: list, home: dict,
+           *, book: bool) -> tuple[list[Origin], list[dict], list[dict], dict, list[str]]:
+    """Delning i steg 1 (V9): kapital i ören per spår och garantidelarna proportionellt, utan ny värdering.
+
+    Spåren delas också vid en rättelse (`book` nej), men posterna och versionerna är då redan bokade.
+    """
+    problems = []
+    old = str(split.from_part_id)
+    new = pl.new_part_id(split.id)
+    share = Decimal(split.share)
+    own = [o for o in origins if o.policy_id == old]
+    tracks = [cl.Track(split.from_part_id, uuid.UUID(_origin_of(o.id)), "", "", o.capital) for o in own]
+    target, moves = pl.split_amounts(tracks, share)
+    planned = {t["origin_id"]: Decimal(t["moved"]) for t in split.content["tracks"]}
+    if target != Decimal(split.content["new_capital_sek"]) or \
+            planned != {str(t.origin_id): m for t, m in zip(tracks, moves)}:
+        problems.append(f"Delningen {split.id} bygger på ett annat kapital än vid beslutet – delningen behöver nytt "
+                        "beslut")
+    moved = dict(zip((o.id for o in own), moves))
+    out, entries = [], []
+    tag = f"{CLOSE_KIND}:split:{split.id}"
+    for o in origins:
+        amount = moved.get(o.id, ZERO)
+        if not amount:
+            out.append(o)
+            continue
+        new_key = _key(home, new, _origin_of(o.id))
+        out += [Origin(o.id, o.policy_id, o.capital - amount), Origin(new_key, str(new), amount)]
+        if book:
+            entries += [_entry(month, tag, o.id, old, "split", -amount, o.capital),
+                        _entry(month, tag, new_key, str(new), "split", amount, ZERO)]
+    rows = []
+    for g in [g for g in guarantees if g.payout_part_id == split.from_part_id]:
+        if g.plan_kind == "plan":
+            problems.append(f"Delningen {split.id} gäller en del med planbaserad garanti – planen beslutas efter "
+                            "delningen")
+            continue
+        keep, part = pl.split_guarantee(g.guarantee_sek_per_month, share)
+        rows += [_version_row(month, "split", g, split.from_part_id, "split", keep),
+                 _version_row(month, "split", g, new, "split", part)]
+    parent = session.get(PayoutPart, split.from_part_id)
+    new_part = {"id": new, "benefit_id": parent.benefit_id, "part_number": split.new_part_number,
+                "share_of_origin": (parent.share_of_origin * share).quantize(Decimal("1e-10")),
+                "split_from_part_id": parent.id, "split_date": month, "split_share": share,
+                "parent_share_after": (parent.share_of_origin * (1 - share)).quantize(Decimal("1e-10"))}
+    return out, (rows if book else []), entries, new_part, problems
+
+
+def _recalculation(month: date, plan: PayoutPlan, guarantees: list, *, split_from: set) -> tuple[list[dict], list[str]]:
+    """Planens omräkning av garantidelarna (PR-ITP1-008, V7), som beslutet räknade den."""
+    if plan.payout_part_id in split_from:
+        return [], [f"Planen {plan.id} och en delning gäller samma del samma månad – besluta en i taget"]
+    own = {str(g.id): g for g in guarantees if g.payout_part_id == plan.payout_part_id}
+    planned = {g["id"]: g for g in plan.content["guarantees"]}
+    if set(own) != set(planned):
+        return [], [(f"Garantidelarna för planen {plan.id} har ändrats sedan beslutet ({len(planned)} beslutade, "
+                     f"{len(own)} i journalen) – planen behöver nytt beslut")]
+    rows = [_version_row(month, f"plan:{plan.id}", own[i], plan.payout_part_id, "recalculation",
+                         Decimal(planned[i]["g_new"]), plan=plan, factor=Decimal(planned[i]["factor_new"]))
+            for i in sorted(own)]
+    return rows, []
+
+
+def _standard_start(session: Session, month: date, valuation: date, part_ids: set) -> dict:
+    """66-årsmånaden (PR-ITP1-025, V4, V6): standardplan för verifierad ägare, annars ärende; inga tysta starter."""
+    out = {"planned": [], "standard": [], "cases": []}
+    if not part_ids:
+        return out
+    planned = pl.planned_parts(session, part_ids)
+    out["planned"] = sorted(str(p) for p in planned)
+    owner_of = pl.owners(session, part_ids - planned)
+    reviewed = {(c.insured_person_id, (c.details or {}).get("reason")) for c in session.scalars(
+        select(Case).where(Case.case_type == "payout_review",
+                           Case.insured_person_id.in_([o.person_id for o in owner_of.values()])))}
+    bases = None
+    for part_id in sorted(owner_of, key=str):
+        owner = owner_of[part_id]
+        sixty_six = pp.sixty_six_month(owner.birth, PENSION_AGE)
+        if sixty_six == month:
+            problems = owner.verification(session)
+            if not problems:
+                bases = bases or pl.Bases.load(session, month)
+                plan = pl.standard_plan(session, owner, month, bases=bases, valuation=valuation,
+                                        pension_age=PENSION_AGE)
+                out["standard"].append({"payout_part_id": str(part_id), "first_right": plan["schedule"]["first_right"],
+                                        "first_payment_day": plan["first_payment_day"],
+                                        "guarantee_sek_per_month": plan["guarantee_sek_per_month"],
+                                        "capital_amount_sek": plan["capital_amount_sek"],
+                                        "m_sek": plan["amount"]["m_sek"], "review_checksum": plan["review_checksum"]})
+                continue
+            reason, detail = "standard_start_unverified", "; ".join(problems)
+        else:
+            reason, detail = "passed_66_without_plan", f"66 år {sixty_six:%Y-%m}, ingen plan registrerad"
+        if (owner.person_id, reason) in reviewed:
+            continue
+        reviewed.add((owner.person_id, reason))
+        out["cases"].append({"payout_part_id": str(part_id), "person_id": owner.person_id,
+                             "policy_id": owner.policy_id, "reason": reason, "detail": detail,
+                             "sixty_six_month": sixty_six.isoformat()})
+    return out
+
+
+def _chain_versions(session: Session, chain: list[LedgerBatch]) -> list[dict]:
+    return [{"guarantee_sek_per_month": g.guarantee_sek_per_month, "supersedes_id": g.supersedes_id}
+            for g in session.scalars(select(LedgerGuaranteePart).where(
+                LedgerGuaranteePart.batch_id.in_([b.id for b in chain]), LedgerGuaranteePart.version > 1))]
 
 
 def _guarantee_row(a: PremiumAddition) -> dict:
@@ -348,15 +580,20 @@ def _guarantee_row(a: PremiumAddition) -> dict:
             "origin_kind": "payment_allocation", "premium_transaction_id": a.premium_transaction_id,
             "payment_allocation_id": a.payment_allocation_id, "premium_sek": a.premium_sek,
             "period_month": a.period_month, "received_month": a.received_month, "value_date": a.value_date,
-            "plan_kind": "reference_lifelong", "plan_start": a.plan_start, "basis_code": a.basis_code,
+            "plan_kind": a.plan_kind, "plan_start": a.plan_start, "basis_code": a.basis_code,
             "basis_checksum": a.basis_checksum, "factor": a.factor,
             "guarantee_sek_per_month": a.guarantee_sek_per_month, "version": 1, "reason": "premium",
-            "supersedes_id": None, "source": LEDGER}
+            "supersedes_id": None, "source": LEDGER,
+            # Planen sätts bara för en premie på en del med beslutad plan (steg 4), så att raden går att
+            # skriva där steg 4:s migration inte är körd
+            **({"plan_id": a.plan_id} if a.plan_id is not None else {})}
 
 
-def _entry(month: date, tag: str, origin: str, part: str, reason: str, amount: Decimal, before: Decimal) -> dict:
-    return {"id": stable_id(tag, month.isoformat(), origin, reason), "account": CUSTOMER,
-            "payout_part_id": uuid.UUID(part), "origin_id": uuid.UUID(origin), "month": month, "reason": reason,
+def _entry(month: date, tag: str, key: str, part: str, reason: str, amount: Decimal, before: Decimal) -> dict:
+    """En kapitalpost på spåret `key`; för ett spår på ursprungets egen del är id:t detsamma som i steg 3."""
+    return {"id": stable_id(tag, month.isoformat(), key, reason), "account": CUSTOMER,
+            "payout_part_id": uuid.UUID(part), "origin_id": uuid.UUID(_origin_of(key)), "month": month,
+            "reason": reason,
             "amount_sek": amount, "balance_before_sek": before, "balance_after_sek": before + amount,
             "source": LEDGER}
 
@@ -391,7 +628,8 @@ def _correction_entries(month: date, version: int, diff: dict, balance: dict[str
 
 
 def _controls(month, computed, origins, additions, opening_balance, avk, fee_label, tax_label, intake_summary,
-              started, deceased, pending_start, g_before, g_added, guarantee_rows, previous) -> list[Control]:
+              started, deceased, pending_start, g_before, g_added, guarantee_rows, previous, *, start=None,
+              g_change=Decimal(0), splits=0, plans=0, with_right=()) -> list[Control]:
     t = computed.totals
     flow = t["opening_sek"] + t["returns_sek"] - t["fees_sek"] - t["taxes_sek"] + t["premiums_sek"]
     track_sum = sum(computed.closing.values(), ZERO)
@@ -418,7 +656,12 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
                 f"{t['taxes_sek']} + premier {t['premiums_sek']} = UB {t['closing_sek']} kr",
                 expected=str(flow), actual=str(t["closing_sek"]), difference=t["closing_sek"] - flow, sources=sources),
         Control("garanti totalt", True, f"ΣG {g_before} + {g_added} = {g_before + g_added} kr/mån; avkastning ändrar "
-                "aldrig G", expected=str(g_before + g_added), actual=str(g_before + g_added), sources=sources),
+                "aldrig G", expected=str(g_before + g_added), actual=str(g_before + g_added), sources=sources)
+        if start is None else
+        Control("garanti totalt", True, f"ΣG {g_before} + premier {g_added} + omräkning och delning {g_change} = "
+                f"{g_before + g_added + g_change} kr/mån; {plans} planer och {splits} delningar genomförs; "
+                "avkastning ändrar aldrig G", expected=str(g_before + g_added + g_change),
+                actual=str(g_before + g_added + g_change), sources=sources),
     ]
     if intake_summary is not None:
         intake_sum = Decimal(intake_summary["premium_sek"])
@@ -438,11 +681,28 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
                 else "Alla delar i stängningen är ej startade hela månaden", actual=str(len(started)), sources=sources),
         Control("levandestatus", not deceased, f"{len(deceased)} delar med registrerat dödsfall" if deceased
                 else "Inget registrerat dödsfall bland delarnas ägare", actual=str(len(deceased)), sources=sources),
-        Control("standardstart väntar på steg 4", True,
-                f"{len(pending_start)} ej startade delar vars ägare fyllt {PENSION_AGE} senast {month:%Y-%m}; "
-                "sparandet stängs, startmånaden flyttas inte och rätten räknas fram i steg 4 (PR-ITP1-025)"
+    ]
+    if start is None:  # steg 4:s migration inte körd: som i steg 3
+        controls.append(Control(
+            "standardstart", True,
+            f"{len(pending_start)} ej startade delar vars ägare fyllt {PENSION_AGE} senast {month:%Y-%m}; "
+            "sparandet stängs, startmånaden flyttas inte och rätten räknas fram när steg 4 är infört (PR-ITP1-025)"
+            if pending_start else f"Ingen ägare har fyllt {PENSION_AGE} senast {month:%Y-%m}",
+            actual=str(len(pending_start)), sources=sources))
+        return controls
+    earlier = len(pending_start) - len(start["planned"]) - len(start["standard"]) - len(start["cases"])
+    controls += [
+        Control("standardstart", not start["standard"],
+                f"{len(pending_start)} ej startade delar vars ägare fyllt {PENSION_AGE} senast {month:%Y-%m}: "
+                f"{len(start['planned'])} har beslutad plan, {len(start['standard'])} får standardplan i månaden "
+                f"(månadsrätt i steg 5), {len(start['cases'])} nya ärenden payout_review och "
+                f"{max(earlier, 0)} med ärende sedan tidigare; startmånaden flyttas aldrig tyst (PR-ITP1-025)"
                 if pending_start else f"Ingen ägare har fyllt {PENSION_AGE} senast {month:%Y-%m}",
-                actual=str(len(pending_start)), sources=sources),
+                expected="0", actual=str(len(start["standard"])), sources=sources),
+        Control("rätt enligt plan", not with_right,
+                f"{len(with_right)} delar har rätt under {month:%Y-%m} enligt beslutad plan; månadsrätt byggs i "
+                "steg 5" if with_right else f"Ingen del har rätt under {month:%Y-%m} enligt beslutad plan",
+                expected="0", actual=str(len(with_right)), sources=sources),
     ]
     return controls
 
@@ -471,13 +731,35 @@ def apply_month(session: Session, month: date, actor: str, reviewed_checksum: st
                         supersedes_id=plan.supersedes.id if plan.kind == CORRECTION_KIND else None)
     session.add(batch)
     session.flush()
-    if plan.guarantee_rows:
-        session.bulk_insert_mappings(LedgerGuaranteePart, [{**r, "batch_id": batch.id, "created_by": actor}
-                                                           for r in plan.guarantee_rows])
+    for p in plan.split_parts:  # steg 4: den nya delen ur månadens delning, ej startad från ändringsmånaden
+        parent = session.get(PayoutPart, p["split_from_part_id"])
+        parent.share_of_origin = p["parent_share_after"]
+        session.add(PayoutPart(id=p["id"], benefit_id=p["benefit_id"], part_number=p["part_number"],
+                               share_of_origin=p["share_of_origin"], split_from_part_id=p["split_from_part_id"],
+                               split_date=p["split_date"], split_share=p["split_share"]))
+        session.flush()
+        session.add(PayoutPartState(payout_part_id=p["id"], state="not_started", valid_from=p["split_date"],
+                                    note=f"Uttagsdel {p['part_number']} genom delning (PR-ITP1-024)"))
+        session.flush()
+    rows = plan.guarantee_rows + plan.version_rows
+    for with_plan in (False, True):  # samma nycklar per anrop; `plan_id` bara där en plan finns
+        batch_rows = [{**r, "batch_id": batch.id, "created_by": actor} for r in rows if ("plan_id" in r) == with_plan]
+        if batch_rows:
+            session.bulk_insert_mappings(LedgerGuaranteePart, batch_rows)
     if plan.entry_rows:
         # Ett nytt spår (premie) får sin post först efter sin garantidel
         session.bulk_insert_mappings(LedgerCapitalEntry, [{**r, "batch_id": batch.id, "created_by": actor}
                                                           for r in plan.entry_rows])
+    for c in plan.review_cases:  # steg 4: ärenden vid 66 (V4, V6), i samma transaktion som stängningen
+        session.add(Case(id=stable_id(plan.kind, plan.period_end.isoformat(), "review", c["payout_part_id"]),
+                         case_number=pl.next_case_number(session), case_type="payout_review", status="open",
+                         insured_person_id=c["person_id"], policy_id=c["policy_id"], channel="system",
+                         received_date=today, source_reference=f"month_close:{plan.period_end.isoformat()}",
+                         details={"reason": c["reason"], "detail": c["detail"], "payout_part_id": c["payout_part_id"],
+                                  "sixty_six_month": c["sixty_six_month"], "month": plan.month.isoformat(),
+                                  "text": pl.REVIEW_REASONS[c["reason"]]},
+                         created_by=actor))
+        session.flush()
     session.add_all(LedgerControl(id=stable_id(plan.kind, plan.period_end.isoformat(), str(plan.version), c.step),
                                   batch_id=batch.id, step=c.step, expected=c.expected, actual=c.actual,
                                   difference=c.difference, sources=c.sources, passed=c.passed, detail=c.detail)
@@ -496,9 +778,10 @@ def verify_month(session: Session, batch: LedgerBatch) -> None:
                            .where(LedgerCapitalEntry.batch_id == batch.id))
     parts = session.scalar(select(func.count()).select_from(LedgerGuaranteePart)
                            .where(LedgerGuaranteePart.batch_id == batch.id))
-    if (count, parts) != (totals["entries"], totals["new_guarantee_parts"]):
+    expected_parts = totals["new_guarantee_parts"] + totals.get("guarantee_versions", 0)
+    if (count, parts) != (totals["entries"], expected_parts):
         raise CloseError(f"Verifikationens rader stämmer inte ({count} poster och {parts} garantidelar mot "
-                         f"{totals['entries']} och {totals['new_guarantee_parts']})")
+                         f"{totals['entries']} och {expected_parts})")
     closing = sum((t.balance for t in cl.tracks(session, batch.period_end)), ZERO)
     if closing != Decimal(totals["closing_sek"]):
         raise CloseError(f"Journalens kundkapital per {batch.period_end} är {closing} kr, inte "

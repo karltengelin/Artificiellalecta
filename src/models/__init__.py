@@ -22,6 +22,7 @@ from .insured_person import InsuredPerson
 from .invoice import Invoice, InvoiceLineRecord
 from .operation_event import OperationEventRecord
 from .payout_part import PayoutPart, PayoutPartState
+from .payout_plan import PayoutPlan, PayoutRequest, PayoutSplit
 from .policy import Policy
 from .policy_benefit import PolicyBenefit
 from .policy_state import PolicyState
@@ -61,6 +62,9 @@ __all__ = [
     "PaymentAllocation",
     "PayoutPart",
     "PayoutPartState",
+    "PayoutPlan",
+    "PayoutRequest",
+    "PayoutSplit",
     "Policy",
     "PolicyBenefit",
     "PolicyState",

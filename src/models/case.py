@@ -37,8 +37,11 @@ _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgres
 #: payment_unmatched: inbetalning på avstämningskontot – överskott, okänd referens eller fel betalare (§4.6)
 #: payout_reconstruction: pågående eller pausat uttag från modellen med ett läge per försäkring, utan
 #: plan, garantidelar eller månadsrätter – rekonstrueras av handläggaren (B-047, P1-PENSION-001 §4)
+#: payout_request: kundens begäran om start, uppskov, paus, förlängning eller delning (P1-PENSION-001 §5.1, V8)
+#: payout_review: systemupptäckt pensionsfråga – standardstart utan verifierad ägare eller 66 år passerat
+#: utan plan (PB2, V4–V6)
 CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue", "payment_unmatched",
-              "payout_reconstruction")
+              "payout_reconstruction", "payout_request", "payout_review")
 CASE_STATUSES = ("open", "in_progress", "waiting_approval", "waiting_info", "closed")
 CASE_OUTCOMES = ("approved", "rejected", "supplement_requested", "manual_review", "no_action")
 #: system: betrodd bevakning som upptäcker ärendet själv, t.ex. förfallen faktura (B-046)
