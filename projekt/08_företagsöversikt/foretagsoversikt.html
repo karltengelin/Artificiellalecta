@@ -6,40 +6,40 @@
 <title>Artificiellalecta företagsöversikt</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400..800&amp;display=swap">
 <style>
-/* Layout: ett driftsdokument i en kolumn med fast sektionsmeny; diagram får full bredd, löptext hålls kring 68 tecken */
+/* Digital klarhet (B-034). Grundvärdena är inbyggda eftersom filen även används fristående. */
 :root{
-  --bg:#F3F5F7; --surface:#FFFFFF; --ink:#152130; --muted:#566376; --line:#D4DAE2;
-  --accent:#0B6480; --accent-soft:#DCEEF3;
-  --ok:#2D7A4C; --ok-bg:#E2F1E7;
-  --part:#985F00; --part-bg:#FBEFD6;
-  --plan:#4A59B3; --plan-bg:#E8EBFA;
-  --none:#8A93A2; --none-bg:#EEF0F3;
-  --stop:#AE3E34; --stop-bg:#F8E3E0;
-  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
-  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --bg:#EEEDF6; --surface:#FFFFFF; --ink:#252440; --muted:#65627D; --line:#DEDCED;
+  --accent:#5E42C6; --accent-soft:#EEEBFF; --mark:#6951CF;
+  --ok:#236342; --ok-bg:#E8F3EC;
+  --part:#8A5A00; --part-bg:#FFF4DC;
+  --plan:#5E42C6; --plan-bg:#EEEBFF;
+  --none:#65627D; --none-bg:#EEEDF6;
+  --stop:#A3262A; --stop-bg:#FCE9E9;
+  --f-body:"DM Sans",system-ui,"Segoe UI",sans-serif;
+  --f-display:var(--f-body);
+  --f-mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0F141B; --surface:#171F29; --ink:#E5EAF0; --muted:#9BA7B6; --line:#2B3543;
-    --accent:#5BB8D6; --accent-soft:#163440;
+    --bg:#252440; --surface:#302E4C; --ink:#F4F2FF; --muted:#C4BFD8; --line:#4F4B6A;
+    --accent:#D2C5FF; --accent-soft:#423666; --mark:#A991F2;
     --ok:#5DC28A; --ok-bg:#16301F;
     --part:#E2A949; --part-bg:#36290F;
-    --plan:#93A0F2; --plan-bg:#212748;
-    --none:#727D8E; --none-bg:#1C2430;
+    --plan:#D2C5FF; --plan-bg:#423666;
+    --none:#C4BFD8; --none-bg:#363450;
     --stop:#E57D72; --stop-bg:#3A1C19;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0F141B; --surface:#171F29; --ink:#E5EAF0; --muted:#9BA7B6; --line:#2B3543;
-  --accent:#5BB8D6; --accent-soft:#163440;
+  --bg:#252440; --surface:#302E4C; --ink:#F4F2FF; --muted:#C4BFD8; --line:#4F4B6A;
+  --accent:#D2C5FF; --accent-soft:#423666; --mark:#A991F2;
   --ok:#5DC28A; --ok-bg:#16301F;
   --part:#E2A949; --part-bg:#36290F;
-  --plan:#93A0F2; --plan-bg:#212748;
-  --none:#727D8E; --none-bg:#1C2430;
+  --plan:#D2C5FF; --plan-bg:#423666;
+  --none:#C4BFD8; --none-bg:#363450;
   --stop:#E57D72; --stop-bg:#3A1C19;
   color-scheme:dark;
 }
@@ -61,7 +61,8 @@ p{margin:0}
 /* Meny */
 .nav{position:sticky; top:env(safe-area-inset-top,0px); z-index:10; background:var(--bg); border-bottom:1px solid var(--line)}
 .nav-inner{display:flex; align-items:center; gap:20px; max-width:1140px; margin-inline:auto; padding-inline:20px}
-.nav-brand{font-family:var(--f-display); font-stretch:80%; font-weight:750; font-size:1rem; white-space:nowrap}
+.nav-brand{display:inline-flex; align-items:center; gap:8px; font-family:var(--f-display); font-weight:700; font-size:1rem; white-space:nowrap}
+.nav-brand::before{content:""; width:14px; height:14px; border-radius:4px; background:var(--mark); transform:rotate(-9deg)}
 .nav ul{list-style:none; margin:0; padding:0; display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; min-width:0}
 .nav ul::-webkit-scrollbar{display:none}
 .nav a{display:block; padding:14px 10px; font-size:13.5px; color:var(--muted); text-decoration:none; white-space:nowrap; border-bottom:2px solid transparent}

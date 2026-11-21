@@ -17,60 +17,90 @@
 </head>
 <body hx-boost="true">
   {% set path = request.url.path %}
-  {% macro nav(href, label, active) %}<a href="{{ href }}"{% if active %} aria-current="page"{% endif %}>{{ label }}{{ caller() if caller }}</a>{% endmacro %}
+  {% set insurance_area = not operator_page %}
+  {% set environment_name = {'demo': 'Demo', 'svc_test': 'Test', 'lakebase': 'Lakebase'}[settings.database] %}
+  {% macro nav(href, label, active, compact=none) %}
+    <a href="{{ href }}"{% if active %} aria-current="page"{% endif %}{% if compact %} aria-label="{{ label }}"{% endif %}>
+      {%- if compact %}<span class="nav__full">{{ label }}</span><span class="nav__compact">{{ compact }}</span>{% else %}{{ label }}{% endif %}
+      {{- caller() if caller }}</a>
+  {% endmacro %}
+  {% macro platform_links() %}
+    {{ nav('/central', 'Centralen', path.startswith('/central') and not path.startswith(('/central/fragor', '/central/utveckling'))) }}
+    {{ nav('/', 'Försäkring', insurance_area) }}
+    {{ nav('/team/aktuarie', 'Aktuarieteamet', path.startswith('/team/aktuarie')) }}
+    {{ nav('/central/fragor', 'Fråga bolaget', path.startswith('/central/fragor')) }}
+    {% if settings.database == 'demo' %}{{ nav('/central/utveckling', 'Utveckling', path.startswith('/central/utveckling')) }}{% endif %}
+  {% endmacro %}
+  {% macro stock_links() %}
+    {{ nav('/', 'Sök', path in ('/', '/sok')) }}
+    {{ nav('/forsakrade', 'Bestånd', path.startswith(('/forsakrade', '/forsakringar'))) }}
+  {% endmacro %}
   <header class="topbar{% if settings.is_production %} topbar--prod{% endif %}">
-    <a class="brand" href="{{ '/central' if operator_page else '/' }}"><span class="brand__mark" aria-hidden="true"></span>Artificiellalecta <span class="brand__sub">{{ 'Operatörscentral' if operator_page else 'Handläggare' }}</span></a>
-    <nav class="mainnav" aria-label="Huvudmeny">
-      {{ nav("/central", "Centralen", path.startswith("/central") and not path.startswith(("/central/fragor", "/central/utveckling"))) }}
-      {{ nav("/central/fragor", "Fråga bolaget", path.startswith("/central/fragor")) }}
-      {{ nav("/team/aktuarie", "Aktuarieteamet", path.startswith("/team/aktuarie")) }}
-      {% if operator_page %}
-      {% if settings.database == "demo" %}{{ nav("/central/utveckling", "Utveckling", path.startswith("/central/utveckling")) }}{% endif %}
-      {{ nav("/", "Försäkringsteamets arbetsyta", false) }}
-      {% else %}
-      {{ nav("/", "Sök", path == "/" or path == "/sok") }}
-      {{ nav("/forsakrade", "Bestånd", path.startswith("/forsakrade") or path.startswith("/forsakringar")) }}
-      {{ nav("/arenden", "Ärenden", path.startswith("/arenden")) }}
-      {{ nav("/premier", "Premier och betalningar", path.startswith("/premier")) }}
-      {% call nav("/godkannanden", "Godkännanden", path.startswith("/godkannanden")) %}{% if pending_approvals %}<span class="count" title="Väntande förslag">{{ pending_approvals }}</span>{% endif %}{% endcall %}
-      {{ nav("/arbetsgivare", "Arbetsgivare", path.startswith("/arbetsgivare")) }}
-      {{ nav("/handelselogg", "Händelselogg", path.startswith("/handelselogg")) }}
-      {{ nav("/parametrar", "Parametrar", path.startswith("/parametrar")) }}
-      {% endif %}
-    </nav>
-    <div class="who">
-      <span class="db db--{{ settings.database }}" title="Databas">{{ settings.database_label }}</span>
-      {% if not operator_page %}<span class="user" title="Aktör i händelseloggen">Handläggare: <strong>{{ settings.handler_id }}</strong></span>{% endif %}
-      {% if operator_user %}
-      <span class="user">Operatör: <strong>{{ operator_user }}</strong></span>
-      <form method="post" action="/logga-ut" hx-boost="false">
-        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
-        <button type="submit" class="secondary">Logga ut</button>
-      </form>
-      {% elif operator_auth_enabled %}<a href="/logga-in" hx-boost="false">Logga in</a>{% endif %}
+    <div class="topbar__bar">
+      <a class="brand" href="{{ '/central' if operator_page else '/' }}"><span class="brand__mark" aria-hidden="true"></span>Artificiellalecta</a>
+      <nav class="mainnav mainnav--desktop" aria-label="Plattformen">{{ platform_links() }}</nav>
+      <details class="nav-disclosure topbar__environment">
+        <summary class="db db--{{ settings.database }}" aria-label="Miljö och konto, {{ settings.database_label }}">{{ environment_name }}</summary>
+        <div class="nav-disclosure__panel environment-panel">
+          <p><strong>{{ settings.database_label }}</strong></p>
+          {% if not settings.is_production %}<p class="muted">Uppgifterna är separata från Lakebase och synkas inte dit.</p>{% endif %}
+          {% if insurance_area or operator_user or operator_auth_enabled %}
+          <div class="account-panel">
+            {% if insurance_area %}<p>Handläggare: <strong>{{ settings.handler_id }}</strong></p>{% endif %}
+            {% if operator_user %}
+            <p>Operatör: <strong>{{ operator_user }}</strong></p>
+            <form method="post" action="/logga-ut" hx-boost="false">
+              <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+              <button type="submit" class="secondary">Logga ut</button>
+            </form>
+            {% elif operator_auth_enabled %}<a href="/logga-in" hx-boost="false">Logga in</a>{% endif %}
+          </div>
+          {% endif %}
+          <form class="environment-picker" data-environment-picker data-current-database="{{ settings.database }}"
+                method="post" action="/miljo" hx-boost="false">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label for="environment-database">Datakälla</label>
+            <select id="environment-database" name="database">
+              {% if settings.database == 'svc_test' %}<option value="svc_test" selected disabled>{{ settings.database_label }}</option>{% endif %}
+              {% for database, label in environment_choices.items() %}
+              <option value="{{ database }}"{% if database == settings.database %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="secondary">Byt miljö</button>
+            <span data-environment-message role="status" aria-live="polite" hidden></span>
+            <noscript>JavaScript behövs för varning om osparade ändringar vid miljöbyte.</noscript>
+          </form>
+        </div>
+      </details>
+      <details class="nav-disclosure topbar__menu">
+        <summary>Meny</summary>
+        <nav class="mainnav nav-disclosure__panel" aria-label="Plattformen">{{ platform_links() }}</nav>
+      </details>
     </div>
-    <form class="environment-picker" data-environment-picker data-current-database="{{ settings.database }}"
-          method="post" action="/miljo" hx-boost="false">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <label for="environment-database">Datakälla</label>
-      <select id="environment-database" name="database">
-        {% if settings.database == "svc_test" %}<option value="svc_test" selected disabled>{{ settings.database_label }}</option>{% endif %}
-        {% for database, label in environment_choices.items() %}
-        <option value="{{ database }}"{% if database == settings.database %} selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit" class="secondary">Byt miljö</button>
-      <span data-environment-message role="status" aria-live="polite" hidden></span>
-      <noscript>JavaScript behövs för varning om osparade ändringar vid miljöbyte.</noscript>
-    </form>
+    {% if insurance_area %}
+    <div class="topbar__context">
+      <nav class="mainnav topbar__bar" aria-label="Försäkringsteamets arbetsyta">
+        <span class="nav__full nav__stock">{{ stock_links() }}</span>
+        {{ nav('/arenden', 'Ärenden', path.startswith('/arenden')) }}
+        {{ nav('/premier', 'Premier och betalningar', path.startswith('/premier'), 'Premier') }}
+        {% call nav('/godkannanden', 'Godkännanden', path.startswith('/godkannanden')) %}{% if pending_approvals %}<span class="count" aria-label="{{ pending_approvals }} väntande förslag" title="Väntande förslag">{{ pending_approvals }}</span>{% endif %}{% endcall %}
+        <details class="nav-disclosure nav__more">
+          <summary{% if path.startswith(('/arbetsgivare', '/handelselogg', '/parametrar')) %} class="is-current"{% endif %}>Mer</summary>
+          <div class="nav-disclosure__panel">
+            <div class="nav__compact nav__stock">{{ stock_links() }}</div>
+            {{ nav('/arbetsgivare', 'Arbetsgivare', path.startswith('/arbetsgivare')) }}
+            {{ nav('/handelselogg', 'Händelselogg', path.startswith('/handelselogg')) }}
+            {{ nav('/parametrar', 'Parametrar', path.startswith('/parametrar')) }}
+          </div>
+        </details>
+      </nav>
+    </div>
+    {% endif %}
   </header>
   {% if settings.is_production %}
-  <div class="prodbanner" role="alert">Lakebase-beståndet: ändringar sparas på riktigt och loggas i händelseloggen.</div>
+  <div class="prodbanner" role="alert"><div class="topbar__bar">Lakebase-beståndet: ändringar sparas på riktigt och loggas i händelseloggen.</div></div>
   {% endif %}
   <main class="page">
-    {% if settings.database != "lakebase" %}
-    <div class="alert alert--info" role="status">{{ settings.database_label }}. Uppgifterna är separata från Lakebase och synkas inte dit.</div>
-    {% endif %}
     {% if not database_available %}
     <div class="alert alert--error" role="alert">Kan inte läsa från {{ settings.database_label }}. Kontrollera databasanslutningen. Ingen annan databas används automatiskt.</div>
     {% endif %}

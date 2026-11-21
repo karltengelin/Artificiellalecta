@@ -26,7 +26,7 @@
 <section class="panel">
   <h2>Versioner</h2>
   <div class="table-wrap">
-  <table class="table">
+  <div class="table-wrap" role="region" aria-label="Produktparametrar" tabindex="0"><table class="table">
     <thead><tr><th>Parameter</th><th class="num">Värde</th><th>Gäller</th><th>Tillstånd</th><th>Regel, källa och beslut</th><th></th></tr></thead>
     <tbody>
       {% for key, (name, unit, help) in parameters.items() %}
@@ -56,7 +56,7 @@
       {% endfor %}
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   </div>
   <p class="muted small">En parameter kan ha en kommande version åt gången. Den går att dra tillbaka tills den börjar gälla; därefter
     ändras värdet bara med en ny version.</p>

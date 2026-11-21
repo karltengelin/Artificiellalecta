@@ -18,9 +18,18 @@ def test_operator_views_are_readable_with_real_gaps_and_no_person_data(web, path
     assert 'action="/central' not in response.text
     if path == "/central":
         assert "Ej beräknat" in response.text and "Okänd" in response.text
+        assert "Försäkringstekniska avsättningar" in response.text
+        assert "Kollektiv konsolidering" in response.text and "Likviditetstäckning" in response.text
     if path == "/central/team":
         assert "Körläge okänt" in response.text and "Profil konfigurerad" in response.text
 
+
+def test_definition_links_open_the_selected_metric(web):
+    overview = web.client.get("/central")
+    assert "&amp;matt=consolidation_ratio#consolidation_ratio" in overview.text
+    details = web.client.get("/central/underlag?matt=consolidation_ratio")
+    assert 'id="consolidation_ratio" open' in details.text
+    assert 'id="liquidity_coverage" open' not in details.text
 
 def test_period_cannot_be_used_for_person_lookup_or_arbitrary_time_slicing(web):
     assert web.client.get("/central?month=not-a-month").status_code == 422

@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% from "partials/forms.html" import field, csrf with context %}
-{% set fe = error.field_errors if error is defined and error else {} %}
+{% from "partials/forms.html" import csrf with context %}
 {% set d = case.details %}
+{% set salary_case = case.case_type in ('salary_report', 'salary_file_deviation') %}
 {% block title %}{{ case.case_number }}{% endblock %}
 {% block content %}
+<p class="breadcrumb"><a href="/arenden">← Ärenden</a></p>
 <div class="case-desk">
 <div class="case-desk__case">
 <section class="panel panel--standalone">
   <div class="panel__head">
-    <h1>{{ case.case_number }} <span class="muted">· {{ case.case_type | label('case_type') }}</span></h1>
+    <div><h1>{{ case.case_type | label('case_type') }}</h1><p class="muted small heading-meta">{{ case.case_number }}</p></div>
     <span class="pill pill--case-{{ case.status }}">{{ case.status | label('case_status') }}{% if case.outcome %} · {{ case.outcome | label('case_outcome') }}{% endif %}</span>
   </div>
 
@@ -17,26 +18,37 @@
 
   <div class="formgrid{% if assistant_available %} case-info{% endif %}">
     <div>
-      <h2>Inrapporterat</h2>
+      <h2>Ärendeunderlag</h2>
+      {% if case.case_type == 'payout_reconstruction' and d.get('instruction') %}<p>{{ d.instruction }}</p>{% endif %}
       <dl class="kv">
-        <dt>Försäkrad</dt><dd>{% if case.personal_id_number %}<a href="/forsakrade/{{ case.personal_id_number }}">{% if o %}{{ o.first_name }} {{ o.last_name }}, {% endif %}{{ case.personal_id_number | pnr }}</a>{% else %}–{% endif %}</dd>
-        <dt>Arbetsgivare</dt><dd>{{ case.employer_org_number or "–" }}</dd>
+        {% if case.personal_id_number %}<dt>Försäkrad</dt><dd><a href="/forsakrade/{{ case.personal_id_number }}">{% if o %}{{ o.first_name }} {{ o.last_name }}, {% endif %}{{ case.personal_id_number | pnr }}</a></dd>{% endif %}
+        {% if case.employer_org_number %}<dt>Arbetsgivare</dt><dd>{{ case.employer_org_number }}</dd>{% endif %}
         {% if case.policy_number %}<dt>Försäkring</dt><dd><a href="/forsakringar/{{ case.policy_number }}">{{ case.policy_number }}</a></dd>{% endif %}
-        <dt>Månad</dt><dd>{{ case.period_month | month }}</dd>
+        {% if case.period_month %}<dt>Månad</dt><dd>{{ case.period_month | month }}</dd>{% endif %}
+        {% if case.case_type == 'payout_reconstruction' %}
+          {% if d.get('payout_part') %}<dt>Uttagsdel</dt><dd>{{ d.payout_part }}</dd>{% endif %}
+          {% if d.get('missing') %}<dt>Underlag saknas</dt><dd>{{ d.missing | join(', ') }}</dd>{% endif %}
+        {% endif %}
         {% if case.case_type == "salary_file_deviation" %}<dt>Avvikelse</dt><dd><code>{{ d.get("reason") }}</code> · {{ d.get("message") }}{% if d.get("row") %} (rad {{ d.get("row") }} i <code>{{ d.get("file_reference") }}</code>){% endif %}</dd>
         {% set d = d.get("reported") or {} %}{% endif %}
         {% if case.case_type == "payment_overdue" %}<dt>Faktura</dt><dd><code>{{ d.get("invoice_number") }}</code> · OCR <code>{{ d.get("ocr_reference") }}</code> · förföll {{ d.get("due_date") }} · {{ d.get("open_sek") | sek }} öppet · {{ d.get("days_overdue") }} dagar{% if d.get("escalated") %} · eskalerad {{ d.get("escalated_on") }}{% endif %}</dd>{% endif %}
         {% if case.case_type == "payment_unmatched" %}<dt>Inbetalning</dt><dd><code>{{ d.get("source_system") }}:{{ d.get("event_id") }}</code> · {{ d.get("amount_sek") | sek }} från {{ d.get("payer_org_number") }} · referens <code>{{ d.get("reference") }}</code> · {{ d.get("unallocated_sek") | sek }} på avstämningskontot (<code>{{ d.get("reason") }}</code>){% if d.get("invoice_number") %} · faktura <code>{{ d.get("invoice_number") }}</code>{% endif %}</dd>{% endif %}
+        {% if salary_case and d %}
         <dt>Lön</dt><dd>{{ d.get("pensionable_salary_sek") | sek }}</dd>
         <dt>Rapport</dt><dd>{% if d.get("kind") == "correction" %}Rättelse av version {{ d.get("corrects_version") }}{% else %}Ny rapport{% endif %} · {{ d.get("source") | label('salary_source') }}</dd>
+        {% endif %}
         <dt>Mottaget</dt><dd>{{ case.received_date | iso_date }}{% if case.source_reference %} · referens <code>{{ case.source_reference }}</code>{% endif %}</dd>
         {% if case.due_date %}<dt>Tidsfrist</dt><dd>{{ case.due_date | iso_date }}</dd>{% endif %}
         <dt>Handläggare</dt><dd>{{ case.assigned_to or "–" }} · registrerat av <code>{{ case.created_by }}</code></dd>
         {% if case.status == "closed" %}<dt>Stängt</dt><dd>{{ case.closed_at | iso_date }} av <code>{{ case.closed_by }}</code>{% if case.closing_note %}: {{ case.closing_note }}{% endif %}</dd>{% endif %}
       </dl>
-      {% if case.status != "closed" and case.personal_id_number %}
+      {% if salary_case and case.status != "closed" and case.personal_id_number %}
       <p><a class="button secondary" href="/forsakrade/{{ case.personal_id_number }}/loneunderlag/ny?arende={{ case.case_number }}&manad={{ case.period_month.isoformat()[:7] if case.period_month else '' }}&lon={{ d.get('pensionable_salary_sek', '') }}{% if d.get('kind') == 'correction' %}&typ=rattelse&version={{ d.get('corrects_version') }}{% endif %}">Registrera löneunderlaget själv</a>
         <span class="muted small">i ärendet – syns i historiken</span></p>
+      {% elif case.case_type == 'payment_unmatched' %}
+      <p><a class="button secondary" href="/premier#avstamningskonto">Visa avstämningskontot</a></p>
+      {% elif case.case_type == 'payment_overdue' and d.get('invoice_number') %}
+      <p><a class="button secondary" href="/premier/fakturor/{{ d.invoice_number }}">Öppna fakturan</a></p>
       {% endif %}
     </div>
 
@@ -82,7 +94,7 @@
 <section class="panel">
   <h2>Förslag i ärendet</h2>
   {% if approvals.requests %}
-  <table class="table table--compact">
+  <div class="table-wrap"><table class="table table--compact">
     <thead><tr><th>Förslag</th><th>Operation</th><th>Föreslaget av</th><th>Status</th><th>Beslut</th></tr></thead>
     <tbody>
       {% for a in approvals.requests %}
@@ -95,7 +107,7 @@
       </tr>
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% else %}
   <p class="empty">Inga förslag i ärendet.</p>
   {% endif %}

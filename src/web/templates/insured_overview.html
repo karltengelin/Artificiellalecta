@@ -16,7 +16,7 @@
     </div>
   </div>
   {% if o.policies %}
-  <table class="table">
+  <div class="table-wrap" role="region" aria-label="Försäkringar" tabindex="0"><table class="table">
     <thead>
       <tr><th>Försäkring</th><th>Produkt</th><th>Tecknad</th><th>Premieförlopp</th><th>Uttagsdelar</th><th>Förmåner</th><th class="num">Kapital</th><th></th></tr>
     </thead>
@@ -48,7 +48,7 @@
       </tr>
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   <p class="muted small">Kapital = summan av betalda premietransaktioner per förmån (databasschema §8).</p>
   {% else %}
   <p class="muted">Den försäkrade har inga försäkringar.</p>

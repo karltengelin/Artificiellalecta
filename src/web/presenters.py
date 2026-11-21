@@ -51,6 +51,16 @@ EVENT_OUTCOMES = {"executed": "Utförd", "proposed": "Föreslagen", "rejected": 
 APPROVAL_STATUS = {"pending": "Väntar", "approved": "Godkänd", "rejected": "Avslagen"}
 ACTOR_TYPES = {"human": "Handläggare", "agent": "Agent", "system": "Skript"}
 OPERATION_KINDS = {"read": "Läsning", "compute": "Beräkning", "write": "Ändring", "external": "Extern"}
+OPERATION_LABELS = {
+    "receive_premium_payment": "Registrera premiebetalning",
+    "schedule_product_parameter_change": "Schemalägg en ändring av produktparametern",
+    "schedule_customer_tax_rate": "Schemalägg skattebelastningen",
+    "propose_valuation_basis": "Registrera ett grundförslag",
+    "run_valuation": "Kör en värdering",
+    "register_salary_report": "Registrera löneunderlag",
+    "set_policy_paid_up": "Avanmäl och sätt försäkringen i fribrev",
+    "enroll_insured_person": "Anslut ny försäkrad",
+}
 CASE_TYPES = {"salary_report": "Löneunderlag", "salary_file_deviation": "Avvikelse i lönefil",
               "payment_overdue": "Förfallen faktura", "payment_unmatched": "Oallokerad inbetalning",
               "payout_reconstruction": "Rekonstruktion av uttag"}
@@ -94,6 +104,7 @@ LABELS = {
     "approval_status": APPROVAL_STATUS,
     "actor_type": ACTOR_TYPES,
     "operation_kind": OPERATION_KINDS,
+    "operation": OPERATION_LABELS,
     "case_type": CASE_TYPES,
     "case_status": CASE_STATUS,
     "case_outcome": CASE_OUTCOMES,

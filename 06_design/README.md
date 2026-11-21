@@ -24,8 +24,9 @@ källan till de maskinläsbara grundvärdena. Den visuella referensen är en bev
 ögonblicksbild av det valda förslaget, med exempeldata och skisser av komponenter.
 Den är inte en kopia av dagens handläggar-UI eller en färdig rapport-/PPTX-mall.
 
-Designgrunden är dokumenterad och tillämpad i handläggar-UI:t, som är pilotytan
-(2026-10-24). Webbens CSS-variabler genereras där ur tokenfilen, se
+Designgrunden tillämpades först i handläggar-UI:t (2026-10-24). Arbetsytorna
+delar nu också det kompakta sidhuvudet, och den fristående företagsöversikten
+använder profilens typografi och färger. Webbens CSS-variabler genereras ur tokenfilen, se
 `02_system/handläggar-ui.md` §2. Återanvändbara mallar för A4-rapport och
 16:9-presentation finns. Införande i övriga ytor, övriga dokumentmallar samt de
 gemensamma genereringsskillsen återstår enligt backloggen.

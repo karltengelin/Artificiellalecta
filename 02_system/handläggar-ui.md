@@ -39,6 +39,9 @@ agenter hör hemma i centralen respektive i teamens egna områden.
   färgvärden. Stilarken länkas med `?v=` och en innehållshash (`web.handler.static_version`), så att
   webbläsaren inte fortsätter använda en cachad gammal version efter en ändring. DM Sans laddas från Google Fonts utan referer, eftersom adresserna innehåller
   personnummer. Saknas nätet används reserven `system-ui`.
+  Sidhuvudet har en plattformsmeny och en lokal meny för försäkringsteamet. På smala
+  skärmar fälls plattformsmenyn ut via **Meny** och fler försäkringsvyer finns under
+  **Mer**. Tabeller med fler kolumner än vad som ryms kan rullas i sitt eget område.
 - **Bara tjänstelagret.** Webbkoden anropar `ServiceLayer.execute/approve/reject` och läsoperationerna,
   och rör aldrig modeller eller sessioner. Det gäller även läsningar, eftersom läsningar av
   personuppgifter loggas. Testet `test_webbkoden_ror_varken_modeller_eller_sessioner` vaktar gränsen.
@@ -130,8 +133,9 @@ jämföras och föras över kontrollerat om de ska bevaras.
 
 ### Byta datakälla i gränssnittet
 
+Öppna den aktuella miljön, **Demo**, **Test** eller **Lakebase**, i sidhuvudet.
 Välj **Lakebase – gemensamt bestånd (Postgres)** eller **Demo – lokal övningsdata (SQLite)**
-i sidhuvudets **Datakälla** och klicka **Byt miljö**. Bytet går till målmiljöns startsida
+under **Datakälla** och klicka **Byt miljö**. Bytet går till målmiljöns startsida
 och gäller bara den aktuella fliken. Andra flikar, öppna ärenden och deras servrar behåller
 sina databasanslutningar. Inga formulär-, person- eller ärendeuppgifter följer med bytet.
 

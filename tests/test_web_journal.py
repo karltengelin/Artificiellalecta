@@ -53,6 +53,7 @@ def test_kon_visar_vantande_forslag_och_antal_i_menyn(web):
     text = response.text
     assert 'title="Väntande förslag">2<' in text
     assert "register_salary_report" in text and "set_policy_paid_up" in text
+    assert "Registrera löneunderlag" in text and "Avanmäl och sätt försäkringen i fribrev" in text
     assert "demo_handlaggaragent" in text and "Lönefil från Demobolaget AB" in text
     assert f'href="/forsakrade/{ANNA}"' in text and 'href="/forsakringar/AL-000002"' in text
     assert "Godkänn och utför" in text and "Avslå" in text

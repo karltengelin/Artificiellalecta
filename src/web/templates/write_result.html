@@ -27,7 +27,7 @@
   <p>{{ r.note }}</p>
   {% if r.affected_premiums %}
   <h3>Berörd premie</h3>
-  <table class="table table--compact">
+  <div class="table-wrap" role="region" aria-label="Förslag som gäller" tabindex="0"><table class="table table--compact">
     <thead><tr><th>Typ</th><th class="num">Lön</th><th class="num">Belopp</th><th>Status</th><th></th></tr></thead>
     <tbody>
       {% for p in r.affected_premiums %}
@@ -44,7 +44,7 @@
       </tr>
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% endif %}
   <p><a href="/forsakrade/{{ o.personal_id_number }}/loneunderlag">Till löneunderlaget</a></p>
 

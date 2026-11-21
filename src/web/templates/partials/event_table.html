@@ -1,6 +1,6 @@
 {# Händelseloggen som tabell. Kräver `log` (EventList). #}
 {% if log.events %}
-<table class="table events">
+<div class="table-wrap" role="region" aria-label="Händelser" tabindex="0"><table class="table events">
   <thead>
     <tr><th>Tid</th><th>Operation</th><th>Utfall</th><th>Aktör</th><th>Motivering</th><th>Regler</th><th></th></tr>
   </thead>
@@ -32,7 +32,7 @@
     </tr>
     {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% if log.truncated %}<p class="muted small">Visar de {{ log.count }} senaste – fler händelser matchar urvalet.</p>{% endif %}
 {% else %}
 <p class="empty">Inga händelser i urvalet.</p>

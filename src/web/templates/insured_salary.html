@@ -12,7 +12,7 @@
     eller registrerad av handläggare. Skiljs från aktuell månadslön på personen och från premien. En månad utan rad
     saknar rapport; 0,00 kr är en rapporterad noll.</p>
   {% if groups %}
-  <table class="table">
+  <div class="table-wrap" role="region" aria-label="Löneunderlag" tabindex="0"><table class="table">
     <thead>
       <tr><th>Månad</th><th>Arbetsgivare</th><th class="num">Lön</th><th>Version</th><th>Ursprung</th><th>Referens</th><th>Mottagen</th><th></th></tr>
     </thead>
@@ -41,7 +41,7 @@
       {% endfor %}
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% else %}
   <p class="empty">Inget löneunderlag registrerat. Premiehistoriken bygger på lön ur den genererade historiken.</p>
   {% endif %}

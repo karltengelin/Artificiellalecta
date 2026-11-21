@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from "partials/forms.html" import csrf with context %}
 {% block title %}Godkännanden{% endblock %}
 {% block content %}
 <section class="panel panel--standalone">
@@ -11,9 +10,7 @@
       {% endfor %}
     </nav>
   </div>
-  <p class="muted small">Agenter lägger förslag för operationer med nivån <code>APPROVAL</code>. Bara en handläggare kan avgöra dem.
-    Vid godkännande körs operationen på nytt mot aktuellt läge, med agenten som förslagsställare i händelseloggen.
-    Stoppas den rullas allt tillbaka och förslaget är kvar som väntande (tjänstelager.md §6).</p>
+  <p class="muted small">Granska vad förslaget ändrar och vem det gäller innan du fattar beslut.</p>
 
   {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
   {% if error and focus %}<p class="small">Gäller förslaget <code>{{ focus }}</code>.</p>{% endif %}
@@ -23,31 +20,35 @@
   <article class="request{% if focus == r.approval_id %} is-highlight{% endif %}" id="arende-{{ r.approval_id }}">
     <header class="request__head">
       <div>
-        <strong><code>{{ r.operation }}</code></strong>
-        <span class="pill pill--{{ r.status }}">{{ r.status | label('approval_status') }}</span>
+        <h2>{{ r.operation | label('operation') }}</h2>
+        {% if r.case_id %}<a class="small" href="/arenden/{{ r.case_id }}">Ärende {{ r.case_id }}</a>{% endif %}
       </div>
-      <span class="muted small">Förslag {{ r.approval_id }}{% if r.case_id %} · ärende <a href="/arenden/{{ r.case_id }}">{{ r.case_id }}</a>{% endif %}</span>
+      <span class="pill pill--{{ r.status }}">{{ r.status | label('approval_status') }}</span>
     </header>
     {% if descriptions.get(r.operation) %}<p class="small muted">{{ descriptions[r.operation] }}</p>{% endif %}
     <dl class="kv">
-      <dt>Föreslagen</dt><dd>{{ r.created_at | iso_date }} av <code>{{ r.proposed_by }}</code>{% if r.proposed_by_team %} ({{ r.proposed_by_team }}){% endif %}{% if r.run_id %} · körning <code>{{ r.run_id }}</code>{% endif %}</dd>
+      <dt>Föreslagen</dt><dd>{{ r.created_at | iso_date }} av {{ r.proposed_by }}{% if r.proposed_by_team %} ({{ r.proposed_by_team }}){% endif %}</dd>
       <dt>Motivering</dt><dd>{{ r.reason or "–" }}</dd>
       <dt>Gäller</dt><dd>
         {% if r.input.get("personal_id_number") %}<a href="/forsakrade/{{ r.input.personal_id_number }}">{{ r.input.personal_id_number | pnr }}</a>
         {% elif r.input.get("policy_number") %}<a href="/forsakringar/{{ r.input.policy_number }}">{{ r.input.policy_number }}</a>
         {% else %}–{% endif %}</dd>
     </dl>
-    <table class="table table--compact table--kv">
+    <div class="table-wrap"><table class="table table--compact table--kv">
       <tbody>
         {% for key, value in r.input.items() if value is not none %}
-        <tr><th>{{ field_names.get(key, key) }}</th><td>{{ value }}</td></tr>
+        <tr><th scope="row">{{ field_names.get(key, key) }}</th><td>{{ value }}</td></tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table></div>
+    <details class="context-details"{% if focus == r.approval_id %} open{% endif %}>
+      <summary>Spårbarhet</summary>
+      <p>Förslag <code>{{ r.approval_id }}</code> · operation <code>{{ r.operation }}</code>{% if r.run_id %} · körning <code>{{ r.run_id }}</code>{% endif %}</p>
+    </details>
     {% if r.status == "pending" %}
     <div class="decide">
       <form method="post" action="/godkannanden/{{ r.approval_id }}/godkann" class="decide__form"
-            hx-confirm="Godkänna förslaget och utföra {{ r.operation }} nu?">
+            hx-confirm="Godkänna förslaget och utföra åtgärden {{ r.operation | label('operation') | lower }} nu?">
         <input type="hidden" name="csrf_token" value="{{ operator_csrf if operator_user else csrf_token }}">
         <label for="ok-{{ r.approval_id }}">Kommentar (valfri)</label>
         <input id="ok-{{ r.approval_id }}" name="note" placeholder="T.ex. kontrollerat mot underlaget">
@@ -67,5 +68,8 @@
   {% else %}
   <p class="empty">Inga förslag i urvalet.</p>
   {% endfor %}
+  <details class="context-details"><summary>Så fungerar ett godkännande</summary>
+    <p>En handläggare avgör förslag med nivån <code>APPROVAL</code>. Vid godkännande körs åtgärden mot aktuellt läge med agenten som förslagsställare i händelseloggen. Stoppas den återställs ändringarna och förslaget ligger kvar i kön.</p>
+  </details>
 </section>
 {% endblock %}

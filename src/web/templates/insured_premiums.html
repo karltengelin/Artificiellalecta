@@ -13,7 +13,7 @@
     </form>
   </div>
   {% if history.transactions %}
-  <table class="table">
+  <div class="table-wrap" role="region" aria-label="Premiehistorik" tabindex="0"><table class="table">
     <thead>
       <tr><th>Månad</th><th>Typ</th><th>Förmån</th><th class="num">Lön</th><th class="num">Belopp</th><th>Status</th><th>Betald</th><th></th></tr>
     </thead>
@@ -34,7 +34,7 @@
     <tfoot>
       <tr><td colspan="4">{{ history.count }} rader</td><td class="num"><strong>{{ history.total_paid_sek | sek }}</strong></td><td colspan="3" class="muted small">summa betalt i urvalet</td></tr>
     </tfoot>
-  </table>
+  </table></div>
   {% else %}
   <p class="empty">Inga premietransaktioner i urvalet.</p>
   {% endif %}
