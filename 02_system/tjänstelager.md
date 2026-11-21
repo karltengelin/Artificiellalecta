@@ -758,7 +758,7 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
 
 ### 9.17 Begäran, uttagsplan och delning (paket B steg 4, B-047) – vad som stöds och vad som blockeras
 
-Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §5 (PB3, PB6) och §10 (PB12), med Karls val V1–V11 2026-11-21 (§5.4; föreslagen B-051).
+Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §5 (PB3, PB6) och §10 (PB12), med Karls val V1–V11 2026-11-21 (§5.4, **B-051**).
 - **Kod:**
   - `src/skills/calculation/payout_plan.py`: kalender, frist, belopp, golv och omräkning, utan databas;
   - `src/services/payout_plans.py`: begäran, förhandsberäkning, beslut, delning och ägarkontrollen;

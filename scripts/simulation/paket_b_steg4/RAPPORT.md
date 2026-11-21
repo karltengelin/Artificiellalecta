@@ -1,6 +1,6 @@
 # Paket B steg 4 – begäran, uttagsplan och delning: rapport och körordning
 
-> **Design:** [P1-PENSION-001 §5](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#5-begäran-plan-och-belopp-pb3-pb6) och §5.4, B-047 punkt 3, Karls val V1–V11 (2026-11-21, ”Godkänn alla”). Föreslagna som B-051, inte loggade.
+> **Design:** [P1-PENSION-001 §5](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#5-begäran-plan-och-belopp-pb3-pb6) och §5.4, B-047 punkt 3, Karls val V1–V11 (2026-11-21, ”Godkänn alla”). Loggade som B-051.
 > **Status 2026-11-21:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg-4-pension-cd2841`. **Inte mergat och inte infört i Lakebase.** Merge först när novembers stängning är bokad och kontrollerad (V11).
 
 ## Vad som är byggt

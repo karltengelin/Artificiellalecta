@@ -230,7 +230,7 @@ proportionellt utan ny värdering. Beloppet ligger fast mellan omräkningarna.
   - lokalt: fall 1–12 (`tests/test_payout_plan_calculation.py` och `tests/test_payout_plans.py`), steg 3:s stängning oförändrad utan steg 4:s tabeller;
   - mot isolerad Postgres (`svc_test`): migrationen från läget efter steg 3 med november stängd, och fall 2 och 7 i novemberstängningen med paket A:s testbestånd (`tests/test_migration_payout_plans.py`).
 
-Karls val V1–V11, godkända i chatten 2026-11-21 (”Godkänn alla”). Föreslås loggade som **B-051** (inte införd):
+Karls val V1–V11, godkända i chatten 2026-11-21 (”Godkänn alla”). Loggade som **B-051** samma dag efter Karls OK (”Yes, log B-051”):
 
 - **V1 Datamodell:**
   - tre tabeller: `payout_requests`, `payout_plans` med versionskedja och `payout_splits`;
