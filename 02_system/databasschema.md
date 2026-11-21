@@ -16,7 +16,8 @@
 | `policy_states` | Premieförloppet – premiebetalande eller fribrev per försäkring, som tidsperioder (§6) | 🟢 I drift i Lakebase; importerad historik och tjänsteoperationer. Paket B steg 1 (B-047): villkoret smalnat till `premium_paying` och `paid_up` i Lakebase 2026-11-14 (§12) |
 | `policy_benefits` | Försäkringsförmåner – förmåner inom en försäkring | 🟢 I drift i Lakebase; förmånen ålderspension |
 | `payout_parts` / `payout_part_states` | Uttagsdelar under en förmån och deras pensionsförlopp (§7b) | 🟢 Paket B steg 1 (B-047, P1-PENSION-001 §4): skapade i Lakebase 2026-11-14 efter backup `backups/20261114T150341Z` och Karls OK, med uttagsdel 1 `not_started` för alla 499 förmåner (§12). `agent_forsakring` och `agent_aktuarie` har SELECT (B-048) |
-| `ledger_batches` / `ledger_guarantee_parts` / `ledger_capital_entries` / `ledger_controls` | Den operativa kapital- och garantijournalen: verifikationer, garantidelar, kapitalposter per konto och spår, och kontrollposter (§7c) | 🟢 Paket B steg 2 (B-047, P1-PENSION-001 §6): modeller, övergången från S-04, migration och tester; verifierade mot isolerad Postgres. Införda i Lakebase 2026-11-15 efter backup `backups/20261114T231325Z` och Karls OK, med det ingående läget per 2026-10-31 bokat (§12); agentrollerna har inga rättigheter. Paket B steg 3 (P1-PENSION-001 §7): månadsstängning och rättelse i `ledger_batches` (`supersedes_id`, två nya slag); byggt och verifierat lokalt och mot isolerad Postgres. Migrationen införd i Lakebase 2026-11-19 efter backup `backups/20261119T201517Z` (§12); novembers stängning tidigast 2026-12-01 |
+| `ledger_batches` / `ledger_guarantee_parts` / `ledger_capital_entries` / `ledger_controls` | Den operativa kapital- och garantijournalen: verifikationer, garantidelar, kapitalposter per konto och spår, och kontrollposter (§7c) | 🟢 Paket B steg 2 (B-047, P1-PENSION-001 §6): modeller, övergången från S-04, migration och tester; verifierade mot isolerad Postgres. Införda i Lakebase 2026-11-15 efter backup `backups/20261114T231325Z` och Karls OK, med det ingående läget per 2026-10-31 bokat (§12); agentrollerna har inga rättigheter. Paket B steg 3 (P1-PENSION-001 §7): månadsstängning och rättelse i `ledger_batches` (`supersedes_id`, två nya slag); byggt och verifierat lokalt och mot isolerad Postgres. Migrationen införd i Lakebase 2026-11-19 efter backup `backups/20261119T201517Z` (§12); novembers stängning tidigast 2026-12-01. Paket B steg 4: `ledger_guarantee_parts.plan_id` och `plan_kind = 'plan'` för garantidelar omräknade på en beslutad plan; byggt och verifierat lokalt och mot isolerad Postgres, **inte infört i Lakebase** |
+| `payout_requests` / `payout_plans` / `payout_splits` | Kundens begäran om uttag, planversioner per uttagsdel och delningsbeslut (§7d) | 🟡 Paket B steg 4 (B-047, P1-PENSION-001 §5, Karls val V1–V11 2026-11-21): modeller, operationer, migration och tester; verifierade lokalt och mot isolerad Postgres. **Inte införda i Lakebase**; migrationen tidigast efter novembers stängning (2026-12-01) och Karls separata OK. Agentrollerna får inga rättigheter |
 | `premium_transactions` | Premietransaktioner (en rad per förmån och månad) | 🟢 I drift i Lakebase med importerad premiehistorik; `corrects_transaction_id` migrerad 2026-10-11 |
 | `salary_reports` | Löneunderlag – pensionsmedförande lön per person, arbetsgivare och månad, versionerat | 🟢 Skapad i Lakebase 2026-10-11 (§8b); registrering verifierad i S6 2026-10-12 |
 | `bank_events` / `payment_allocations` | Inbetalningar enligt banken och deras fördelning på fakturarader eller avstämningskontot (§8e) | 🟢 Paket A steg 4 (B-046): modeller, operationer och lokala tester. Skapade tomma i Lakebase 2026-11-08 med `migrate_premium_flow.py` (§12) efter backup `backups/20261108T075712Z` och Karls OK; agentrollerna har inga rättigheter |
@@ -25,7 +26,7 @@
 | `premium_month_journals` / `premium_receipts` / `premium_month_closes` | Frysta syntetiska månadsunderlag, mottagning med kapital-/garantispår och avstämd FTA-analys | 🟢 Skapade tomma i Lakebase 2026-11-03 efter backup `backups/20261103T212124Z` och separat OK (P6-MANAD-001); inga nya agenträttigheter. [Fält, nycklar och riktad migration](avstamd_fta_manad.md#tabeller-och-lakebase-gräns) |
 | `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟢 I drift (seedad 2023–2026) |
 | `operation_events` / `approval_requests` | Tjänstelagrets händelselogg och godkännandekö (§9b–9c) | 🟢 Skapade i Lakebase i Fas 1f T3a; kö/logg används av tjänstelagret och UI:t |
-| `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad med agentrollens läsrätt i Lakebase 2026-10-24. Agentflödet verifierat i Lakebase 2026-11-02 (F5-5–6). Ärendetypen `salary_file_deviation` (steg 2), `payment_overdue` och kanalen `system` (steg 3) samt `payment_unmatched` (steg 4): CHECK-villkoren `ck_cases_type`, `ck_cases_channel` och `ck_cases_subject` bytta i Lakebase 2026-11-08 av samma migration som premieflödets tabeller (steg 8, §12); de 8 befintliga ärendena oförändrade |
+| `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad med agentrollens läsrätt i Lakebase 2026-10-24. Ärendetyperna `payout_request` och `payout_review` (paket B steg 4) är inte införda i Lakebase. Agentflödet verifierat i Lakebase 2026-11-02 (F5-5–6). Ärendetypen `salary_file_deviation` (steg 2), `payment_overdue` och kanalen `system` (steg 3) samt `payment_unmatched` (steg 4): CHECK-villkoren `ck_cases_type`, `ck_cases_channel` och `ck_cases_subject` bytta i Lakebase 2026-11-08 av samma migration som premieflödets tabeller (steg 8, §12); de 8 befintliga ärendena oförändrade |
 | `case_work` / `case_messages` / `case_work_days` | Varaktiga ärendeuppdrag, skyddad dialog och daglig budgetbok (§12b) | 🟢 Skapade tomma i Lakebase 2026-10-31 efter backup och operatörens OK; inga direkta agenträttigheter. Schema är avstängt |
 | `product_parameters` | Versionerade premieåldrar, premiesatser och brytpunkter, samt kapitalavgift och skattebelastning per år (§9h) | 🟢 Skapad och seedad i Lakebase 2026-10-25; agentrollens läsrätt satt. Förändringsoperationer finns; komplett flödesverifiering återstår i 3c-V. 🟢 Kapitalets nycklar (A5) införda i Lakebase 2026-10-31 efter backup `backups/20261031T172901Z` och operatörens OK |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
@@ -246,6 +247,7 @@ Delens **pensionsförlopp** som tidsperioder, på samma sätt som `policy_states
 > - **Verifierat:** lokalt och mot isolerad Postgres. Fall 36 och 37 är också verifierade på en återställd kopia av Lakebase-backupen `backups/20261114T150341Z`.
 > - **Infört i Lakebase 2026-11-15** efter backup `backups/20261114T231325Z`: migrationen och övergången med var sitt OK från Karl. Det ingående läget per 2026-10-31 är bokat (492 försäkringar, 15 097 garantidelar och kapitalspår). Agentrollerna har inga rättigheter på tabellerna (§12).
 > - **Paket B steg 3 (2026-11-19, [P1-PENSION-001 §7](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#7-månadsstängningen-pb5)):** månadsstängningen för sparandet i `src/services/month_close.py`, med verifikationsslagen `month_close` och `month_correction` och kolumnen `ledger_batches.supersedes_id`. Migrationen `scripts/migrations/migrate_month_close.py` (§12). Verifierat lokalt och mot isolerad Postgres. **Migrationen införd i Lakebase 2026-11-19** efter backup `backups/20261119T201517Z`; ingen månad är stängd än (B-050).
+> - **Paket B steg 4 (2026-11-21, [P1-PENSION-001 §5](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#5-begäran-plan-och-belopp-pb3-pb6), Karls val V1–V11):** ändringsmånadens stängning genomför beslutade planer och delningar i steg 1 (§7d). Garantidelarna får `plan_kind = 'plan'` och `plan_id`; delningen bokar kapitalposter med orsaken `split`. Migrationen `scripts/migrations/migrate_payout_plans.py` (§12). Verifierat lokalt och mot isolerad Postgres; **inte infört i Lakebase**.
 
 **Domän:**
 - Journalen är **bolagets enda källa** för pensionskapitalet C och garantin G efter övergången från S-04.
@@ -253,6 +255,7 @@ Delens **pensionsförlopp** som tidsperioder, på samma sätt som `policy_states
 - Posterna är oföränderliga. En rättelse är en ny länkad post, aldrig en ändring.
 - Ett **kapitalspår** är paret (uttagsdel, ursprungets garantidel). Summan av en dels spår är delens C.
 - Steg 2 bokar det **ingående läget** per 2026-10-31. Steg 3 bokar **månadsstängningen** för sparandet (PR-ITP1-020 steg 1–4 och 8): avkastning, kapitalavgift och skattebelastning per spår samt månadens premier ur paket A med garantidelar. Månaderna stängs i ordning, en stängning per månad.
+- Steg 4 genomför i ändringsmånadens stängning, steg 1, beslutade **planer och delningar** (§7d), på värderingen vid föregående månadsslut. En delning flyttar C i ören med största bråkrest och varje G_j proportionellt till den nya delen. En ändrad plan räknar om varje G_j värdebevarande på sin historiska grund: `V_j = G_j × A_gj(gammal plan)` och `G_j_ny = V_j / A_gj(ny plan)`.
 - En stängd månad ändras aldrig. En **rättelse** är en ny verifikation med nettodifferensen per spår och orsak som motposter, länkad till versionen den ersätter. Bara den senast stängda månaden kan rättas.
 
 ### `ledger_batches`
@@ -293,17 +296,19 @@ En garantidel G_j per ursprung och uttagsdel.
 | `payment_allocation_id` | `UUID` | NULL, FK → `payment_allocations(id)` | Allokeringen i paket A |
 | `premium_sek` | `NUMERIC(14,2)` | NOT NULL, CHECK > 0 | P_j, mottagen nettopremie (PR-ITP1-008) |
 | `period_month` / `received_month` / `value_date` | `DATE` | NOT NULL | Premieperiod, mottagningsmånad och värdedag (månadsslutet, PR-ITP1-020 steg 4) |
-| `plan_kind` / `plan_start` | | NOT NULL, CHECK in (`'reference_lifelong'`) | Referensplanen som A_g räknas på (aktuariell_grund.md §3) |
+| `plan_kind` / `plan_start` | | NOT NULL, CHECK in (`'reference_lifelong'`, `'plan'`) | Planen som A_g räknas på: referensplanen (aktuariell_grund.md §3) eller en beslutad uttagsplan (steg 4). `plan_start` är planens första rätt |
+| `plan_id` | `UUID` | NULL, FK → `payout_plans(id)` ON DELETE RESTRICT, index | Planversionen när `plan_kind = 'plan'` (steg 4, §7d) |
 | `basis_code` / `basis_checksum` | | NOT NULL, CHECK längd 64 | Grunden i `valuation_bases` med kontrollsumma |
 | `factor` | `NUMERIC(24,10)` | NOT NULL, CHECK > 0 | A_g vid värdedagen |
 | `guarantee_sek_per_month` | `NUMERIC(24,10)` | NOT NULL, CHECK ≥ 0 | G_j i kr/mån; avrundas först i rapporteringen |
-| `version` / `reason` / `supersedes_id` | | NOT NULL; CHECK `ck_ledger_guarantee_parts_version` | Version 1 har orsaken `premium`. Delning och omräkning (steg 4) ger nya versioner med länk |
+| `version` / `reason` / `supersedes_id` | | NOT NULL; CHECK `ck_ledger_guarantee_parts_version` | Version 1 har orsaken `premium`. Delning (`split`) och omräkning (`recalculation`) i steg 4 ger nya versioner med värdedag den första i ändringsmånaden, som ersätter den gällande versionen |
 | `source` / `created_by` / tidsstämplar | | NOT NULL | `reconstructed_s04` eller `ledger` |
 
 **Integritet:**
 - CHECK `ck_ledger_guarantee_parts_origin`: en S-04-del har en premierad och ingen allokering; en allokeringsdel har en allokering.
 - Partiellt unikt index `uq_ledger_guarantee_parts_premium`: högst en version 1 per S-04-premierad.
 - Partiellt unikt index `uq_ledger_guarantee_parts_allocation`: högst en version 1 per allokering.
+- CHECK `ck_ledger_guarantee_parts_plan_id`: `plan_id` finns precis när `plan_kind = 'plan'` (steg 4).
 - Samma premie får inte ge både ett S-04-ursprung och ett ursprung ur paket A (§6.2 p. 5). Det prövas av ledger-utdragets kontroll *en källa per premie*.
 
 ### `ledger_capital_entries`
@@ -343,7 +348,7 @@ Det ingående läget har nio led:
 - antal uttagsdelar;
 - ej överförda försäkringar.
 
-En månadsstängning eller rättelse har elva led:
+En månadsstängning eller rättelse har elva led (steg 3):
 - föregående läge;
 - avkastning för månaden;
 - avgift och skattebelastning;
@@ -353,7 +358,10 @@ En månadsstängning eller rättelse har elva led:
 - avstämningskontot;
 - startade delar;
 - levandestatus;
-- standardstart väntar på steg 4.
+- standardstart.
+
+Med steg 4:s tabeller tillkommer ett tolfte led, *rätt enligt plan*. *Standardstart* räknar då delar med plan,
+standardstarter i månaden och nya ärenden; en standardstart eller en rätt enligt plan blockerar till steg 5.
 
 **Skrivs av:** `open_capital_ledger` och `close_policy_month` (båda `HUMAN_ONLY`, bara en människa).
 - `close_policy_month` bokar månadsstängningen eller rättelsen med granskningssumman ur `prepare_month_close`, i en transaktion med ett transaktionsbundet lås. Samma innehåll igen ger ingen ny effekt; ändrat underlag ger konflikt (tjänstelager §9.16).
@@ -369,6 +377,78 @@ En månadsstängning eller rättelse har elva led:
 - P6-MANAD-001, som IB när det ingående läget finns. Scenariot skriver aldrig tillbaka (§6.3).
 - `preview_ledger_premiums`, som visar månadens premier ur paket A:s allokeringar på fakturarader utan att boka dem. Bokningen sker i månadsstängningen (steg 3).
 - `prepare_month_close` och `get_month_close` (`HUMAN_ONLY`), som granskar respektive visar en månad.
+
+## 7d. Tabeller: `payout_requests`, `payout_plans` och `payout_splits` – Begäran, uttagsplan och delning
+
+> **Status:** Paket B steg 4 (B-047 punkt 3, [P1-PENSION-001 §5](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#5-begäran-plan-och-belopp-pb3-pb6), Karls val V1–V11 2026-11-21).
+> - **Var koden finns:** modeller i `src/models/payout_plan.py`; tjänstelogiken i `src/services/payout_plans.py`; operationerna i `src/services/operations/payout_plans.py`; kalender och belopp i `src/skills/calculation/payout_plan.py`; genomförandet i `src/services/month_close.py`; migrationen i `scripts/migrations/migrate_payout_plans.py` (§12).
+> - **Verifierat** lokalt (fall 1–12) och mot isolerad Postgres. **Inte infört i Lakebase.**
+
+**Domän:**
+- Raderna är oföränderliga. Ett beslut **skriver bara beslutet**; ändringsmånadens stängning genomför det i steg 1 (V2).
+- Ett beslut kräver att föregående månadsslut är täckt, av det ingående läget eller en stängd månad, och att ändringsmånaden är öppen.
+- En del med rätt under månaden enligt plan blockerar stängningen tills månadsrätten byggs i steg 5 (V3).
+- Utan tabellerna beter sig stängningen som i steg 3.
+
+### `payout_requests`
+
+En begäran om start, uppskov, paus, förlängning eller delning, prövad mot fristen (UTTAG_GEMENSAMT).
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Stabilt id ur innehållet: samma begäran igen ger samma rad |
+| `insured_person_id` / `payout_part_id` | `UUID` | NULL, FK, index | Personen och uttagsdelen; saknas vid okänd identitet |
+| `kind` | `VARCHAR(10)` | NOT NULL, CHECK in (`'start'`, `'pause'`, `'extend'`, `'split'`) | `start` gäller också uppskov och ändrad framtida start |
+| `change_month` | `DATE` | NOT NULL | Första månad begäran ändrar |
+| `content` | `JSONB` | NOT NULL | Kundens val: startmånad, form, N, paus, delningsandel, premiemottagare |
+| `received_date` / `channel` / `requester` / `authority_verified` | | NOT NULL; CHECK på kanal och aktör | Mottagningsdag, kanal (samma värden som `cases.channel`), `insured` eller `representative`, verifierad behörighet |
+| `deadline` | `DATE` | NOT NULL | Sista kalenderdagen i månaden före ändringsmånaden |
+| `outcome` | `VARCHAR(20)` | NOT NULL, CHECK in (`'in_time'`, `'late'`, `'incomplete'`, `'stopped'`, `'blocked'`) | `blocked`: utanför första versionen, t.ex. uttag före 66 (PB1) |
+| `proposed_month` | `DATE` | NULL; CHECK `ck_payout_requests_proposal` | Nästa möjliga månad, precis när begäran är sen |
+| `missing` | `JSONB` | NOT NULL | Uppgifter som saknas eller hindret |
+| `confirms_request_id` | `UUID` | NULL, FK → `payout_requests(id)` | Kundens bekräftelse av ett förslag pekar på den sena begäran |
+| `case_id` | `UUID` | NULL, FK → `cases(id)` | Ärendet `payout_request` |
+| `checksum` / `registered_by` / tidsstämplar | | NOT NULL | |
+
+### `payout_plans`
+
+En planversion per uttagsdel. En ny version ersätter den förra uttryckligen.
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | |
+| `payout_part_id` / `version` / `supersedes_id` | | NOT NULL, UNIQUE (del, version); unikt index på `supersedes_id` | Version 1 har ingen föregångare; versionerna bildar en rak kedja |
+| `origin` / `request_id` | | NOT NULL, CHECK in (`'request'`, `'standard_start'`) | En begäran har `request_id`. `standard_start` är förberett för steg 5 och skrivs inte i steg 4 |
+| `change` | `VARCHAR(10)` | NOT NULL, CHECK in (`'start'`, `'pause'`, `'extend'`) | Styr beloppsgolvet (PR-ITP1-009) |
+| `effective_month` / `valuation_date` | `DATE` | NOT NULL, index på månaden | Ändringsmånaden och föregående månadsslut som värderingen görs på |
+| `form` / `first_right` / `payments` / `pauses` / `end_month` | | NOT NULL utom N och slutmånad; CHECK `ck_payout_plans_payments` | Livsvarig utan N och slutmånad, eller tidsbegränsad med N ≥ 60 och härledd slutmånad. Första rätt är originalstarten |
+| `consumed` | `INTEGER` | NOT NULL | Förbrukade rätter enligt kalendern före ändringsmånaden |
+| `capital_sek` / `guarantee_sek_per_month` / `capital_amount_sek` | `NUMERIC` | NOT NULL | C, ΣG_j efter omräkning och B = C / A_b |
+| `payout_basis_code` / `payout_basis_checksum` / `payout_factor` | | NOT NULL | Utbetalningsgrunden (SIM-B) med kontrollsumma och A_b |
+| `m_sek` / `floor_sek` | `NUMERIC(14,2)` | `m_sek` > 0 | M = max(round_half_up(max(G, B)), ceil_öre(ΣG_j), golv) och bindande golv |
+| `content` / `checksum` | | NOT NULL, `checksum` UNIQUE | Hela beräkningen med garantidelarnas gamla och nya faktorer; granskningssumman `decide_payout_plan` binder |
+| `reason` / `decided_by` / tidsstämplar | | NOT NULL | Motivering och beslutsfattare |
+
+### `payout_splits`
+
+Ett delningsbeslut för en ej startad uttagsdel (PR-ITP1-024).
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Stabilt id; den nya delens id härleds ur det |
+| `from_part_id` / `request_id` | `UUID` | NOT NULL, FK | Delen som delas och begäran |
+| `new_part_number` | `INTEGER` | CHECK 2–3 | Högst tre delar per försäkring |
+| `share` | `NUMERIC(11,10)` | CHECK 0,1–0,9 | Andelen av C och varje G_j som går till den nya delen |
+| `effective_month` / `valuation_date` | `DATE` | NOT NULL, UNIQUE (del, månad) | |
+| `premium_receiver_number` | `INTEGER` | CHECK 1–3 | Primär premiemottagare med vikt 1 bland ej startade delar (PR-ITP1-015) |
+| `capital_sek` / `content` / `checksum` / `reason` / `decided_by` | | NOT NULL, `checksum` UNIQUE | |
+
+**Skrivs av:** `register_payout_request`, `decide_payout_plan` och `split_payout_part`, alla `HUMAN_ONLY` (tjänstelager §9.17).
+Stängningen skapar den nya uttagsdelen med läget `not_started`, kapitalposterna `split` och garantidelarnas nya versioner.
+
+**Läses av:** `preview_payout_plan`, `get_payout_part`, månadsstängningen, premieunderlaget (premiemottagaren) och
+`ledger_premiums` (en ny premie på en del med beslutad plan får G_j direkt på planen). Ledger-utdraget redovisar en
+försäkring med planbaserad garanti som ej beräknad (`payout_plan`) tills A6 kan värdera planer.
 
 ---
 
@@ -803,7 +883,7 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
 | `case_number` | `VARCHAR(20)` | NOT NULL, UNIQUE, CHECK form `CASE-NNNNNN` | Ärendenumret; står i `case_id` i kö och logg |
-| `case_type` | `VARCHAR(40)` | NOT NULL, CHECK in (`'salary_report'`, `'salary_file_deviation'`, `'payment_overdue'`, `'payment_unmatched'`, `'payout_reconstruction'`) | Ärendetyp. Fler typer läggs till med ny CHECK (B-033 val C). `salary_file_deviation` (paket A steg 2) är en avvikelse i en löneunderlagsfil, `payment_overdue` (steg 3) en förfallen faktura och `payment_unmatched` (steg 4) en inbetalning på avstämningskontot; alla avgörs av människa. CHECK-villkoret byttes i Lakebase av premieflödets migration 2026-11-08 (§12, paket A steg 8). `payout_reconstruction` (paket B steg 1) skapas av övergången för varje uttag som flyttats från försäkringens läge till uttagsdel 1; handläggaren rekonstruerar plan och utbetalningshistorik ur underlag. Villkoret byttes i Lakebase av uttagsdelarnas migration 2026-11-14 (§12); inga sådana ärenden där, eftersom inga uttagslägen fanns |
+| `case_type` | `VARCHAR(40)` | NOT NULL, CHECK in (`'salary_report'`, `'salary_file_deviation'`, `'payment_overdue'`, `'payment_unmatched'`, `'payout_reconstruction'`, `'payout_request'`, `'payout_review'`) | Ärendetyp. Fler typer läggs till med ny CHECK (B-033 val C). `salary_file_deviation` (paket A steg 2) är en avvikelse i en löneunderlagsfil, `payment_overdue` (steg 3) en förfallen faktura och `payment_unmatched` (steg 4) en inbetalning på avstämningskontot; alla avgörs av människa. CHECK-villkoret byttes i Lakebase av premieflödets migration 2026-11-08 (§12, paket A steg 8). `payout_reconstruction` (paket B steg 1) skapas av övergången för varje uttag som flyttats från försäkringens läge till uttagsdel 1; handläggaren rekonstruerar plan och utbetalningshistorik ur underlag. Villkoret byttes i Lakebase av uttagsdelarnas migration 2026-11-14 (§12); inga sådana ärenden där, eftersom inga uttagslägen fanns. `payout_request` (paket B steg 4) är kundens begäran om uttag, delning eller ändrad plan, och `payout_review` ett ärende som månadsstängningen öppnar när standardstarten inte kan göras: overifierat underlag eller en person som passerat 66 utan plan. Båda avgörs av människa; villkoret vidgas av `migrate_payout_plans.py`, som inte är införd i Lakebase |
 | `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`open`, `in_progress`, `waiting_approval`, `waiting_info`, `closed`), default `open` | Aktuell status |
 | `outcome` | `VARCHAR(20)` | NULL, CHECK in (`approved`, `rejected`, `supplement_requested`, `manual_review`, `no_action`) | Utfall; satt exakt när ärendet är stängt |
 | `insured_person_id` | `UUID` | NULL, FK → `insured_persons(id)` ON DELETE RESTRICT | Den försäkrade ärendet gäller |
@@ -1142,6 +1222,21 @@ ingenting. Erfarenhetsdata importeras separat, aldrig från fabricerade modellut
       - ingen månad är stängd.
     - **Granskningarna** (`READ ONLY`) gick också att köra. `adopt_avk.py` gav AVK-SIM-2026-02 med kontrollsumman `b75912c4…ef13`, samma som lokalt. `close_month.py` stoppar, eftersom november inte har tagit slut.
     - **Kvar:** AVK, stängning och `verify.py` tidigast 2026-12-01.
+
+- **Paket B steg 4 (2026-11-21) – begäran, uttagsplan och delning (§7c, §7d, §9g, B-047, P1-PENSION-001 §5, Karls val V1–V11):** införs med `scripts/migrations/migrate_payout_plans.py` (`utils/migration_payout_plans.py`) i **en** transaktion.
+  - **Vad den gör:**
+    - skapar `payout_requests`, `payout_plans` och `payout_splits` tomma med index och villkor;
+    - vidgar `ck_cases_type` med `payout_request` och `payout_review`;
+    - lägger till `ledger_guarantee_parts.plan_id` med FK och index, vidgar `ck_ledger_guarantee_parts_plan` med `plan` och skapar `ck_ledger_guarantee_parts_plan_id`.
+  - Inga rader ändras; journalens rader uppfyller de nya villkoren.
+  - **Förutsättning:** steg 1–3 är införda (uttagsdelarna, journalen och `ledger_batches.supersedes_id`).
+  - **Torrkörning** är standard och körs `READ ONLY`. Den visar SQL, läget för varje del, villkorens nuvarande definitioner, hinder (agenträttigheter) och radantal.
+  - **Skarp körning:** `--apply` kräver `--backup`. Körningen kontrollerar i samma transaktion modellens kolumner, de bytta villkoren, tomma tabeller, oförändrade radantal och att ingen agentroll har rättigheter på de nya tabellerna eller journalen. Minsta avvikelse rullar tillbaka allt.
+  - **Idempotent:** är allt infört görs ingenting; är bara en del infört stoppar migrationen.
+  - **Verifierat** mot isolerad Postgres (`tests/test_migration_payout_plans.py`): från läget efter steg 3, med november stängd, blir de tre tabellerna, `cases` och `ledger_guarantee_parts` identiska med `create_all`. Migrationen är idempotent, och delvis infört stoppar. Paket A:s testbestånd i Postgres ger i novemberstängningen planbaserade garantidelar med `plan_id` (fall 2) och en delning med kapital (fall 7), och stängningen är idempotent.
+  - **Kodens beroende:** `plan_id` läses först när den behövs (`deferred`) och skrivs bara när den är satt, så stängningen fungerar före migrationen. Då beter den sig som i steg 3, utan ärenden och planer. Operationerna blockeras med hänvisning till migrationen.
+  - **Ordning i Lakebase** (Karls val V11): tidigast när novembers stängning är bokad och kontrollerad (2026-12-01) och steg 4 är mergat. Därefter `survey.py` → backup → torrkörning → `--apply` → `verify.py --backup`, i `scripts/simulation/paket_b_steg4/`. Varje skarpt steg kräver Karls separata OK och samordning enligt AGENTS.md §4.5.
+  - **Inte införd i Lakebase.**
 
 ---
 

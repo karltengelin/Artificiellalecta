@@ -215,6 +215,74 @@ Vid planändring räknas varje garantidel om värdebevarande på sin historiska 
 `V_j = G_j × A_gj(gammal plan)` och `G_j_ny = V_j / A_gj(ny plan)`. Vid delning delas G_j
 proportionellt utan ny värdering. Beloppet ligger fast mellan omräkningarna.
 
+### 5.4 Byggt i steg 4
+
+**Byggt 2026-11-21 på branchen `claude/paket-b-steg-4-pension-cd2841`; inte mergat och inte infört i Lakebase.**
+
+- **Var det finns:**
+  - kalender, frist, belopp, golv och omräkning i `src/skills/calculation/payout_plan.py`;
+  - begäran, förhandsberäkning, beslut, delning och ägarkontrollen i `src/services/payout_plans.py`;
+  - operationerna `register_payout_request`, `preview_payout_plan`, `decide_payout_plan`, `split_payout_part` och `get_payout_part`, alla `HUMAN_ONLY` ([tjänstelager §9.17](../../02_system/tjänstelager.md));
+  - genomförandet i stängningens steg 1 i `src/services/month_close.py`;
+  - tabellerna `payout_requests`, `payout_plans` och `payout_splits`, `ledger_guarantee_parts.plan_id` och migrationen `migrate_payout_plans.py` ([databasschema §7d och §12](../../02_system/databasschema.md));
+  - körskripten för Lakebase i `scripts/simulation/paket_b_steg4/`.
+- **Verifierat:**
+  - lokalt: fall 1–12 (`tests/test_payout_plan_calculation.py` och `tests/test_payout_plans.py`), steg 3:s stängning oförändrad utan steg 4:s tabeller;
+  - mot isolerad Postgres (`svc_test`): migrationen från läget efter steg 3 med november stängd, och fall 2 och 7 i novemberstängningen med paket A:s testbestånd (`tests/test_migration_payout_plans.py`).
+
+Karls val V1–V11, godkända i chatten 2026-11-21 (”Godkänn alla”). Föreslås loggade som **B-051** (inte införd):
+
+- **V1 Datamodell:**
+  - tre tabeller: `payout_requests`, `payout_plans` med versionskedja och `payout_splits`;
+  - `ledger_guarantee_parts` får `plan_kind = 'plan'` och `plan_id`;
+  - `ck_cases_type` vidgas med `payout_request` och `payout_review`.
+- **V2 Bokning:**
+  - ett beslut skriver bara beslutet;
+  - ändringsmånadens stängning genomför det i steg 1, inom sin kontrollsumma, på värderingen vid föregående månadsslut;
+  - beslutet kräver att föregående månadsslut är täckt och att ändringsmånaden är öppen.
+- **V3 Startade delar:** beslut om start, paus och förlängning tillåts. En månad där en del har rätt enligt plan blockerar tills månadsrätten finns i steg 5.
+- **V4 Standardstart:**
+  - för en verifierad ägare som fyller 66 i månaden visar granskningen standardplanen livsvarig från 66-månaden, med G, B, M, första rätt och betalningsdag, och månaden blockerar enligt V3;
+  - overifierat underlag ger ett ärende `payout_review`, och sparandet stängs som i S4;
+  - kontrollen heter *standardstart*.
+- **V5 Verifiering:** registerkontroll i betrodd kod. Personen är inte `deceased` och har en giltig födelsedag, försäkringen är ITP1 med arbetsgivarens avtal `ITP`, och inget rekonstruktionsärende är öppet.
+- **V6 Passerat 66 utan plan:**
+  - ett ärende `payout_review` per person, första gången;
+  - planen beslutas efter kundens begäran;
+  - inga automatiska retroaktiva rätter, och startmånaden flyttas inte.
+- **V7 Omräkning och premier:**
+  - en ändrad plan räknar om varje G_j värdebevarande som ny version (`recalculation`, länk till planen; fall 12);
+  - en ny premie på en del med beslutad plan får G_j direkt på planen;
+  - ledger-utdraget redovisar en försäkring med planbaserad garanti som ej beräknad.
+- **V8 Begäran:**
+  - varje begäran sparas med utfallet i tid, sen, ofullständig, stoppad eller blockerad;
+  - kundens bekräftelse av ett förslag är en ny begäran som pekar på den sena;
+  - ett ombud kräver verifierad behörighet;
+  - systemets egna fynd får typen `payout_review`.
+- **V9 Delning:**
+  - bara ej startade delar delas;
+  - delningen genomförs i ändringsmånadens stängning;
+  - beslutet anger en primär premiemottagare med vikt 1 (PR-ITP1-015), som premieunderlaget använder;
+  - viktad fördelning är ett senare steg.
+- **V10 Belopp:**
+  - M = max(round_half_up(max(G, B)), ceil_öre(ΣG_j), golv);
+  - golvet för en livsvarig del under de första 60 rätterna är senast beslutade M;
+  - förbrukade rätter härleds ur kalendern;
+  - januariomräkningen finns som funktion och tillämpas i steg 5.
+- **V11 Main och Lakebase:**
+  - ingen merge förrän novembers stängning är bokad och kontrollerad, eftersom kontrollens nya namn ändrar sammanställningen;
+  - koden beter sig som steg 3 när tabellerna saknas;
+  - migrationen och körskripten är skrivna men inte körda.
+
+Avvikelser från §5 och §10:
+- *Standardplanen sparas inte i steg 4.* Den visas i 66-månadens granskning och blockerar månaden. Den beslutas och bokas i steg 5 tillsammans med månadsrätten. `origin = 'standard_start'` finns i modellen men skrivs inte än.
+- *Paus och förlängning* av en startad del kan bara förhandsberäknas som indikativa (fall 5, 6 och 10), eftersom en startad del blockerar varje stängning till steg 5.
+- *Delning* av en del med planbaserad garanti blockeras, liksom plan och delning på samma del i samma månad.
+- *M vid uppskov* räknas vid beslutet på dagens grunder och räknas om vid den verkliga starten (steg 5).
+- *Premie utan mottagande del* täcks redan av ärendet `salary_file_deviation` ur paket A. Ingen ny `payout_review` skapas för det fallet.
+- *En ny ärendetyp*, `payout_review`, för systemets egna fynd vid 66 (V8), utöver §10:s lista. `payout_hindrance` gäller utbetalningshinder (§8.2) och byggs i steg 6.
+- *Körskripten* i `scripts/simulation/paket_b_steg4/` är inte provade på en lokal kopia av Lakebase.
+
 ## 6. Operativ kapital- och garantijournal (PB4)
 
 ### 6.1 En journal för bolagets faktiska kapital
@@ -331,14 +399,14 @@ Karls val S1–S7, godkända i chatten 2026-11-19 (”Godkänn alla”) och logg
   - Premiekällan tar fram en månad först när föregående månad är stängd.
 - **S4 Pensionsförloppet:**
   - En startad, pausad eller avslutad uttagsdel med kapital blockerar. Det gör också ett registrerat dödsfall. Månadsrätt, slutavräkning och dödsfall byggs i steg 5–7.
-  - En ej startad del vars ägare fyllt 66 utan plan stängs för sparandet. Den redovisas i kontrollen *standardstart väntar på steg 4*; startmånaden flyttas inte.
+  - En ej startad del vars ägare fyllt 66 utan plan stängs för sparandet. Den redovisas i kontrollen *standardstart väntar på steg 4*; startmånaden flyttas inte. *I steg 4 heter kontrollen* standardstart *och räknar planer och ärenden (§5.4, V4).*
   - En startad del utan kapital i journalen ligger utanför stängningen.
 - **S5 AVK för november:** AVK-SIM-2026-02 har AVK-SIM-2026-01:s historik och november +0,20 %, exakt som P6-MANAD-001 D5 (§13). Den föreslås och antas genom A4 från 2026-11-01 med Karl som aktör, av `adopt_avk.py` efter separat OK.
 - **S6 Ordning i Lakebase:** migrationen kan införas när steg 3 är mergat. AVK, granskning och stängning görs tidigast 2026-12-01, efter novembers sista bankfil. Ordningen är backup → torrkörning → migration (OK) → AVK (OK) → granskning → stängning (OK) → skrivskyddad kontroll.
 - **S7 Befogenheter:** alla tre operationerna är `HUMAN_ONLY`. Systemaktören nekas stängningen, agenterna får inga rättigheter, och granskningen är bunden till kontrollsumman. Avgift och skatt som inte kunde tas ut syns bara i sammanställningen.
 
 Avvikelser från §7.2:
-- *Sammanställningen* har inga planer eller dödsfall att visa. Planerna byggs i steg 4; dödsfall blockerar enligt S4.
+- *Sammanställningen* har inga planer eller dödsfall att visa. Planerna byggs i steg 4; dödsfall blockerar enligt S4. *Steg 4 lägger till avsnittet `payout` med planer, delningar, standardstarter och ärenden (§5.4).*
 - *Testdatabasen:* saldovillkoret på kapitalposterna prövas på halva ören i SQLite, eftersom SQLite räknar `NUMERIC` som flyttal. Postgres-DDL:en är oförändrad.
 
 ## 8. Skatt, utbetalning och bankkvitto (PB7, PB8)
@@ -434,7 +502,7 @@ ingen betalning rapporteras som lyckad. Startbeloppet E_min beräknas av aktuari
 | `register_company_capital` | skrivning | HUMAN_ONLY | Operatören |
 | `get_payout_part`, `list_pension_claims`, `get_month_close` | läsning | AGENT för aggregat utan PII, annars HUMAN_ONLY | Poddmontering prövas när ett agentuppdrag behöver dem |
 
-Nya ärendetyper: `payout_request`, `payout_hindrance`, `death_report` och `tax_status`.
+Nya ärendetyper: `payout_request`, `payout_hindrance`, `death_report` och `tax_status`. *Steg 4 byggde `payout_request` och dessutom `payout_review` för systemets egna fynd vid 66 (§5.4); `payout_hindrance` byggs i steg 6.*
 De ligger inte i ärendepolicyn och kan inte lämnas till agenten i första versionen.
 Agenter föreslår inga planer, betalningar eller dödsfallsbeslut.
 
@@ -546,7 +614,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up`. *Byggt och infört i Lakebase 2026-11-14 (§4): 499 delar nr 1, inga uttag att flytta; agentrollernas läsrätt enligt B-048* | 38 |
 | 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`). *Byggt 2026-11-14 (§6), verifierat lokalt, mot `svc_test` och på en kopia av Lakebase-backupen. Infört i Lakebase 2026-11-15: tabellerna och det ingående läget per 2026-10-31 (492 försäkringar, 15 097 garantidelar); `verify.py` 16 av 16* | 36, 37 |
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase.** *Byggt 2026-11-19 (§7, val S1–S7), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg3/`. Migrationen införd i Lakebase 2026-11-19 (B-050); novembers AVK och stängning tidigast 2026-12-01* | 13, 15–17 |
-| 4 | Begäran, plan, beslut, belopp, standardstart och delning | 1–12 |
+| 4 | Begäran, plan, beslut, belopp, standardstart och delning. *Byggt 2026-11-21 (§5.4, val V1–V11), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg4/`. Inte mergat och inte infört i Lakebase; tidigast efter novembers stängning (2026-12-01)* | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd | 14, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida | 18–25 |
 | 7 | Dödsfall, arvsvinst och slutavräkning (steg 6–7) | 26–34 |
@@ -565,6 +633,7 @@ Steg 6 kan byggas parallellt med steg 7 först när anspråkskontraktet i steg 5
   kohort): förslag ärende per person och plan med kundens bekräftelse, inga automatiskt
   retroaktiva rättigheter. Alternativ: standardstart från 2026-11 eller retroaktiv start
   från 66-årsmånaden enligt PR-025:s *beräknas tillbaka*.
+  *Avgjord 2026-11-21 (V6, §5.4): ärende `payout_review` per person, plan efter kundens begäran.*
 - **Huvudinkomst med skattetabell:** ska en versionsbunden tabell för 2026 och 2027 läggas
   in som parameter från Skatteverkets källa, som Karl hämtar? Utan den kan bara sidoinkomst
   och individuella beslut betalas ut.
