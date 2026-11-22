@@ -18,6 +18,19 @@ aktuella steget, till exempel ”Hämtar premiehistorik” eller ”Väntar på 
 aktuariens agent”. Samma idé kan användas i andra gränssnitt där agenter arbetar.
 Ikon och placering bestäms när respektive gränssnitt utformas.
 
+## Erfarenhetsminne för agenter och agentteam
+
+När en agent stöter på ett problem skriver den en kort anteckning i sitt eller
+teamets beständiga minne. Anteckningen beskriver problemet, vad som prövades,
+hur det löstes och hur utfallet kontrollerades. Om problemet fortfarande är öppet
+framgår nästa steg. Koppla anteckningen till [körjournalen](harness.md) så att
+utfallet går att följa upp. Samla återkommande fall under samma lärdom.
+
+Vid ett liknande uppdrag kan agenten hämta relevanta lärdomar för sitt mandat.
+Spara återanvändbara mönster utan kunduppgifter. Förslag från agenten kan granskas
+och markeras som verifierade innan de används som rekommenderat arbetssätt.
+Gällande regler, behörigheter och godkännanden styr alltid själva åtgärden.
+
 ## Certa som möjligt namn för bolaget och projektet
 
 Vilande namnförslag. Om operatören aktiverar namnbytet används **Certa** för
