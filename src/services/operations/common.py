@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import date, timedelta
 
 from sqlalchemy import inspect, select
 
 from models import InsuredPerson, Policy, PolicyBenefit, PremiumTransaction
 from services.errors import BlockedError, NotFoundError
-
 
 #: Paket A:s tabeller (B-046). De förs in i Lakebase först i steg 8 (P1-PREMIE-001 §11)
 PREMIUM_FLOW_TABLES = ("salary_files", "invoices", "invoice_lines", "bank_events", "payment_allocations")
@@ -20,9 +21,21 @@ def missing_tables(session, names) -> list[str]:
     return [name for name in names if not inspector.has_table(name)]
 
 
+_business_day = ContextVar("business_day", default=None)
+
+
+@contextmanager
+def business_day(day: date):
+    """Affärsdatum under ett lokalt simuleringsanrop. Audit och andra körningar har egna klockor."""
+    token = _business_day.set(day)
+    try:
+        yield
+    finally:
+        _business_day.reset(token)
+
+
 def today() -> date:
-    """Dagens datum – en funktion så att tester kan sätta dagen."""
-    return date.today()
+    return _business_day.get() or date.today()
 
 
 def month_of(d: date) -> date:

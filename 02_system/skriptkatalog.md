@@ -78,6 +78,13 @@ stöder `--help`, som visar användning utan databasanslutning eller AI-anrop.
 | web | [set_operator_password.py](../scripts/web/set_operator_password.py) | Operatören sätter själv en lokal lösenfras för bolagsfrågor (OC-3a H–I) | Dold interaktiv inmatning; skriver operatörs-id och Argon2id-hash till `.env`, bevarar övrig konfiguration. Ingen databas, AI eller utskrift av lösenfras/hash; se [operatörsinloggning](operator_inloggning.md) |
 | web | [start_ui.py](../scripts/web/start_ui.py) | Starta handläggar-UI:t på 127.0.0.1 | `--db demo` (standard) skapar en lokal SQLite med demobestånd; `--db svc_test` ett eget schema i den isolerade testdatabasen; `--db lakebase` läser och skriver beståndet via tjänstelagret |
 
+## Isolerad premiemånad (Paket C)
+
+[premium_calendar.py](../scripts/simulation/premium_calendar.py) skapar en ny lokal SQLite-kopia för varje
+körning och läser samt skriver i arbetskopians `logs/simulation/paket-c/`. Börja med `start partial`.
+Granska oktoberfilen och använd dess kör-ID, revision och kontrollsumma vid beslut. Novemberavstämningen och
+decemberuppföljningen sparas var för sig. [Kommandon och acceptans](manadssimulator_designstopp.md)
+
 ## Körskript för operativa perioder (2026-11-14)
 
 Körningar av en verklig period i Lakebase versioneras i `scripts/simulation/<period>/`. Skripten är
