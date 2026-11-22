@@ -107,8 +107,9 @@ De här delarna ska avgränsas till bygguppdrag innan en full pensionsmånad kan
   avgifter, skatt och eget kapital; ingående balans och månadsbokslut.
 - **V-11, aktuarie/risk:** garanti-/reserv-/FTA-/ALM- och finansieringskontroller med
   verifierade motorer. Den dokumenterade SIM-grunden är metodunderlag, inte färdig beräkningskod.
-- **V-12, rapportering:** välj tillsammans med projekt 2 första interna månadsrapporten,
-  därefter tillämpliga skatte-/tillsyns-/partsrapporter med bestämd mottagare och period.
+- **V-12, rapportering:** [kontraktsförslaget för den första interna premiemånadsrapporten](RAPPORTKONTRAKT_PREMIEMANAD.md)
+  anger mottagare, källor, öreskontroller och intern kvittens. Rapportansvar och granskningsväg väntar på operatörens beslut.
+  Därefter avgränsas tillämpliga skatte-/tillsyns-/partsrapporter med bestämd mottagare och period.
 - **Paket B och S-04:** föreslagen samordning med projekt 1 och 5 för pensions-/månadsavräkning
   och ett ekonomiskt avstämt startbestånd. Byggansvaret behöver fastställas vid designstart.
 
