@@ -107,7 +107,10 @@ class PremiumAddition:
     plan_id: uuid.UUID | None = None
 
     def plain(self) -> dict:
-        return {k: (str(v) if isinstance(v, (uuid.UUID, Decimal, date)) else v) for k, v in asdict(self).items()}
+        out = {k: (str(v) if isinstance(v, (uuid.UUID, Decimal, date)) else v) for k, v in asdict(self).items()}
+        if self.plan_id is None:  # referensplanen: samma innehåll och kontrollsumma som före steg 4
+            del out["plan_kind"], out["plan_id"]
+        return out
 
 
 @dataclass

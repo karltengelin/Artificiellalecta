@@ -70,7 +70,8 @@ report = {
         "standard_start_parts": [s["payout_part_id"] for s in payout["standard_start"]],
     },
     "controls": {c["step"]: {"passed": c["passed"], "detail": c["detail"]} for c in summary["controls"]
-                 if c["step"] in ("standardstart", "rätt enligt plan", "garanti totalt", "startade delar")},
+                 if c["step"] in ("standardstart", "standardstart väntar på steg 4", "rätt enligt plan", "garanti totalt",
+                                   "startade delar")},
 }
 (OUT / f"survey_{month:%Y-%m}_{engine.dialect.name}.json").write_text(
     json.dumps(report, indent=2, ensure_ascii=False, default=str), encoding="utf-8")

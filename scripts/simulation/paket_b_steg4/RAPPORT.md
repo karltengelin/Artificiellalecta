@@ -19,7 +19,8 @@
   - genomför beslutade planer och delningar i ändringsmånaden;
   - visar standardstarten vid 66 och öppnar ärenden `payout_review`;
   - blockerar månader med rätt enligt plan till steg 5;
-  - kontrollen *standardstart* ersätter *standardstart väntar på steg 4*, och *rätt enligt plan* tillkommer.
+  - efter migrationen ersätter kontrollen *standardstart* steg 3:s *standardstart väntar på steg 4*, och *rätt enligt plan* tillkommer;
+  - före migrationen är stängningen identisk med steg 3.
 - **Premierna** (`ledger_premiums.py`, premieunderlaget): en ny premie på en del med beslutad plan får G_j på planen. Premieunderlaget går till delningens premiemottagare.
 - **Utdragen:** ledger-utdraget redovisar en försäkring med planbaserad garanti som ej beräknad (`payout_plan`).
 - **Migrationen** (`scripts/migrations/migrate_payout_plans.py`):
@@ -43,6 +44,7 @@
 | Overifierat och passerat 66 | lokalt | Ett ärende `payout_review` per person, en gång. Sparandet stängs |
 | Utan steg 4:s tabeller | lokalt | Stängningen beter sig som i steg 3 |
 | Migrationen | `svc_test` | Från läget efter steg 3, med november stängd, blir resultatet identiskt med `create_all`. Den är idempotent, och delvis infört stoppar. Paket A:s testbestånd i Postgres ger garantidelar med `plan_id` och en delning med kapital |
+| Före migrationen | lokalt, 2026-11-22 | På en databas byggd med main:s kod (utan steg 4:s tabeller och kolumn) ger main:s och branchens kod samma granskningssumma för november, samma verifikation, samma 20 poster och 8 garantidelar och samma ärenden. Det gäller också med två ägare som fyllt 66 |
 | Befogenheter | lokalt | Agenter nekas alla fem operationerna, och systemaktören de skrivande |
 
 Körskripten är provade på en lokal SQLite-kopia med dagen satt till 2026-12-01:

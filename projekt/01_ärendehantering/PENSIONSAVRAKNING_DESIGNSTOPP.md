@@ -244,7 +244,7 @@ Karls val V1–V11, godkända i chatten 2026-11-21 (”Godkänn alla”). Loggad
 - **V4 Standardstart:**
   - för en verifierad ägare som fyller 66 i månaden visar granskningen standardplanen livsvarig från 66-månaden, med G, B, M, första rätt och betalningsdag, och månaden blockerar enligt V3;
   - overifierat underlag ger ett ärende `payout_review`, och sparandet stängs som i S4;
-  - kontrollen heter *standardstart*.
+  - efter migrationen heter kontrollen *standardstart*; före den är kontrollposten densamma som i steg 3.
 - **V5 Verifiering:** registerkontroll i betrodd kod. Personen är inte `deceased` och har en giltig födelsedag, försäkringen är ITP1 med arbetsgivarens avtal `ITP`, och inget rekonstruktionsärende är öppet.
 - **V6 Passerat 66 utan plan:**
   - ett ärende `payout_review` per person, första gången;
@@ -272,6 +272,7 @@ Karls val V1–V11, godkända i chatten 2026-11-21 (”Godkänn alla”). Loggad
 - **V11 Main och Lakebase:**
   - ingen merge förrän novembers stängning är bokad och kontrollerad, eftersom kontrollens nya namn ändrar sammanställningen;
   - koden beter sig som steg 3 när tabellerna saknas;
+  - *2026-11-22:* före migrationen är novembers stängning nu identisk med steg 3. Kontrollposten har steg 3:s namn och text, och premiernas innehåll saknar steg 4:s fält. En jämförelse på samma databas utan steg 4, med main:s kod och branchens, gav samma granskningssumma, verifikation, poster, garantidelar och ärenden, även med två ägare som fyllt 66;
   - migrationen och körskripten är skrivna men inte körda.
 
 Avvikelser från §5 och §10:
@@ -399,7 +400,7 @@ Karls val S1–S7, godkända i chatten 2026-11-19 (”Godkänn alla”) och logg
   - Premiekällan tar fram en månad först när föregående månad är stängd.
 - **S4 Pensionsförloppet:**
   - En startad, pausad eller avslutad uttagsdel med kapital blockerar. Det gör också ett registrerat dödsfall. Månadsrätt, slutavräkning och dödsfall byggs i steg 5–7.
-  - En ej startad del vars ägare fyllt 66 utan plan stängs för sparandet. Den redovisas i kontrollen *standardstart väntar på steg 4*; startmånaden flyttas inte. *I steg 4 heter kontrollen* standardstart *och räknar planer och ärenden (§5.4, V4).*
+  - En ej startad del vars ägare fyllt 66 utan plan stängs för sparandet. Den redovisas i kontrollen *standardstart väntar på steg 4*; startmånaden flyttas inte. *Efter steg 4:s migration heter kontrollen* standardstart *och räknar planer och ärenden; före migrationen är den oförändrad (§5.4, V4).*
   - En startad del utan kapital i journalen ligger utanför stängningen.
 - **S5 AVK för november:** AVK-SIM-2026-02 har AVK-SIM-2026-01:s historik och november +0,20 %, exakt som P6-MANAD-001 D5 (§13). Den föreslås och antas genom A4 från 2026-11-01 med Karl som aktör, av `adopt_avk.py` efter separat OK.
 - **S6 Ordning i Lakebase:** migrationen kan införas när steg 3 är mergat. AVK, granskning och stängning görs tidigast 2026-12-01, efter novembers sista bankfil. Ordningen är backup → torrkörning → migration (OK) → AVK (OK) → granskning → stängning (OK) → skrivskyddad kontroll.

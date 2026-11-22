@@ -36,7 +36,8 @@ version (`plan_kind = 'plan'`, länk till planen). En del med rätt under månad
 tills månadsrätten finns i steg 5 (V3).
 
 **66-årsmånaden (Karls val S4, V4–V6).** En ej startad del vars ägare fyllt 66 senast i månaden och
-saknar plan redovisas i kontrollposten *standardstart*. Verifierad ägare som fyller 66 i månaden visar
+saknar plan redovisas i kontrollposten *standardstart* (före steg 4:s migration *standardstart väntar på
+steg 4*, exakt som i steg 3). Verifierad ägare som fyller 66 i månaden visar
 standardplanen i granskningen och blockerar till steg 5; overifierat underlag och den som passerat 66
 utan plan får ett ärende `payout_review` en gång, och sparandet stängs. Startmånaden flyttas aldrig tyst
 (PR-ITP1-025). Utan steg 4:s tabeller beter sig stängningen som i steg 3.
@@ -683,10 +684,11 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
                 else "Inget registrerat dödsfall bland delarnas ägare", actual=str(len(deceased)), sources=sources),
     ]
     if start is None:  # steg 4:s migration inte körd: som i steg 3
+        # Exakt steg 3:s kontrollpost, så att stängningen före migrationen är identisk med steg 3 (B-051 p. 11)
         controls.append(Control(
-            "standardstart", True,
+            "standardstart väntar på steg 4", True,
             f"{len(pending_start)} ej startade delar vars ägare fyllt {PENSION_AGE} senast {month:%Y-%m}; "
-            "sparandet stängs, startmånaden flyttas inte och rätten räknas fram när steg 4 är infört (PR-ITP1-025)"
+            "sparandet stängs, startmånaden flyttas inte och rätten räknas fram i steg 4 (PR-ITP1-025)"
             if pending_start else f"Ingen ägare har fyllt {PENSION_AGE} senast {month:%Y-%m}",
             actual=str(len(pending_start)), sources=sources))
         return controls

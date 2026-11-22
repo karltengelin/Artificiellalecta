@@ -47,6 +47,7 @@ from services import payout_plans as pl
 from services import valuation_bases as vb
 from services.errors import AccessDeniedError, ConflictError
 from services.ledger_extract import build_ledger_extract
+from services.ledger_premiums import premium_intake
 from services.operations.premium_basis import _recipient
 from tests import test_premium_month_export as export_tests
 from tests.test_premium_month_export import PERSONS, run
@@ -387,7 +388,14 @@ class TestUtanSteg4:
             assert not pl.plans_present(s)
         review = prepare(ready)
         assert review["passed"] and "payout" not in review and "guarantee_versions" not in review["totals"]
-        assert next(c for c in review["controls"] if c["step"] == "standardstart")["passed"]
+        # Före migrationen är sammanställningen identisk med steg 3 (B-051 p. 11): samma kontrollpost och
+        # premiernas innehåll utan steg 4:s fält, så att novembers stängning får samma kontrollsumma
+        steps = [c["step"] for c in review["controls"]]
+        assert "standardstart väntar på steg 4" in steps and "standardstart" not in steps and "rätt enligt plan" not in steps
+        assert next(c for c in review["controls"] if c["step"] == "standardstart väntar på steg 4")["passed"]
+        with ready.factory() as s:
+            intake = premium_intake(s, NOVEMBER)
+        assert intake.additions and all({"plan_kind", "plan_id"}.isdisjoint(a.plain()) for a in intake.additions)
         with pytest.raises(BlockedError, match="migrate_payout_plans"):
             request(ready, "A", "split", {"month": "2026-11-01", "share": "0.3", "premium_receiver": 1})
         close(ready, checksum=review["review_checksum"])

@@ -751,7 +751,7 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
   - en ägare registrerad som avliden eller utan födelsedag (S4);
   - en kontroll som inte går ihop.
   - En blockerad månad skriver ingenting.
-- *Redovisas utan att blockera:* ej startade delar vars ägare fyllt 66 utan plan. De stängs för sparandet, och startmånaden flyttas inte (kontrollen *standardstart*; med steg 4:s tabeller se §9.17).
+- *Redovisas utan att blockera:* ej startade delar vars ägare fyllt 66 utan plan. De stängs för sparandet, och startmånaden flyttas inte (kontrollen *standardstart väntar på steg 4*; efter steg 4:s migration *standardstart*, se §9.17).
 - *Konflikt:* en granskningssumma som inte stämmer, eller en stängd månad med annat innehåll.
 - *Nekas:* agenter i alla tre operationerna. `close_policy_month` nekas också för systemaktören.
 - **Lakebase:** körskripten finns i `scripts/simulation/paket_b_steg3/`, med ordningen enligt S6 ([databasschema §12](databasschema.md#12-migrationer-och-versionering)).

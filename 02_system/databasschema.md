@@ -358,9 +358,9 @@ En månadsstängning eller rättelse har elva led (steg 3):
 - avstämningskontot;
 - startade delar;
 - levandestatus;
-- standardstart.
+- standardstart väntar på steg 4.
 
-Med steg 4:s tabeller tillkommer ett tolfte led, *rätt enligt plan*. *Standardstart* räknar då delar med plan,
+Efter steg 4:s migration heter det elfte ledet *standardstart*, och ett tolfte led, *rätt enligt plan*, tillkommer. Före migrationen är kontrollposterna och hela sammanställningen identiska med steg 3. *Standardstart* räknar delar med plan,
 standardstarter i månaden och nya ärenden; en standardstart eller en rätt enligt plan blockerar till steg 5.
 
 **Skrivs av:** `open_capital_ledger` och `close_policy_month` (båda `HUMAN_ONLY`, bara en människa).
