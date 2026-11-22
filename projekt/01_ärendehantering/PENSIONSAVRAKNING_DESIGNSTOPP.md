@@ -217,7 +217,7 @@ proportionellt utan ny värdering. Beloppet ligger fast mellan omräkningarna.
 
 ### 5.4 Byggt i steg 4
 
-**Byggt 2026-11-21 på branchen `claude/paket-b-steg-4-pension-cd2841`; inte mergat och inte infört i Lakebase.**
+**Byggt 2026-11-21 på branchen `claude/paket-b-steg-4-pension-cd2841` och mergat till main 2026-11-22 efter Karls OK (B-052); inte infört i Lakebase.**
 
 - **Var det finns:**
   - kalender, frist, belopp, golv och omräkning i `src/skills/calculation/payout_plan.py`;
@@ -270,7 +270,7 @@ Karls val V1–V11, godkända i chatten 2026-11-21 (”Godkänn alla”). Loggad
   - förbrukade rätter härleds ur kalendern;
   - januariomräkningen finns som funktion och tillämpas i steg 5.
 - **V11 Main och Lakebase:**
-  - ingen merge förrän novembers stängning är bokad och kontrollerad, eftersom kontrollens nya namn ändrar sammanställningen;
+  - ingen merge förrän novembers stängning är bokad och kontrollerad, eftersom kontrollens nya namn ändrar sammanställningen. *Ersatt 2026-11-22 av **B-052**: merge tillåts eftersom stängningen före migrationen är identisk med steg 3;*
   - koden beter sig som steg 3 när tabellerna saknas;
   - *2026-11-22:* före migrationen är novembers stängning nu identisk med steg 3. Kontrollposten har steg 3:s namn och text, och premiernas innehåll saknar steg 4:s fält. En jämförelse på samma databas utan steg 4, med main:s kod och branchens, gav samma granskningssumma, verifikation, poster, garantidelar och ärenden, även med två ägare som fyllt 66;
   - migrationen och körskripten är skrivna men inte körda.
@@ -615,7 +615,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 1 | Uttagsdel och tre förlopp, övergång av `policy_states`, anpassade läsare och `set_policy_paid_up`. *Byggt och infört i Lakebase 2026-11-14 (§4): 499 delar nr 1, inga uttag att flytta; agentrollernas läsrätt enligt B-048* | 38 |
 | 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`). *Byggt 2026-11-14 (§6), verifierat lokalt, mot `svc_test` och på en kopia av Lakebase-backupen. Infört i Lakebase 2026-11-15: tabellerna och det ingående läget per 2026-10-31 (492 försäkringar, 15 097 garantidelar); `verify.py` 16 av 16* | 36, 37 |
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase.** *Byggt 2026-11-19 (§7, val S1–S7), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg3/`. Migrationen införd i Lakebase 2026-11-19 (B-050); novembers AVK och stängning tidigast 2026-12-01* | 13, 15–17 |
-| 4 | Begäran, plan, beslut, belopp, standardstart och delning. *Byggt 2026-11-21 (§5.4, val V1–V11), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg4/`. Inte mergat och inte infört i Lakebase; tidigast efter novembers stängning (2026-12-01)* | 1–12 |
+| 4 | Begäran, plan, beslut, belopp, standardstart och delning. *Byggt 2026-11-21 (§5.4, val V1–V11), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg4/`. Mergat till main 2026-11-22 (B-052). Inte infört i Lakebase; migrationen tidigast efter novembers stängning (2026-12-01)* | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd | 14, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida | 18–25 |
 | 7 | Dödsfall, arvsvinst och slutavräkning (steg 6–7) | 26–34 |

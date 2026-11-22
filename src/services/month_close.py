@@ -684,7 +684,7 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
                 else "Inget registrerat dödsfall bland delarnas ägare", actual=str(len(deceased)), sources=sources),
     ]
     if start is None:  # steg 4:s migration inte körd: som i steg 3
-        # Exakt steg 3:s kontrollpost, så att stängningen före migrationen är identisk med steg 3 (B-051 p. 11)
+        # Exakt steg 3:s kontrollpost, så att stängningen före migrationen är identisk med steg 3 (B-052)
         controls.append(Control(
             "standardstart väntar på steg 4", True,
             f"{len(pending_start)} ej startade delar vars ägare fyllt {PENSION_AGE} senast {month:%Y-%m}; "

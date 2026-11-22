@@ -1,7 +1,7 @@
 # Paket B steg 4 – begäran, uttagsplan och delning: rapport och körordning
 
 > **Design:** [P1-PENSION-001 §5](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#5-begäran-plan-och-belopp-pb3-pb6) och §5.4, B-047 punkt 3, Karls val V1–V11 (2026-11-21, ”Godkänn alla”). Loggade som B-051.
-> **Status 2026-11-21:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg-4-pension-cd2841`. **Inte mergat och inte infört i Lakebase.** Merge först när novembers stängning är bokad och kontrollerad (V11).
+> **Status 2026-11-22:** byggt och verifierat lokalt och mot `svc_test`, mergat till main efter Karls OK (B-052). **Inte infört i Lakebase**; migrationen först när novembers stängning är bokad och kontrollerad (V11).
 
 ## Vad som är byggt
 
@@ -67,7 +67,7 @@ Se designstoppet §5.4. I korthet:
 
 Varje steg kräver Karls separata OK i chatten och samordning enligt AGENTS.md §4.5.
 
-1. **Före allt:** novembers stängning är bokad och `paket_b_steg3/verify.py` godkänd (tidigast 2026-12-01). Därefter mergas steg 4 efter Karls OK.
+1. **Före allt:** novembers stängning är bokad och `paket_b_steg3/verify.py` godkänd (tidigast 2026-12-01). Steg 4 är redan mergat (B-052).
 2. Kör översikten `python scripts/simulation/paket_b_steg4/survey.py` (bara läsning). Lakebase har ingen som passerat 66 (V6), så den väntas visa noll sådana ärenden. Läs standardstarterna: en ägare som fyller 66 i stängningsmånaden blockerar den till steg 5.
 3. Ta en backup med `scripts/maintenance/backup_database.py`.
 4. Torrkör `python scripts/migrations/migrate_payout_plans.py`.

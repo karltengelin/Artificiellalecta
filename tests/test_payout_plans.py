@@ -388,7 +388,7 @@ class TestUtanSteg4:
             assert not pl.plans_present(s)
         review = prepare(ready)
         assert review["passed"] and "payout" not in review and "guarantee_versions" not in review["totals"]
-        # Före migrationen är sammanställningen identisk med steg 3 (B-051 p. 11): samma kontrollpost och
+        # Före migrationen är sammanställningen identisk med steg 3 (B-052): samma kontrollpost och
         # premiernas innehåll utan steg 4:s fält, så att novembers stängning får samma kontrollsumma
         steps = [c["step"] for c in review["controls"]]
         assert "standardstart väntar på steg 4" in steps and "standardstart" not in steps and "rätt enligt plan" not in steps

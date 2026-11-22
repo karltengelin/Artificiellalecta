@@ -8,6 +8,38 @@
 
 ## Beslut
 
+### B-052 | 2026-11-22 | Paket B steg 4 får mergas före novembers stängning
+
+**Beslut:** Operatören godkände i chatten 2026-11-22 (”Yes, go ahead”) att steg 4 mergas till main
+före novembers stängning, på villkor att stängningen utan steg 4:s migration är identisk med steg 3.
+Ordalydelsen godkändes samma dag: ”Yes, write and merge”.
+
+1. **Merge.** Steg 4 får nå main när hela sviten är grön lokalt och mot isolerad Postgres, och
+   när stängningens sammanställning utan steg 4:s tabeller är identisk med steg 3:
+   - kontrollposten heter *standardstart väntar på steg 4*;
+   - premiernas innehåll saknar steg 4:s fält;
+   - därmed blir granskningssumman, verifikationen och raderna desamma.
+2. **Migrationen.** `migrate_payout_plans.py` förs fortfarande in i Lakebase först när novembers
+   stängning är bokad och kontrollerad (tidigast 2026-12-01), med separat OK och samordning enligt
+   AGENTS.md §4.5.
+
+**Motivering:**
+- En levande branch medan steg 5 byggs ger dubbla underhållsspår och fler konflikter mot main.
+- Skälet till väntan var att kontrollens nya namn ändrade sammanställningen. Det är undanröjt.
+- Jämförelsen 2026-11-22 gjordes på samma databas utan steg 4, med main:s kod och branchens. Den gav
+  samma granskningssumma, verifikation, 20 poster, 8 garantidelar och ärenden, även med två ägare som
+  fyllt eller passerat 66. Ett regressionstest låser detta.
+- Hela sviten med main inlagd: 1935 godkända lokalt och mot isolerad Postgres.
+
+**Konsekvenser:**
+- Novembers stängning körs 2026-12-01 med steg 4-koden på main.
+- Jämförelsen är gjord på testbeståndet, inte på Lakebases data.
+- Steg 5 byggs från main.
+
+**Ersätter:** B-051 punkt 11 i det som gäller merge. Övriga delar av B-051 kvarstår.
+
+---
+
 ### B-051 | 2026-11-21 | Paket B steg 4: begäran, uttagsplan, standardstart och delning
 
 **Beslut:** Operatören godkände valen V1–V11 för byggsteg 4 i paket B
