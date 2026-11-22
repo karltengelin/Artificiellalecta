@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Premierapport · {{ p.summary.day }}{% endblock %}
+{% block content %}
+<a href="{{ base }}">Alla premierapporter</a>
+<h1>{{ p.type }} · {{ p.summary.day }}</h1>
+<p><strong>{{ statuses[record.status] }}</strong> · {{ p.id }} · revision {{ p.revision }}</p>
+{% if not record.latest %}<p>Historisk version. En senare revision finns i rapportlistan.</p>{% endif %}
+<section class="panel"><h2>Premier och betalningar</h2>
+<p>{{ p.summary.conclusion }}</p>
+<p>Löneperiod {{ p.summary.salary_period }} · rapportperiod {{ p.summary.period }} · scenario {{ p.summary.scenario }}.</p>
+<p>Sista kalendersteg {{ p.summary.last_step }}.</p>
+<table><thead><tr><th>Mått</th><th>SEK</th></tr></thead><tbody>
+{% for label, value in p.summary.amounts.items() %}<tr><th>{{ label }}</th><td>{{ value | replace('.', ',') }}</td></tr>{% else %}<tr><td colspan="2">Beloppsunderlag saknas.</td></tr>{% endfor %}
+</tbody></table>
+<h2>Öppna åtgärder</h2>
+<ul>{% for a in p.summary.actions %}<li>{{ a.orsak }} · {{ a.belopp | replace('.', ',') }} kr · {{ a.ansvar }}. {{ a.kontroll }}.</li>
+{% else %}<li>{{ 'Åtgärdsunderlaget behöver verifieras.' if p.failures else 'Inga öppna poster.' }}</li>{% endfor %}</ul>
+<h2>Handläggning</h2>
+<dl>{% for name, value in p.summary.operations.items() %}<dt>{{ name }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
+<h2>Avstämningskontroller</h2>
+<ul>{% for label, passed in p.summary.checks.items() %}<li>{{ label }} · {{ 'Godkänd' if passed else 'Kontrollfel' }}</li>{% endfor %}</ul>
+<p>Ej prövat · {{ p.summary.unverified | join(', ') }}.</p>
+{% if p.reason %}<p>Rättelseorsak · {{ p.reason }}</p><h3>Skillnad mot föregående revision</h3>
+<ul>{% for label, diff in p.delta.items() %}<li>{{ label }} · {{ diff }} SEK</li>{% endfor %}</ul>{% endif %}
+<details><summary>Leverans och källreferenser</summary>
+<p>{{ p.contract }} · körning {{ p.source_run }} · beredd av {{ p.producer }} · {{ p.prepared_at }} (UTC).</p>
+{% if p.parent %}<p><a href="{{ base }}/{{ p.parent_id }}/{{ p.parent_rev }}">Föregående leverans · revision {{ p.parent_rev }}</a> · <code>{{ p.parent }}</code></p>{% endif %}
+<ul>{% for name, ref in p.summary.refs.items() %}<li>{{ name }} · <code>{{ ref }}</code></li>{% endfor %}
+<li>Specialistunderlag · <code>{{ p.evidence_hash }}</code></li></ul></details>
+<p>Leveranssumma · <code>{{ record.digest }}</code></p></section>
+<section class="panel"><h2>Beslut och mottagning</h2>
+{% if record.decision %}<p>{{ 'Godkänd' if record.decision.verdict == 'approved' else 'Återremitterad' }} av ekonomiansvarig {{ record.decision.actor }} · {{ record.decision.at }} (UTC).</p>{% endif %}
+{% if record.receipt %}<p>Mottaget av {{ record.receipt.actor }} · {{ record.receipt.at }} (UTC) · revision {{ record.receipt.revision }} · <code>{{ record.receipt.digest }}</code>.</p>{% endif %}
+{% if record.latest and record.status in ('approved', 'pending') %}
+<form method="post" action="{{ base }}/{{ p.id }}/{{ p.revision }}" hx-boost="false"><input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="digest" value="{{ record.digest }}">
+{% if record.status == 'approved' %}<button name="action" value="receive">Kvittera intern mottagning</button>
+{% else %}<label>Beslutsmotivering <textarea name="reason" maxlength="1000" required></textarea></label>
+<button name="action" value="approve"{% if p.failures %} disabled{% endif %}>Godkänn versionen</button>
+<button name="action" value="return">Återremittera</button>{% endif %}</form>{% endif %}
+<p><a href="{{ base }}/{{ p.id }}/{{ p.revision }}/underlag">Öppna specialistunderlag och beslutsmotivering</a></p></section>
+{% if record.latest and record.status != 'pending' %}
+<details class="panel"><summary>Bered en rättelse</summary>
+<form method="post" action="{{ base }}/bered" hx-boost="false"><input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+<input type="hidden" name="run" value="{{ p.id.split('-')[1] }}"><input type="hidden" name="day" value="{{ p.summary.day }}">
+<input type="hidden" name="previous" value="{{ record.digest }}">
+<label>Körning med rättat underlag <input required name="source_run" value="{{ p.source_run }}" pattern="[a-f0-9]{32}"></label>
+<label>Rättelseorsak till mottagaren (utan individuppgifter) <textarea required maxlength="1000" name="reason"></textarea></label>
+<button>Bered ny revision</button></form></details>{% endif %}
+{% endblock %}

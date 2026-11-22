@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Specialistunderlag{% endblock %}
+{% block content %}
+<a href="{{ base }}/{{ record.report }}/{{ record.rev }}">Till rapportversionen</a>
+<h1>Fryst specialistunderlag</h1>
+<p>{{ record.report }} · revision {{ record.rev }} · {{ record.digest }}</p>
+{% if record.decision %}<p>Beslutsmotivering · {{ record.decision.reason }}</p>{% endif %}
+{% for label, data in [('Löne-, faktura- och betalningsspår', record.evidence.report), ('Körmanifest', record.evidence.manifest), ('Motpartsfiler och facit', record.evidence.files)] %}
+<details><summary>{{ label }}</summary><pre>{{ data | pretty_json }}</pre></details>
+{% endfor %}{% endblock %}
