@@ -91,7 +91,7 @@ premieeffektanalysen ersätter inte värderingsunderlaget.
 - Fastställ historisk arbetsgivarkoppling och löneunderlagens betydelse vid flera försäkringar.
 - Utöka till hela beståndet, månadstrender och kvalitetskontroller som inkluderar saknade premier.
 - Bestäm åtkomst och rapportkontrakt innan insikter exponeras för agenter.
-- För månadssimuleringen: konkretisera V-12 och S-06 i [processöversikten](../../01_domän/processer_översikt.md). Definiera periodlåst intern månadsrapport med ekonomiskt underlag, öppna avvikelser, handläggning och agentkostnad. Samordna med projekt 6; dashboard och rapportmall ersätter inte bokföring, kapital- eller reservmotorer. Fastställ externa mottagare och tillämplighet separat
+- För månadssimuleringen finns ett [första kontraktsförslag för V-12](../06_avdelningsfunktioner/RAPPORTKONTRAKT_PREMIEMANAD.md) med projekt 6. Det anger periodlåsta mått, öppna avvikelser, handläggning, modellkostnad och acceptans för den interna premierapporten. Externa mottagare och tillämplighet fastställs separat. [Processöversikt](../../01_domän/processer_översikt.md)
 - Visualisera flöden och ansvar tillsammans med [Projekt 9: Processkartor](../09_processkartor/PROJEKTPLAN.md).
 
 ## Beroenden
