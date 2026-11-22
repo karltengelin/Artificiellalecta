@@ -60,7 +60,7 @@ dependents = ["services", "tooling"]
 [suites.simulation]
 description = "Frysta premie-/betalningsunderlag, avstämd syntetisk FTA-månad, motpartssimulatorn och överlämningen från paket A"
 status = "partial"
-tests = ["tests/test_premium_month.py", "tests/test_counterparty_simulation.py", "tests/test_premium_month_export.py", "tests/test_capital_ledger.py", "tests/test_month_close.py"]
+tests = ["tests/test_premium_month.py", "tests/test_counterparty_simulation.py", "tests/test_premium_calendar.py", "tests/test_premium_month_export.py", "tests/test_capital_ledger.py", "tests/test_month_close.py"]
 dependents = []
 
 [suites.compliance]
@@ -245,7 +245,7 @@ paths = ["src/risk/**"]
 suites = ["risk"]
 
 [[rules]]
-paths = ["src/simulation/**"]
+paths = ["src/simulation/**", "scripts/simulation/premium_calendar.py"]
 suites = ["simulation"]
 
 [[rules]]

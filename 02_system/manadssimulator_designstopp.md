@@ -1,6 +1,24 @@
 # Paket C – designstopp för den första premiemånaden
 
-**Förslag till Karl, 2026-11-22.** Underlaget är granskat mot `main` på `63a26b2`. Karl har godkänt en avgränsning i chatten under designarbetet: en enda ej startad uttagsdel per förmån och slutpunkt vid Paket A:s allokeringar. Övriga val i §7 väntar på beslut före byggstart.
+**Godkänt för bygge 2026-11-22.** Underlaget är granskat mot `main` på `63a26b2`. Karl godkände en enda ej startad uttagsdel per förmån och slutpunkt vid Paket A:s allokeringar. Efter genomgången av C1–C4 i §7 gav Karl klartecken till byggstart i chatten. Den lokala körvägen beskrivs nedan.
+
+### Kör premiemånaden
+
+Från reporoten med projektets Pythonmiljö:
+
+```powershell
+python scripts/simulation/premium_calendar.py start partial
+python scripts/simulation/premium_calendar.py status <kör-id>
+python scripts/simulation/premium_calendar.py approve <kör-id> --revision 1 --digest <granskad-summa> --note "Två giltiga oktoberlöner granskade"
+```
+
+`start` visar kör-ID, rader, summering och beslutsunderlag. `status` gör om den aktuella filgranskningen. Använd revisionen och summan som hör till den visningen. `reject` tar samma argument och registrerar avslag med skäl. Den lokala operatörens identitet hämtas från operativsystemet. För att fortsätta efter processavbrott körs `resume <kör-id>`. Ett nytt `start` återställer läget genom att skapa en ny kopia. Tillgängliga betalningsfall är `full`, `partial`, `duplicate`, `twice` och `unknown`.
+
+Under `logs/simulation/paket-c/<kör-id>/` finns den lokala databasen, körmanifestet, motpartsfiler med separat filfacit och rapporterna `2026-11-30.md` och `2026-12-29.md` med källspår i JSON. Ett avslag ger ett eget beslutsprotokoll. Statuskommandot kan återskapa filerna ur databasen efter avbrott. En avvikelse i öresfacitet ger underkänt protokoll och felkod. Ett avstämt delbelopp med öppen fordran är ett giltigt utfall.
+
+**Genomförande av S-05.** Varje kalendersteg tar ett skrivlås i körningens SQLite-kopia. Ordinarie tjänsteanrop, tjänstelagrets händelselogg och kalenderkvittot avslutas i samma yttre transaktion. En process som dör mitt i steget lämnar föregående revision intakt. Vid fortsatt körning kontrolleras startbilden, versionen och domänspåren för redan genomförda beslut och banksteg. Rapporterna identifierar mottagaren med försäkringsnummer eftersom A:s tekniska fakturaradnummer kan variera mellan försök.
+
+**Verifierat lokalt 2026-11-22.** I [kalenderproven](../tests/test_premium_calendar.py) gav två försök per betalningsfall samma affärsutfall för november och december. Vid delbetalning blev beloppen 1 203,01 och 2 796,99 kr, med 2 733,13 kr kvar. Förfalloärendet öppnades den 29 december. Återleveransen gav en unik bankhändelse. Separata prov täcker konkurrerande beslut, nekad agent, avslag, ändrat facit med ett öre, avbrott före kvittens, motstridigt bankunderlag vid återstart och återgivning av rapporter från körningens databas. Detta avser den lokala premiemånaden på Paket A. Samprov med färdigt Paket B återstår.
 
 ## 1. Vad månaden ska visa
 
@@ -89,7 +107,7 @@ Följande åtta prov konkretiserar processöversiktens §6. Ett korrekt avslag e
 
 Inför implementation jämförs på nytt ändringar i premiemottagare, kalender, tjänsteregister och testkatalog med Claudes aktuella branch. En ändring som kräver gemensamt schema eller nytt publikt kontrakt tas tillbaka till Karl före arbete där. Slutprovet för första månaden körs på den sammanslagna versionen med projektets testverktyg. [Teststrategi](teststrategi.md)
 
-## 7. Designval för Karl före byggstart
+## 7. Designval som låg till grund för byggstarten
 
 | Val | Rekommendation | Vad ett ja innebär |
 |---|---|---|
