@@ -8,7 +8,7 @@
   <h2>Rätta premie efter rättat löneunderlag</h2>
   {% include "partials/error_box.html" %}
   {% if t %}
-  <table class="table table--compact">
+  <div class="table-wrap" role="region" aria-label="Ursprunglig premie" tabindex="0"><table class="table table--compact">
     <thead><tr><th>Månad</th><th>Typ</th><th class="num">Lön</th><th class="num">Belopp</th><th>Status</th></tr></thead>
     <tbody>
       <tr>
@@ -27,7 +27,7 @@
       </tr>
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   <div class="formgrid">
     <form method="post" action="/forsakringar/{{ policy_number }}/premier/{{ t.transaction_id }}/rattelse" class="form">
       {{ csrf() }}

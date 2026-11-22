@@ -17,32 +17,24 @@ Den befintliga statiska HTML-översikten görs inte om till ett driftsgränssnit
 
 ## Status
 
-🟡 Första version 2026-10-12; senast uppdaterad 2026-10-25:
-[foretagsoversikt.html](foretagsoversikt.html), läget på main @ 5fd10ab.
-Öppnas direkt i webbläsaren. Den innehåller en klickbar bolagskarta, delprojektens status,
-byggordning, tjänstelagrets flöde, regelkedjan, datamodellen, agentekosystemet, kod, skript
-och luckor. Sidan är statisk och uppdateras manuellt; siffror och status gäller per datumet i
-sidhuvudet. Naturligt att uppdatera i takt med att övriga delprojekt tar form – annars blir
-översikten inaktuell.
+🟡 Första version 2026-10-12. [Företagsöversikten](foretagsoversikt.html) är uppdaterad
+2026-11-21 mot main @ 9001d0e. Öppna sidan direkt i webbläsaren. Bolagskartan och de
+elva delprojekten visar arbetsytor, arkitektur, datamodell, agentmandat, byggstatus och
+nästa steg. Sidan är en statisk ögonblicksbild med länkar till projektplaner,
+beslutslogg och dokumenterad verifiering.
 
-**Uppdatering 25 oktober:** båda HTML-filerna visar nu 25 tjänsteoperationer,
-tre agentprofiler, fem poddar och 13 mappade verktyg, ärendestödet, versionerade
-produktparametrar och den lokala flödesmotorn. De tio delprojekten omfattar även
-operatörscentralen och teamområdena. Diagram, detaljrutor, test- och kodinventering
-skiljer byggt stöd från kvarstående verifiering och verksamhetsbygge.
+Novemberuppdateringen beskriver det körda premieflödet, kapital- och garantijournalen,
+månadsstängningen och kvarstående pensionssteg. Den följer bytet till Fråga bolagets
+fritextpilot, uppdragsarkivet och den lokala agentloopen enligt B-049. Sidan följer
+Digital klarhet och beskriver webbens kompakta plattformsmeny från 21 november.
+Dokumenterade Lakebase-resultat och lokal demo anges med respektive miljö.
 
-B-037:s verksamhetsdrivna målbild styr beskrivningen. Ett visningsscenario är
-inget eget byggmål; det avgränsade parameterflödet beskrivs med sina begränsningar.
-HTML är fortsatt en daterad statisk ögonblicksbild, utan liveanslutning till
-Lakebase. Grunddokumenten och projektplanerna är underlaget för senare ändringar.
-Källor, verifiering och avgränsningar finns i
-[uppdateringsunderlaget för 25 oktober](UPPDATERING_2026-10-25.md).
-[Underlaget för 24 oktober](UPPDATERING_2026-10-24.md) bevaras som historik.
+[Uppdateringsunderlaget för 25 oktober](UPPDATERING_2026-10-25.md) och
+[underlaget för 24 oktober](UPPDATERING_2026-10-24.md) bevaras som historik.
 
-En fristående leveranskopia finns även i projektroten:
-[foretagsoversikt.html](../../foretagsoversikt.html), på operatörens begäran.
-Vid kommande uppdateringar ska båda HTML-filerna hållas synkroniserade;
-rotkopians hänvisning till uppdateringsunderlaget utgår från projektroten.
+En fristående leveranskopia finns även i projektroten
+([foretagsoversikt.html](../../foretagsoversikt.html)). Håll kopiornas innehåll
+synkroniserat och anpassa källänkarna till respektive sökväg.
 
 ## Beroenden
 

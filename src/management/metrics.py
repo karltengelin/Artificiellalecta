@@ -104,7 +104,7 @@ DEFINITIONS = {
             )
             for key, name, unit, definition, source, owner in (
                 ("capital_market_value_sek", "Förvaltat kapital", "SEK", "Marknadsvärde enligt verifierad kapitalvärdering.", "Kapitalvärdering saknas", "kapital"),
-                ("fta_sek", "Försäkringstekniska avsättningar", "SEK", "Värderade åtaganden enligt beslutad aktuariell grund.", "Aktuariell motor saknas", "aktuarie"),
+                ("fta_sek", "Försäkringstekniska avsättningar", "SEK", "Värderade åtaganden enligt beslutad aktuariell grund.", "FTA-värdering saknas i centralens underlag", "aktuarie"),
                 ("consolidation_ratio", "Kollektiv konsolidering", "%", "Kräver beslutad fördelningsmodell och jämförbara värderingsunderlag.", "Fördelningsmodell och värdering saknas", "aktuarie"),
                 ("liquidity_coverage", "Likviditetstäckning", "kvot", "Kräver likvida tillgångar och framtida betalningar på samma grund.", "Likviditets- och betalningsunderlag saknas", "ekonomi"),
             )

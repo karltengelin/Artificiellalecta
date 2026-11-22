@@ -13,7 +13,7 @@
   </div>
   {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
   {% if listing.employers %}
-  <table class="table">
+  <div class="table-wrap" role="region" aria-label="Arbetsgivare" tabindex="0"><table class="table">
     <thead><tr><th>Arbetsgivare</th><th>Org.nr</th><th>Avtal</th><th>Ansluten</th><th>Status</th><th class="num">Aktiva försäkrade</th><th></th></tr></thead>
     <tbody>
       {% for e in listing.employers %}
@@ -28,7 +28,7 @@
       </tr>
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   <p class="muted small">{{ listing.count }} arbetsgivare. Kontaktpersoner visas inte i listan.</p>
   {% else %}
   <p class="empty">Inga arbetsgivare i urvalet.</p>

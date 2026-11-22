@@ -24,7 +24,7 @@ def months(today: date) -> list[date]:
 @router.get("/central/team")
 @router.get("/central/kostnader")
 @router.get("/central/underlag")
-def operator_overview(request: Request, month: str = ""):
+def operator_overview(request: Request, month: str = "", matt: str = ""):
     config = settings(request)
     today = date.today()
     choices = months(today)
@@ -75,7 +75,7 @@ def operator_overview(request: Request, month: str = ""):
     response = render(request, "operator.html", {
         "operator_page": True, "active_view": request.url.path.rsplit("/", 1)[-1],
         "metrics": metrics, "cost_metrics": cost_metrics, "definitions": DEFINITIONS, "telemetry": telemetry, "teams": teams,
-        "months": choices, "selected_month": selected.strftime("%Y-%m"), "period": period,
+        "months": choices, "selected_month": selected.strftime("%Y-%m"), "selected_metric": matt, "period": period,
         "now": now, "source_failed": source_failed, "profile_error": profile_error, "profile_ref": profile_ref,
         "dataset_ref": config.dataset_ref,
     })

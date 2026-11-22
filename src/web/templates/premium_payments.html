@@ -28,9 +28,6 @@
     </form>
     {% endif %}
   </div>
-  <p class="muted small">Premieflödet från arbetsgivarens löneunderlagsfil till mottagen nettopremie (B-046, P1-PREMIE-001).
-    Handläggaren granskar och godkänner filer, fakturerar, läser in bankfiler och fördelar oallokerade inbetalningar.
-    Alla operationer är <code>HUMAN_ONLY</code> för agenter. Garanti och kapital uppstår först i månadsjournalen.</p>
   {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
   {% include "partials/error_box.html" %}
 
@@ -43,20 +40,32 @@
     {% if write_refused %}<p class="alert__nochange">Ingenting har ändrats.</p>{% endif %}
   </div>
   {% else %}
-  <h2>Avstämning{% if filters.employer %} – {{ employer_names.get(filters.employer, filters.employer) }}{% endif %}</h2>
-  <dl class="metrics metrics--amounts">
+  {% if receivables.suspense_sek > 0 %}
+  <div class="alert alert--approval action-notice">
+    <div><strong class="alert__title">Belopp kvar på avstämningskontot</strong>
+      <p class="alert__message">{{ receivables.suspense_sek | sek }} att följa upp{% if filters.employer %} för valt företag{% endif %}.</p></div>
+    <a class="button" href="#avstamningskonto">Visa poster</a>
+  </div>
+  {% endif %}
+  <div class="panel__head">
+    <div><h2>Avstämning{% if filters.employer %} – {{ employer_names.get(filters.employer, filters.employer) }}{% endif %}</h2>
+      <span class="muted small">Samtliga perioder</span></div>
+    {% if receivables.balanced %}<span class="pill pill--approved">Går ihop</span>
+    {% else %}<span class="pill pill--rejected">Går inte ihop</span>{% endif %}
+  </div>
+  <dl class="metrics metrics--amounts metrics--summary">
     <div class="metric"><dt>Fakturerat netto</dt><dd>{{ receivables.invoiced_sek | sek }}</dd></div>
     <div class="metric"><dt>Inbetalt</dt><dd>{{ receivables.bank_total_sek | sek }}</dd></div>
     <div class="metric"><dt>Fördelat på fakturor</dt><dd>{{ receivables.allocated_sek | sek }}</dd></div>
     <div class="metric"><dt>Avstämningskonto</dt><dd>{{ receivables.suspense_sek | sek }}</dd></div>
     <div class="metric"><dt>Öppna fordringar</dt><dd>{{ receivables.receivables_sek | sek }}</dd></div>
   </dl>
-  <p class="small">
-    {% if receivables.balanced %}<span class="pill pill--approved">Går ihop</span>
-    {% else %}<span class="pill pill--rejected">Går inte ihop</span>{% endif %}
-    Inbetalningar = fördelat + avstämningskonto{% if not filters.employer %}, och fakturerat − fördelat = öppna fordringar{% endif %}.
-    {% if filters.period %}<span class="muted">Avstämningen gäller alla perioder; urvalet på period gäller filer och fakturor.</span>{% endif %}
-  </p>
+  {% if filters.period %}<p class="muted small">Urvalet på period gäller filer och fakturor.</p>{% endif %}
+  <details class="context-details">
+    <summary>Så fungerar avstämningen</summary>
+    <p>Inbetalningar = fördelat + avstämningskonto{% if not filters.employer %}, och fakturerat − fördelat = öppna fordringar{% endif %}.</p>
+    <p>Handläggaren granskar och godkänner löneunderlagsfiler, fakturerar, läser in bankfiler och fördelar poster. Garanti och kapital uppstår först i månadsjournalen (P1-PREMIE-001).</p>
+  </details>
   {% endif %}
 </section>
 

@@ -101,6 +101,12 @@ class TestListaOchRegistrering:
         assert post(web, "/arenden", case_form(), csrf=False).status_code == 403
         assert cases_in_db(web) == DEMO_CASES
 
+    def test_uttagsarende_visar_rekonstruktionsunderlag(self, web):
+        response = web.client.get("/arenden/CASE-000001")
+        assert response.status_code == 200
+        assert "Rekonstruktion av uttag" in response.text and "Rekonstruera beslutad plan" in response.text
+        assert "Registrera löneunderlaget själv" not in response.text
+
 
 class TestAgenten:
     def test_korning_utan_forslag(self, agent_web):

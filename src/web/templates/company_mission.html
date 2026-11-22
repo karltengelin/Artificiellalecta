@@ -18,7 +18,8 @@
 {% if task.status == "rejected" %}<p>Aktiveringsförslaget avslogs.</p>{% endif %}
 {% endmacro %}
 {% block content %}
-<p><a href="{{ base }}">Fråga bolaget · lokal pilot</a></p>
+<div class="company-workspace">
+<p class="breadcrumb"><a href="{{ base }}">← Fråga bolaget</a></p>
 <section class="panel panel--standalone">
   <h1>Bolagsuppdrag</h1>
   <p><span class="pill">{{ statuses.get(state.status, state.status) }}</span> · <code>BO-{{ mission.id }}</code></p>
@@ -51,28 +52,30 @@
   <p>Underlag <a href="#uppdrag-{{ basis.id }}">{{ basis.id[:8] }}</a>
     {% if review.effect %} och <a href="#uppdrag-{{ review.effect }}">beståndsanalysen</a>{% endif %}
     · kontrollsumma <code>{{ review.hash[:16] }}</code></p>
-  <form method="post" action="{{ base }}/{{ mission.id }}/granska">{{ form_fields() }}
+  <form method="post" action="{{ base }}/{{ mission.id }}/granska" class="form">{{ form_fields() }}
     <input type="hidden" name="seen" value="{{ review.hash }}">
     {% if review.kind != "approve_interpretation" %}
-      <label for="rule_version">Regelversion</label><input id="rule_version" name="rule_version" placeholder="1.1">
-      <label for="valid_from">Giltighetsdag</label><input id="valid_from" type="date" name="valid_from" value="{{ basis.result.output.result.effective_on or '' }}">
-      <label for="decision_number">Beslutsnummer, om loggat</label><input id="decision_number" name="decision_number" placeholder="B-000">
+      <div class="row">
+        <div class="field"><label for="rule_version">Regelversion</label><input id="rule_version" name="rule_version" placeholder="1.1"></div>
+        <div class="field"><label for="valid_from">Giltighetsdag</label><input id="valid_from" type="date" name="valid_from" value="{{ basis.result.output.result.effective_on or '' }}"></div>
+        <div class="field"><label for="decision_number">Beslutsnummer, om loggat</label><input id="decision_number" name="decision_number" placeholder="B-000"></div>
+      </div>
       {% if review.kind == "prepare_development" %}
-        <label for="rule_id">Berörd regel</label>
-        <select id="rule_id" name="rule_id">{% for rule in basis.result.output.result.affected_rules %}<option>{{ rule }}</option>{% endfor %}</select>
-        <label for="code_reason">Motivering för kodändring</label>
-        <textarea id="code_reason" name="code_reason" maxlength="1500">{{ basis.result.output.result.code_dependency }}</textarea>
-        <label for="affected_system">Berört system</label><input id="affected_system" name="affected_system" maxlength="160">
-        <label for="expected_effect">Effekt som Utveckling ska verifiera</label><textarea id="expected_effect" name="expected_effect" maxlength="1500"></textarea>
+        <div class="field"><label for="rule_id">Berörd regel</label>
+          <select id="rule_id" name="rule_id">{% for rule in basis.result.output.result.affected_rules %}<option>{{ rule }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="code_reason">Motivering för kodändring</label>
+          <textarea id="code_reason" name="code_reason" maxlength="1500">{{ basis.result.output.result.code_dependency }}</textarea></div>
+        <div class="field"><label for="affected_system">Berört system</label><input id="affected_system" name="affected_system" maxlength="160"></div>
+        <div class="field"><label for="expected_effect">Effekt som Utveckling ska verifiera</label><textarea id="expected_effect" name="expected_effect" maxlength="1500"></textarea></div>
       {% else %}
-        <label for="commit">Commit med införd regeltext och parameterregister</label><input id="commit" name="commit" maxlength="40">
+        <div class="field"><label for="commit">Commit med införd regeltext och parameterregister</label><input id="commit" name="commit" maxlength="40"></div>
       {% endif %}
     {% endif %}
-    <label for="note">Kommentar eller skäl vid avslag</label><input id="note" name="note" maxlength="500">
-    {% if enabled or review.kind == "approve_interpretation" %}
-      <button type="submit" name="verdict" value="approved">Godkänn underlaget</button>
-    {% endif %}
-    <button class="danger" type="submit" name="verdict" value="rejected">Avslå</button>
+    <div class="field"><label for="note">Kommentar eller skäl vid avslag</label><input id="note" name="note" maxlength="500"></div>
+    <div class="form__actions">
+      {% if enabled or review.kind == "approve_interpretation" %}<button type="submit" name="verdict" value="approved">Godkänn underlaget</button>{% endif %}
+      <button class="danger" type="submit" name="verdict" value="rejected">Avslå</button>
+    </div>
   </form>
 </section>
 {% endif %}
@@ -147,21 +150,22 @@
 {% if enabled and not state.external and state.status not in ["running", "reconciliation_required", "taken_over"] %}
 <section class="panel panel--standalone">
   <h2>Precisera eller ställ en följdfråga</h2>
-  <form method="post" action="{{ base }}/{{ mission.id }}/precisera">{{ form_fields() }}
+  <form method="post" action="{{ base }}/{{ mission.id }}/precisera" class="form">{{ form_fields() }}
     <input type="hidden" name="key" value="{{ follow_key }}">
-    <label for="follow_goal">Ny information eller fråga</label>
-    <textarea id="follow_goal" name="goal" maxlength="3200" rows="3" required></textarea>
-    <button type="submit">Spara och köa</button>
+    <div class="field"><label for="follow_goal">Ny information eller fråga</label>
+      <textarea id="follow_goal" name="goal" maxlength="3200" rows="3" required></textarea></div>
+    <div class="form__actions"><button type="submit">Spara och köa</button></div>
   </form>
 </section>
 {% endif %}
 {% if state.status not in ["running", "taken_over", "answered", "rejected"] %}
 <section class="panel panel--standalone">
   <h2>Ta över uppdraget</h2>
-  <form method="post" action="{{ base }}/{{ mission.id }}/ta-over">{{ form_fields() }}
-    <label for="takeover_note">Skäl</label><input id="takeover_note" name="note" maxlength="500" required>
-    <button class="secondary" type="submit">Ta över</button>
+  <form method="post" action="{{ base }}/{{ mission.id }}/ta-over" class="form">{{ form_fields() }}
+    <div class="field"><label for="takeover_note">Skäl</label><input id="takeover_note" name="note" maxlength="500" required></div>
+    <div class="form__actions"><button class="secondary" type="submit">Ta över</button></div>
   </form>
 </section>
 {% endif %}
+</div>
 {% endblock %}
