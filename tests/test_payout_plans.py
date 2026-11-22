@@ -126,6 +126,14 @@ def decide(db, request_id, name="decide_payout_plan"):
                           "reason": "Prov enligt kundens begäran"}).payload
 
 
+def without_step5(db):
+    """Som Lakebase före steg 5:s migration: inga tabeller för belopp, anspråk och finansiering (B-052)."""
+    with db.engine.begin() as conn:
+        for table in ("pension_claim_fundings", "pension_claims", "payout_amounts"):
+            conn.exec_driver_sql(f"DROP TABLE {table}")
+    return db
+
+
 def part_id(db, key, number=1):
     with db.factory() as s:
         return pl.find_part(s, POLICY[key], number).part.id
@@ -144,6 +152,7 @@ def ready(chain):
 
 class TestStandardstart:
     def test_fall_1_verifierad_agare_far_standardplan_och_stangningen_blockeras(self, at_66):
+        without_step5(at_66)  # med steg 5:s tabeller bokas standardstarten (test_pension_claims)
         review = prepare(at_66)
         assert not review["passed"]
         assert any("standardstart" in p and "steg 5" in p for p in review["problems"])
@@ -234,6 +243,7 @@ class TestUppskov:
             assert any(n.reason.startswith("Beslutad uttagsplan") for n in extract.not_calculated)
 
     def test_v3_plan_med_ratt_i_manaden_blockerar(self, at_66):
+        without_step5(at_66)  # med steg 5:s tabeller bokas rätten (test_pension_claims)
         made = request(at_66, "B", "start", {"first_right": "2026-11-01", "form": "lifelong"})
         decide(at_66, made["request_id"])
         review = prepare(at_66)
@@ -381,6 +391,7 @@ class TestDelning:
 
 class TestUtanSteg4:
     def test_utan_tabellerna_som_steg_3(self, ready):
+        without_step5(ready)
         with ready.engine.begin() as conn:
             for table in ("payout_splits", "payout_plans", "payout_requests"):
                 conn.exec_driver_sql(f"DROP TABLE {table}")

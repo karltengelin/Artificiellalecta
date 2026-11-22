@@ -31,6 +31,8 @@ operations:
   decide_payout_plan: HUMAN_ONLY       # hashbunden planversion; bara människa, agenter föreslår inga planer (PB12)
   split_payout_part: HUMAN_ONLY        # delning av ej startad del (PR-ITP1-024); bara människa
   get_payout_part: HUMAN_ONLY          # delens planer och begäran; agentmontering prövas när ett uppdrag behöver den
+  register_company_capital: HUMAN_ONLY # ägarens insättning på bolagskontot (paket B steg 5, PR-ITP1-028, Karls val W7); bara människa
+  list_pension_claims: HUMAN_ONLY      # månadsrätter och bolagskonto; individrader, agenter får inga rättigheter (W12)
   get_premium_month: HUMAN_ONLY        # månadsstatus; agenten använder avgränsad analysgateway
   approve_premium_month: HUMAN_ONLY    # mänsklig analysgranskning, aldrig baslås
   register_actuarial_dataset: HUMAN_ONLY  # observerat utfall; människa/betrodd dataproducent

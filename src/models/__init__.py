@@ -23,6 +23,7 @@ from .invoice import Invoice, InvoiceLineRecord
 from .operation_event import OperationEventRecord
 from .payout_part import PayoutPart, PayoutPartState
 from .payout_plan import PayoutPlan, PayoutRequest, PayoutSplit
+from .pension_claim import PayoutAmount, PensionClaim, PensionClaimFunding
 from .policy import Policy
 from .policy_benefit import PolicyBenefit
 from .policy_state import PolicyState
@@ -60,11 +61,14 @@ __all__ = [
     "LedgerGuaranteePart",
     "OperationEventRecord",
     "PaymentAllocation",
+    "PayoutAmount",
     "PayoutPart",
     "PayoutPartState",
     "PayoutPlan",
     "PayoutRequest",
     "PayoutSplit",
+    "PensionClaim",
+    "PensionClaimFunding",
     "Policy",
     "PolicyBenefit",
     "PolicyState",

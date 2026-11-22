@@ -42,8 +42,22 @@ standardplanen i granskningen och blockerar till steg 5; overifierat underlag oc
 utan plan får ett ärende `payout_review` en gång, och sparandet stängs. Startmånaden flyttas aldrig tyst
 (PR-ITP1-025). Utan steg 4:s tabeller beter sig stängningen som i steg 3.
 
-Avgift och skatt som inte kan dras (C för litet) avstås och redovisas bara i sammanställningen;
-bolagskontot kommer i steg 5. Ren beräkning: `compute_month` (fall 13).
+Avgift och skatt som inte kan dras (C för litet) avstås och redovisas bara i sammanställningen.
+Ren beräkning: `compute_month` (fall 13).
+
+**Månadsrätt och skuld (paket B steg 5, PR-ITP1-020 steg 5, Karls val W1–W12).** När steg 5:s migration
+är körd (`pension_claims.claims_present`) bokar stängningen steg 5 efter steg 4. Standardplanen vid 66
+sparas som planversion med ursprung `standard_start` (W3). En startad, pausad eller återstartad del
+följer sin plan: läget skrivs i `payout_part_states` (W4). En del med rätt i månaden får ett beslutat M
+(planens M i ändringsmånaden, annars nytt M vid verklig start, återstart och i januari, W2) och ett
+anspråk. Från C dras min(M, C efter kostnader), fördelat på spåren i ören; bristen K tas från
+bolagskontot direkt till betalningsskulden (W5). På den tidsbegränsade delens sista rätt är bruttot
+max(M, C) (PR-ITP1-027, W6). Räcker bolagskontot inte stängs månaden ändå: det ej finansierade står kvar
+på anspråket, ett ärende `company_capital` öppnas och en senare insättning finansierar de äldsta
+anspråken först (W8). Den första stängningen med en rätt kräver en registrerad insättning (PB11). En
+premie på en del som startar eller har startat hålls utanför journalen med ett ärende (W9). Rättelse av
+en månad med anspråk tillåts bara om varje anspråks brutto och kapitaldel är oförändrade (W10). Utan
+steg 5:s tabeller beter sig stängningen som i steg 4.
 """
 
 from __future__ import annotations
@@ -66,16 +80,20 @@ from models import (
     LedgerControl,
     LedgerGuaranteePart,
     PaymentAllocation,
+    PayoutAmount,
     PayoutPart,
     PayoutPartState,
     PayoutPlan,
     PayoutSplit,
+    PensionClaim,
+    PensionClaimFunding,
     Policy,
     PolicyBenefit,
 )
 from services import capital_ledger as cl
 from services import parameters
 from services import payout_plans as pl
+from services import pension_claims as pc
 from services import valuation_bases as vb
 from services.capital_ledger import (
     CLOSE_KIND,
@@ -91,6 +109,7 @@ from services.payout_parts import receiving_parts
 from services.valuation_extract import ExtractError, _returns, month_end
 from skills.calculation import actuarial_annuity as aa
 from skills.calculation import payout_plan as pp
+from skills.calculation import pension_claim as pcalc
 from skills.calculation.premium_origin_ledger import (
     Origin,
     origin_code_version,
@@ -105,6 +124,10 @@ REASONS = ("return", "fee", "tax", "premium")
 #: Transaktionsbundet lås för alla stängningar och rättelser: en åt gången
 LOCK = (6048, 0)
 PENSION_AGE = 66
+#: Steg 5: pensionsdebiteringen av kundkapitalet (PR-020 steg 5) och orsakernas ordning vid rättelse
+DEBIT = "pension_debit"
+ORDER = (*REASONS, DEBIT)
+STANDARD_REASON = "Standardstart vid 66 (PR-ITP1-025) i månadsstängningen"
 
 
 class CloseError(LedgerError):
@@ -135,6 +158,14 @@ class MonthPlan:
     version_rows: list[dict] = field(default_factory=list)
     split_parts: list[dict] = field(default_factory=list)
     review_cases: list[dict] = field(default_factory=list)
+    #: Steg 5: standardplaner, beloppsbeslut, anspråk, senare finansieringar, lägesändringar och ärendet
+    #: om bolagskapital
+    standard_plans: list[PayoutPlan] = field(default_factory=list)
+    amount_rows: list[dict] = field(default_factory=list)
+    claim_rows: list[dict] = field(default_factory=list)
+    funding_rows: list[dict] = field(default_factory=list)
+    state_changes: list[dict] = field(default_factory=list)
+    company_case: dict | None = None
 
     @property
     def kind(self) -> str:
@@ -228,6 +259,11 @@ def _booked_amounts(session: Session, chain: list[LedgerBatch], home: dict) -> d
 
 def plan_month(session: Session, month: date, today: date) -> MonthPlan:
     """Räknar månadens stängning – eller rättelse av en stängd månad – utan att skriva."""
+    return _plan(session, month, today, None)
+
+
+def _plan(session: Session, month: date, today: date, withhold: set | None) -> MonthPlan:
+    """Stängningen. Med steg 5 räknas den om med `withhold` när en del som startar har en premie i månaden (W9)."""
     month = month.replace(day=1)
     end = month_end(month)
     if not cl.month_close_present(session):
@@ -263,6 +299,7 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
     # Steg 1: öppningskapitalet per kapitalspår. Ett spår är (uttagsdel, ursprung): efter en delning bär två
     # delar samma ursprung. Spårnyckeln är ursprunget på dess egen del (som i steg 3) och `ursprung@del` annars
     steg4 = pl.plans_present(session)
+    steg5 = steg4 and pc.claims_present(session)
     home = _homes(session)
     opening_tracks = cl.tracks(session, previous_end)
     origins = [Origin(_key(home, t.payout_part_id, t.origin_id), str(t.payout_part_id), t.balance)
@@ -290,14 +327,16 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
     split_owner = {p["id"]: p["split_from_part_id"] for p in split_parts}
 
     # Steg 4: månadens premier – vid stängning ur paket A, vid rättelse de redan bokade
-    intake_summary, additions_src, booked_parts = None, [], []
+    intake_summary, additions_src, booked_parts, withheld = None, [], [], []
     if current is None:
         try:
-            intake = premium_intake(session, month)
+            intake = (premium_intake(session, month, withhold=withhold or set()) if steg5
+                      else premium_intake(session, month))
         except IntakeError as exc:
             raise CloseError(str(exc)) from exc
         intake_summary = {**intake.summary, "checksum": intake.checksum}
         additions_src = intake.additions
+        withheld = intake.withheld
     else:
         booked_parts = _chain_premiums(session, chain, month)
         allocations = {a.id: a for a in session.scalars(select(PaymentAllocation).where(
@@ -327,9 +366,15 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
     unknown_birth = sorted(str(p) for p in parts if owners.get(p, (None, ""))[0] is None)
     pending_start = sorted(str(p) for p in parts if p in receiving and (born := owners.get(p, (None, ""))[0])
                            and date(born.year + PENSION_AGE, born.month, 1) <= month)
+    in_force: dict = {}
+    if steg5:  # steg 5: en startad del följer sin plan; bara en startad del utan plan blockerar
+        in_force = pl.plans_in_force(session, stored, month)
+        started = [p for p in started if uuid.UUID(p) not in in_force]
     if started:
         problems.append(f"{len(started)} uttagsdelar med kapital har startat, pausats eller avslutats under "
-                        f"{month:%Y-%m} (t.ex. {started[0]}); månadsrätt och slutavräkning byggs i paket B steg 5–7")
+                        f"{month:%Y-%m} (t.ex. {started[0]}); "
+                        + ("ingen beslutad plan gäller – manuell prövning" if steg5 else
+                           "månadsrätt och slutavräkning byggs i paket B steg 5–7"))
     if deceased:
         problems.append(f"{len(deceased)} uttagsdelar tillhör en person registrerad som avliden (t.ex. "
                         f"{deceased[0]}); dödsfallsavräkningen byggs i paket B steg 7")
@@ -338,14 +383,29 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
 
     # Steg 1 (steg 4): rätt under månaden enligt plan blockerar (V3); standardstart och ärenden vid 66 (V4, V6)
     pending_ids = {uuid.UUID(p) for p in pending_start}
-    start = (_standard_start(session, month, previous_end, (stored & pending_ids) - set(unknown_ids(owners)))
-             if steg4 else {"planned": [], "standard": [], "cases": []})
-    with_right = sorted(str(part) for part, plan in pl.plans_in_force(session, stored, month).items()
-                        if pl.schedule_of(plan).has_right(month)) if steg4 else []
-    if with_right:
+    candidates = (stored & pending_ids) - set(unknown_ids(owners))
+    if steg5:  # en standardstart kräver kapital att räkna planen på
+        candidates &= {uuid.UUID(o.policy_id) for o in origins}
+    start = (_standard_start(session, month, previous_end, candidates)
+             if steg4 else {"planned": [], "standard": [], "cases": [], "plans": {}})
+    standard_plans: list[PayoutPlan] = []
+    if steg5:
+        standard_plans = [_standard_record(month, start["plans"][s["payout_part_id"]]) for s in start["standard"]]
+        in_force.update({sp.payout_part_id: sp for sp in standard_plans})
+        starting = {part for part, plan in in_force.items()
+                    if pc.state_in(pl.schedule_of(plan), month) != "not_started"}
+        if current is None and withhold is None and starting & {a.payout_part_id for a in additions_src}:
+            return _plan(session, month, today, starting)  # premien på en del som startar hålls utanför (W9)
+        for plan in standard_plans:  # standardplanens omräkning av garantidelarna (V7)
+            rows, problem = _recalculation(month, plan, guarantees_before, split_from={s.from_part_id for s in splits})
+            version_rows += rows if current is None else []
+            problems += problem
+    with_right = sorted(str(part) for part, plan in (in_force if steg5 else pl.plans_in_force(session, stored, month))
+                        .items() if pl.schedule_of(plan).has_right(month)) if steg4 else []
+    if with_right and not steg5:
         problems.append(f"{len(with_right)} uttagsdelar har rätt under {month:%Y-%m} enligt beslutad plan (t.ex. "
                         f"{with_right[0]}); månadsrätt byggs i paket B steg 5")
-    if start["standard"]:
+    if start["standard"] and not steg5:
         problems.append(f"{len(start['standard'])} uttagsdelar får standardstart {month:%Y-%m} (PR-ITP1-025), t.ex. "
                         f"{start['standard'][0]['payout_part_id']}; månadsrätt byggs i paket B steg 5")
 
@@ -355,8 +415,20 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
         raise CloseError(f"Avräkningen per kapitalspår går inte ihop: {exc}") from exc
 
     opening_balance = {o.id: o.capital for o in origins}
+    payouts, pre_debit = None, computed
+    if steg5:  # steg 5: månadsrätt, debitering, bolagsstöd och skuld (PR-020 steg 5)
+        payouts = _payouts(session, month, previous_end, in_force, origins, computed, guarantees_before,
+                           booking=current is None, today=today)
+        problems += payouts.problems
+        if payouts.claims and not pc.capital_registered(session):
+            problems.append("Bolagskontot saknar en registrerad startinsättning – den första stängningen med en "
+                            "månadsrätt kräver den (PB11, PR-ITP1-028); register_company_capital först")
+        computed = _after_debit(computed, payouts.debits)
+        payouts.review_cases = _premium_cases(session, month, withheld) if current is None else []
     if current is None:
-        status, entry_rows = "open", split_entries + _close_entries(month, origins, additions, computed)
+        status, entry_rows = "open", split_entries + _close_entries(month, origins, additions, pre_debit)
+        if payouts is not None:
+            entry_rows += _debit_entries(month, origins, pre_debit, payouts.debits) + payouts.entries
     else:
         booked = _booked_amounts(session, chain, home)
         diff = {k: computed.amounts.get(k, ZERO) - booked.get(k, ZERO) for k in {*computed.amounts, *booked}}
@@ -382,13 +454,17 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
     controls = _controls(month, computed, origins, additions, opening_balance, avk, fee_label, tax_label,
                          intake_summary, started, deceased, pending_start, g_before, g_added, guarantee_rows,
                          previous, start=start if steg4 else None, g_change=g_change, splits=len(splits),
-                         plans=len(effective_plans), with_right=with_right)
+                         plans=len(effective_plans) + len(standard_plans), with_right=with_right, payouts=payouts)
     version = len(chain) + 1
     rows_digest = vb.checksum({"guarantee_parts": [_plain(r) for r in guarantee_rows],
                                "entries": [_plain(r) for r in entry_rows],
                                **({"guarantee_versions": [_plain(r) for r in version_rows],
                                    "payout_parts": [_plain(r) for r in split_parts]}
-                                  if version_rows or split_parts else {})})
+                                  if version_rows or split_parts else {}),
+                               **({"payout_amounts": payouts.section["amounts"],
+                                   "pension_claims": payouts.section["claims"],
+                                   "fundings": payouts.section["fundings"], "states": payouts.section["states"]}
+                                  if payouts is not None and current is None else {})})
     content = {
         "method": METHOD, "origin_method": origin_code_version(), "design": "P1-PENSION-001 §7, B-047",
         "kind": CORRECTION_KIND if status == "correction" else CLOSE_KIND, "version": version,
@@ -409,20 +485,33 @@ def plan_month(session: Session, month: date, today: date) -> MonthPlan:
                    "guarantee_closing_sek_per_month": str(g_before + g_added + g_change),
                    "entries": len(entry_rows),
                    **({"guarantee_versions": len(version_rows), "guarantee_change_sek_per_month": str(g_change),
-                       "splits": len(splits), "plans": len(effective_plans)} if steg4 else {})},
+                       "splits": len(splits), "plans": len(effective_plans)} if steg4 else {}),
+                   **(payouts.totals if payouts is not None else {})},
         "standard_start_pending": pending_start,
         **({"payout": {"plans": [str(p.id) for p in effective_plans], "splits": [str(s.id) for s in splits],
                        "planned_parts": start["planned"], "standard_start": start["standard"],
                        "review_cases": [{k: str(v) for k, v in c.items() if k != "person_id"}
                                         for c in start["cases"]],
                        "with_right": with_right}} if steg4 else {}),
+        **({"pension": {**payouts.section, "standard_plans": [str(sp.id) for sp in standard_plans],
+                        "withheld_premiums": withheld,
+                        "premium_review_cases": [{k: str(v) for k, v in c.items() if k != "person_id"}
+                                                 for c in payouts.review_cases]}}
+           if payouts is not None else {}),
         "rows_checksum": rows_digest,
         "controls": [c.as_dict() for c in controls],
     }
+    booking = current is None and payouts is not None
     return MonthPlan(month=month, period_end=end, status=status, content=content, checksum=vb.checksum(content),
                      guarantee_rows=guarantee_rows, entry_rows=entry_rows, controls=controls, problems=problems,
                      supersedes=current, version=version, version_rows=version_rows, split_parts=split_parts,
-                     review_cases=start["cases"] if current is None else [])
+                     review_cases=(start["cases"] + (payouts.review_cases if payouts else [])) if current is None else [],
+                     standard_plans=standard_plans if current is None else [],
+                     amount_rows=[pc.amount_row(a) for a in payouts.section["amounts"]] if booking else [],
+                     claim_rows=payouts.claim_rows if booking else [],
+                     funding_rows=payouts.funding_rows if booking else [],
+                     state_changes=payouts.state_changes if booking else [],
+                     company_case=payouts.company_case if booking else None)
 
 
 def unknown_ids(owners: dict) -> list:
@@ -533,7 +622,7 @@ def _recalculation(month: date, plan: PayoutPlan, guarantees: list, *, split_fro
 
 def _standard_start(session: Session, month: date, valuation: date, part_ids: set) -> dict:
     """66-årsmånaden (PR-ITP1-025, V4, V6): standardplan för verifierad ägare, annars ärende; inga tysta starter."""
-    out = {"planned": [], "standard": [], "cases": []}
+    out = {"planned": [], "standard": [], "cases": [], "plans": {}}
     if not part_ids:
         return out
     planned = pl.planned_parts(session, part_ids)
@@ -557,6 +646,7 @@ def _standard_start(session: Session, month: date, valuation: date, part_ids: se
                                         "guarantee_sek_per_month": plan["guarantee_sek_per_month"],
                                         "capital_amount_sek": plan["capital_amount_sek"],
                                         "m_sek": plan["amount"]["m_sek"], "review_checksum": plan["review_checksum"]})
+                out["plans"][str(part_id)] = plan  # steg 5 sparar planen; inte i sammanställningen
                 continue
             reason, detail = "standard_start_unverified", "; ".join(problems)
         else:
@@ -567,6 +657,327 @@ def _standard_start(session: Session, month: date, valuation: date, part_ids: se
         out["cases"].append({"payout_part_id": str(part_id), "person_id": owner.person_id,
                              "policy_id": owner.policy_id, "reason": reason, "detail": detail,
                              "sixty_six_month": sixty_six.isoformat()})
+    return out
+
+
+# --- steg 5: månadsrätt och skuld (PR-020 steg 5, Karls val W1–W12) ---------------------------------
+
+
+@dataclass
+class Payouts:
+    """Månadens rätter: debitering per spår, beloppsbeslut, anspråk, skuld- och bolagsposter och kontroller."""
+
+    debits: dict[str, Decimal]
+    claims: list[dict]
+    claim_rows: list[dict]
+    funding_rows: list[dict]
+    entries: list[dict]
+    state_changes: list[dict]
+    controls: list[Control]
+    problems: list[str]
+    section: dict
+    totals: dict
+    company_case: dict | None = None
+    review_cases: list[dict] = field(default_factory=list)
+
+
+def _standard_record(month: date, data: dict) -> PayoutPlan:
+    """Standardplanen vid 66 som planversion 1 med ursprung `standard_start` (W3); beslutare sätts vid bokningen."""
+    content = {k: v for k, v in data.items() if k != "review_checksum"}
+    return pl.plan_record(content, data["review_checksum"], part_id=uuid.UUID(data["payout_part_id"]), previous=None,
+                          origin="standard_start", request_id=None, effective=month, reason=STANDARD_REASON,
+                          actor="month_close")
+
+
+def _after_debit(computed: Computed, debits: dict[str, Decimal]) -> Computed:
+    """Månadens avräkning efter pensionsdebiteringen: spårens utgående saldo och summor efter steg 5."""
+    total = sum(debits.values(), ZERO)
+    amounts = {**computed.amounts, **{(k, DEBIT): -v for k, v in debits.items()}}
+    closing = {k: v - debits.get(k, ZERO) for k, v in computed.closing.items()}
+    totals = {**computed.totals, "closing_sek": computed.totals["closing_sek"] - total, "pension_debits_sek": total}
+    return Computed(amounts, closing, totals)
+
+
+def _debit_entries(month: date, origins: list[Origin], computed: Computed, debits: dict[str, Decimal]) -> list[dict]:
+    part_of = {o.id: o.policy_id for o in origins}
+    return [_entry(month, f"{CLOSE_KIND}:1", key, part_of[key], DEBIT, -debits[key], computed.closing[key])
+            for key in sorted(debits)]
+
+
+def _account_entry(month: date, account: str, part, reason: str, amount: Decimal, before: Decimal, *ident) -> dict:
+    """En post på betalningsskulden eller bolagskontot (utan kapitalspår)."""
+    return {"id": stable_id(f"{CLOSE_KIND}:1", month.isoformat(), account, *[str(i) for i in ident], reason),
+            "account": account, "payout_part_id": part, "origin_id": None, "month": month, "reason": reason,
+            "amount_sek": amount, "balance_before_sek": before, "balance_after_sek": before + amount, "source": LEDGER}
+
+
+def _decided_amounts(session: Session, month: date, previous_end: date, rights: dict, schedules: dict,
+                     origins: list[Origin], guarantees: list) -> tuple[dict, list[dict], list[str]]:
+    """Beloppet per del med rätt: (del → (beslut, M), nya beslut, problem). Ordningen i W2."""
+    problems, new, decided = [], [], {}
+    previous_month = aa.add_months(month, -1)
+    existing = {a.payout_part_id: a for a in session.scalars(select(PayoutAmount).where(
+        PayoutAmount.effective_month == month, PayoutAmount.payout_part_id.in_(list(rights))))}
+    latest = pc.amounts_by_part(session, rights, previous_month)
+    owner_of, bases = None, None
+    for part, plan in rights.items():
+        schedule = schedules[part]
+        if part in existing:  # redan beslutat i månaden (rättelse eller ny granskning efter bokning)
+            decided[part] = (existing[part].id, existing[part].m_sek)
+            continue
+        before, previous = schedule.rights_before(month), latest.get(part)
+        if plan.effective_month == month:
+            data = pc.amount_from_plan(plan, month, "start" if before == 0 else "plan_change")
+        else:
+            reason = ("start" if before == 0 else "restart" if schedule.paused(previous_month)
+                      else "january" if month.month == 1 else None)
+            if reason is None:  # beloppet ligger fast mellan besluten
+                if previous is None:
+                    problems.append(f"Uttagsdelen {part} har rätt {month:%Y-%m} men inget beslutat belopp")
+                else:
+                    decided[part] = (previous.id, previous.m_sek)
+                continue
+            owner_of = owner_of if owner_of is not None else pl.owners(session, list(rights))
+            bases = bases or pl.Bases.load(session, month)
+            form = None
+            if previous is not None:
+                form = plan.form if previous.plan_id == plan.id else session.get(PayoutPlan, previous.plan_id).form
+            capital = sum((o.capital for o in origins if o.policy_id == str(part)), ZERO)
+            data = pc.compute_amount(owner_of[part], plan, month, previous_end, reason, previous, bases,
+                                     previous_form=form, capital=capital,
+                                     guarantees=[g for g in guarantees if g.payout_part_id == part])
+        row = pc.amount_row(data)
+        new.append(data)
+        decided[part] = (row["id"], row["m_sek"])
+    return decided, new, problems
+
+
+def _state_changes(session: Session, month: date, in_force: dict, schedules: dict,
+                   finals: set) -> tuple[list[dict], list[str]]:
+    """Delens läge enligt planen (W4): pågående, pausad, återstartad och avslutad efter slutavräkning."""
+    if not in_force:
+        return [], []
+    rows: dict = defaultdict(list)
+    for r in session.scalars(select(PayoutPartState).where(PayoutPartState.payout_part_id.in_(list(in_force)))
+                             .order_by(PayoutPartState.valid_from)):
+        rows[r.payout_part_id].append(r)
+    changes, problems = [], []
+    day_before = date.fromordinal(month.toordinal() - 1)
+    for part in sorted(in_force, key=str):
+        expected = pc.state_in(schedules[part], month)
+        covering = [r for r in rows[part] if r.valid_from <= month and (r.valid_to is None or r.valid_to >= month)]
+        open_row = next((r for r in rows[part] if r.valid_to is None), None)
+        if not covering or open_row is None:
+            problems.append(f"Uttagsdelen {part} saknar läge för {month:%Y-%m}")
+            continue
+        now, final = covering[-1].state, part in finals
+        changed = now != expected
+        if changed and (now == "ended" or expected in ("ended", "not_started") or open_row is not covering[-1]
+                        or open_row.valid_from >= month):
+            problems.append(f"Uttagsdelen {part} är {now} men planen ger {expected} för {month:%Y-%m}")
+            continue
+        if changed:
+            changes.append({"payout_part_id": part, "close_id": open_row.id, "close_to": day_before,
+                            "state": expected, "end_reason": None, "valid_from": month,
+                            "valid_to": month_end(month) if final else None, "from_state": now})
+        if final:  # sista rätten: avslutad från månaden efter (PR-ITP1-027)
+            changes.append({"payout_part_id": part, "close_id": None if changed else open_row.id,
+                            "close_to": None if changed else month_end(month), "state": "ended",
+                            "end_reason": "final_settlement", "valid_from": aa.add_months(month, 1),
+                            "valid_to": None, "from_state": expected})
+    return changes, problems
+
+
+def _payouts(session: Session, month: date, previous_end: date, in_force: dict, origins: list[Origin],
+             computed: Computed, guarantees: list, *, booking: bool, today: date) -> Payouts:
+    """PR-020 steg 5: belopp, anspråk, debitering per spår, bolagsstöd och skuld (W2, W5–W8, W10)."""
+    previous_month = aa.add_months(month, -1)
+    schedules = {part: pl.schedule_of(plan) for part, plan in in_force.items()}
+    rights = {part: in_force[part] for part in sorted(in_force, key=str) if schedules[part].has_right(month)}
+    decided, new_amounts, problems = _decided_amounts(session, month, previous_end, rights, schedules, origins,
+                                                      guarantees)
+    tracks_of: dict = defaultdict(list)
+    for o in sorted(origins, key=lambda o: o.id):
+        tracks_of[uuid.UUID(o.policy_id)].append(o.id)
+    ended_with_capital = sorted(str(part) for part in in_force if pc.state_in(schedules[part], month) == "ended"
+                                and sum((computed.closing[k] for k in tracks_of.get(part, [])), ZERO) > 0)
+    if ended_with_capital:
+        problems.append(f"{len(ended_with_capital)} avslutade uttagsdelar har kvar kapital (t.ex. "
+                        f"{ended_with_capital[0]}) – manuell prövning")
+
+    booked = {} if booking else {c.payout_part_id: c for c in session.scalars(
+        select(PensionClaim).where(PensionClaim.right_month == month))}
+    company_open = pc.account_balance(session, pc.COMPANY, previous_month)
+    company = pc.account_balance(session, pc.COMPANY, month) if booking else ZERO
+    inserted = company - company_open if booking else ZERO
+    liability_open = pc.account_balance(session, pc.LIABILITY, previous_month)
+    liability = pc.liability_by_part(session, month) if booking else {}
+    entries, funding_rows, fundings = [], [], []
+
+    # Senare finansiering: äldsta ej finansierade anspråk först, innan månadens nya (W8)
+    outstanding = pc.outstanding_unfunded(session, before=month) if booking else []
+    for claim, rest in outstanding:
+        amount = min(rest, company)
+        if amount <= 0:
+            break
+        before_part = liability.get(claim.payout_part_id, ZERO)
+        entries += [_account_entry(month, pc.COMPANY, None, "company_support", -amount, company, "funding", claim.id),
+                    _account_entry(month, pc.LIABILITY, claim.payout_part_id, "company_support", amount, before_part,
+                                   "funding", claim.id)]
+        company -= amount
+        liability[claim.payout_part_id] = before_part + amount
+        funding_rows.append({"id": stable_id(f"{CLOSE_KIND}:1", month.isoformat(), "funding", str(claim.id)),
+                             "claim_id": claim.id, "amount_sek": amount})
+        fundings.append({"claim_id": str(claim.id), "payout_part_id": str(claim.payout_part_id),
+                         "right_month": claim.right_month.isoformat(), "amount_sek": str(amount),
+                         "remaining_sek": str(rest - amount)})
+
+    claims, claim_rows, debits, finals = [], [], {}, set()
+    for part, plan in rights.items():
+        if part not in decided:
+            continue
+        amount_id, m = decided[part]
+        schedule, keys = schedules[part], tracks_of.get(part, [])
+        balances = [computed.closing[k] for k in keys]
+        capital = sum(balances, ZERO)
+        final = schedule.form == "fixed_term" and schedule.end_month == month
+        try:
+            funding = pcalc.claim_funding(m, capital, company if booking else ZERO, final=final)
+            if not booking:  # W10: anspråket ligger fast; bara spårens fördelning får ändras
+                claim = booked.get(part)
+                if claim is None or (funding.gross, funding.from_capital) != (claim.gross_sek, claim.from_capital_sek):
+                    problems.append(f"Rättelsen ändrar anspråket för uttagsdelen {part} {month:%Y-%m} (brutto eller "
+                                    "kapitaldel) – manuell prövning (W10)")
+                    continue
+                funding = pcalc.ClaimFunding(claim.gross_sek, claim.from_capital_sek, claim.company_support_sek,
+                                             claim.unfunded_sek, claim.final_settlement)
+            shares = pcalc.debit_tracks(funding.from_capital, balances) if funding.from_capital else []
+        except pcalc.ClaimError as exc:
+            problems.append(f"Anspråket för uttagsdelen {part} {month:%Y-%m} kan inte räknas: {exc}")
+            continue
+        debits.update({k: v for k, v in zip(keys, shares) if v})
+        if final:
+            finals.add(part)
+        claim_id = pc.claim_id(part, month)
+        row = {"id": claim_id, "payout_part_id": part, "plan_id": plan.id, "amount_id": amount_id,
+               "right_month": month, "right_number": schedule.rights_before(month) + 1, "gross_sek": funding.gross,
+               "from_capital_sek": funding.from_capital, "company_support_sek": funding.company_support,
+               "unfunded_sek": funding.unfunded, "final_settlement": final, "payment_day": pc.payment_day(month)}
+        claim_rows.append(row)
+        claims.append(_plain(row))
+        if booking:
+            company -= funding.company_support
+            before_part = liability.get(part, ZERO)
+            if funding.from_capital:
+                entries.append(_account_entry(month, pc.LIABILITY, part, DEBIT, funding.from_capital, before_part,
+                                              claim_id))
+                before_part += funding.from_capital
+            if funding.company_support:
+                entries += [_account_entry(month, pc.COMPANY, None, "company_support", -funding.company_support,
+                                           company + funding.company_support, claim_id),
+                            _account_entry(month, pc.LIABILITY, part, "company_support", funding.company_support,
+                                           before_part, claim_id)]
+                before_part += funding.company_support
+            liability[part] = before_part
+
+    states, state_problems = (_state_changes(session, month, in_force, schedules, finals) if booking else ([], []))
+    problems += state_problems
+    gross, from_capital, support, unfunded = (sum((r[k] for r in claim_rows), ZERO) for k in (
+        "gross_sek", "from_capital_sek", "company_support_sek", "unfunded_sek"))
+    funded_later = sum((r["amount_sek"] for r in funding_rows), ZERO)
+    funded_by_claim = {r["claim_id"]: r["amount_sek"] for r in funding_rows}
+    left = [rest - funded_by_claim.get(claim.id, ZERO) for claim, rest in outstanding]
+    still_open = sum(left, ZERO)
+    open_claims = sum(1 for v in left if v > 0) + sum(1 for r in claim_rows if r["unfunded_sek"] > 0)
+    total_unfunded = unfunded + still_open
+    liability_close = liability_open + from_capital + support + funded_later
+    entries_liability = sum((e["amount_sek"] for e in entries if e["account"] == pc.LIABILITY), ZERO)
+    entries_company = sum((e["amount_sek"] for e in entries if e["account"] == pc.COMPANY), ZERO)
+    liquidity = 12 * sum((m for _, m in decided.values()), ZERO)
+    sources = {"month": month.isoformat()}
+    counts = pc.claims_before(session, rights, month)
+    consumed_off = sorted(str(part) for part in rights if counts.get(part, 0) != schedules[part].rights_before(month))
+    controls = [
+        Control("månadsrätt", len(claim_rows) == len(rights) and gross == from_capital + support + unfunded,
+                f"{len(rights)} delar har rätt {month:%Y-%m}: {len(claim_rows)} anspråk, brutto {gross} kr varav "
+                f"{from_capital} kr ur kundkapitalet, {support} kr bolagsstöd och {unfunded} kr ej finansierat; "
+                f"betalning {pc.payment_day(month)} (PR-ITP1-020 steg 5, -026)" if rights
+                else f"Ingen del har rätt under {month:%Y-%m}",
+                expected=str(len(rights)), actual=str(len(claim_rows)), sources=sources),
+        Control("förbrukade rätter", not consumed_off,
+                f"Bokade anspråk före {month:%Y-%m} stämmer med planernas förbrukade rätter för {len(rights)} delar"
+                if not consumed_off else f"{len(consumed_off)} delar har annat antal bokade anspråk än planens "
+                f"förbrukade rätter (t.ex. {consumed_off[0]})",
+                expected="0", actual=str(len(consumed_off)), sources=sources),
+    ]
+    if booking:
+        company_close = company_open + inserted - support - funded_later
+        controls.append(Control(
+            "skuld och bolagskonto",
+            entries_liability == from_capital + support + funded_later and entries_company == -(support + funded_later)
+            and company == company_close and company_close >= 0 and liability_close >= 0,
+            f"Skuld {liability_open} + {from_capital} ur kapital + {support} bolagsstöd + {funded_later} senare "
+            f"finansiering = {liability_close} kr; bolagskonto {company_open} + insättning {inserted} − "
+            f"{support + funded_later} = {company_close} kr; ej finansierat {total_unfunded} kr",
+            expected=str(company_close), actual=str(company), difference=company - company_close, sources=sources))
+    else:
+        controls.append(Control("skuld och bolagskonto", True,
+                                "Rättelsen ändrar inte anspråk, skuld eller bolagskonto (W10)", sources=sources))
+
+    company_case = None
+    economic_block = None
+    if booking and total_unfunded > 0:
+        economic_block = {"unfunded_sek": str(total_unfunded),
+                          "claims": open_claims,
+                          "text": "Bolagskontot räcker inte – rätten är bevarad, ingen betalorder för ej finansierat "
+                                  "belopp (PR-ITP1-028, W8)"}
+        open_case = session.scalar(select(Case).where(Case.case_type == "company_capital", Case.status != "closed")
+                                   .order_by(Case.created_at).limit(1))
+        company_case = {"case_id": open_case.id if open_case is not None else None,
+                        "details": {"reason": "insufficient_company_capital", "month": month.isoformat(),
+                                    "unfunded_sek": str(total_unfunded), "company_balance_sek": str(company),
+                                    "liquidity_12m_sek": str(liquidity), "stress_gap": pc.STRESS_GAP,
+                                    "text": economic_block["text"]}}
+    section = {
+        "amounts": new_amounts, "claims": claims,
+        "fundings": fundings, "states": [_plain({k: v for k, v in c.items() if k != "close_id"}) for c in states],
+        "company": ({"opening_sek": str(company_open), "inserted_sek": str(inserted), "support_sek": str(support),
+                     "fundings_sek": str(funded_later), "closing_sek": str(company),
+                     "registered": pc.capital_registered(session), "liquidity_12m_sek": str(liquidity),
+                     "stress_gap": pc.STRESS_GAP} if booking else None),
+        "liability": ({"opening_sek": str(liability_open), "closing_sek": str(liability_close)} if booking else None),
+        "economic_block": economic_block,
+    }
+    totals = {"pension_debits_sek": str(from_capital), "claims": len(claim_rows), "amount_decisions": len(new_amounts),
+              "claims_gross_sek": str(gross), "company_support_sek": str(support + funded_later),
+              "unfunded_sek": str(total_unfunded), "fundings": len(funding_rows), "state_changes": len(states)}
+    return Payouts(debits=debits, claims=claims, claim_rows=claim_rows, funding_rows=funding_rows, entries=entries,
+                   state_changes=states, controls=controls, problems=problems, section=section, totals=totals,
+                   company_case=company_case)
+
+
+def _premium_cases(session: Session, month: date, withheld: list[dict]) -> list[dict]:
+    """Ett ärende `payout_review` per del vars premie hålls utanför journalen (W9), en gång per del."""
+    parts = sorted({uuid.UUID(w["payout_part_id"]) for w in withheld}, key=str)
+    if not parts:
+        return []
+    owner_of = pl.owners(session, parts)
+    reviewed = {(c.details or {}).get("payout_part_id") for c in session.scalars(
+        select(Case).where(Case.case_type == "payout_review",
+                           Case.insured_person_id.in_([o.person_id for o in owner_of.values()])))
+        if (c.details or {}).get("reason") == "premium_after_start"}
+    out = []
+    for part in parts:
+        if str(part) in reviewed:
+            continue
+        owner = owner_of[part]
+        own = [w for w in withheld if w["payout_part_id"] == str(part)]
+        total = sum((Decimal(w["premium_sek"]) for w in own), ZERO)
+        out.append({"payout_part_id": str(part), "person_id": owner.person_id, "policy_id": owner.policy_id,
+                    "reason": "premium_after_start", "id_tag": "premium_after_start",
+                    "detail": f"{len(own)} premier, {total} kr, hålls utanför journalen från {month:%Y-%m}",
+                    "sixty_six_month": pp.sixty_six_month(owner.birth, PENSION_AGE).isoformat()
+                    if owner.birth else None})
     return out
 
 
@@ -621,7 +1032,7 @@ def _correction_entries(month: date, version: int, diff: dict, balance: dict[str
     rows, tag = [], f"{CORRECTION_KIND}:{version}"
     for origin in sorted({o for o, _ in diff}):
         current = balance.get(origin, ZERO)
-        changes = sorted(((r, v) for (o, r), v in diff.items() if o == origin), key=lambda rv: (rv[1] < 0, REASONS.index(rv[0])))
+        changes = sorted(((r, v) for (o, r), v in diff.items() if o == origin), key=lambda rv: (rv[1] < 0, ORDER.index(rv[0])))
         for reason, amount in changes:
             rows.append(_entry(month, tag, origin, part_of[origin], reason, amount, current))
             current += amount
@@ -630,9 +1041,12 @@ def _correction_entries(month: date, version: int, diff: dict, balance: dict[str
 
 def _controls(month, computed, origins, additions, opening_balance, avk, fee_label, tax_label, intake_summary,
               started, deceased, pending_start, g_before, g_added, guarantee_rows, previous, *, start=None,
-              g_change=Decimal(0), splits=0, plans=0, with_right=()) -> list[Control]:
+              g_change=Decimal(0), splits=0, plans=0, with_right=(), payouts=None) -> list[Control]:
     t = computed.totals
     flow = t["opening_sek"] + t["returns_sek"] - t["fees_sek"] - t["taxes_sek"] + t["premiums_sek"]
+    debit = t.get("pension_debits_sek")  # steg 5: pensionsdebiteringen (PR-020 steg 5)
+    if debit is not None:
+        flow -= debit
     track_sum = sum(computed.closing.values(), ZERO)
     negative = [o for o, v in computed.closing.items() if v < 0]
     opening_sum = sum(opening_balance.values(), ZERO)
@@ -654,7 +1068,8 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
                 sources=sources),
         Control("kapital totalt", flow == t["closing_sek"],
                 f"IB {t['opening_sek']} + avkastning {t['returns_sek']} − avgift {t['fees_sek']} − skatt "
-                f"{t['taxes_sek']} + premier {t['premiums_sek']} = UB {t['closing_sek']} kr",
+                f"{t['taxes_sek']} + premier {t['premiums_sek']}"
+                + (f" − pensionsdebitering {debit}" if debit is not None else "") + f" = UB {t['closing_sek']} kr",
                 expected=str(flow), actual=str(t["closing_sek"]), difference=t["closing_sek"] - flow, sources=sources),
         Control("garanti totalt", True, f"ΣG {g_before} + {g_added} = {g_before + g_added} kr/mån; avkastning ändrar "
                 "aldrig G", expected=str(g_before + g_added), actual=str(g_before + g_added), sources=sources)
@@ -678,7 +1093,9 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
                     sources=sources),
         ]
     controls += [
-        Control("startade delar", not started, f"{len(started)} startade delar med kapital" if started
+        Control("startade delar", not started, f"{len(started)} startade delar med kapital"
+                + (" utan beslutad plan" if payouts is not None else "") if started
+                else "Alla startade delar följer en beslutad plan" if payouts is not None
                 else "Alla delar i stängningen är ej startade hela månaden", actual=str(len(started)), sources=sources),
         Control("levandestatus", not deceased, f"{len(deceased)} delar med registrerat dödsfall" if deceased
                 else "Inget registrerat dödsfall bland delarnas ägare", actual=str(len(deceased)), sources=sources),
@@ -693,6 +1110,16 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
             actual=str(len(pending_start)), sources=sources))
         return controls
     earlier = len(pending_start) - len(start["planned"]) - len(start["standard"]) - len(start["cases"])
+    if payouts is not None:  # steg 5: standardplanen sparas och rätten bokas; månadsrätt ersätter rätt enligt plan
+        controls.append(Control(
+            "standardstart", True,
+            f"{len(pending_start)} ej startade delar vars ägare fyllt {PENSION_AGE} senast {month:%Y-%m}: "
+            f"{len(start['planned'])} har beslutad plan, {len(start['standard'])} får standardplan sparad och första "
+            f"rätt i månaden, {len(start['cases'])} nya ärenden payout_review och {max(earlier, 0)} med ärende "
+            "sedan tidigare; startmånaden flyttas aldrig tyst (PR-ITP1-025)"
+            if pending_start else f"Ingen ägare har fyllt {PENSION_AGE} senast {month:%Y-%m}",
+            expected=str(len(start["standard"])), actual=str(len(start["standard"])), sources=sources))
+        return controls + payouts.controls
     controls += [
         Control("standardstart", not start["standard"],
                 f"{len(pending_start)} ej startade delar vars ägare fyllt {PENSION_AGE} senast {month:%Y-%m}: "
@@ -743,17 +1170,41 @@ def apply_month(session: Session, month: date, actor: str, reviewed_checksum: st
         session.add(PayoutPartState(payout_part_id=p["id"], state="not_started", valid_from=p["split_date"],
                                     note=f"Uttagsdel {p['part_number']} genom delning (PR-ITP1-024)"))
         session.flush()
+    for record in plan.standard_plans:  # steg 5: standardplanen före garantidelarna som pekar på den (W3)
+        record.decided_by = actor
+        session.add(record)
+        session.flush()
     rows = plan.guarantee_rows + plan.version_rows
     for with_plan in (False, True):  # samma nycklar per anrop; `plan_id` bara där en plan finns
         batch_rows = [{**r, "batch_id": batch.id, "created_by": actor} for r in rows if ("plan_id" in r) == with_plan]
         if batch_rows:
             session.bulk_insert_mappings(LedgerGuaranteePart, batch_rows)
+    stamp = {"batch_id": batch.id, "created_by": actor}
+    if plan.amount_rows:  # steg 5: beloppsbeslut, anspråk och senare finansiering (W1, W2, W8)
+        session.bulk_insert_mappings(PayoutAmount, [{**r, **stamp} for r in plan.amount_rows])
+    if plan.claim_rows:
+        session.bulk_insert_mappings(PensionClaim, [{**r, **stamp} for r in plan.claim_rows])
+    if plan.funding_rows:
+        session.bulk_insert_mappings(PensionClaimFunding, [{**r, **stamp} for r in plan.funding_rows])
     if plan.entry_rows:
         # Ett nytt spår (premie) får sin post först efter sin garantidel
         session.bulk_insert_mappings(LedgerCapitalEntry, [{**r, "batch_id": batch.id, "created_by": actor}
                                                           for r in plan.entry_rows])
+    for change in plan.state_changes:  # steg 5: delens läge enligt planen (W4)
+        if change["close_id"] is not None:
+            session.get(PayoutPartState, change["close_id"]).valid_to = change["close_to"]
+            session.flush()
+        session.add(PayoutPartState(payout_part_id=change["payout_part_id"], state=change["state"],
+                                    end_reason=change["end_reason"], valid_from=change["valid_from"],
+                                    valid_to=change["valid_to"],
+                                    note=f"Månadsstängningen {plan.month:%Y-%m}: {change['from_state']} → "
+                                         f"{change['state']} enligt planen"))
+        session.flush()
+    if plan.company_case is not None:  # steg 5: ekonomiskt blockerad körning (W8)
+        _company_case(session, plan, actor, today)
     for c in plan.review_cases:  # steg 4: ärenden vid 66 (V4, V6), i samma transaktion som stängningen
-        session.add(Case(id=stable_id(plan.kind, plan.period_end.isoformat(), "review", c["payout_part_id"]),
+        tag = (c["id_tag"],) if c.get("id_tag") else ()
+        session.add(Case(id=stable_id(plan.kind, plan.period_end.isoformat(), "review", c["payout_part_id"], *tag),
                          case_number=pl.next_case_number(session), case_type="payout_review", status="open",
                          insured_person_id=c["person_id"], policy_id=c["policy_id"], channel="system",
                          received_date=today, source_reference=f"month_close:{plan.period_end.isoformat()}",
@@ -771,6 +1222,22 @@ def apply_month(session: Session, month: date, actor: str, reviewed_checksum: st
     return batch, True
 
 
+def _company_case(session: Session, plan: MonthPlan, actor: str, today: date) -> None:
+    """Öppnar ärendet om bolagskapital eller uppdaterar det öppna med månaden (W8)."""
+    details = plan.company_case["details"]
+    if plan.company_case["case_id"] is not None:
+        case = session.get(Case, plan.company_case["case_id"])
+        months = [*(case.details or {}).get("months", []), details]
+        case.details = {**(case.details or {}), **details, "months": months}
+    else:
+        session.add(Case(id=stable_id(plan.kind, plan.period_end.isoformat(), "company_capital"),
+                         case_number=pl.next_case_number(session), case_type="company_capital", status="open",
+                         channel="system", received_date=today,
+                         source_reference=f"month_close:{plan.period_end.isoformat()}",
+                         details={**details, "months": [details]}, created_by=actor))
+    session.flush()
+
+
 def verify_month(session: Session, batch: LedgerBatch) -> None:
     """Prövar en bokad stängning eller rättelse mot sin sammanställning, och månadens saldon mot totalerna."""
     if vb.checksum(batch.content) != batch.checksum:
@@ -784,6 +1251,10 @@ def verify_month(session: Session, batch: LedgerBatch) -> None:
     if (count, parts) != (totals["entries"], expected_parts):
         raise CloseError(f"Verifikationens rader stämmer inte ({count} poster och {parts} garantidelar mot "
                          f"{totals['entries']} och {expected_parts})")
+    if "claims" in totals and batch.kind == CLOSE_KIND:  # steg 5: anspråken bokas med stängningen
+        claims = session.scalar(select(func.count()).select_from(PensionClaim).where(PensionClaim.batch_id == batch.id))
+        if claims != totals["claims"]:
+            raise CloseError(f"Verifikationens anspråk stämmer inte ({claims} mot {totals['claims']})")
     closing = sum((t.balance for t in cl.tracks(session, batch.period_end)), ZERO)
     if closing != Decimal(totals["closing_sek"]):
         raise CloseError(f"Journalens kundkapital per {batch.period_end} är {closing} kr, inte "

@@ -41,6 +41,7 @@ from models import (
     Case,
     Employer,
     InsuredPerson,
+    PayoutAmount,
     PayoutPart,
     PayoutPartState,
     PayoutPlan,
@@ -67,6 +68,8 @@ from utils.bank_calendar import next_bank_day
 
 METHOD = "payout-plan-1"
 PLAN_TABLES = (PayoutRequest.__tablename__, PayoutPlan.__tablename__, PayoutSplit.__tablename__)
+#: Månadsstängningens beloppsbeslut (paket B steg 5); läses bara när steg 5:s migration är körd
+AMOUNT_TABLE = "payout_amounts"
 PAYOUT_FAMILY = "SIM-B"
 PRODUCT = "ITP1"
 AGREEMENT = "ITP"
@@ -78,7 +81,9 @@ REQUIRED = {"start": ("first_right", "form"), "pause": ("first", "resume"), "ext
             "split": ("month", "share", "premium_receiver")}
 #: Vem som registrerar ärenden som månadsstängningen upptäcker
 REVIEW_REASONS = {"standard_start_unverified": "Standardstart vid 66 utan verifierat underlag (PR-ITP1-025)",
-                  "passed_66_without_plan": "66 år passerat utan registrerat val – plan efter kundens bekräftelse"}
+                  "passed_66_without_plan": "66 år passerat utan registrerat val – plan efter kundens bekräftelse",
+                  # Paket B steg 5 (Karls val W9): premien hålls utanför journalen tills ny försäkring finns
+                  "premium_after_start": "Premie på en startad uttagsdel – hålls utanför journalen (PR-ITP1-025)"}
 
 
 class PlanServiceError(ValueError):
@@ -309,6 +314,7 @@ def evaluate(session: Session, owner: Owner, schedule: pp.Schedule, change: str,
     bases = bases or Bases.load(session, effective)
     birth = owner.model_birth
     previous = latest_plan(session, owner.part.id)
+    previous_m, previous_form = latest_amount(session, owner.part.id, previous)
     rows = _part_guarantees(session, owner.part.id, valuation)
     plans = _plans_by_id(session, [getattr(r, "plan_id", None) for r in rows if r.plan_kind == "plan"])
     guarantees, g_total = [], Decimal(0)
@@ -327,8 +333,7 @@ def evaluate(session: Session, owner: Owner, schedule: pp.Schedule, change: str,
     capital = sum((t.balance for t in tracks), Decimal("0.00"))
     payout_factor = factor(bases.payout_model, birth, valuation, schedule)
     b = (capital / payout_factor).quantize(PRECISION)
-    floor = pp.amount_floor(schedule, change, effective, previous.m_sek if previous else None,
-                            previous.form if previous else None)
+    floor = pp.amount_floor(schedule, change, effective, previous_m, previous_form)
     amount = pp.pension_amount(g_total, b, floor)
     first_right_month = next((m for m in _months_from(effective, 1200) if schedule.has_right(m)), None)
     content = {
@@ -350,6 +355,40 @@ def evaluate(session: Session, owner: Owner, schedule: pp.Schedule, change: str,
                            "form": previous.form} if previous else None),
     }
     return {**content, "review_checksum": vb.checksum(content)}
+
+
+def latest_amount(session: Session, part_id: uuid.UUID, plan: PayoutPlan | None) -> tuple[Decimal | None, str | None]:
+    """Senast beslutade M och planens form: månadsstängningens beloppsbeslut (steg 5: januari, återstart och
+    verklig start) eller planens M."""
+    if plan is None:
+        return None, None
+    if AMOUNT_TABLE in set(inspect(session.connection()).get_table_names()):
+        row = session.scalar(select(PayoutAmount).where(PayoutAmount.payout_part_id == part_id)
+                             .order_by(PayoutAmount.effective_month.desc()).limit(1))
+        if row is not None and row.effective_month >= plan.effective_month:
+            form = plan.form if row.plan_id == plan.id else session.get(PayoutPlan, row.plan_id).form
+            return row.m_sek, form
+    return plan.m_sek, plan.form
+
+
+def plan_record(content: dict, checksum: str, *, part_id: uuid.UUID, previous: PayoutPlan | None, origin: str,
+                request_id: uuid.UUID | None, effective: date, reason: str, actor: str) -> PayoutPlan:
+    """Planversionen ur en förhandsberäkning: begärans beslut eller standardstarten i månadsstängningen."""
+    schedule = pp.Schedule.from_plain(content["schedule"])
+    floor = content["amount"]["previous_floor_sek"]
+    return PayoutPlan(
+        id=cl.stable_id("payout_plan", checksum), payout_part_id=part_id,
+        version=previous.version + 1 if previous else 1, supersedes_id=previous.id if previous else None,
+        origin=origin, request_id=request_id, change=content["change"], effective_month=effective,
+        valuation_date=date.fromisoformat(content["valuation_date"]), form=schedule.form,
+        first_right=schedule.first_right, payments=schedule.payments,
+        pauses=content["schedule"]["pauses"], end_month=schedule.end_month, consumed=content["consumed"],
+        capital_sek=Decimal(content["capital_sek"]), guarantee_sek_per_month=Decimal(content["guarantee_sek_per_month"]),
+        capital_amount_sek=Decimal(content["capital_amount_sek"]), payout_basis_code=content["payout_basis"]["code"],
+        payout_basis_checksum=content["payout_basis"]["checksum"],
+        payout_factor=Decimal(content["payout_basis"]["factor"]), m_sek=Decimal(content["amount"]["m_sek"]),
+        floor_sek=Decimal(floor) if floor else None, content=content, checksum=checksum, reason=reason,
+        decided_by=actor)
 
 
 def _months_from(first: date, count: int):
@@ -533,20 +572,9 @@ def decide_plan(session: Session, request: PayoutRequest, reviewed_checksum: str
     if previous is not None and previous.effective_month > request.change_month:
         raise PlanServiceError(f"En senare planversion gäller från {previous.effective_month:%Y-%m}")
     content = {k: v for k, v in preview.items() if k != "review_checksum"}
-    schedule = pp.Schedule.from_plain(content["schedule"])
-    plan = PayoutPlan(
-        id=cl.stable_id("payout_plan", reviewed_checksum), payout_part_id=request.payout_part_id,
-        version=previous.version + 1 if previous else 1, supersedes_id=previous.id if previous else None,
-        origin="request", request_id=request.id, change=content["change"], effective_month=request.change_month,
-        valuation_date=date.fromisoformat(content["valuation_date"]), form=schedule.form,
-        first_right=schedule.first_right, payments=schedule.payments,
-        pauses=content["schedule"]["pauses"], end_month=schedule.end_month, consumed=content["consumed"],
-        capital_sek=Decimal(content["capital_sek"]), guarantee_sek_per_month=Decimal(content["guarantee_sek_per_month"]),
-        capital_amount_sek=Decimal(content["capital_amount_sek"]), payout_basis_code=content["payout_basis"]["code"],
-        payout_basis_checksum=content["payout_basis"]["checksum"],
-        payout_factor=Decimal(content["payout_basis"]["factor"]), m_sek=Decimal(content["amount"]["m_sek"]),
-        floor_sek=Decimal(content["amount"]["previous_floor_sek"]) if content["amount"]["previous_floor_sek"] else None,
-        content=content, checksum=reviewed_checksum, reason=reason, decided_by=actor)
+    plan = plan_record(content, reviewed_checksum, part_id=request.payout_part_id, previous=previous,
+                       origin="request", request_id=request.id, effective=request.change_month, reason=reason,
+                       actor=actor)
     session.add(plan)
     _close_case(session, request, actor, f"Planversion {plan.version} beslutad: {reason}")
     session.flush()

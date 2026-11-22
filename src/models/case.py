@@ -40,8 +40,12 @@ _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgres
 #: payout_request: kundens begäran om start, uppskov, paus, förlängning eller delning (P1-PENSION-001 §5.1, V8)
 #: payout_review: systemupptäckt pensionsfråga – standardstart utan verifierad ägare eller 66 år passerat
 #: utan plan (PB2, V4–V6)
+#: company_capital: bolagskontot räcker inte till ett anspråk – ekonomiskt blockerad körning, eskalerad till
+#: operatören (PR-ITP1-028, paket B steg 5, Karls val W8). Ärendet gäller bolaget, inte en person
 CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue", "payment_unmatched",
-              "payout_reconstruction", "payout_request", "payout_review")
+              "payout_reconstruction", "payout_request", "payout_review", "company_capital")
+#: Ärendetyper som får sakna både försäkrad och arbetsgivare
+SUBJECTLESS_CASE_TYPES = ("payment_unmatched", "company_capital")
 CASE_STATUSES = ("open", "in_progress", "waiting_approval", "waiting_info", "closed")
 CASE_OUTCOMES = ("approved", "rejected", "supplement_requested", "manual_review", "no_action")
 #: system: betrodd bevakning som upptäcker ärendet själv, t.ex. förfallen faktura (B-046)
@@ -65,9 +69,9 @@ class Case(Base):
         CheckConstraint(_in("status", CASE_STATUSES), name="ck_cases_status"),
         CheckConstraint(f"outcome IS NULL OR {_in('outcome', CASE_OUTCOMES)}", name="ck_cases_outcome"),
         CheckConstraint(_in("channel", CASE_CHANNELS), name="ck_cases_channel"),
-        # En oallokerad inbetalning kan komma från en okänd betalare (B-046, §4.6)
+        # En oallokerad inbetalning kan komma från en okänd betalare (B-046, §4.6); bolagskapitalet gäller bolaget
         CheckConstraint(
-            "insured_person_id IS NOT NULL OR employer_id IS NOT NULL OR case_type = 'payment_unmatched'",
+            f"insured_person_id IS NOT NULL OR employer_id IS NOT NULL OR {_in('case_type', SUBJECTLESS_CASE_TYPES)}",
             name="ck_cases_subject",
         ),
         CheckConstraint(

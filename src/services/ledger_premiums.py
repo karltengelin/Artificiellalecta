@@ -25,13 +25,19 @@ därför i nästa öppna månad, med den månadens värdedag och grund – inte 
 månaden. Mottagningar efter månadsslutet hör till en senare månad och redovisas som utanför. Månaden
 kan bara tas emot när föregående månad är stängd (eller är det ingående läget), och en stängd månad tar
 inte emot fler premier.
+
+**Premie på startad del (paket B steg 5, Karls val W9).** Utan steg 5 blockerar en premie på en startad del
+mottagningen. Med `withhold` (månadsstängningen när steg 5:s migration är körd) hålls en premie på en del
+som har startat, eller som startar i månaden (`withhold` = delarnas id), utanför journalen: den redovisas
+som hållen i sammanställningen och får ett ärende, men ger ingen garantidel och ingen kapitalpost. Den
+ligger kvar i paket A och prövas igen i nästa månad.
 """
 
 from __future__ import annotations
 
 import uuid
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import date
 from decimal import Decimal
 
@@ -119,14 +125,20 @@ class PremiumIntake:
     additions: list[PremiumAddition]
     summary: dict
     checksum: str
+    #: Premier på startade delar som hålls utanför journalen (bara med `withhold`, steg 5)
+    withheld: list[dict] = field(default_factory=list)
 
 
 def _q(value: float | Decimal) -> Decimal:
     return (value if isinstance(value, Decimal) else Decimal(repr(value))).quantize(PRECISION)
 
 
-def premium_intake(session: Session, month: date) -> PremiumIntake:
-    """Månadens premier ur paket A:s allokeringar som journalens tillskott (PR-020 steg 4). Skriver ingenting."""
+def premium_intake(session: Session, month: date, *, withhold: set | None = None) -> PremiumIntake:
+    """Månadens premier ur paket A:s allokeringar som journalens tillskott (PR-020 steg 4). Skriver ingenting.
+
+    `withhold` (steg 5): delar som startar i månaden; en premie på dem eller på en redan startad del hålls
+    utanför journalen i stället för att blockera.
+    """
     month = month.replace(day=1)
     end = month_end(month)
     batch = cl.opening_batch(session)
@@ -203,7 +215,7 @@ def premium_intake(session: Session, month: date) -> PremiumIntake:
         receipts.append(receipt)
         additions_src.extend((allocation, event, invoice, line) for allocation, line in group["allocations"])
 
-    additions = _additions(session, month, end, additions_src)
+    additions, withheld = _additions(session, month, end, additions_src, withhold)
     late = {allocation.id for allocation, event, _, _ in additions_src if event.received_date < month}
     in_month = (BankEvent.received_date >= month, BankEvent.received_date <= end)
     suspense = session.execute(
@@ -235,12 +247,18 @@ def premium_intake(session: Session, month: date) -> PremiumIntake:
     }
     content = {"summary": summary, "additions": [a.plain() for a in additions],
                "receipts": [r.model_dump(mode="json") for r in receipts]}
-    return PremiumIntake(month=month, additions=additions, summary=summary, checksum=vb.checksum(content))
+    if withhold is not None:  # steg 5: samma innehåll som före steg 5 utökat med de hållna premierna
+        summary["withheld_allocations"] = len(withheld)
+        summary["withheld_sek"] = _money(sum((Decimal(w["premium_sek"]) for w in withheld), ZERO))
+        content["withheld"] = withheld
+    return PremiumIntake(month=month, additions=additions, summary=summary, checksum=vb.checksum(content),
+                         withheld=withheld)
 
 
-def _additions(session: Session, month: date, end: date, items: list) -> list[PremiumAddition]:
+def _additions(session: Session, month: date, end: date, items: list,
+               withhold: set | None = None) -> tuple[list[PremiumAddition], list[dict]]:
     if not items:
-        return []
+        return [], []
     premium_ids = {line.premium_transaction_id for _, _, _, line in items}
     part_numbers = {tx: (basis or {}).get("payout_part") for tx, basis in session.execute(
         select(PremiumTransaction.id, PremiumTransaction.calculation_basis)
@@ -272,7 +290,7 @@ def _additions(session: Session, month: date, end: date, items: list) -> list[Pr
     # Steg 4: en premie på en ej startad del med beslutad plan får G_j direkt på planen (V7)
     plans = payout_plans.plans_in_force(session, {p.id for ps in all_parts.values() for p in ps.values()}, month)
 
-    out = []
+    out, withheld = [], []
     for allocation, event, invoice, line in items:
         number = part_numbers.get(line.premium_transaction_id)
         parts = all_parts.get(line.benefit_id, {})
@@ -282,6 +300,12 @@ def _additions(session: Session, month: date, end: date, items: list) -> list[Pr
         if part is None:
             raise IntakeError(f"Premien på {invoice.invoice_number} rad {line.line_number} saknar uttagsdel "
                               f"(nummer {number}) – manuell prövning")
+        if withhold is not None and (part.id in withhold or part not in receiving.get(line.benefit_id, [])):
+            withheld.append({"payment_allocation_id": str(allocation.id), "payout_part_id": str(part.id),
+                             "policy_id": str(line.policy_id), "invoice_number": invoice.invoice_number,
+                             "line_number": line.line_number, "premium_sek": _money(allocation.amount_sek),
+                             "period_month": line.period_month.isoformat()})
+            continue
         if part not in receiving.get(line.benefit_id, []):
             raise IntakeError(f"Uttagsdel {part.part_number} för premien på {invoice.invoice_number} rad "
                               f"{line.line_number} har startat under {month:%Y-%m}. Premie på en startad del blockeras "
@@ -307,7 +331,9 @@ def _additions(session: Session, month: date, end: date, items: list) -> list[Pr
             plan_start=plan_start, basis_code=code, basis_checksum=basis.checksum,
             factor=_q(factor), guarantee_sek_per_month=_q(g),
             plan_kind="plan" if plan is not None else "reference_lifelong", plan_id=plan.id if plan else None))
-    return sorted(out, key=lambda a: (str(a.bank_event_id), a.invoice_number, a.line_number, str(a.payment_allocation_id)))
+    return (sorted(out, key=lambda a: (str(a.bank_event_id), a.invoice_number, a.line_number,
+                                       str(a.payment_allocation_id))),
+            sorted(withheld, key=lambda w: (w["invoice_number"], w["line_number"], w["payment_allocation_id"])))
 
 
 __all__ = ["VERSION", "IntakeError", "PremiumAddition", "PremiumIntake", "premium_intake"]

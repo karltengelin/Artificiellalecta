@@ -49,15 +49,19 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
-#: Verifikationens slag: ingående läge (steg 2), månadsstängning och rättelse av en stängd månad (steg 3)
-BATCH_KINDS = ("opening_s04", "month_close", "month_correction")
+#: Verifikationens slag: ingående läge (steg 2), månadsstängning och rättelse av en stängd månad (steg 3) och
+#: bolagets kapitalinsättning (steg 5, PR-ITP1-028, Karls val W7)
+BATCH_KINDS = ("opening_s04", "month_close", "month_correction", "company_capital")
 #: Märkning av posternas ursprung, samma värden som värderingsmotorns källor (`valuation_runs.source`)
 SOURCES = ("reconstructed_s04", "ledger")
 #: Journalens konton (P1-PENSION-001 §6.1). Steg 2 använder bara kundkapitalet
 ACCOUNTS = ("customer_capital", "payment_liability", "tax_liability", "inheritance_pool", "company", "suspense")
-#: Kapitalpostens orsak (§6.1). `opening` är det ingående saldot från S-04 (beslutat av Karl 2026-11-14)
+#: Kapitalpostens orsak (§6.1). `opening` är det ingående saldot från S-04 (beslutat av Karl 2026-11-14);
+#: `company_capital` är ägarens dokumenterade insättning på bolagskontot (steg 5, Karls val W7)
 ENTRY_REASONS = ("opening", "premium", "return", "fee", "tax", "pension_debit", "company_support",
-                 "pool_in", "pool_out", "split")
+                 "pool_in", "pool_out", "split", "company_capital")
+#: Konton som aldrig får bli negativa utöver kundkapitalet (steg 5): betalningsskulden och bolagskontot
+NON_NEGATIVE_ACCOUNTS = ("payment_liability", "company")
 #: Garantidelens ursprung: en premierad i S-04 eller en allokering i paket A (PA6)
 GUARANTEE_ORIGINS = ("s04_premium", "payment_allocation")
 #: Varför en garantidelsversion finns: premien själv (version 1), delning eller omräkning (steg 4)
@@ -223,6 +227,9 @@ class LedgerCapitalEntry(Base):
         CheckConstraint("account <> 'customer_capital' OR (balance_before_sek >= 0 AND balance_after_sek >= 0)",
                         name="ck_ledger_capital_entries_non_negative"),
         CheckConstraint("reason <> 'opening' OR balance_before_sek = 0", name="ck_ledger_capital_entries_opening"),
+        # Betalningsskuld och bolagskonto blir aldrig negativa; ett ej finansierat anspråk står på anspråket (W8)
+        CheckConstraint(f"account NOT IN {NON_NEGATIVE_ACCOUNTS!r} OR (balance_before_sek >= 0 AND balance_after_sek >= 0)",
+                        name="ck_ledger_capital_entries_accounts"),
         CheckConstraint("EXTRACT(DAY FROM month) = 1", name="ck_ledger_capital_entries_month").ddl_if(
             dialect="postgresql"),
         # Samma regel i testdatabasen (SQLite saknar EXTRACT)

@@ -18,6 +18,7 @@ from services.operations import (  # noqa: F401
     month_close,
     payments,
     payout_plans,
+    pension_claims,
     persons,
     policies,
     portfolio_impact,
