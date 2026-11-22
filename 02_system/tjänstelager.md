@@ -726,7 +726,7 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
 - **Steg 1:** öppningskapitalet är föregående lägets kapitalspår: det ingående läget eller förra månadens stängning. Ägarnas levandestatus och uttagsdelarnas lägen prövas.
 - **Steg 2–3:** avkastning enligt den antagna AVK:n för månaden (PR-ITP1-021). Kapitalavgift och skattebelastning tas ut på öppningsbasen med månadens parameterversioner, satsen delad med 12 (PR-ITP1-022, PR-ITP1-023). Beräkningen görs med `close_month` och `roll_origins` per uttagsdel och fördelas på spåren i ören. Belopp som inte kunde tas ut syns bara i sammanställningen.
 - **Steg 4:** månadens premier ur paket A (§9.15) blir en garantidel och ett nytt kapitalspår per allokering, med värdedag vid månadsslutet och utan avkastning denna månad.
-- **Steg 8:** elva kontrollposter, bland dem föregående läge, kapital per spår och totalt, garanti, premier och avstämningskontot.
+- **Steg 8:** elva kontrollposter (tolv med steg 4, §9.17), bland dem föregående läge, kapital per spår och totalt, garanti, premier och avstämningskontot.
 - **Fall 13:** C0 = 100 000,00 kr och r = 1 % ger +1 000,00, −16,67 och −29,50 kr, alltså C1 = 100 953,83 kr.
 
 **Granskning, idempotens och rättelse (§7.2):**
@@ -751,10 +751,58 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
   - en ägare registrerad som avliden eller utan födelsedag (S4);
   - en kontroll som inte går ihop.
   - En blockerad månad skriver ingenting.
-- *Redovisas utan att blockera:* ej startade delar vars ägare fyllt 66 utan plan. De stängs för sparandet, och startmånaden flyttas inte (kontrollen *standardstart väntar på steg 4*).
+- *Redovisas utan att blockera:* ej startade delar vars ägare fyllt 66 utan plan. De stängs för sparandet, och startmånaden flyttas inte (kontrollen *standardstart väntar på steg 4*; efter steg 4:s migration *standardstart*, se §9.17).
 - *Konflikt:* en granskningssumma som inte stämmer, eller en stängd månad med annat innehåll.
 - *Nekas:* agenter i alla tre operationerna. `close_policy_month` nekas också för systemaktören.
 - **Lakebase:** körskripten finns i `scripts/simulation/paket_b_steg3/`, med ordningen enligt S6 ([databasschema §12](databasschema.md#12-migrationer-och-versionering)).
+
+### 9.17 Begäran, uttagsplan och delning (paket B steg 4, B-047) – vad som stöds och vad som blockeras
+
+Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §5 (PB3, PB6) och §10 (PB12), med Karls val V1–V11 2026-11-21 (§5.4, **B-051**).
+- **Kod:**
+  - `src/skills/calculation/payout_plan.py`: kalender, frist, belopp, golv och omräkning, utan databas;
+  - `src/services/payout_plans.py`: begäran, förhandsberäkning, beslut, delning och ägarkontrollen;
+  - `src/services/operations/payout_plans.py`: operationerna;
+  - genomförandet i stängningens steg 1 i `src/services/month_close.py` (§9.16).
+- **Tabeller och migration:** `payout_requests`, `payout_plans`, `payout_splits` och `ledger_guarantee_parts.plan_id`, se [databasschema §7d och §12](databasschema.md#7d-tabeller-payout_requests-payout_plans-och-payout_splits--begäran-uttagsplan-och-delning). Inte införda i Lakebase.
+- **Befogenheter:** fem nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter.
+- **Avgränsning:** besluten kan fattas för alla delar, men bara ej startade delar bokas. Månadsrätt, skuld och den verkliga starten byggs i steg 5.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `register_payout_request` | `write` | Ja | `HUMAN_ONLY` | Sparar begäran med mottagningsdag, kanal, aktör och innehåll och prövar fristen. Utfallet är `in_time`, `late` (med förslag på nästa möjliga månad), `incomplete`, `stopped` eller `blocked`. Skapar eller uppdaterar ärendet `payout_request`. Samma begäran igen ger samma rad |
+| `preview_payout_plan` | `read` | Ja | `HUMAN_ONLY` | Räknar planen eller delningen för en begäran utan att skriva: kalender, förbrukade och kvarvarande rätter, C, varje G_j:s omräkning, B och M med golv, första rätt och betalningsdag. Ger `review_checksum` och om beslutet kan bindas nu |
+| `decide_payout_plan` | `write` | Ja | `HUMAN_ONLY` | Sparar planversionen med den granskade summan och stänger ärendet som `approved`. Bokas i ändringsmånadens stängning |
+| `split_payout_part` | `write` | Ja | `HUMAN_ONLY` | Beslutar delningen av en ej startad del med den granskade summan ur `preview_payout_plan`: andel, nytt delnummer och premiemottagare (PR-ITP1-015, PR-ITP1-024). Bokas i ändringsmånadens stängning |
+| `get_payout_part` | `read` | Ja | `HUMAN_ONLY` | Visar en uttagsdels läge, kapital, garanti, gällande plan och delningar |
+
+**Begäran och frist (§5.1, V8):**
+- Fristen är sista kalenderdagen i månaden före ändringsmånaden (UTTAG_GEMENSAMT). En sen begäran får förslag på nästa möjliga månad; kundens bekräftelse registreras som en ny begäran som pekar på den sena (fall 3).
+- En ofullständig begäran listar vad som saknas, och ärendet går till `waiting_info`. Okänd identitet, avliden ägare eller ett ombud utan verifierad behörighet stoppar begäran.
+- Uttag före 66 blockeras med ärende (fall 8, PB1).
+
+**Plan och belopp (§5.2–5.3, V2, V7, V10):**
+- Värderingen görs vid föregående månadsslut. Beslutet kan bindas när det månadsslutet är täckt, av det ingående läget eller en stängd månad, och ändringsmånaden är öppen; annars är förhandsberäkningen indikativ.
+- M = max(round_half_up(max(G, B)), ceil_öre(ΣG_j), golv) med B = C / A_b på SIM-B (fall 9–11). Golvet för en livsvarig del under de första 60 rätterna är senast beslutade M.
+- En ändrad plan räknar om varje G_j värdebevarande på sin historiska grund (fall 12). En ny premie på en del med beslutad plan får G_j direkt på planen (`ledger_premiums`).
+- Uppskov och ändrad framtida start bokas fullt ut (fall 2). Tidsbegränsad plan kräver minst 60 rätter (fall 4).
+
+**Standardstart vid 66 (§5.2, V4–V6):** i 66-månadens stängning (§9.16):
+- en verifierad ägare utan plan får standardplanen livsvarig från 66-månaden i granskningen, och månaden blockeras till steg 5 (fall 1);
+- overifierat underlag (V5) ger ett ärende `payout_review`, och sparandet stängs;
+- en person som passerat 66 utan plan får ett ärende `payout_review` en gång (V6).
+
+**Delning (PR-ITP1-024, V9):** C delas i ören med största bråkrest och varje G_j proportionellt, i ändringsmånadens stängning. Andelen ska vara 10–90 %, och en försäkring har högst tre delar, väntande delningar inräknade (fall 7). Premieunderlaget går till den primära premiemottagaren.
+
+**Spärras:**
+- *Blockeras:*
+  - operationerna innan migrationen är körd;
+  - ett beslut när föregående månadsslut inte är täckt eller ändringsmånaden är stängd;
+  - en stängning där en del har rätt enligt plan eller får standardstart (till steg 5, V3);
+  - delning av en startad del eller en del med planbaserad garanti, och plan och delning på samma del i samma månad.
+- *Konflikt:* en granskningssumma som inte stämmer, eller ett beslut som redan är fattat med annat innehåll.
+- *Nekas:* agenter i alla fem operationerna, och systemaktören i de skrivande.
+- **Lakebase:** körskripten finns i `scripts/simulation/paket_b_steg4/` och körs tidigast efter novembers stängning (V11, [databasschema §12](databasschema.md#12-migrationer-och-versionering)).
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.

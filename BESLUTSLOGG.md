@@ -8,6 +8,111 @@
 
 ## Beslut
 
+### B-052 | 2026-11-22 | Paket B steg 4 får mergas före novembers stängning
+
+**Beslut:** Operatören godkände i chatten 2026-11-22 (”Yes, go ahead”) att steg 4 mergas till main
+före novembers stängning, på villkor att stängningen utan steg 4:s migration är identisk med steg 3.
+Ordalydelsen godkändes samma dag: ”Yes, write and merge”.
+
+1. **Merge.** Steg 4 får nå main när hela sviten är grön lokalt och mot isolerad Postgres, och
+   när stängningens sammanställning utan steg 4:s tabeller är identisk med steg 3:
+   - kontrollposten heter *standardstart väntar på steg 4*;
+   - premiernas innehåll saknar steg 4:s fält;
+   - därmed blir granskningssumman, verifikationen och raderna desamma.
+2. **Migrationen.** `migrate_payout_plans.py` förs fortfarande in i Lakebase först när novembers
+   stängning är bokad och kontrollerad (tidigast 2026-12-01), med separat OK och samordning enligt
+   AGENTS.md §4.5.
+
+**Motivering:**
+- En levande branch medan steg 5 byggs ger dubbla underhållsspår och fler konflikter mot main.
+- Skälet till väntan var att kontrollens nya namn ändrade sammanställningen. Det är undanröjt.
+- Jämförelsen 2026-11-22 gjordes på samma databas utan steg 4, med main:s kod och branchens. Den gav
+  samma granskningssumma, verifikation, 20 poster, 8 garantidelar och ärenden, även med två ägare som
+  fyllt eller passerat 66. Ett regressionstest låser detta.
+- Hela sviten med main inlagd: 1935 godkända lokalt och mot isolerad Postgres.
+
+**Konsekvenser:**
+- Novembers stängning körs 2026-12-01 med steg 4-koden på main.
+- Jämförelsen är gjord på testbeståndet, inte på Lakebases data.
+- Steg 5 byggs från main.
+
+**Ersätter:** B-051 punkt 11 i det som gäller merge. Övriga delar av B-051 kvarstår.
+
+---
+
+### B-051 | 2026-11-21 | Paket B steg 4: begäran, uttagsplan, standardstart och delning
+
+**Beslut:** Operatören godkände valen V1–V11 för byggsteg 4 i paket B
+([P1-PENSION-001 §5.4](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#54-byggt-i-steg-4))
+enligt rekommendationerna i chatten 2026-11-21: ”Godkänn alla”. Loggningen godkändes
+samma dag: ”Yes, log B-051”.
+
+1. **Datamodell (V1).** Tre tabeller:
+   - `payout_requests` för begäran;
+   - `payout_plans` med en rak versionskedja per uttagsdel;
+   - `payout_splits` för delningsbeslut.
+   - `ledger_guarantee_parts` får `plan_kind = 'plan'` och `plan_id`. Ärendetyperna
+     `payout_request` och `payout_review` tillkommer.
+2. **Bokning (V2).** Ett beslut skriver bara beslutet. Ändringsmånadens stängning genomför
+   det i steg 1, inom sin kontrollsumma, på värderingen vid föregående månadsslut. Beslutet
+   kan bindas när det månadsslutet är täckt och ändringsmånaden är öppen.
+3. **Startade delar (V3).** Beslut om start, paus och förlängning tillåts. En månad där en
+   del har rätt enligt plan blockerar stängningen tills månadsrätten finns i steg 5.
+4. **Standardstart (V4).** För en verifierad ägare som fyller 66 i månaden visar granskningen
+   standardplanen livsvarig från 66-månaden, och månaden blockerar enligt V3. Overifierat
+   underlag ger ett ärende `payout_review`, och sparandet stängs. Kontrollen heter *standardstart*.
+5. **Verifiering (V5).** En registerkontroll i betrodd kod:
+   - personen är inte avliden och har en giltig födelsedag;
+   - försäkringen är ITP1 med arbetsgivarens avtal `ITP`;
+   - inget rekonstruktionsärende är öppet.
+6. **Passerat 66 utan plan (V6).** Ett ärende `payout_review` per person, första gången.
+   Planen beslutas efter kundens begäran, utan automatiska retroaktiva rätter, och
+   startmånaden flyttas inte.
+7. **Omräkning och premier (V7).**
+   - En ändrad plan räknar om varje G_j värdebevarande på sin historiska grund, som ny
+     version med länk till planen.
+   - En ny premie på en del med beslutad plan får G_j direkt på planen.
+   - Ledger-utdraget redovisar en försäkring med planbaserad garanti som ej beräknad.
+8. **Begäran (V8).**
+   - Varje begäran sparas med utfallet i tid, sen, ofullständig, stoppad eller blockerad.
+   - Kundens bekräftelse av ett förslag är en ny begäran som pekar på den sena.
+   - Ett ombud kräver verifierad behörighet.
+   - Systemets egna fynd får typen `payout_review`.
+9. **Delning (V9).** Bara ej startade delar delas, i ändringsmånadens stängning. Beslutet
+   anger en primär premiemottagare med vikt 1 (PR-ITP1-015). Viktad fördelning är ett senare steg.
+10. **Belopp (V10).** M = max(round_half_up(max(G, B)), ceil_öre(ΣG_j), golv).
+    - Golvet för en livsvarig del under de första 60 rätterna är senast beslutade M.
+    - Förbrukade rätter härleds ur kalendern.
+    - Januariomräkningen tillämpas i steg 5.
+11. **Main och Lakebase (V11).** Ingen merge förrän novembers stängning är bokad och
+    kontrollerad, eftersom kontrollens nya namn ändrar sammanställningen. Utan steg 4:s
+    tabeller beter sig koden som steg 3. Migrationen införs efter separat OK.
+
+**Motivering:**
+- Månadsrätt och skuld byggs först i steg 5. Allt som rör ej startade delar kan därför
+  bokas fullt ut nu, medan starter beslutas men blockerar stängningen i stället för att
+  bokas ofullständigt.
+- Att genomföra besluten i stängningen håller journalen oföränderlig och en enda kontrollsumma
+  per månad (B-050).
+- Värdebevarande omräkning på varje garantidels historiska grund följer PR-ITP1-008 och
+  aktuariell_grund.md §3.
+- Valen är bevisade lokalt (fall 1–12) och mot isolerad Postgres (migrationen, uppskov med
+  plankopplade garantidelar och delning med kapital).
+
+**Konsekvenser:**
+- Fem nya `HUMAN_ONLY`-operationer: `register_payout_request`, `preview_payout_plan`,
+  `decide_payout_plan`, `split_payout_part` och `get_payout_part`. Agentrollerna får inga rättigheter.
+- Standardplanen sparas inte i steg 4. En ägare som fyller 66 i stängningsmånaden blockerar
+  den månaden tills steg 5 finns.
+- Migrationen `migrate_payout_plans.py` och körskripten i `scripts/simulation/paket_b_steg4/`
+  körs först efter novembers stängning och merge.
+- Den nya ärendetypen `payout_review` ligger utanför P1-PENSION-001 §10:s lista;
+  `payout_hindrance` för utbetalningshinder byggs i steg 6.
+
+**Preciserar** B-047 punkt 3 och PB3, PB6 och PB12. **Bygger på** B-048 (uttagsdelarna) och B-050 (stängningen).
+
+---
+
 ### B-050 | 2026-11-19 | Paket B steg 3: månadsstängningens verifikationer, rättelse och stoppunkt
 
 **Beslut:** Operatören godkände valen S1–S7 för byggsteg 3 i paket B

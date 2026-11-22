@@ -27,6 +27,7 @@ from sqlalchemy.exc import IntegrityError
 from models import (
     Base,
     BaseAmount,
+    Case,
     Employer,
     InsuredPerson,
     LedgerBatch,
@@ -479,14 +480,18 @@ class TestSparrar:
     def test_66_arsmanaden_stangs_och_redovisas(self, ready, monkeypatch):
         # Med 41 år som pensionsålder i provet har A (1985-05), B (1978) och C (1982) passerat startmånaden, inte D (1990)
         monkeypatch.setattr(mc, "PENSION_AGE", 41)
+        # Steg 4 (V6): passerad startmånad utan plan ger ett ärende payout_review per person, sparandet stängs
         review = prepare(ready)
         assert review["passed"] and len(review["standard_start_pending"]) == 3
-        control = next(c for c in review["controls"] if c["step"] == "standardstart väntar på steg 4")
-        assert control["passed"] and control["actual"] == "3"
+        control = next(c for c in review["controls"] if c["step"] == "standardstart")
+        assert control["passed"] and control["actual"] == "0" and "3 nya ärenden" in control["detail"]
+        assert len(review["payout"]["review_cases"]) == 3
         close(ready, checksum=review["review_checksum"])
         with ready.factory() as s:
             states = s.scalars(select(PayoutPartState.state).where(PayoutPartState.valid_to.is_(None))).all()
+            cases = s.scalars(select(Case).where(Case.case_type == "payout_review")).all()
         assert set(states) == {"not_started"}  # startmånaden flyttas inte och ingen plan skapas
+        assert len(cases) == 3 and {c.details["reason"] for c in cases} == {"passed_66_without_plan"}
 
 
 class TestBefogenheter:

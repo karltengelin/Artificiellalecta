@@ -68,6 +68,9 @@ NOT_CALCULATED = {
     "payout_paused": "Pausat uttag: pensionsbelopp och utbetalt kapital enligt PR-009 rekonstrueras inte i S-04",
     "terminated": "Avslutad försäkring med premier: slutavräkningen (PR-027) rekonstrueras inte i S-04",
     "negative": "Negativ premierad: återtag enligt PR-019 rekonstrueras inte i S-04",
+    #: Journalen (paket B steg 4): G_j räknad på en beslutad uttagsplan, inte på referensplanen
+    "payout_plan": "Beslutad uttagsplan: garantidelarna räknas på planen, inte på referensplanen – värderas när "
+                   "planen kan läsas i utdraget",
 }
 #: Antal decimaler för garantidelar och faktorer i utdraget (hög precision, avrundas först i rapportering)
 PRECISION = Decimal("1e-10")

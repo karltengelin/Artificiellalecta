@@ -63,7 +63,8 @@ OPERATION_LABELS = {
 }
 CASE_TYPES = {"salary_report": "Löneunderlag", "salary_file_deviation": "Avvikelse i lönefil",
               "payment_overdue": "Förfallen faktura", "payment_unmatched": "Oallokerad inbetalning",
-              "payout_reconstruction": "Rekonstruktion av uttag"}
+              "payout_reconstruction": "Rekonstruktion av uttag", "payout_request": "Begäran om uttag",
+              "payout_review": "Pensionsfråga"}
 CASE_STATUS = {
     "open": "Öppet", "in_progress": "Pågår", "waiting_approval": "Väntar på godkännande",
     "waiting_info": "Väntar på komplettering", "closed": "Stängt",
