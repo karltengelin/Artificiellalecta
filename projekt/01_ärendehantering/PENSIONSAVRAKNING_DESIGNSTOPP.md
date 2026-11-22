@@ -283,6 +283,97 @@ Avvikelser från §5 och §10:
 - *Premie utan mottagande del* täcks redan av ärendet `salary_file_deviation` ur paket A. Ingen ny `payout_review` skapas för det fallet.
 - *En ny ärendetyp*, `payout_review`, för systemets egna fynd vid 66 (V8), utöver §10:s lista. `payout_hindrance` gäller utbetalningshinder (§8.2) och byggs i steg 6.
 - *Körskripten* i `scripts/simulation/paket_b_steg4/` är inte provade på en lokal kopia av Lakebase.
+- *2026-11-22:* standardplanen, paus och förlängning av startade delar och M vid verklig start är byggda i steg 5 (§5.5).
+
+### 5.5 Byggt i steg 5: månadsrätt, skuld och bolagskonto
+
+**Byggt 2026-11-22 på branchen `claude/paket-b-steg-5-manadsr-e22262`; inte mergat till main och inte infört i Lakebase.**
+
+- **Var det finns:**
+  - finansiering, debitering per spår och slutavräkning i `src/skills/calculation/pension_claim.py`, utan databas;
+  - beloppsbeslut, bolagskonto, anspråk och läsningar i `src/services/pension_claims.py`;
+  - operationerna `register_company_capital` och `list_pension_claims`, båda `HUMAN_ONLY` ([tjänstelager §9.18](../../02_system/tjänstelager.md));
+  - stängningens steg 1 och 5 i `src/services/month_close.py`;
+  - premier på startade delar i `src/services/ledger_premiums.py`;
+  - tabellerna `payout_amounts`, `pension_claims` och `pension_claim_fundings` och migrationen `migrate_pension_claims.py` ([databasschema §7e och §12](../../02_system/databasschema.md));
+  - körskripten för Lakebase i `scripts/simulation/paket_b_steg5/`.
+- **Verifierat lokalt:**
+  - fall 1 och 14 i stängningen;
+  - fall 35 med senare finansiering;
+  - PB11;
+  - W9;
+  - fall 5 och 6;
+  - januariomräkningen;
+  - W10.
+  
+  Fall 14, 32, 33 och 35 är också verifierade som ren beräkning. Utan steg 5:s tabeller beter sig stängningen som steg 4 (`tests/test_pension_claims.py`, `tests/test_pension_claim_calculation.py`).
+- **Verifierat mot `svc_test`:** migrationen från läget efter steg 4, och fall 1 och 14 i novemberstängningen (`tests/test_migration_pension_claims.py`).
+- **Jämfört med main (B-052):** novembers stängning med main:s och branchens kod på samma databas (`compare_main.py`). Kontrollerat:
+  - utan steg 4:s och steg 5:s tabeller;
+  - med steg 4:s men utan steg 5:s tabeller;
+  - med och utan ägare som fyllt 66.
+
+  Resultatet var detsamma i alla fall: samma granskningssumma, verifikation, poster, garantidelar och ärenden.
+
+Karls val W1–W12, godkända i chatten 2026-11-22 (”Godkänn alla”). Ännu inte loggade; förslaget är B-053.
+
+- **W1 Anspråket:**
+  - `pension_claims` har en oföränderlig rad per uttagsdel och rättighetsmånad (unik). Raden har plan, beloppsbeslut, löpnummer, brutto, del ur C, bolagsstöd, ej finansierat, slutavräkning och betalningsdag (första bankdagen efter månaden). Stabilt id ur del och månad.
+  - Steg 6 bygger betalningsförloppet som egna rader som pekar på anspråket.
+- **W2 Beloppsbeslut:**
+  - `payout_amounts` har ett beslutat M per del från en månad, med orsak `start`, `restart`, `plan_change` eller `january`, och med G, B, faktor, golv och grund med kontrollsumma.
+  - Ordningen: ett befintligt beslut för månaden; planens M när planens ändringsmånad är månaden; nytt M vid första rätt (även efter uppskov) och vid återstart efter paus; januariomräkning; annars senaste beslutet.
+  - Nya belopp räknas på föregående månadsslut, med golvet ur `amount_floor` och senast beslutade M.
+- **W3 Standardstart:**
+  - 66-månadens stängning sparar standardplanen med `origin = 'standard_start'`, med den som stänger som beslutsfattare;
+  - G_j räknas om till planen (oförändrat med samma referensplan);
+  - delen får läget `in_payout`, och M beslutas;
+  - första rätten skuldförs i samma transaktion (fall 1: november, betalning 2026-12-01).
+- **W4 Pensionsförloppet:**
+  - stängningen skriver `in_payout` vid första rätt och återstart, `paused` vid paus och `ended` vid slutavräkning;
+  - startade och pausade delar får avkastning, avgift och skatt i stället för att blockera;
+  - paus och förlängning av startade delar bokas (fall 5 och 6);
+  - registrerat dödsfall blockerar fortfarande (steg 7).
+- **W5 Debitering och bolagsstöd:**
+  - debiteringen ur C är min(M, C efter kostnader), fördelad på delens spår i ören med största bråkrest (`pension_debit`);
+  - bolagsstödet K = M − debiteringen förs direkt från bolagskontot till betalningsskulden (`company_support`), utan att passera C.
+- **W6 Slutavräkning (PR-027):**
+  - den tidsbegränsade delens sista rätt är max(M, C), med bolagsstöd vid brist; därefter C = 0 och delen `ended`;
+  - fall 32 och 33 hör till steg 5 (§12); fall 34 verifieras i steg 6.
+- **W7 Bolagskonto:**
+  - `register_company_capital` bokar insättningen som en egen verifikation `company_capital` i första öppna månaden;
+  - insättningen har belopp, beslutsdag, dokumentreferens och en valfri hänvisning till aktuariens E_min, och är idempotent;
+  - bolagskontot och skulden blir aldrig negativa (villkor i databasen);
+  - granskningen visar likviditetsdelen 12 × ΣM och markerar stressgapet som ej beräknat (projekt 6, A8);
+  - den första stängningen med en rätt kräver en registrerad insättning (PB11).
+- **W8 Ej finansierat (fall 35):**
+  - månaden stängs och rätten bevaras; skulden bokas bara för den finansierade delen;
+  - verifikationen märks `economic_block`, och samma transaktion öppnar eller fyller på ett ärende `company_capital` utan person;
+  - steg 6 får inte skapa bankuppdrag för det ej finansierade;
+  - efter en ny insättning finansierar nästa stängning de äldsta ej finansierade anspråken först (`pension_claim_fundings`).
+- **W9 Premie på startande eller startad del:**
+  - premien hålls utanför journalen och redovisas som innehållen i granskningen;
+  - delen får ett ärende `payout_review` (`premium_after_start`) en gång;
+  - utan steg 5:s tabeller blockerar premien som förut.
+- **W10 Rättelse:** en rättelse av en månad med anspråk tillåts bara när varje anspråks brutto och del ur C är oförändrade. Ändrad fördelning på spåren bokas som motposter; annars blockeras rättelsen.
+- **W11 Kontrollposter:**
+  - *standardstart* godkänns när planen sparas;
+  - *rätt enligt plan* ersätts av *månadsrätt*;
+  - nya kontroller är *förbrukade rätter* (anspråken före månaden mot kalenderns förbrukade rätter) och *skuld och bolagskonto*;
+  - *kapital totalt* drar av pensionsdebiteringen;
+  - ledger-utdraget och A6 redovisar startade delar och skuld som förut.
+- **W12 Migration och befogenheter:**
+  - `migrate_pension_claims.py` förutsätter steg 4:s migration;
+  - båda operationerna är `HUMAN_ONLY`, och agenterna får inga rättigheter;
+  - ordningen i Lakebase är novembers stängning, steg 4:s migration och sedan steg 5:s, var och en efter eget OK.
+
+Avvikelser från designen och valen:
+- *Inget `claim_id` på kapitalposterna (W1).* Posterna på skulden och bolagskontot bär uttagsdelen och månaden, och deras stabila id härleds ur anspråkets id. En tredje tabell, `pension_claim_fundings`, bär den senare finansieringen (W8) i stället för en ändring av anspråket.
+- *Bolagsstödet passerar inte C (W5).* PR-020 talar om ett eget stödspår. Den ekonomiska effekten är densamma, eftersom stödet förbrukas samma månad.
+- *Slutavräkningen i stängningen* är byggd men inte provad hela vägen: en tidsbegränsad del når sin sista rätt först efter minst 60 bokade rätter. Fall 32 och 33 är verifierade som ren beräkning.
+- *Ärendetypen `company_capital`* gäller bolaget, och `ck_cases_subject` tillåter den utan person och arbetsgivare.
+- *Premien efter start (W9)* bokas först när ny försäkring för sådana premier finns (PR-025, senare steg).
+- *Körskripten* är provade på en lokal SQLite-kopia, inte på en kopia av Lakebase.
 
 ## 6. Operativ kapital- och garantijournal (PB4)
 
@@ -399,7 +490,7 @@ Karls val S1–S7, godkända i chatten 2026-11-19 (”Godkänn alla”) och logg
   - Bara den senast stängda månaden kan rättas.
   - Premiekällan tar fram en månad först när föregående månad är stängd.
 - **S4 Pensionsförloppet:**
-  - En startad, pausad eller avslutad uttagsdel med kapital blockerar. Det gör också ett registrerat dödsfall. Månadsrätt, slutavräkning och dödsfall byggs i steg 5–7.
+  - En startad, pausad eller avslutad uttagsdel med kapital blockerar. Det gör också ett registrerat dödsfall. Månadsrätt, slutavräkning och dödsfall byggs i steg 5–7. *Efter steg 5:s migration stängs startade och pausade delar med månadsrätt; dödsfall blockerar till steg 7 (§5.5, W4).*
   - En ej startad del vars ägare fyllt 66 utan plan stängs för sparandet. Den redovisas i kontrollen *standardstart väntar på steg 4*; startmånaden flyttas inte. *Efter steg 4:s migration heter kontrollen* standardstart *och räknar planer och ärenden; före migrationen är den oförändrad (§5.4, V4).*
   - En startad del utan kapital i journalen ligger utanför stängningen.
 - **S5 AVK för november:** AVK-SIM-2026-02 har AVK-SIM-2026-01:s historik och november +0,20 %, exakt som P6-MANAD-001 D5 (§13). Den föreslås och antas genom A4 från 2026-11-01 med Karl som aktör, av `adopt_avk.py` efter separat OK.
@@ -616,9 +707,9 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`). *Byggt 2026-11-14 (§6), verifierat lokalt, mot `svc_test` och på en kopia av Lakebase-backupen. Infört i Lakebase 2026-11-15: tabellerna och det ingående läget per 2026-10-31 (492 försäkringar, 15 097 garantidelar); `verify.py` 16 av 16* | 36, 37 |
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase.** *Byggt 2026-11-19 (§7, val S1–S7), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg3/`. Migrationen införd i Lakebase 2026-11-19 (B-050); novembers AVK och stängning tidigast 2026-12-01* | 13, 15–17 |
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning. *Byggt 2026-11-21 (§5.4, val V1–V11), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg4/`. Mergat till main 2026-11-22 (B-052). Inte infört i Lakebase; migrationen tidigast efter novembers stängning (2026-12-01)* | 1–12 |
-| 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd | 14, 35 |
-| 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida | 18–25 |
-| 7 | Dödsfall, arvsvinst och slutavräkning (steg 6–7) | 26–34 |
+| 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd. *Byggt 2026-11-22 (§5.5, val W1–W12), verifierat lokalt och mot `svc_test`, med slutavräkningen (W6); körskript i `scripts/simulation/paket_b_steg5/`. Inte mergat och inte infört i Lakebase; migrationen efter steg 4:s* | 1, 5, 6, 14, 32, 33, 35 |
+| 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida | 18–25, 34 |
+| 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6 | 26–31 |
 | 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll | – |
 | 9 | Lakebase enligt ovan, med separat OK för varje ingrepp | – |
 

@@ -726,7 +726,7 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
 - **Steg 1:** öppningskapitalet är föregående lägets kapitalspår: det ingående läget eller förra månadens stängning. Ägarnas levandestatus och uttagsdelarnas lägen prövas.
 - **Steg 2–3:** avkastning enligt den antagna AVK:n för månaden (PR-ITP1-021). Kapitalavgift och skattebelastning tas ut på öppningsbasen med månadens parameterversioner, satsen delad med 12 (PR-ITP1-022, PR-ITP1-023). Beräkningen görs med `close_month` och `roll_origins` per uttagsdel och fördelas på spåren i ören. Belopp som inte kunde tas ut syns bara i sammanställningen.
 - **Steg 4:** månadens premier ur paket A (§9.15) blir en garantidel och ett nytt kapitalspår per allokering, med värdedag vid månadsslutet och utan avkastning denna månad.
-- **Steg 8:** elva kontrollposter (tolv med steg 4, §9.17), bland dem föregående läge, kapital per spår och totalt, garanti, premier och avstämningskontot.
+- **Steg 8:** elva kontrollposter (tolv med steg 4, §9.17, och fjorton med steg 5, §9.18), bland dem föregående läge, kapital per spår och totalt, garanti, premier och avstämningskontot.
 - **Fall 13:** C0 = 100 000,00 kr och r = 1 % ger +1 000,00, −16,67 och −29,50 kr, alltså C1 = 100 953,83 kr.
 
 **Granskning, idempotens och rättelse (§7.2):**
@@ -766,7 +766,7 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
   - genomförandet i stängningens steg 1 i `src/services/month_close.py` (§9.16).
 - **Tabeller och migration:** `payout_requests`, `payout_plans`, `payout_splits` och `ledger_guarantee_parts.plan_id`, se [databasschema §7d och §12](databasschema.md#7d-tabeller-payout_requests-payout_plans-och-payout_splits--begäran-uttagsplan-och-delning). Inte införda i Lakebase.
 - **Befogenheter:** fem nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter.
-- **Avgränsning:** besluten kan fattas för alla delar, men bara ej startade delar bokas. Månadsrätt, skuld och den verkliga starten byggs i steg 5.
+- **Avgränsning:** besluten kan fattas för alla delar, men bara ej startade delar bokas. Månadsrätt, skuld och den verkliga starten byggs i steg 5. *Efter steg 5:s migration bokas även startade delar och standardplanen (§9.18).*
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
@@ -803,6 +803,51 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
 - *Konflikt:* en granskningssumma som inte stämmer, eller ett beslut som redan är fattat med annat innehåll.
 - *Nekas:* agenter i alla fem operationerna, och systemaktören i de skrivande.
 - **Lakebase:** körskripten finns i `scripts/simulation/paket_b_steg4/` och körs tidigast efter novembers stängning (V11, [databasschema §12](databasschema.md#12-migrationer-och-versionering)).
+
+### 9.18 Månadsrätt, skuld och bolagskonto (paket B steg 5, B-047) – vad som stöds och vad som blockeras
+
+Beslutat i **B-047** punkt 4 och 6 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §5.5, §7.1 steg 5 och §9 (PB6, PB11), med Karls val W1–W12 2026-11-22 (förslag **B-053**).
+- **Kod:**
+  - `src/skills/calculation/pension_claim.py`: finansiering, debitering per spår och slutavräkning, utan databas;
+  - `src/services/pension_claims.py`: beloppsbeslut, bolagskonto, anspråk och läsningar;
+  - `src/services/operations/pension_claims.py`: operationerna;
+  - bokningen i stängningens steg 1 och 5 i `src/services/month_close.py` (§9.16).
+- **Tabeller och migration:** `payout_amounts`, `pension_claims` och `pension_claim_fundings`, se [databasschema §7e och §12](databasschema.md#7e-tabeller-payout_amounts-pension_claims-och-pension_claim_fundings--beloppsbeslut-månadsrätt-och-bolagsstöd). Inte mergade och inte införda i Lakebase.
+- **Befogenheter:** två nya operationer, båda `HUMAN_ONLY`, och inga nya agentbefogenheter.
+- **Avgränsning:** anspråket skuldförs i stängningen. Skatt, bankuppdrag och kvitton byggs i steg 6, och dödsfall och arvsvinst i steg 7.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `register_company_capital` | `write` | Nej | `HUMAN_ONLY` | Bokar ägarens dokumenterade insättning på bolagskontot. Den blir en egen verifikation `company_capital` i första öppna månaden, med belopp, beslutsdag, dokumentreferens och en valfri hänvisning till aktuariens E_min (PR-ITP1-028). Samma insättning igen ger ingen ny effekt. E_min räknas inte här (projekt 6, A8) |
+| `list_pension_claims` | `read` | Ja | `HUMAN_ONLY` | Visar månadsrätterna för en månad eller alla. För varje rätt: brutto, del ur kundkapitalet, bolagsstöd, ej finansierat, senare finansiering, kvarstående och betalningsdag. Visar också bolagskontots saldo, insättningar och betalningsskulden |
+
+**Månadsrätten i stängningen (§7.1 steg 5, W1–W6):**
+- Varje uttagsdel med rätt under månaden får ett beloppsbeslut när ett nytt belopp gäller: start, även efter uppskov, återstart efter paus, planändring och januari. Beslutet räknas på föregående månadsslut.
+- Delen får också ett bruttoanspråk, en gång per del och månad.
+- Debiteringen ur kundkapitalet är min(M, C efter kostnader), fördelad på delens spår i ören. Bristen tas från bolagskontot. Hela beloppet blir betalningsskuld med betalningsdag den första bankdagen efter månaden (fall 14).
+- Standardstarten vid 66 sparar planen med ursprung `standard_start` och bokar första rätten i samma transaktion (fall 1).
+- Paus, återstart och förlängning av startade delar bokas (fall 5 och 6). Lägena `in_payout`, `paused` och `ended` skrivs av stängningen.
+- Den tidsbegränsade delens sista rätt slutavräknas med max(M, C) (fall 32 och 33).
+
+**Bolagskontot (PB11, W7–W8):**
+- Den första stängningen med en rätt kräver en registrerad insättning.
+- Räcker bolagskontot inte stängs månaden ändå, och rätten bevaras (fall 35):
+  - skulden bokas bara för den finansierade delen;
+  - verifikationen märks `economic_block`;
+  - ett ärende `company_capital` öppnas eller fylls på och eskaleras till operatören.
+- Efter en ny insättning finansierar nästa stängning de äldsta ej finansierade anspråken först.
+- Granskningen visar likviditetsdelen 12 × ΣM och markerar stressgapet som ej beräknat.
+
+**Premier efter start (W9):** en premie på en del som startar eller har startat hålls utanför journalen. Granskningen redovisar den som innehållen, och delen får ett ärende `payout_review` (`premium_after_start`) en gång.
+
+**Spärras:**
+- *Blockeras:*
+  - operationerna innan migrationen är körd;
+  - en stängning med en rätt utan registrerad insättning (PB11);
+  - registrerat dödsfall (till steg 7);
+  - en rättelse som ändrar ett anspråks brutto eller del ur kundkapitalet (W10).
+- *Nekas:* agenter i båda operationerna och systemaktören i insättningen.
+- **Lakebase:** körskripten finns i `scripts/simulation/paket_b_steg5/`. De körs efter steg 4:s migration (W12, [databasschema §12](databasschema.md#12-migrationer-och-versionering)).
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.
