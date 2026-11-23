@@ -806,7 +806,7 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
 
 ### 9.18 Månadsrätt, skuld och bolagskonto (paket B steg 5, B-047) – vad som stöds och vad som blockeras
 
-Beslutat i **B-047** punkt 4 och 6 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §5.5, §7.1 steg 5 och §9 (PB6, PB11), med Karls val W1–W12 2026-11-22 (förslag **B-053**).
+Beslutat i **B-047** punkt 4 och 6 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §5.5, §7.1 steg 5 och §9 (PB6, PB11), med Karls val W1–W12 2026-11-22 (**B-053**).
 - **Kod:**
   - `src/skills/calculation/pension_claim.py`: finansiering, debitering per spår och slutavräkning, utan databas;
   - `src/services/pension_claims.py`: beloppsbeslut, bolagskonto, anspråk och läsningar;

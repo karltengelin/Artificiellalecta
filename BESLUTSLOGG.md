@@ -8,6 +8,99 @@
 
 ## Beslut
 
+### B-053 | 2026-11-23 | Paket B steg 5: månadsrätt, skuld, bolagskonto och bolagsstöd
+
+**Beslut:** Operatören godkände valen W1–W12 för byggsteg 5 i paket B
+([P1-PENSION-001 §5.5](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#55-byggt-i-steg-5-månadsrätt-skuld-och-bolagskonto))
+enligt rekommendationerna i chatten 2026-11-22: ”Godkänn alla”. Loggningen godkändes
+2026-11-23: ”Logga B-053”.
+
+1. **Anspråket (W1).** `pension_claims` har en oföränderlig rad per uttagsdel och
+   rättighetsmånad. Raden har plan, beloppsbeslut, löpnummer, brutto, del ur C, bolagsstöd,
+   ej finansierat, slutavräkning och betalningsdag (första bankdagen efter månaden). Steg 6
+   bygger betalningsförloppet som egna rader som pekar på anspråket.
+2. **Beloppsbeslut (W2).** `payout_amounts` har ett beslutat M per del från en månad, med
+   orsak `start`, `restart`, `plan_change` eller `january` och med G, B, faktor, golv och
+   grund. Planens M gäller i planens ändringsmånad. Annars räknas M om på föregående
+   månadsslut vid verklig start (även efter uppskov), vid återstart och i januari.
+3. **Standardstart (W3).** 66-månadens stängning sparar standardplanen med
+   `origin = 'standard_start'` och den som stänger som beslutsfattare. Samma transaktion
+   räknar om G_j, sätter delen i `in_payout`, beslutar M och skuldför första rätten.
+4. **Pensionsförloppet (W4).**
+   - Stängningen skriver lägena `in_payout`, `paused` och `ended`.
+   - Startade och pausade delar får avkastning, avgift och skatt.
+   - Paus och förlängning av startade delar bokas.
+   - Registrerat dödsfall blockerar till steg 7.
+5. **Debitering och bolagsstöd (W5).** Debiteringen ur C är min(M, C efter kostnader),
+   fördelad på spåren i ören. Bolagsstödet K = M − debiteringen förs direkt från
+   bolagskontot till betalningsskulden, utan att passera C.
+6. **Slutavräkning (W6).** Den tidsbegränsade delens sista rätt är max(M, C), med bolagsstöd
+   vid brist. Därefter är C = 0 och delen `ended` (PR-ITP1-027). Fall 32 och 33 hör till
+   steg 5, fall 34 till steg 6.
+7. **Bolagskonto (W7).**
+   - `register_company_capital` bokar ägarens dokumenterade insättning som en egen
+     verifikation `company_capital`, med en valfri hänvisning till aktuariens E_min.
+   - Skuld och bolagskonto blir aldrig negativa.
+   - Den första stängningen med en rätt kräver en registrerad insättning (PB11).
+   - E_min räknas i projekt 6 (A8).
+8. **Ej finansierat (W8).**
+   - Räcker bolagskontot inte stängs månaden ändå. Rätten bevaras, och skulden bokas bara
+     för den finansierade delen.
+   - Verifikationen märks `economic_block`, och ett ärende `company_capital` öppnas eller
+     fylls på och eskaleras till operatören.
+   - Steg 6 skapar inga bankuppdrag för det ej finansierade.
+   - Efter en ny insättning finansieras de äldsta ej finansierade anspråken först
+     (`pension_claim_fundings`).
+9. **Premie efter start (W9).** En premie på en del som startar eller har startat hålls
+   utanför journalen. Delen får ett ärende `payout_review` (`premium_after_start`) en gång.
+   Premien bokas när ny försäkring för sådana premier finns.
+10. **Rättelse (W10).** En rättelse av en månad med anspråk tillåts bara när varje anspråks
+    brutto och del ur C är oförändrade. Ändrad fördelning på spåren bokas som motposter.
+11. **Kontrollposter (W11).**
+    - *Standardstart* godkänns när planen sparas.
+    - *Rätt enligt plan* ersätts av *månadsrätt*.
+    - *Förbrukade rätter* och *skuld och bolagskonto* tillkommer, så stängningen har fjorton
+      kontroller.
+    - Ledger-utdraget och A6 redovisar startade delar och skuld som förut.
+12. **Migration och befogenheter (W12).**
+    - `migrate_pension_claims.py` förutsätter steg 4:s migration.
+    - Båda nya operationerna är `HUMAN_ONLY`, och agentrollerna får inga rättigheter.
+    - Ordningen i Lakebase är novembers stängning, steg 4:s migration och sedan steg 5:s,
+      var och en efter separat OK.
+
+**Motivering:**
+- Anspråket är kontraktet som steg 6 och 7 bygger på. Med ett oföränderligt anspråk ger ett
+  nytt bankförsök aldrig en ny rätt eller en ny debitering (PR-ITP1-026).
+- Om månaden stängs vid finansieringsbrist bevaras kundens rätt, och resten av kollektivets
+  sparande kan fortsätta. Bristen syns och eskaleras, och ingen betalning rapporteras som
+  lyckad (PR-ITP1-028).
+- Standardplanen och första rätten bokas i samma stängning. Därmed blockerar 66-månaden
+  inte längre, och startmånaden flyttas aldrig tyst (PR-ITP1-025).
+- Valen är bevisade:
+  - lokalt med fall 1, 5, 6, 14 och 35 i stängningen, fall 32–33 som beräkning, PB11, W9,
+    W10 och januariomräkningen;
+  - mot isolerad Postgres med migrationen och fall 1 och 14;
+  - med hela sviten grön, 1 859 tester.
+- Utan steg 5:s tabeller är novembers stängning identisk med main:s kod på samma databas
+  (B-052). Det gäller utan steg 4:s tabeller och med dem, och med och utan ägare som fyllt 66.
+
+**Konsekvenser:**
+- Tre nya tabeller (`payout_amounts`, `pension_claims`, `pension_claim_fundings`).
+- Batchtypen och postorsaken `company_capital`, villkoret `ck_ledger_capital_entries_accounts`
+  och ärendetypen `company_capital`, som saknar person och arbetsgivare.
+- Kapitalposterna får inget `claim_id`. Posterna på skuld och bolagskonto bär del och månad
+  och härleder sitt id ur anspråket.
+- Slutavräkningen i stängningen är byggd men inte provad hela vägen, eftersom en del når sin
+  sista rätt först efter minst 60 bokade rätter.
+- Lakebase behöver ingen insättning förrän det första pensionsfallet; Karl bestämmer
+  beloppet då.
+- Merge till main kräver separat OK och en ny jämförelse mot dåvarande main.
+
+**Preciserar** B-047 punkt 4 och 6 och PB6, PB11 och PB12. **Bygger på** B-050 (stängningen),
+B-051 (planerna; V3 och V10 fullföljs här) och B-052 (jämförelsen mot main).
+
+---
+
 ### B-052 | 2026-11-22 | Paket B steg 4 får mergas före novembers stängning
 
 **Beslut:** Operatören godkände i chatten 2026-11-22 (”Yes, go ahead”) att steg 4 mergas till main
