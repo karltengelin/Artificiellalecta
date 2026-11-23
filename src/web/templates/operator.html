@@ -54,6 +54,7 @@
     <ul class="record-list">
       {% if pending_approvals %}<li><span>{{ pending_approvals }} förslag väntar på beslut</span><a href="/godkannanden">Öppna godkännandekön</a></li>{% endif %}
       <li><a href="/premier">Premier och betalningar</a></li>
+      {% if settings.database == 'demo' %}<li><a href="/central/premierapporter">Granska och kvittera premiemånadens rapport</a></li>{% endif %}
       <li><a href="/central/team?month={{ selected_month }}">Följ teamens läge</a></li>
     </ul>
   </section>
