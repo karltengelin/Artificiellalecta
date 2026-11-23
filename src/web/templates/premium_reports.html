@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Premierapporter{% endblock %}
+{% block content %}
+<h1>Premierapporter</h1>
+<p>Paket C:s isolerade premiemånad · lokal demo</p>
+<section class="panel"><h2>Intern mottagning</h2>
+<ul>{% for row in records if row.latest and row.status in ('approved', 'received') %}
+<li><a href="{{ base }}/{{ row.report }}/{{ row.rev }}">{{ row.report }} · revision {{ row.rev }}</a> · {{ statuses[row.status] }}</li>
+{% else %}<li>Inga godkända rapporter att kvittera.</li>{% endfor %}</ul></section>
+<section class="panel"><h2>Ekonomiansvarigs granskning</h2>
+<ul>{% for row in records %}
+<li><a href="{{ base }}/{{ row.report }}/{{ row.rev }}">{{ row.report }} · revision {{ row.rev }}</a> · {{ statuses[row.status] }}</li>
+{% else %}<li>Inga rapportversioner har beretts.</li>{% endfor %}</ul>
+{% if runs %}
+<form method="post" action="{{ base }}/bered" hx-boost="false">
+<input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+<label>Körning <select name="run">{% for run in runs %}<option>{{ run }}</option>{% endfor %}</select></label>
+<label>Underlag <select name="day"><option value="{{ days[0] }}">30 november · månadsrapport</option><option value="{{ days[1] }}">29 december · uppföljning</option></select></label>
+<button>Bered för granskning</button></form>
+{% else %}<p>Inga lokala Paket C-körningar hittades. Kör premiemånaden i samma arbetskopia.</p>{% endif %}
+</section>{% endblock %}

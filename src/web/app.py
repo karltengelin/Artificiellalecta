@@ -22,12 +22,13 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from agents.case_workspace import CaseWorkspace
 from agents.mission_archive import MissionArchive
 from ai import AIClient
+from reporting.premium_deliveries import PremiumDeliveries
 from services import ServiceLayer
 from services.change_releases import ChangeReleases
 from services.change_requests import ChangeRequests
 from services.development_demo import DemoDelivery
 from web.agent import CaseAgent
-from web.config import WebConfigError, WebSettings
+from web.config import REPO_ROOT, WebConfigError, WebSettings
 from web.development_github import GitHubReader
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.operator_auth import OperatorAuth
@@ -51,6 +52,7 @@ from web.routes import (
     operator,
     parameters,
     premium_payments,
+    premium_reports,
 )
 
 log = logging.getLogger("web")
@@ -101,6 +103,7 @@ def create_app(
     app.state.actuary_submissions = Submissions()
     app.state.mission_archive = MissionArchive(service._session_factory) if service._session_factory else None
     app.state.settings = settings
+    app.state.premium_deliveries = PremiumDeliveries(REPO_ROOT / "logs" / "simulation" / "paket-c")
     app.state.csrf_token = new_csrf_token()
     app.state.operator_auth = OperatorAuth(settings.operator_id, settings.operator_password_hash)
 
@@ -113,6 +116,7 @@ def create_app(
     app.include_router(journal.router)
     app.include_router(cases.router)
     app.include_router(premium_payments.router)
+    app.include_router(premium_reports.router)
     app.include_router(case_workspace.router)
     app.include_router(parameters.router)
     app.include_router(environments.router)
@@ -144,6 +148,10 @@ def create_app(
         if exc.status_code == 404 and detail == "Not Found":
             detail = "Adressen finns inte i handläggar-UI:t."
         error = ErrorView("error", title, detail, exc.status_code, nothing_changed=False)
+        if request.url.path.startswith(premium_reports.BASE):
+            response = render(request, "error.html", {"error": error}, status_code=exc.status_code, check_database=False)
+            response.headers.update(HEADERS)
+            return response
         if request.url.path.startswith(development.BASE):
             return development.respond(request, "error.html", {"error": error}, status_code=exc.status_code)
         response = render(request, "error.html", {"error": error}, status_code=exc.status_code)
@@ -153,6 +161,12 @@ def create_app(
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception):
+        if request.url.path.startswith(premium_reports.BASE):
+            error = ErrorView("error", "Rapportunderlaget kunde inte läsas",
+                              "Kontrollera den lokala körkatalogen och rapportregistret.", 503, nothing_changed=False)
+            response = render(request, "error.html", {"error": error}, status_code=503, check_database=False)
+            response.headers.update(HEADERS)
+            return response
         if request.url.path.startswith(development.BASE):
             error = ErrorView("error", "Utvecklingsytan är tillfälligt otillgänglig",
                               "Kontrollera ärendelistan innan du registrerar ärendet igen.", 503, nothing_changed=False)

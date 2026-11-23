@@ -1,6 +1,6 @@
 # V-12 · Intern månadsrapport om premier och betalningar
 
-**Kontraktsförslag 1.0 · 2026-11-22 · projekt 6 och projekt 2.** Första tillämpningen är Paket C:s isolerade, syntetiska novembermånad. Källuppgifterna finns i dag. Ansvarsfördelningen och kvittensen nedan föreslås för operatörens beslut.
+**Kontrakt 1.0 · 2026-11-22 · projekt 6 och projekt 2.** Första tillämpningen är Paket C:s isolerade, syntetiska novembermånad. I democentralen kan operatören bereda rapporten, fatta rapportbeslut och kvittera den godkända versionen.
 
 ## 1. Mottagare och beslut
 
@@ -77,4 +77,13 @@ Novemberunderlaget visar ett granskat lönefilbeslut, noll avslag, noll återlev
 3. **Kvittera.** När den godkända versionen tagits emot internt sparas mottagare, tidpunkt, rapport-ID, revision och samma leveranssumma. Skilj mellan *godkänd, väntar på kvitto* och *mottagen*. Om operatören har båda rollerna dokumenteras även det. Upprepad kvittens av samma version ger en mottagning.
 4. **Följ upp eller rätta.** Ett senare förfall ger ett daterat tillägg enligt §4. Ett fel i novemberrapporten ger ny revision med hänvisning till föregående version, orsak och beloppsskillnad. Den nya versionen granskas och kvitteras på nytt. Granskaren ska kunna återfinna det tidigare utfallet.
 
-**Gräns för leveransen.** Paket C producerar redan periodunderlag, affärskontroller och specialistprotokoll. Förslaget tillför rapportansvar och acceptans för ledningssammanfattning, versionsbundet rapportbeslut och intern kvittens. Före implementation behöver operatören fastställa rollerna i §1 och granskningsvägen i §5. Pensioner och utgående betalningar knyts senare till Paket B:s egna kvitton. Huvudbok och aktuariell värdering behöver egna avstämda underlag från projekt 6.
+## 6. Kör rapportflödet i demo
+
+1. Starta democentralen med `python scripts/web/start_ui.py --db demo` i den arbetskopia där Paket C-körningen finns. Logga in som operatör. [Operatörsinloggning](../../02_system/operator_inloggning.md) · [Kör premiemånaden](../../02_system/manadssimulator_designstopp.md)
+2. Gå till **Centralen → Granska och kvittera premiemånadens rapport** (`/central/premierapporter`). Välj kör-ID och 30 november. **Bered för granskning** fryser källspåren och visar belopp, öresdifferenser, åtgärder och samtliga kontroller. En körning som stannat vid lönebeslutet saknar månadsunderlag.
+3. Öppna specialistunderlaget vid behov. Motivera beslutet och välj **Godkänn versionen** eller **Återremittera**. Kontrollfel spärrar godkännande. Rätta källan och bered en ny revision vid återremiss. Även en tidigare kvitterad version kan rättas. Ange rättelseorsak på aggregerad nivå och använd kör-ID för det rättade underlaget från samma scenario. Granskaren kan följa länken bakåt till föregående leverans.
+4. Under **Intern mottagning** öppnar mottagaren den godkända rapporten och väljer **Kvittera intern mottagning**. Kvittot visar aktör, verklig tid i UTC, revision och leveranssumma. Samma operatör kan utföra båda momenten. Den daterade decemberuppföljningen kan beredas när november har godkänts.
+
+Rapporter, källkopior, beslut och kvitton sparas i `logs/simulation/paket-c/v12.sqlite` i arbetskopian. Bevara den filen tillsammans med körkatalogerna och startbeståndet. Vid omstart loggar operatören in igen och återfinner tidigare revisioner under **Ekonomiansvarigs granskning**.
+
+Pensioner och utgående betalningar knyts senare till Paket B:s egna kvitton. Huvudbok och aktuariell värdering behöver egna avstämda underlag från projekt 6.
