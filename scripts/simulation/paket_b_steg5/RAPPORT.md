@@ -47,18 +47,23 @@
 | Migrationen | `svc_test` | Från läget efter steg 4 blir resultatet identiskt med `create_all`. Migrationen är idempotent; delvis införd och saknat steg 4 stoppar |
 | Befogenheter | lokalt | Agenter nekas båda operationerna, och systemaktören insättningen |
 
+Grupperna `pensions` och `data` kördes med `--postgres` mot `svc_test` 2026-11-22, med resultatet 343 godkända och 4 underkända:
+
+- Tre av de underkända var migrationstester för steg 1–4 som bygger en del av schemat. Steg 5:s tabeller kom med i det urvalet fast tabellerna de pekar på saknades. Filtren är rättade, och de tre testerna godkänns.
+- Det fjärde, steg 5:s eget prov för delvis införd migration, föll på samma sätt. Det föll sedan i teardown efter en körning som tog över sju timmar och gick över natten. Ensamt godkänns det på 43 sekunder.
+
 ### Jämförelsen med main (B-052)
 
-`compare_main.py` bygger testbeståndet med main:s kod och kör sedan novembers granskning och bokning, en gång med main:s kod och en gång med branchens, på var sin kopia av samma databas. Resultatet:
+`compare_main.py` bygger testbeståndet med main:s kod och kör sedan novembers granskning och bokning, en gång med main:s kod och en gång med branchens, på var sin kopia av samma databas. Resultatet 2026-11-22 mot main `1d8f869` (paket C inräknat), efter att main mergats in i branchen:
 
 | Läge | Utfall |
 |---|---|
-| `steg3`: utan steg 4:s och steg 5:s tabeller, B fyller 66 och C har passerat 66 | Identiskt: granskningssumma `c733488b…`, 20 poster, 8 garantidelar, 2 ärenden |
-| `steg3-ung`: som ovan utan någon som fyllt 66 | Identiskt: granskningssumma `9623db1c…` |
-| `steg4`: steg 4:s tabeller utan steg 5:s, C har passerat 66 | Identiskt: granskningssumma `da940468…`, 3 ärenden |
-| `steg4-66`: som ovan och B fyller 66 | Blockeras lika i båda |
+| `steg3`: utan steg 4:s och steg 5:s tabeller, B fyller 66 och C har passerat 66 | Identiskt: granskningssumma `c7e6a33a…`, 20 poster, 8 garantidelar, 2 ärenden |
+| `steg3-ung`: som ovan utan någon som fyllt 66 | Identiskt: granskningssumma `7c1c30a8…`, 20 poster, 8 garantidelar, 2 ärenden |
+| `steg4`: steg 4:s tabeller utan steg 5:s, C har passerat 66 | Identiskt: granskningssumma `96006c42…`, 20 poster, 8 garantidelar, 3 ärenden |
+| `steg4-66`: som ovan och B fyller 66 | Blockeras lika i båda: granskningssumma `3b1cc531…`, ett problem |
 
-Jämförelsen omfattar granskningssumma, problem, kontroller, innehåll och bokade rader, utom väggklockans tidsstämplar. Den ska köras igen mot aktuell main före en merge.
+Jämförelsen omfattar granskningssumma, problem, kontroller, innehåll och bokade rader, utom väggklockans tidsstämplar. Summorna skiljer sig mellan två byggen, eftersom testbeståndet får nya slumpade id, men inom en körning är de lika. Samma jämförelse mot main `a90fd7f` gav också identiskt i alla fyra lägen. Den ska köras igen mot aktuell main före en merge.
 
 ### Körskripten
 
