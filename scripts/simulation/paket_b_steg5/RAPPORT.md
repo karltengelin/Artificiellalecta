@@ -1,7 +1,7 @@
 # Paket B steg 5 – månadsrätt, skuld och bolagskonto: rapport och körordning
 
 > **Design:** [P1-PENSION-001 §5.5](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md), §7.1 steg 5 och §9, PR-ITP1-026–028, B-047 punkt 4 och 6, Karls val W1–W12 (2026-11-22, ”Godkänn alla”). Loggade som **B-053** 2026-11-23 efter Karls OK.
-> **Status 2026-11-22:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg-5-manadsr-e22262`. **Inte mergat till main och inte infört i Lakebase.**
+> **Status 2026-11-23:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg-5-manadsr-e22262` och mergat till main 2026-11-23 efter Karls OK. Före mergen var jämförelsen med main `f5188fd` identisk i alla fyra lägen. **Inte infört i Lakebase.**
 
 ## Vad som är byggt
 

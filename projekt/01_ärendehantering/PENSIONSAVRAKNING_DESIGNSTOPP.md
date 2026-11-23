@@ -287,7 +287,7 @@ Avvikelser från §5 och §10:
 
 ### 5.5 Byggt i steg 5: månadsrätt, skuld och bolagskonto
 
-**Byggt 2026-11-22 på branchen `claude/paket-b-steg-5-manadsr-e22262`; inte mergat till main och inte infört i Lakebase.**
+**Byggt 2026-11-22 på branchen `claude/paket-b-steg-5-manadsr-e22262` och mergat till main 2026-11-23 efter Karls OK (”okej, mergea”); inte infört i Lakebase.**
 
 - **Var det finns:**
   - finansiering, debitering per spår och slutavräkning i `src/skills/calculation/pension_claim.py`, utan databas;
@@ -707,7 +707,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 2 | Operativ kapital- och garantijournal, övergång från S-04, paket A som premiekälla och A6-adapter (`ledger`). *Byggt 2026-11-14 (§6), verifierat lokalt, mot `svc_test` och på en kopia av Lakebase-backupen. Infört i Lakebase 2026-11-15: tabellerna och det ingående läget per 2026-10-31 (492 försäkringar, 15 097 garantidelar); `verify.py` 16 av 16* | 36, 37 |
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase.** *Byggt 2026-11-19 (§7, val S1–S7), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg3/`. Migrationen införd i Lakebase 2026-11-19 (B-050); novembers AVK och stängning tidigast 2026-12-01* | 13, 15–17 |
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning. *Byggt 2026-11-21 (§5.4, val V1–V11), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg4/`. Mergat till main 2026-11-22 (B-052). Inte infört i Lakebase; migrationen tidigast efter novembers stängning (2026-12-01)* | 1–12 |
-| 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd. *Byggt 2026-11-22 (§5.5, val W1–W12, B-053), verifierat lokalt och mot `svc_test`, med slutavräkningen (W6); körskript i `scripts/simulation/paket_b_steg5/`. Inte mergat och inte infört i Lakebase; migrationen efter steg 4:s* | 1, 5, 6, 14, 32, 33, 35 |
+| 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd. *Byggt 2026-11-22 (§5.5, val W1–W12, B-053), verifierat lokalt och mot `svc_test`, med slutavräkningen (W6); körskript i `scripts/simulation/paket_b_steg5/`. Mergat till main 2026-11-23. Inte infört i Lakebase; migrationen efter steg 4:s* | 1, 5, 6, 14, 32, 33, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida | 18–25, 34 |
 | 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6 | 26–31 |
 | 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll | – |

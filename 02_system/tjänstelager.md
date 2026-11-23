@@ -812,7 +812,7 @@ Beslutat i **B-047** punkt 4 och 6 och [P1-PENSION-001](../projekt/01_ärendehan
   - `src/services/pension_claims.py`: beloppsbeslut, bolagskonto, anspråk och läsningar;
   - `src/services/operations/pension_claims.py`: operationerna;
   - bokningen i stängningens steg 1 och 5 i `src/services/month_close.py` (§9.16).
-- **Tabeller och migration:** `payout_amounts`, `pension_claims` och `pension_claim_fundings`, se [databasschema §7e och §12](databasschema.md#7e-tabeller-payout_amounts-pension_claims-och-pension_claim_fundings--beloppsbeslut-månadsrätt-och-bolagsstöd). Inte mergade och inte införda i Lakebase.
+- **Tabeller och migration:** `payout_amounts`, `pension_claims` och `pension_claim_fundings`, se [databasschema §7e och §12](databasschema.md#7e-tabeller-payout_amounts-pension_claims-och-pension_claim_fundings--beloppsbeslut-månadsrätt-och-bolagsstöd). Mergade till main 2026-11-23; inte införda i Lakebase.
 - **Befogenheter:** två nya operationer, båda `HUMAN_ONLY`, och inga nya agentbefogenheter.
 - **Avgränsning:** anspråket skuldförs i stängningen. Skatt, bankuppdrag och kvitton byggs i steg 6, och dödsfall och arvsvinst i steg 7.
 
