@@ -16,9 +16,10 @@
 | `policy_states` | Premieförloppet – premiebetalande eller fribrev per försäkring, som tidsperioder (§6) | 🟢 I drift i Lakebase; importerad historik och tjänsteoperationer. Paket B steg 1 (B-047): villkoret smalnat till `premium_paying` och `paid_up` i Lakebase 2026-11-14 (§12) |
 | `policy_benefits` | Försäkringsförmåner – förmåner inom en försäkring | 🟢 I drift i Lakebase; förmånen ålderspension |
 | `payout_parts` / `payout_part_states` | Uttagsdelar under en förmån och deras pensionsförlopp (§7b) | 🟢 Paket B steg 1 (B-047, P1-PENSION-001 §4): skapade i Lakebase 2026-11-14 efter backup `backups/20261114T150341Z` och Karls OK, med uttagsdel 1 `not_started` för alla 499 förmåner (§12). `agent_forsakring` och `agent_aktuarie` har SELECT (B-048) |
-| `ledger_batches` / `ledger_guarantee_parts` / `ledger_capital_entries` / `ledger_controls` | Den operativa kapital- och garantijournalen: verifikationer, garantidelar, kapitalposter per konto och spår, och kontrollposter (§7c) | 🟢 Paket B steg 2 (B-047, P1-PENSION-001 §6): modeller, övergången från S-04, migration och tester; verifierade mot isolerad Postgres. Införda i Lakebase 2026-11-15 efter backup `backups/20261114T231325Z` och Karls OK, med det ingående läget per 2026-10-31 bokat (§12); agentrollerna har inga rättigheter. Paket B steg 3 (P1-PENSION-001 §7): månadsstängning och rättelse i `ledger_batches` (`supersedes_id`, två nya slag); byggt och verifierat lokalt och mot isolerad Postgres. Migrationen införd i Lakebase 2026-11-19 efter backup `backups/20261119T201517Z` (§12); novembers stängning tidigast 2026-12-01. Paket B steg 4: `ledger_guarantee_parts.plan_id` och `plan_kind = 'plan'` för garantidelar omräknade på en beslutad plan; byggt och verifierat lokalt och mot isolerad Postgres, **inte infört i Lakebase**. Paket B steg 5: slaget `company_capital`, posterna på betalningsskulden och bolagskontot och `ck_ledger_capital_entries_accounts`; byggt och verifierat lokalt och mot isolerad Postgres, mergat till main 2026-11-23, **inte infört i Lakebase**. Paket B steg 6: slaget `payout_settlement`, orsakerna `payout`, `withholding` och `payout_returned` och skatteskulden i `ck_ledger_capital_entries_accounts`; byggt och verifierat lokalt och mot isolerad Postgres, mergat till main 2026-11-24, **inte infört i Lakebase** |
+| `ledger_batches` / `ledger_guarantee_parts` / `ledger_capital_entries` / `ledger_controls` | Den operativa kapital- och garantijournalen: verifikationer, garantidelar, kapitalposter per konto och spår, och kontrollposter (§7c) | 🟢 Paket B steg 2 (B-047, P1-PENSION-001 §6): modeller, övergången från S-04, migration och tester; verifierade mot isolerad Postgres. Införda i Lakebase 2026-11-15 efter backup `backups/20261114T231325Z` och Karls OK, med det ingående läget per 2026-10-31 bokat (§12); agentrollerna har inga rättigheter. Paket B steg 3 (P1-PENSION-001 §7): månadsstängning och rättelse i `ledger_batches` (`supersedes_id`, två nya slag); byggt och verifierat lokalt och mot isolerad Postgres. Migrationen införd i Lakebase 2026-11-19 efter backup `backups/20261119T201517Z` (§12); novembers stängning tidigast 2026-12-01. Paket B steg 4: `ledger_guarantee_parts.plan_id` och `plan_kind = 'plan'` för garantidelar omräknade på en beslutad plan; byggt och verifierat lokalt och mot isolerad Postgres, **inte infört i Lakebase**. Paket B steg 5: slaget `company_capital`, posterna på betalningsskulden och bolagskontot och `ck_ledger_capital_entries_accounts`; byggt och verifierat lokalt och mot isolerad Postgres, mergat till main 2026-11-23, **inte infört i Lakebase**. Paket B steg 6: slaget `payout_settlement`, orsakerna `payout`, `withholding` och `payout_returned` och skatteskulden i `ck_ledger_capital_entries_accounts`; byggt och verifierat lokalt och mot isolerad Postgres, mergat till main 2026-11-24, **inte infört i Lakebase**. Paket B steg 7: orsaken `death_reversal`, arvsvinstpoolen (`inheritance_pool`) i `ck_ledger_capital_entries_accounts` och garantiorsaken `death`; byggt och verifierat lokalt och mot isolerad Postgres, **inte mergat och inte infört i Lakebase** |
 | `payout_amounts` / `pension_claims` / `pension_claim_fundings` | Beslutade månadsbelopp, månadsrätter per uttagsdel och månad, och senare bolagsstöd till ej finansierade anspråk (§7e) | 🟡 Paket B steg 5 (B-047, B-053, P1-PENSION-001 §5.5): modeller, operationer, migration och tester; verifierade lokalt och mot isolerad Postgres. Mergade till main 2026-11-23; **inte införda i Lakebase**; migrationen efter steg 4:s och Karls separata OK. Agentrollerna får inga rättigheter |
 | `tax_statuses` / `payout_accounts` / `payout_files` / `payout_orders` / `payout_order_lines` / `payout_receipts` | Skattestatus och utbetalningskonto per person i versionskedjor, bankfiler, bankuppdrag per mottagare, försök per anspråk och bankens kvitton (§7f) | 🟡 Paket B steg 6 (B-047, B-054, P1-PENSION-001 §8): modeller, operationer, migration och tester; verifierade lokalt och mot isolerad Postgres. Mergade till main 2026-11-24, **inte införda i Lakebase**; migrationen efter steg 5:s och Karls separata OK. Agentrollerna får inga rättigheter |
+| `death_reports` / `death_settlements` / `pension_claim_reversals` / `estate_authorities` | Dödsfallsbesked i versionskedjor per person, dödsfallsavräkningen per uttagsdel, återförda anspråk efter dödsmånaden och dödsboets behörighet med konto (§7g) | 🟡 Paket B steg 7 (B-047, B-055, P1-PENSION-001 §9.1): modeller, operationer, migration och tester; verifierade lokalt och mot isolerad Postgres. **Inte mergade och inte införda i Lakebase**; migrationen efter steg 6:s och Karls separata OK. Agentrollerna får inga rättigheter |
 | `payout_requests` / `payout_plans` / `payout_splits` | Kundens begäran om uttag, planversioner per uttagsdel och delningsbeslut (§7d) | 🟡 Paket B steg 4 (B-047, B-051, P1-PENSION-001 §5): modeller, operationer, migration och tester; verifierade lokalt och mot isolerad Postgres. **Inte införda i Lakebase**; migrationen tidigast efter novembers stängning (2026-12-01) och Karls separata OK. Agentrollerna får inga rättigheter |
 | `premium_transactions` | Premietransaktioner (en rad per förmån och månad) | 🟢 I drift i Lakebase med importerad premiehistorik; `corrects_transaction_id` migrerad 2026-10-11 |
 | `salary_reports` | Löneunderlag – pensionsmedförande lön per person, arbetsgivare och månad, versionerat | 🟢 Skapad i Lakebase 2026-10-11 (§8b); registrering verifierad i S6 2026-10-12 |
@@ -28,7 +29,7 @@
 | `premium_month_journals` / `premium_receipts` / `premium_month_closes` | Frysta syntetiska månadsunderlag, mottagning med kapital-/garantispår och avstämd FTA-analys | 🟢 Skapade tomma i Lakebase 2026-11-03 efter backup `backups/20261103T212124Z` och separat OK (P6-MANAD-001); inga nya agenträttigheter. [Fält, nycklar och riktad migration](avstamd_fta_manad.md#tabeller-och-lakebase-gräns) |
 | `base_amounts` | Basbelopp per år (parametertabell för beräkningar) | 🟢 I drift (seedad 2023–2026) |
 | `operation_events` / `approval_requests` | Tjänstelagrets händelselogg och godkännandekö (§9b–9c) | 🟢 Skapade i Lakebase i Fas 1f T3a; kö/logg används av tjänstelagret och UI:t |
-| `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad med agentrollens läsrätt i Lakebase 2026-10-24. Ärendetyperna `payout_request` och `payout_review` (paket B steg 4), `company_capital` (steg 5) och `payout_hindrance` och `tax_status` (steg 6) är inte införda i Lakebase. Agentflödet verifierat i Lakebase 2026-11-02 (F5-5–6). Ärendetypen `salary_file_deviation` (steg 2), `payment_overdue` och kanalen `system` (steg 3) samt `payment_unmatched` (steg 4): CHECK-villkoren `ck_cases_type`, `ck_cases_channel` och `ck_cases_subject` bytta i Lakebase 2026-11-08 av samma migration som premieflödets tabeller (steg 8, §12); de 8 befintliga ärendena oförändrade |
+| `cases` | Ärenden – handläggaragentens arbetsenhet och mandat (§9g) | 🟢 Skapad med agentrollens läsrätt i Lakebase 2026-10-24. Ärendetyperna `payout_request` och `payout_review` (paket B steg 4), `company_capital` (steg 5), `payout_hindrance` och `tax_status` (steg 6) och `death_report`, `death_recovery` och `inheritance_pool` (steg 7) är inte införda i Lakebase. Agentflödet verifierat i Lakebase 2026-11-02 (F5-5–6). Ärendetypen `salary_file_deviation` (steg 2), `payment_overdue` och kanalen `system` (steg 3) samt `payment_unmatched` (steg 4): CHECK-villkoren `ck_cases_type`, `ck_cases_channel` och `ck_cases_subject` bytta i Lakebase 2026-11-08 av samma migration som premieflödets tabeller (steg 8, §12); de 8 befintliga ärendena oförändrade |
 | `case_work` / `case_messages` / `case_work_days` | Varaktiga ärendeuppdrag, skyddad dialog och daglig budgetbok (§12b) | 🟢 Skapade tomma i Lakebase 2026-10-31 efter backup och operatörens OK; inga direkta agenträttigheter. Schema är avstängt |
 | `product_parameters` | Versionerade premieåldrar, premiesatser och brytpunkter, samt kapitalavgift och skattebelastning per år (§9h) | 🟢 Skapad och seedad i Lakebase 2026-10-25; agentrollens läsrätt satt. Förändringsoperationer finns; komplett flödesverifiering återstår i 3c-V. 🟢 Kapitalets nycklar (A5) införda i Lakebase 2026-10-31 efter backup `backups/20261031T172901Z` och operatörens OK |
 | `portfolios` / `portfolio_holdings` / `trades` | Fristående paper trading-scenarier, instrument och affärsförslag/kvittenser (§9d–9f) | 🟡 Fas 2c: modeller och lokala tester; ej skapade i Lakebase |
@@ -608,6 +609,83 @@ Senare finansiering av ett ej finansierat anspråk från bolagskontot, bokad i e
 
 ---
 
+## 7g. Tabeller: `death_reports`, `death_settlements`, `pension_claim_reversals` och `estate_authorities` – Dödsfall, avräkning och dödsbo
+
+> **Status:** Paket B steg 7 (B-047 punkt 7, [P1-PENSION-001 §9.1](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md), PB9 och PB10, Karls val Y1–Y14 2026-11-24, **B-055**).
+> - **Var koden finns:** modeller i `src/models/death.py`; besked, dödsbo och läsningar i `src/services/death_reports.py`; avräkningen och arvsvinsten i `src/services/month_close.py` (PR-ITP1-020 steg 6–7); dödsboets bankuppdrag i `src/services/payout_orders.py`; operationerna i `src/services/operations/death_reports.py`; folkbokföringens simulerade avisering i `src/simulation/counterparties.py` (`death_notice_file`); migrationen i `scripts/migrations/migrate_death_reports.py` (§12).
+> - **Verifierat** lokalt och mot isolerad Postgres. **Inte mergat; inte infört i Lakebase.**
+
+**Domän:**
+- Ett **besked** är misstänkt, verifierat eller tillbakadraget och sparas som en versionskedja per person. Ett verifierat besked kräver dödsdag, verifieringssätt och dokumentreferens, och dödsdagen ligger senast på rapportdagen. Vid verifieringen sätts personens status till `deceased`, och den tidigare statusen sparas i versionen; ett tillbakadraget besked återställer den. Efter avräkningen kan beskedet inte ändras (Y2). Ett misstänkt besked stoppar bara personens bankuppdrag (Y3).
+- **Avräkningen** görs i första stängningen vars månadsslut ligger på eller efter dödsdagen (Y6). Dödsmånadens rätt står kvar om delen var i utbetalning den månaden – även vid död på startdagen – men ingen rätt bokas efter dödsmånaden (Y4). Delens återstående kapital förs spår för spår till arvsvinstpoolen (`pool_in`), varje gällande garantidel får G = 0 (orsaken `death`) och delen blir `ended` med orsaken `death`. En rad i `death_settlements` per del.
+- **Anspråk efter dödsmånaden** (sent besked, Y5):
+  - ej betalda återförs exakt: skulden minskar, kapitaldelen går tillbaka till spåren och därifrån till poolen, bolagsstödet tillbaka till bolagskontot (`death_reversal`) och det ej finansierade stryks;
+  - skickade och okända väntar på kvittot;
+  - utförda ger ärendet `death_recovery` – ingen kvittning och ingen negativ arvsvinst.
+- **Arvsvinsten** (Y7): hela poolen fördelas samma månad på delar med öppningskapital som inte är avlidna, avräknade, slutavräknade eller avslutade. Vikten är `E = C_öppning × q/(1 − q)` ur den antagna SIM-R, i ören med största rest och inom delen efter spårens öppningskapital (`pool_out`). Arvsvinsten ökar C, aldrig G. Utan mottagare, med ΣE = 0 eller utan antagen SIM-R står poolen kvar med ärendet `inheritance_pool`.
+- **Dödsboet** (Y10) får bara anspråk med rätt senast dödsmånaden, när delarna är avräknade och behörigheten och kontot är verifierade. Kontot är en version i `payout_accounts` på den avlidnes person, registrerad efter dödsdagen. Skatten är personens skattestatus utan gränserna för småbelopp, och uppdraget märks som dödsbo i underlaget för kontrolluppgiften.
+- Rättelse av en månad med avräkning, återföring eller poolens in- eller utflöde blockeras i första versionen (Y8). Utan tabellerna beter sig stängningen som i steg 6 (B-052).
+
+### `death_reports`
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Stabilt id ur person och version |
+| `insured_person_id` / `version` / `supersedes_id` | | NOT NULL, FK RESTRICT; UNIQUE (person, version), UNIQUE föregångare; CHECK: föregångare saknas exakt för version 1 | Versionskedjan per person |
+| `status` | `VARCHAR(20)` | CHECK in (`'suspected'`, `'verified'`, `'withdrawn'`) | Misstänkt, verifierat eller tillbakadraget |
+| `death_date` | `DATE` | CHECK: krävs för verifierat; ≤ `reported_on` | Dödsdagen |
+| `reported_on` / `received_date` | `DATE` | NOT NULL; rapportdagen ≤ mottagningsdagen | Dagen källan lämnade beskedet och dagen det togs emot |
+| `source` / `source_ref` | `VARCHAR` | CHECK in (`'population_register'`, `'relative'`, `'employer'`, `'case_handler'`, `'other'`) | Källan och dess referens |
+| `source_system` / `notice_id` | `VARCHAR` | båda eller ingen; partiellt unikt index `uq_death_reports_notice` | Folkbokföringens källsystem och besked-id (Y14) |
+| `verification_method` / `document_ref` | `VARCHAR` | CHECK: krävs för verifierat; sätt in (`'population_register'`, `'death_certificate'`, `'other_document'`) | Verifieringen (PR-ITP1-010) |
+| `previous_status` | `VARCHAR(20)` | | Personens status före verifieringen; återställs vid tillbakadragning |
+| `channel` / `content` / `checksum` / `created_by` | | NOT NULL, kontrollsumman 64 tecken | Samma besked igen ger ingen ny version |
+
+### `death_settlements`
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Stabilt id ur delen |
+| `payout_part_id` | `UUID` | NOT NULL, FK RESTRICT, UNIQUE | En avräkning per uttagsdel |
+| `report_id` | `UUID` | NOT NULL, FK → `death_reports(id)` | Den verifierade versionen avräkningen bygger på |
+| `death_month` | `DATE` | NOT NULL, CHECK dag = 1 | Dödsmånaden |
+| `batch_id` | `UUID` | NOT NULL, FK → `ledger_batches(id)`, index | Stängningen som avräknade delen |
+| `death_month_claim_id` | `UUID` | FK → `pension_claims(id)` | Dödsmånadens rätt, om den finns |
+| `reversed_claims` / `capital_to_pool_sek` / `estate_liability_sek` | | alla ≥ 0 | Antal återförda anspråk, kapitalet till poolen och dödsboets fordran (skulden på delen efter stängningen) |
+| `content` / `created_by` | | NOT NULL | Dödsdag, versionsnummer, väntande och återkrävda anspråk och den frisläppta garantin |
+
+### `pension_claim_reversals`
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Stabilt id ur anspråket |
+| `claim_id` | `UUID` | NOT NULL, FK RESTRICT, UNIQUE | Anspråket som återförs (`pension_claims` ändras aldrig, W1) |
+| `payout_part_id` / `report_id` / `batch_id` | `UUID` | NOT NULL, FK | Delen, beskedet och stängningen |
+| `payment_state` | `VARCHAR(20)` | NOT NULL | Betalningsläget vid återföringen: finansierat, ej finansierat, avvisat, återkommet eller i en förberedd fil |
+| `liability_sek` / `capital_sek` / `company_sek` / `unfunded_dropped_sek` | `NUMERIC(14,2)` | alla ≥ 0; CHECK skuld = kapital + bolag | Ur skulden, tillbaka till kundkapitalet respektive bolagskontot, och struket ej finansierat |
+| `content` / `created_by` | | NOT NULL | Rättens månad, brutto, dödsmånad och debiteringen per spår |
+
+### `estate_authorities`
+
+| Kolumn | Datatyp | Constraints | Beskrivning |
+|--------|---------|-------------|-------------|
+| `id` | `UUID` | PK | Stabilt id ur person och version |
+| `insured_person_id` / `version` / `supersedes_id` | | NOT NULL; UNIQUE (person, version), UNIQUE föregångare; kedjevillkor | Versionskedjan per avliden person |
+| `report_id` | `UUID` | NOT NULL, FK → `death_reports(id)` | Det verifierade beskedet |
+| `role` | `VARCHAR(30)` | CHECK in (`'estate_member'`, `'estate_administrator'`, `'representative'`) | Dödsbodelägare, boutredningsman eller ombud |
+| `representative` / `document_kind` / `document_ref` | | CHECK handling in (`'death_certificate_with_family'`, `'estate_inventory'`, `'power_of_attorney'`) | Företrädaren och behörighetshandlingen |
+| `verified` / `verification_method` / `verification_ref` | | CHECK: verifierad kräver sätt och referens | Prövningen av behörigheten |
+| `account_id` | `UUID` | NOT NULL, FK → `payout_accounts(id)` | Dödsboets konto, en version på den avlidnes person |
+| `decided_by` / `received_date` / `channel` / `checksum` / `created_by` | | NOT NULL | Samma uppgift igen ger ingen ny version |
+
+**Journalen** (§7c) får orsaken `death_reversal`, kontot `inheritance_pool` bland de konton som aldrig blir negativa och garantiorsaken `death`. **Ärendena** får typerna `death_report`, `death_recovery` och `inheritance_pool`; det sista har varken person eller arbetsgivare.
+
+**Skrivs av:** `register_death_report`, `verify_death_report`, `import_death_notices` och `register_estate_authority`, alla `HUMAN_ONLY` (tjänstelager §9.20, Y11), och månadsstängningen (`death_settlements`, `pension_claim_reversals`).
+
+**Läses av:** `get_death_settlement` (kontot maskerat), stängningens kontroller *dödsfall* och *arvsvinstpool* och bankfilen. Agentrollerna har inga rättigheter.
+
+---
+
 ## 8. Tabell: `premium_transactions` – Premietransaktioner
 
 **Domän:** En rad per **förmån**, kalendermånad och transaktionstyp (B-022: premien hör till förmånen, inte försäkringen). I nuvarande produktscope hanteras bara ålderspensionspremier. Om andra förmånstyper senare godkänns genom ett nytt scopebeslut ska deras premier hållas åtskilda från pensionspremier. Ordinarie ålderspensionspremie beräknas enligt `01_domän/ITP1_regelverk.md` §2/§6. Tabellen är **spårbarhetens kärna**: varje krona i pensionskapitalet ska kunna följas hit och räknas om ur sitt underlag.
@@ -1039,7 +1117,7 @@ Raden har ärendets **aktuella** status och utfall. Historiken – vem som skapa
 |--------|---------|-------------|-------------|
 | `id` | `UUID` | PK, default `gen_random_uuid()` | Surrogatnyckel |
 | `case_number` | `VARCHAR(20)` | NOT NULL, UNIQUE, CHECK form `CASE-NNNNNN` | Ärendenumret; står i `case_id` i kö och logg |
-| `case_type` | `VARCHAR(40)` | NOT NULL, CHECK in (`'salary_report'`, `'salary_file_deviation'`, `'payment_overdue'`, `'payment_unmatched'`, `'payout_reconstruction'`, `'payout_request'`, `'payout_review'`, `'company_capital'`, `'payout_hindrance'`, `'tax_status'`) | Ärendetyp. Fler typer läggs till med ny CHECK (B-033 val C). `salary_file_deviation` (paket A steg 2) är en avvikelse i en löneunderlagsfil, `payment_overdue` (steg 3) en förfallen faktura och `payment_unmatched` (steg 4) en inbetalning på avstämningskontot; alla avgörs av människa. CHECK-villkoret byttes i Lakebase av premieflödets migration 2026-11-08 (§12, paket A steg 8). `payout_reconstruction` (paket B steg 1) skapas av övergången för varje uttag som flyttats från försäkringens läge till uttagsdel 1; handläggaren rekonstruerar plan och utbetalningshistorik ur underlag. Villkoret byttes i Lakebase av uttagsdelarnas migration 2026-11-14 (§12); inga sådana ärenden där, eftersom inga uttagslägen fanns. `payout_request` (paket B steg 4) är kundens begäran om uttag, delning eller ändrad plan, och `payout_review` ett ärende som månadsstängningen öppnar när standardstarten inte kan göras: overifierat underlag eller en person som passerat 66 utan plan. Båda avgörs av människa; villkoret vidgas av `migrate_payout_plans.py`, som inte är införd i Lakebase. `company_capital` (paket B steg 5) öppnas av månadsstängningen när bolagskontot inte räcker till ett anspråk och eskaleras till operatören; ärendet gäller bolaget och saknar person och arbetsgivare. Villkoret vidgas av `migrate_pension_claims.py`, som inte är införd. `payout_hindrance` (paket B steg 6) är ett utbetalningshinder – saknat, overifierat, avvisat eller återkommet konto – där skulden står kvar, och `tax_status` en saknad skattestatus eller huvudinkomst utan skattetabell (§7f). Båda gäller en person och avgörs av människa; villkoret vidgas av `migrate_payout_orders.py`, som inte är införd |
+| `case_type` | `VARCHAR(40)` | NOT NULL, CHECK in (`'salary_report'`, `'salary_file_deviation'`, `'payment_overdue'`, `'payment_unmatched'`, `'payout_reconstruction'`, `'payout_request'`, `'payout_review'`, `'company_capital'`, `'payout_hindrance'`, `'tax_status'`, `'death_report'`, `'death_recovery'`, `'inheritance_pool'`) | Ärendetyp. Fler typer läggs till med ny CHECK (B-033 val C). `salary_file_deviation` (paket A steg 2) är en avvikelse i en löneunderlagsfil, `payment_overdue` (steg 3) en förfallen faktura och `payment_unmatched` (steg 4) en inbetalning på avstämningskontot; alla avgörs av människa. CHECK-villkoret byttes i Lakebase av premieflödets migration 2026-11-08 (§12, paket A steg 8). `payout_reconstruction` (paket B steg 1) skapas av övergången för varje uttag som flyttats från försäkringens läge till uttagsdel 1; handläggaren rekonstruerar plan och utbetalningshistorik ur underlag. Villkoret byttes i Lakebase av uttagsdelarnas migration 2026-11-14 (§12); inga sådana ärenden där, eftersom inga uttagslägen fanns. `payout_request` (paket B steg 4) är kundens begäran om uttag, delning eller ändrad plan, och `payout_review` ett ärende som månadsstängningen öppnar när standardstarten inte kan göras: overifierat underlag eller en person som passerat 66 utan plan. Båda avgörs av människa; villkoret vidgas av `migrate_payout_plans.py`, som inte är införd i Lakebase. `company_capital` (paket B steg 5) öppnas av månadsstängningen när bolagskontot inte räcker till ett anspråk och eskaleras till operatören; ärendet gäller bolaget och saknar person och arbetsgivare. Villkoret vidgas av `migrate_pension_claims.py`, som inte är införd. `payout_hindrance` (paket B steg 6) är ett utbetalningshinder – saknat, overifierat, avvisat eller återkommet konto – där skulden står kvar, och `tax_status` en saknad skattestatus eller huvudinkomst utan skattetabell (§7f). Båda gäller en person och avgörs av människa; villkoret vidgas av `migrate_payout_orders.py`, som inte är införd. `death_report` (paket B steg 7) samlar en persons dödsfallsbesked, avräkningen, premie efter dödsfallet och dödsboet, `death_recovery` är återkravsprövningen av ett utfört anspråk efter dödsmånaden och `inheritance_pool` en arvsvinstpool som står kvar efter stängningen; den saknar person och arbetsgivare (§7g). Alla avgörs av människa; villkoren vidgas av `migrate_death_reports.py`, som inte är införd |
 | `status` | `VARCHAR(20)` | NOT NULL, CHECK in (`open`, `in_progress`, `waiting_approval`, `waiting_info`, `closed`), default `open` | Aktuell status |
 | `outcome` | `VARCHAR(20)` | NULL, CHECK in (`approved`, `rejected`, `supplement_requested`, `manual_review`, `no_action`) | Utfall; satt exakt när ärendet är stängt |
 | `insured_person_id` | `UUID` | NULL, FK → `insured_persons(id)` ON DELETE RESTRICT | Den försäkrade ärendet gäller |
@@ -1421,6 +1499,20 @@ ingenting. Erfarenhetsdata importeras separat, aldrig från fabricerade modellut
   - **Kodens beroende:** utan tabellerna beter sig stängningen som i steg 5. Det prövas mot main:s kod på samma databas (`scripts/simulation/paket_b_steg6/compare_main.py`, B-052). Operationerna blockeras med hänvisning till migrationen.
   - **Ordning i Lakebase** (Karls val X13): steg 4:s och steg 5:s migrationer och därefter backup → torrkörning → `--apply`. Varje skarpt steg kräver Karls separata OK och samordning enligt AGENTS.md §4.5.
   - **Mergad till main 2026-11-24; inte införd i Lakebase.**
+- **Paket B steg 7 (2026-11-24) – dödsfall, avräkning, arvsvinst och dödsbo (§7c, §7g, §9g, B-047, B-055, P1-PENSION-001 §9.1, Karls val Y1–Y14):** införs med `scripts/migrations/migrate_death_reports.py` (`utils/migration_death_reports.py`) i **en** transaktion.
+  - **Vad den gör:**
+    - skapar `death_reports`, `death_settlements`, `pension_claim_reversals` och `estate_authorities` tomma med index och villkor;
+    - vidgar `ck_ledger_capital_entries_reason` med `death_reversal`, `ck_ledger_capital_entries_accounts` med arvsvinstpoolen och `ck_ledger_guarantee_parts_reason` med `death`;
+    - vidgar `ck_cases_type` med `death_report`, `death_recovery` och `inheritance_pool` och `ck_cases_subject` med `inheritance_pool`.
+  - Inga rader ändras; poolen har inga poster före migrationen.
+  - **Förutsättning:** steg 1–6 är införda, med skatteskuldens villkor; annars stoppar migrationen.
+  - **Torrkörning** är standard och körs `READ ONLY`. **Skarp körning:** `--apply` kräver `--backup`. Samma kontroller i transaktionen som i steg 6; minsta avvikelse rullar tillbaka allt.
+  - **Idempotent:** är allt infört görs ingenting. Är bara en del av tabellerna införd stoppar migrationen.
+  - **Verifierat** mot isolerad Postgres (`tests/test_migration_death_reports.py`): från läget efter steg 6 blir de fyra tabellerna, journalens villkor och `cases` identiska med `create_all`. Migrationen är idempotent; delvis införd och saknat steg 6 stoppar. Paket A:s testbestånd i Postgres avräknar ett dödsfall med arvsvinst (fall 26), och poolen kan inte bli negativ.
+  - **Kodens beroende:** utan tabellerna beter sig stängningen som i steg 6. Det prövas mot main:s kod på samma databas i sju lägen (`scripts/simulation/paket_b_steg7/compare_main.py`, B-052, Y13). Operationerna blockeras med hänvisning till migrationen.
+  - **Före migrationen:** `scripts/simulation/paket_b_steg7/survey.py` räknar personer med status `deceased`; var och en behöver ett verifierat besked innan nästa stängning avräknar dem.
+  - **Ordning i Lakebase** (Karls val Y12): novembers stängning, steg 4:s, 5:s och 6:s migrationer och därefter backup → torrkörning → `--apply`. Varje skarpt steg kräver Karls separata OK och samordning enligt AGENTS.md §4.5.
+  - **Inte mergad och inte införd i Lakebase.**
 
 ---
 

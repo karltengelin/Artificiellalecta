@@ -726,7 +726,7 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
 - **Steg 1:** öppningskapitalet är föregående lägets kapitalspår: det ingående läget eller förra månadens stängning. Ägarnas levandestatus och uttagsdelarnas lägen prövas.
 - **Steg 2–3:** avkastning enligt den antagna AVK:n för månaden (PR-ITP1-021). Kapitalavgift och skattebelastning tas ut på öppningsbasen med månadens parameterversioner, satsen delad med 12 (PR-ITP1-022, PR-ITP1-023). Beräkningen görs med `close_month` och `roll_origins` per uttagsdel och fördelas på spåren i ören. Belopp som inte kunde tas ut syns bara i sammanställningen.
 - **Steg 4:** månadens premier ur paket A (§9.15) blir en garantidel och ett nytt kapitalspår per allokering, med värdedag vid månadsslutet och utan avkastning denna månad.
-- **Steg 8:** elva kontrollposter (tolv med steg 4, §9.17, fjorton med steg 5, §9.18, och femton med steg 6, §9.19), bland dem föregående läge, kapital per spår och totalt, garanti, premier och avstämningskontot.
+- **Steg 8:** elva kontrollposter (tolv med steg 4, §9.17, fjorton med steg 5, §9.18, femton med steg 6, §9.19, och sjutton med steg 7, §9.20), bland dem föregående läge, kapital per spår och totalt, garanti, premier och avstämningskontot.
 - **Fall 13:** C0 = 100 000,00 kr och r = 1 % ger +1 000,00, −16,67 och −29,50 kr, alltså C1 = 100 953,83 kr.
 
 **Granskning, idempotens och rättelse (§7.2):**
@@ -814,7 +814,7 @@ Beslutat i **B-047** punkt 4 och 6 och [P1-PENSION-001](../projekt/01_ärendehan
   - bokningen i stängningens steg 1 och 5 i `src/services/month_close.py` (§9.16).
 - **Tabeller och migration:** `payout_amounts`, `pension_claims` och `pension_claim_fundings`, se [databasschema §7e och §12](databasschema.md#7e-tabeller-payout_amounts-pension_claims-och-pension_claim_fundings--beloppsbeslut-månadsrätt-och-bolagsstöd). Mergade till main 2026-11-23; inte införda i Lakebase.
 - **Befogenheter:** två nya operationer, båda `HUMAN_ONLY`, och inga nya agentbefogenheter.
-- **Avgränsning:** anspråket skuldförs i stängningen. Skatt, bankuppdrag och kvitton finns i steg 6 (§9.19), och dödsfall och arvsvinst byggs i steg 7.
+- **Avgränsning:** anspråket skuldförs i stängningen. Skatt, bankuppdrag och kvitton finns i steg 6 (§9.19), och dödsfall och arvsvinst i steg 7 (§9.20).
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
@@ -844,7 +844,7 @@ Beslutat i **B-047** punkt 4 och 6 och [P1-PENSION-001](../projekt/01_ärendehan
 - *Blockeras:*
   - operationerna innan migrationen är körd;
   - en stängning med en rätt utan registrerad insättning (PB11);
-  - registrerat dödsfall (till steg 7);
+  - registrerat dödsfall utan verifierat besked (med steg 7 avräknas ett verifierat dödsfall, §9.20);
   - en rättelse som ändrar ett anspråks brutto eller del ur kundkapitalet (W10).
 - *Nekas:* agenter i båda operationerna och systemaktören i insättningen.
 - **Lakebase:** körskripten finns i `scripts/simulation/paket_b_steg5/`. De körs efter steg 4:s migration (W12, [databasschema §12](databasschema.md#12-migrationer-och-versionering)).
@@ -879,7 +879,7 @@ Beslutat i **B-047** punkt 6 och [P1-PENSION-001](../projekt/01_ärendehantering
 
 **Bankfilen och kvittona (X6–X9, fall 21–25 och 34):**
 - Utförandedagen är den senare av betalningsdagen och närmaste bankdag från i dag; en försening redovisas.
-- Saknat eller overifierat konto, saknad skattestatus och avliden person blockerar personens uppdrag. Avliden ger inget ärende (steg 7).
+- Saknat eller overifierat konto, saknad skattestatus och avliden person blockerar personens uppdrag. Avliden utan besked ger inget ärende; med steg 7 gäller beskedet och dödsboet (§9.20).
 - Kvittots övergångar: skickat eller okänt → utfört, avvisat eller okänt; utfört → återkommet. Allt annat ger konflikt för hela filen.
 - Efter avvisning eller retur blockeras nästa försök tills ett nytt verifierat konto registrerats. Försöket är en ny rad med samma anspråk.
 - Verifikationen `payout_settlement` bokas i första öppna månaden: skulden −brutto per del (`payout`) och skatteskulden +skatt (`withholding`); retur ger exakta motposter (`payout_returned`).
@@ -891,6 +891,48 @@ Beslutat i **B-047** punkt 6 och [P1-PENSION-001](../projekt/01_ärendehantering
 - *Konflikt:* fel eller ersatt kontrollsumma vid godkännande, ändrat underlag sedan filen skapades, kvitto-id med ändrat innehåll, okänt eller ej godkänt uppdrag och otillåten övergång.
 - *Nekas:* agenter i alla sex operationerna och systemaktören i de skrivande.
 - **Lakebase:** migrationen körs efter steg 5:s, med backup, torrkörning och Karls separata OK (X13, [databasschema §12](databasschema.md#12-migrationer-och-versionering)).
+
+### 9.20 Dödsfall, avräkning, arvsvinst och dödsbo (paket B steg 7, B-047) – vad som stöds och vad som blockeras
+
+Beslutat i **B-047** punkt 7 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §9.1 (PB9, PB10), med Karls val Y1–Y14 2026-11-24 (**B-055**).
+- **Kod:**
+  - `src/services/death_reports.py`: besked, folkbokföringens avisering, dödsboet och läsningarna för stängningen och bankfilen;
+  - `src/services/operations/death_reports.py`: operationerna;
+  - stängningens steg 6–7 i `src/services/month_close.py`: avräkning, återföring, poolen och arvsvinsten (§9.16);
+  - dödsboets uppdrag och stoppet vid misstänkt dödsfall i `src/services/payout_orders.py` (§9.19);
+  - `src/simulation/counterparties.py`: folkbokföringens avisering (`death_notice_file`, källan `population-register-sim`, Y14).
+- **Tabeller och migration:** `death_reports`, `death_settlements`, `pension_claim_reversals` och `estate_authorities`, se [databasschema §7g och §12](databasschema.md#7g-tabeller-death_reports-death_settlements-pension_claim_reversals-och-estate_authorities--dödsfall-avräkning-och-dödsbo). Inte mergade och inte införda i Lakebase.
+- **Befogenheter:** fem nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter (Y11).
+- **Avgränsning:** en ändrad dödsdag eller ett tillbakadraget besked efter avräkningen, verkställt återkrav, dröjsmålsränta, KU och AGI och handläggarsidan ligger utanför steg 7.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `register_death_report` | `write` | Ja | `HUMAN_ONLY` | Registrerar ett besked som misstänkt eller direkt som verifierat med dödsdag, verifieringssätt och dokumentreferens. Verifierat sätter personens status till avliden. Öppnar eller fyller på ärendet `death_report`. Samma besked igen ger ingen ny version, och ett verifierat besked nedgraderas inte |
+| `verify_death_report` | `write` | Ja | `HUMAN_ONLY` | Verifierar ett misstänkt besked, ändrar dödsdagen eller drar tillbaka beskedet med anteckning – som en ny version och bara före avräkningen. Tillbakadraget återställer personens tidigare status |
+| `import_death_notices` | `write` | Ja | `HUMAN_ONLY` | Folkbokföringens avisering: varje besked registreras som misstänkt med kanalen `system` och verifieras av handläggaren. Samma besked igen ger ingen effekt, samma besked-id med annat innehåll ger konflikt för hela filen, och okända personnummer redovisas |
+| `register_estate_authority` | `write` | Ja | `HUMAN_ONLY` | Dödsboets företrädare med roll, behörighetshandling, prövning och konto – en kontoversion på den avlidnes person, registrerad efter dödsdagen. Kräver ett verifierat besked |
+| `get_death_settlement` | `read` | Ja | `HUMAN_ONLY` | Personens besked i alla versioner, avräkningen per del, anspråken med återföringar, återkravsärendena och dödsboet med maskerat konto. Systemaktören får läsa, agenter nekas |
+
+**Avräkningen (Y4–Y6, fall 26–28 och 31):**
+- Görs i första stängningen vars månadsslut ligger på eller efter dödsdagen, för varje del vars ägare har ett gällande verifierat besked.
+- Dödsmånadens rätt står kvar om delen var i utbetalning den månaden, också vid död på startdagen; en pausad del får ingen rätt. Ingen rätt bokas efter dödsmånaden, och en standardstart görs inte för en del vars ägare dog före 66-månaden.
+- Anspråk efter dödsmånaden: ej betalda återförs exakt (`death_reversal`) – kapitaldelen till spåren, bolagsstödet till bolagskontot och det ej finansierade stryks. Skickade och okända väntar på kvittot. Utförda ger ärendet `death_recovery` en gång per anspråk, utan kvittning.
+- Delens återstående kapital förs till poolen spår för spår (`pool_in`), garantin sätts till G = 0 (orsaken `death`) och delen blir `ended` (`death`) från månaden efter dödsmånaden, eller från avräkningsmånaden när dödsmånaden redan är stängd.
+- Premien på en avliden del hålls utanför journalen som i W9 och redovisas i ärendet `death_report` för manuell avräkning.
+
+**Arvsvinsten (Y7, fall 26 och 29):** hela poolen fördelas samma månad efter `E = C_öppning × q/(1 − q)` ur SIM-R, i ören med största rest och inom delen efter spårens öppningskapital (`pool_out`). Mottagare är delar med öppningskapital vars ägare inte är avlidna och som inte är avräknade, slutavräknade eller avslutade. Arvsvinsten ökar C, aldrig G. Utan mottagare, med ΣE = 0 eller utan antagen SIM-R står poolen kvar med ärendet `inheritance_pool`.
+
+**Stängningen (Y9):** steg 8 får kontrollerna *dödsfall* och *arvsvinstpool*, och *kapital totalt* räknar in återföringen, poolens inflöde och arvsvinsten – sjutton kontrollposter med steg 7. Utan tabellerna är stängningen identisk med steg 6, prövat mot main:s kod i sju lägen med `scripts/simulation/paket_b_steg7/compare_main.py` och låst i `tests/test_death_reports.py` (B-052, Y13).
+
+**Bankfilen (Y3, Y10, fall 27 och 30):**
+- Ett misstänkt besked blockerar personens uppdrag (`death_suspected`) utan hinderärende; en förberedd fil ger konflikt vid godkännandet.
+- Efter ett verifierat besked betalas bara anspråk med rätt senast dödsmånaden, till dödsboets verifierade konto när personens delar är avräknade (annars `estate_missing`). Skatten är personens skattestatus utan gränserna för 100 och 1 000 kr, och uppdraget märks som dödsbo.
+
+**Spärras:**
+- *Blockeras:* operationerna innan migrationen är körd; verifiering utan dödsdag, sätt eller handling; dödsdag efter rapportdagen; ändring efter avräkningen; dödsbo utan verifierat besked eller med konto från före dödsdagen; avisering med fel kontrollsumma; rättelse av en månad med avräkning eller poolens rörelse (Y8).
+- *Konflikt:* samma besked-id från folkbokföringen med annat innehåll.
+- *Nekas:* agenter i alla fem operationerna och systemaktören i de fyra skrivande.
+- **Lakebase:** migrationen körs efter steg 6:s, med backup, torrkörning och Karls separata OK; `scripts/simulation/paket_b_steg7/survey.py` räknar först personer med status `deceased` (Y12, [databasschema §12](databasschema.md#12-migrationer-och-versionering)).
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.

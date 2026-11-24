@@ -970,6 +970,27 @@ Kontrakten från steg 5 och 6 består. Ett anspråk ändras aldrig (W1), och ett
 - KU och AGI;
 - handläggarsidan (steg 8).
 
+**Byggt i steg 7 (2026-11-24 på branchen `claude/paket-b-steg-7-design-c61002`; inte mergat, inte infört i Lakebase):**
+
+- **Var det finns:**
+  - besked, avisering, dödsbo och läsningar i `src/services/death_reports.py`;
+  - avräkningen, återföringen, poolen och arvsvinsten i stängningens steg 6–7 i `src/services/month_close.py`, med kontrollerna *dödsfall* och *arvsvinstpool*;
+  - dödsboets uppdrag och stoppet vid misstänkt dödsfall i `src/services/payout_orders.py`, med skatten utan småbeloppsgränser i `src/skills/calculation/payout_tax.py`;
+  - de fem operationerna, alla `HUMAN_ONLY` ([tjänstelager §9.20](../../02_system/tjänstelager.md));
+  - folkbokföringens avisering i `src/simulation/counterparties.py`;
+  - tabellerna och migrationen `migrate_death_reports.py` ([databasschema §7g och §12](../../02_system/databasschema.md));
+  - jämförelsen med main och översikten före migrationen i `scripts/simulation/paket_b_steg7/`.
+- **Verifierat lokalt:** fall 26–31, dödsboets betalning, premien efter dödsfallet, Y8 och stängningen utan steg 7:s tabeller. Jämförelsen med main `df93ea2` är identisk i alla sju lägen (B-052), och regressionstestet låser main:s form per läge. Migrationen och fall 26 är verifierade mot `svc_test` (`tests/test_migration_death_reports.py`); fall 29 lokalt.
+- **Preciseringar vid bygget** (inom valen):
+  - ett verifierat besked med dödsdag efter månadsslutet räknas som levande i månaden; avräkningen väntar till dödsmånadens stängning;
+  - en del med verifierad dödsdag i 66-månaden eller senare får standardstarten och dödsmånadens rätt; en del vars ägare dog före 66-månaden startas inte, och standardstartens hinder för avliden ägare gäller inte den (Y4);
+  - kontrollen *levandestatus* räknar bara delar med avliden ägare utan verifierat besked;
+  - en avräknad dels nollspår tas inte med i senare stängningar. Ett anspråk som återförs efter avräkningen (sent kvitto på ett väntande anspråk) går tillbaka till spåret och därifrån till poolen i samma stängning;
+  - vid en ny granskning av en månad räknas delar som avräknats i månadens egen stängning som delar som avräknas nu, så att granskningen ser samma läge som bokningen. Rättelse med avräkning blockeras ändå (Y8);
+  - poolens vikter avrundas till 10 decimaler, mottagarna tas i delarnas id-ordning och arvsvinsten fördelas inom delen efter spårens öppningskapital;
+  - dödsboets skatt är den skattestatus som är registrerad på den avlidnes person; saknas den blockeras uppdraget med ärendet `tax_status` som i steg 6;
+  - ett misstänkt besked ger skälet `death_suspected` utan hinderärende, och en avliden utan besked stoppas som i steg 6 (`deceased`).
+
 ## 10. Operationer, befogenheter och samordning (PB12)
 
 | Operation | Typ | Agentnivå | Kommentar |
@@ -1102,7 +1123,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning. *Byggt 2026-11-21 (§5.4, val V1–V11), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg4/`. Mergat till main 2026-11-22 (B-052). Inte infört i Lakebase; migrationen tidigast efter novembers stängning (2026-12-01)* | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd. *Byggt 2026-11-22 (§5.5, val W1–W12, B-053), verifierat lokalt och mot `svc_test`, med slutavräkningen (W6); körskript i `scripts/simulation/paket_b_steg5/`. Mergat till main 2026-11-23. Inte infört i Lakebase; migrationen efter steg 4:s* | 1, 5, 6, 14, 32, 33, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida. *Valen X1–X13 godkända 2026-11-24 (§8.3); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg6/`. Mergat till main 2026-11-24. Inte infört i Lakebase; migrationen efter steg 5:s* | 18–25, 34 |
-| 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 godkända 2026-11-24 (§9.1); inte byggt* | 26–31 |
+| 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 godkända 2026-11-24 (§9.1, B-055); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg7/`. Inte mergat och inte infört i Lakebase; migrationen efter steg 6:s* | 26–31 |
 | 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll | – |
 | 9 | Lakebase enligt ovan, med separat OK för varje ingrepp | – |
 
