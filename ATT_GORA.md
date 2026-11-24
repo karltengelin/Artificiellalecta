@@ -84,6 +84,10 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
 - [ ] **Migrationen i Lakebase** (`migrate_payout_orders.py`) efter steg 4:s och steg 5:s, med backup, torrkörning och Karls separata OK (X13).
 - [ ] **Skattetabellen för huvudinkomst** (X4) blir ett eget steg när Karl hämtat Skatteverkets tabeller för 2026 och 2027.
 
+**Därefter, paket B steg 7** (dödsfall och arvsvinst, fall 26–31):
+
+- [ ] **Valen Y1–Y14** föreslogs 2026-11-24 i [designstoppet §9.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#91-val-för-steg-7-dödsfall-och-arvsvinst) och väntar på Karls svar. Inget är byggt.
+
 ### Paket A steg 8: period 2026-10 – kvar att följa upp
 
 Första operativa perioden 2026-10 är körd i Lakebase med verklig kalender: filintag och fakturering 2026-11-08,

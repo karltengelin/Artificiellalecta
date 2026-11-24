@@ -647,6 +647,328 @@ ej finansierat, körningen markeras ekonomiskt blockerad, ärendet eskaleras til
 ingen betalning rapporteras som lyckad. Startbeloppet E_min beräknas av aktuarien
 (projekt 6); paket B kräver bara att en dokumenterad insättning finns.
 
+### 9.1 Val för steg 7: dödsfall och arvsvinst
+
+**Föreslagna 2026-11-24 och väntar på Karls svar. Ingenting är byggt.** Valen preciserar PB9, PB10 och §9
+ovan och ändrar inga produktregler. Varje val har ett förslag, ett alternativ, en motivering och en
+regelreferens.
+
+Kontrakten från steg 5 och 6 består. Ett anspråk ändras aldrig (W1), och ett bankförsök är en egen rad
+(X1). Valen kräver ändå ändringar i steg 5:s och 6:s kod och villkor. De flaggas här:
+- `month_close.py`:
+  - rätten i månaden begränsas till och med dödsmånaden;
+  - en avräknad del lämnar `plans_in_force`;
+  - stängningen får steg 6 och 7 (Y4, Y6 och Y7).
+- `pension_claims.outstanding_unfunded` och `payout_orders._payable`: ett återfört anspråk räknas varken som
+  ej finansierat eller som betalbart (Y5).
+- `payout_orders.build_file`: misstänkt dödsfall stoppar personen. Ett verifierat dödsfall stoppar tills
+  dödsboet är prövat (Y3 och Y10).
+- Villkoren vidgas för postens orsak, för konton som aldrig blir negativa, för garantidelens orsak och för
+  ärendetypen (Y8 och Y11).
+
+`ledger_premiums.py` ändras inte (Y6).
+
+- **Y1 Datamodell**
+  - *Förslag:* fyra tabeller där rader bara läggs till:
+    - `death_reports`: dödsfallsbesked per person i en versionskedja. Läget är `suspected`, `verified`
+      eller `withdrawn`. Raden har dödsdag, rapportdag, mottagningsdag, källa med referens, kanal, aktör
+      samt verifieringssätt med dokumentreferens. Den är unik på (person, version) och, när beskedet kommer
+      i en fil, på (källsystem, besked-id).
+    - `death_settlements`: en rad per avräknad uttagsdel. Raden har beskedets version, dödsmånaden och
+      stängningens verifikation, samt dödsmånadens anspråk, återförda anspråk, kapital till poolen och
+      kvarstående skuld till dödsboet. Den är unik på uttagsdelen, så varje del avräknas en gång.
+    - `pension_claim_reversals`: ett återfört anspråk efter dödsmånaden (Y5), unikt på anspråket. Raden
+      har beloppen som går tillbaka till kundkapitalet och bolagskontot.
+    - `estate_authorities`: dödsboets företrädare per avliden person i en versionskedja (Y10). Raden har
+      roll, behörighetshandling, verifiering och beslutsfattare samt en kontoversion i `payout_accounts`.
+
+    Delens slut skrivs som `ended` med orsaken `death` i `payout_part_states`. Steg 1 tillåter redan det.
+  - *Alternativ:* dödsdag och besked som kolumner på `insured_persons`, och anspråk efter dödsmånaden
+    markerade direkt på `pension_claims`.
+  - *Motivering:* ett besked kan ändras, dras tillbaka eller komma sent. Varje version ska därför gå att
+    spåra med sin rapportdag (T-005). Att skriva på anspråket bryter W1, som steg 6 bygger på.
+  - *Regel:* PR-ITP1-010, PR-ITP1-019 p. 5–6 och PR-ITP1-031. UTTAG_GEMENSAMT kräver verifierat
+    dödsdatum och rapportdatum.
+- **Y2 Registrering och verifiering**
+  - *Förslag:*
+    - `register_death_report` sparar ett besked som `suspected`. Med verifieringssätt och
+      dokumentreferens kan beskedet sparas direkt som `verified`. Ett verifierat besked kräver dödsdag,
+      och dödsdagen får inte ligga efter rapportdagen.
+    - `verify_death_report` kan verifiera ett misstänkt besked, ändra dödsdagen som en ny version eller
+      dra tillbaka beskedet. Verifieringssätten är folkbokföringen, dödsbevis och annan handling med
+      referens.
+    - Vid verifieringen sätts `insured_persons.status` till `deceased`, och personens tidigare status
+      sparas i versionen. Då gäller de befintliga spärrarna för löneunderlag, rättelse, plan, begäran och
+      bankuppdrag direkt (§9). Om beskedet dras tillbaka före avräkningen återställs den sparade statusen.
+    - När personens delar är avräknade (Y6) kan beskedet inte längre ändras eller dras tillbaka. En sen
+      ändring blir ett ärende för manuell rättelse (PR-019 p. 6). Den rättelsen byggs i ett senare steg.
+    - Varje registrering öppnar ett ärende `death_report` för personen eller fyller på det som finns.
+  - *Alternativ:* varje besked registreras som misstänkt och verifieras alltid i ett andra steg. Ett annat
+    alternativ är att ett besked ur folkbokföringen räknas som verifierat utan handläggare.
+  - *Motivering:* PB9 tillåter båda lägena. Ett verifierat dödsfall avslutar pensionen, så verifieringen
+    ska vara en människas beslut med en handling som grund. Statusen på personen återanvänds eftersom
+    spärrarna i tjänstelagret redan läser den.
+  - *Regel:* PR-ITP1-010 kräver verifierat dödsdatum, källreferens och rapportdatum. Enligt PR-ITP1-031
+    avgörs misstänkt dödsfall av en människa. Se även T-ITP1-005.
+- **Y3 Misstänkt dödsfall (fall 30)**
+  - *Förslag:*
+    - Ett öppet misstänkt besked stoppar personens bankuppdrag med skälet `death_suspected` i bankfilen.
+      Inget ärende öppnas utöver `death_report`.
+    - Stängningen påverkas inte. Rätter skuldförs, kapitalet förvaltas och delarna får arvsvinst.
+    - En förberedd fil som innehåller personen ersätts, och ett godkännande av den gamla filen ger konflikt
+      (X7).
+    - När beskedet dras tillbaka kommer uppdragen med i nästa bankfil.
+  - *Alternativ:* misstänkt dödsfall stoppar också nya rätter, eller undantar delarna från arvsvinsten.
+  - *Motivering:* PR-010 säger att flaggan stoppar nya bankuppdrag men inte raderar intjänad rätt. Om
+    beskedet senare verifieras med en tidigare dödsdag återförs rätterna efter dödsmånaden (Y5). Den
+    arvsvinst som delarna har fått följer då kapitalet tillbaka till poolen (Y6), och ingen annan mottagare
+    debiteras.
+  - *Regel:* PR-ITP1-010, PR-ITP1-011 och PR-ITP1-019 p. 6.
+- **Y4 Var månadsrätten upphör (fall 28)**
+  - *Förslag:*
+    - En del har rätt i månaden M bara om planen ger rätt i M och M är senast dödsmånaden D. Rätten gäller
+      hela månaden, även vid dödsfall den första dagen.
+    - En pausad del får ingen rätt i dödsmånaden. En del som inte har startat före D får ingen pension.
+      En del vars första rätt eller återstart är D får en hel rätt, även vid dödsfall på startdagen.
+    - En ägare som fyller 66 och dör i 66-månaden får standardplanen och dess första rätt, om resten av
+      underlaget i V5 är verifierat. V5:s krav på en levande ägare prövas då mot dödsdagen, inte bara mot
+      statusen.
+    - Delen får läget `ended` med orsaken `death` från månaden efter D. Om beskedet kommer efter att D har
+      stängts gäller läget i stället från avräkningsmånaden.
+  - *Alternativ:* rätten upphör vid rapportdagen, eller räknas per dag i dödsmånaden.
+  - *Motivering:* ITP 7.5 ger pension längst under dödsmånaden. T-005 väljer att dödsfall på startdagen
+    ger hela månaden, eftersom datumet saknar klockslag. Ett läge som börjar i avräkningsmånaden skriver
+    inte om historiken. Det som har rättats står i stället i avräkningen och i de återförda anspråken.
+  - *Regel:* PR-ITP1-010, villkoren §12, T-ITP1-005 och PR-ITP1-025.
+- **Y5 Anspråk och bankuppdrag efter dödsmånaden (fall 31)**
+  - *Förslag:* avräkningen prövar varje anspråk med en rättighetsmånad efter D. Anspråket ändras aldrig
+    (W1), och utfallet härleds ur bankförsöken (X1):
+    - *Ej betalt* betyder finansierat eller ej finansierat, avvisat eller återkommet, eller med i en
+      förberedd fil. Ett sådant anspråk får en rad i `pension_claim_reversals`:
+      - skulden minskar med det skuldförda beloppet;
+      - kundkapitalet får tillbaka sin debitering per spår;
+      - bolagskontot får tillbaka bolagsstödet och den senare finansieringen;
+      - en ej finansierad rest stryks.
+
+      Kapitalet går sedan till poolen tillsammans med resten av delens C (Y6).
+    - *Skickat eller okänt* betyder att anspråket ligger i en godkänd fil. Inget återförs förrän ett
+      kvitto har kommit (X8). Ett avvisat eller återkommet anspråk återförs i nästa stängning.
+    - *Utfört* ger ett ärende `death_recovery` för återkravsprövning. Ärendet har brutto, skatt, netto,
+      utförandedag och kvitto. Inget av följande sker:
+      - en post i journalen;
+      - kvittning mot dödsboets äldre anspråk;
+      - negativ arvsvinst.
+
+      En verkställd återbetalning bokas först i ett senare steg och blir då poolmedel (PR-011).
+  - *Alternativ:* anspråk efter dödsmånaden står kvar som skuld tills handläggaren avgör dem. Ett annat
+    alternativ är att ett utfört belopp kvittas mot dödsboets obetalda anspråk.
+  - *Motivering:* ett anspråk efter dödsmånaden är ingen giltig rätt, men det raderas inte. Återföringen
+    är en egen rad med motposter, på samma sätt som X9 bokar en retur. Återkrav kräver en rättslig och
+    skattemässig bedömning och ett beslut av en människa. Automatisk kvittning är uttryckligen utesluten.
+  - *Regel:* PR-ITP1-010, PR-ITP1-019 p. 5–6, PR-ITP1-026, PR-ITP1-028 och PR-ITP1-031.
+- **Y6 Avräkningen i stängningen (fall 26–27)**
+  - *Förslag:* avräkningen görs i PR-020:s steg 6, i samma verifikation `month_close` som månadens övriga
+    steg. Den gäller varje uttagsdel som ännu inte är avräknad och vars ägare har ett verifierat besked med
+    D senast månadens slut:
+    1. Dödsmånadens rätt skuldförs som vanligt i steg 5, med bolagsstöd vid brist. En rätt som redan
+       skuldförts i en tidigare stängning dras inte igen.
+    2. Anspråk efter D återförs enligt Y5.
+    3. Delens återstående C, efter steg 2–5 och återföringen, förs till arvsvinstpoolen.
+    4. Varje gällande garantidel får en ny version med G_j = 0 och orsaken `death`. Den frigjorda
+       garantin tillför inga pengar.
+    5. Delens läge blir `ended` (`death`) enligt Y4, och en rad skrivs i `death_settlements`.
+
+    Särskilda fall:
+    - En premie på en del som är avräknad, eller som avräknas i månaden, hålls utanför journalen med W9:s
+      mekanism. Premien ligger kvar i paket A och anges i ärendet `death_report` för manuell avräkning.
+    - En person med status `deceased` men utan verifierat besked blockerar stängningen som i dag, eftersom
+      dödsdagen saknas.
+    - Försäkringens avslut härleds (PB10) när alla delar är avslutade, C = 0 och skulden till dödsboet är
+      reglerad.
+  - *Alternativ:* en egen verifikation `death_settlement` direkt vid verifieringen, på samma sätt som
+    `payout_settlement`. Ett annat alternativ är att G_j lämnas oförändrad och att avslutet läses ur delens
+    läge.
+  - *Motivering:*
+    - PR-020 lägger dödsfallsavräkningen efter avkastning, kostnader och månadsrätt och före
+      poolfördelningen, i samma månad. En egen verifikation skulle ge C för en månad som inte är stängd.
+    - Journalen är bolagets enda källa för G (PB4). Utan nollversionen skulle den avlidnes garanti ligga
+      kvar i ΣG och i A6.
+    - W9:s mekanism gör att `ledger_premiums.py` inte behöver ändras.
+  - *Regel:* PR-ITP1-010, PR-ITP1-020 steg 5–6 och PR-ITP1-028. Att frigjord garanti inte tillför pengar
+    följer av PR-ITP1-010 och PR-ITP1-028.
+- **Y7 Arvsvinsten (fall 29)**
+  - *Förslag:* PR-020 steg 7, efter avräkningen:
+    - Hela poolens saldo fördelas, alltså det ingående saldot och månadens inflöde.
+    - Mottagare är delar som uppfyller tre villkor:
+      - delen har öppningskapital efter steg 1, alltså efter månadens delning;
+      - ägaren saknar verifierat dödsfall senast månadens slut;
+      - delen är inte avslutad och slutavräknas inte i månaden.
+
+      Sparande, fribrev, uppskov, paus och pågående pension deltar. En del utan öppningskapital får
+      vikten 0, så en ny medlem får arvsvinst först nästa hela månad.
+    - Vikten är E_i = C_i_öppning × q_i/(1 − q_i). q_i gäller månaden och tas ur den antagna SIM-R som gäller
+      för månaden (A4), med samma modellfödelsedag som i övriga beräkningar. Grundens kod och kontrollsumma
+      står i sammanställningen.
+    - H_i fördelas i ören med största bråkrest, och vid lika rest i delarnas id-ordning (`allocate_cents`).
+      Inom delen fördelas H_i på spåren efter öppningssaldot, på samma sätt.
+    - Arvsvinsten ökar C men aldrig G.
+    - I tre fall står poolen kvar: när det saknas mottagare, när ΣE = 0 och när ingen SIM-R är antagen
+      för månaden. Månaden stängs ändå, och ett ärende `inheritance_pool` öppnas eller fylls på, som i W8.
+  - *Alternativ:* H_i läggs på delens största spår, eller poolen fördelas först i nästa månads stängning.
+  - *Motivering:*
+    - PR-011 kräver fördelning samma månad, öppningskapital som vikt, aktuell riskgrund och öresfördelning
+      med stabil ordning.
+    - Fördelningen efter öppningssaldot ger exakt delens summa, och varje spår behåller sitt ursprung.
+    - En månad med ett dödsfall ger ungefär en post per kapitalspår i kollektivet. I Lakebase blir det
+      omkring 15 000 poster. Det är priset för att varje öre ska gå att spåra.
+  - *Regel:* PR-ITP1-011, PR-ITP1-020 steg 7 och villkoren §12.
+- **Y8 Journalen**
+  - *Förslag:*
+    - Inget nytt slag av verifikation. Avräkningen och fördelningen är poster i `month_close`.
+    - Orsakerna `pool_in` och `pool_out` finns sedan steg 2:
+      - `pool_in`: minus på dödsfallsdelens spår och plus på poolen;
+      - `pool_out`: minus på poolen och plus på mottagarnas spår.
+    - Den nya orsaken `death_reversal` används för återföringen på skulden, kundkapitalet och bolagskontot
+      (Y5). Posterna summeras per spår och orsak, så varje kombination förekommer en gång per verifikation.
+    - Poolen blir ett konto som aldrig blir negativt (`ck_ledger_capital_entries_accounts`), och garantidelens
+      orsak får värdet `death`.
+    - Sammanställningen får avsnittet `death` med besked, avräkningar, återföringar, pool och fördelning,
+      men bara när steg 7:s tabeller finns.
+    - En rättelse av en månad med dödsfallsavräkning eller poolfördelning blockeras i första versionen och
+      prövas manuellt. Ändrad AVK ändrar poolen och därmed varje mottagares andel.
+  - *Alternativ:* rättelsen bokar nettodifferensen även på pool- och återföringsposterna. Ett annat
+    alternativ är en egen orsak för dödsfallsdelens kapital till poolen.
+  - *Motivering:*
+    - Kapital, skuld, pool och bolagskonto blandas aldrig i samma saldo (§6.1).
+    - Varje orsak syns med motsatt tecken på två konton, som `company_support` i steg 5.
+    - S2:s rättelse per spår och orsak räcker inte för en fördelning som beror på hela kollektivets kapital.
+  - *Regel:* PR-ITP1-011, PR-ITP1-020 och PR-ITP1-028, samt designstoppets §6.1.
+- **Y9 Kontrollerna**
+  - *Förslag:*
+    - Den nya kontrollen *dödsfall* prövar tre saker:
+      - varje verifierat besked med D senast månadens slut är avräknat en gång;
+      - inget anspråk efter D har skapats i månaden;
+      - kapitalet till poolen och återföringarna stämmer med posterna.
+    - Den nya kontrollen *arvsvinstpool* prövar fyra saker:
+      - ingående pool + inflöde − fördelat = utgående pool, och utgående pool är minst 0;
+      - ΣH är lika med det fördelade;
+      - antalet mottagare och ΣE redovisas;
+      - G är oförändrad av fördelningen.
+    - *levandestatus* räknar misstänkta besked, som godkänns, och personer med status `deceased` utan
+      verifierat besked, som underkänns.
+    - *kapital totalt*, *garanti totalt* och *skuld och bolagskonto* tar med poolposterna, nollversionerna
+      och återföringarna.
+    - Utan steg 7:s tabeller är kontrollerna och deras texter exakt som i steg 6 (B-052).
+  - *Alternativ:* dödsfall och pool i en gemensam kontroll.
+  - *Motivering:* acceptansen i §11 kräver två saker:
+    - kundkapital, skulder, pool och bolagskonto stäms av varje månad;
+    - ingen månadsrätt finns två gånger.
+  - *Regel:* PR-ITP1-020 steg 8 och PR-ITP1-011.
+- **Y10 Dödsboet och utbetalning till dödsboet**
+  - *Förslag:*
+    - `register_estate_authority` sparar dödsboets företrädare. Det kan vara en dödsbodelägare med
+      fullmakt, en boutredningsman eller ett ombud. Raden har behörighetshandling, verifiering och
+      beslutsfattare. Handlingen är dödsfallsintyg med släktutredning, bouppteckning eller fullmakt.
+    - Företrädaren pekar på en kontoversion i `payout_accounts`. Kontot registreras med
+      `register_payout_account` på den avlidnes person efter dödsdagen och verifieras mot handlingen.
+    - Dödsboet får bara anspråk med rättighetsmånad senast D, aldrig återstående kapital. Anspråken betalas
+      i den vanliga bankfilen, men först när delarna är avräknade och behörigheten är prövad. Annars
+      blockeras personen med skälet `estate_missing`, och skulden står kvar.
+    - Handläggaren registrerar skattestatus för utbetalningsåret på den avlidnes person (X5):
+      - förslaget är 30 % som engångsbelopp (PR-026 p. 6);
+      - ett individuellt beslut med referens går också;
+      - gränserna för småbelopp (X3) tillämpas inte på dödsboet i första versionen.
+    - Underlaget för kontrolluppgiften märks som dödsbo och går till projekt 6.
+    - Handläggaren stänger ärendet `death_report` när dödsboets anspråk är betalda eller avgjorda.
+  - *Alternativ:* ingen betalning till dödsboet i första versionen. Ärendet visar beloppen, och skulden står
+    kvar (§3).
+  - *Motivering:*
+    - PR-010 och PR-033 ger dödsboet de redan uppkomna anspråken efter behörighets- och skatteprövning.
+    - Steg 6:s konto, skatt och hashbundna bankfil återanvänds, så godkännandet förblir den externa
+      handlingen.
+    - Betalningen sker aldrig automatiskt. Behörighet, konto, skatt och bankfil är fyra beslut av en
+      människa.
+    - Om gränserna för småbelopp gäller ett dödsbo är en tolkningsfråga för projekt 4 (§13).
+  - *Regel:* PR-ITP1-010 och PR-ITP1-026, där dödsbo kräver verifierad behörighet och
+    skatteklassificering. Se även PR-ITP1-033 och villkoren §12.
+- **Y11 Ärendetyper, operationer och befogenheter**
+  - *Förslag:*
+    - Fem nya operationer, alla `HUMAN_ONLY`:
+      - `register_death_report`;
+      - `verify_death_report`;
+      - `import_death_notices`;
+      - `register_estate_authority`;
+      - läsningen `get_death_settlement`, som per person visar besked, avräkning, anspråk, återkrav och
+        dödsbo med maskerat konto.
+    - Skrivningarna tar kanal och verifierad aktör (PB12). Systemaktören och agenterna nekas verifiering,
+      tillbakadragning och dödsboets behörighet, och agentrollerna får inga rättigheter på tabellerna.
+    - Tre nya ärendetyper, alla utanför ärendepolicyn:
+      - `death_report`: besked, avräkning, premie efter dödsfallet och dödsbo;
+      - `death_recovery`: återkravsprövning (Y5);
+      - `inheritance_pool`: kvarstående pool, utan person och arbetsgivare.
+  - *Alternativ:* `import_death_notices` blir ett systemsteg utan människa, eller ett och samma ärende per
+    person täcker både besked och återkrav.
+  - *Motivering:* §10 och PR-031 kräver en människa för dödsfallsbeslut, och agenter föreslår inga sådana
+    beslut. Återkrav är ett eget beslut med eget utfall och egen motpart. Poolen gäller kollektivet, på
+    samma sätt som `company_capital` gäller bolaget.
+  - *Regel:* PR-ITP1-031, PR-ITP1-019 p. 5, B-028, B-033 val C och PB12.
+- **Y12 Tabeller och migration**
+  - *Förslag:*
+    - `migrate_death_reports.py` förutsätter steg 6:s migration. Den skapar de fyra tabellerna tomma och
+      vidgar fem villkor:
+      - `ck_cases_type`;
+      - `ck_cases_subject`;
+      - `ck_ledger_capital_entries_reason`;
+      - `ck_ledger_capital_entries_accounts`;
+      - `ck_ledger_guarantee_parts_reason`.
+    - `survey.py` räknar först personer med status `deceased`. Varje sådan person behöver ett besked innan
+      nästa stängning kan bokas.
+    - Ordningen i Lakebase är novembers stängning och sedan migrationerna för steg 4, 5, 6 och 7. Varje
+      migration görs med backup, torrkörning och eget OK. Körskripten läggs i
+      `scripts/simulation/paket_b_steg7/`.
+  - *Alternativ:* steg 4–7 förs in i ett enda ingrepp.
+  - *Motivering:* samma mönster som X13. I Lakebase finns inget att avräkna förrän det första dödsfallet
+    registreras. Det fallet blir troligen en sparare, och då behövs ingen pension, bara poolen.
+  - *Regel:* B-047 punkt 10, PB13 och AGENTS.md §4.5.
+- **Y13 Jämförelsen med main (B-052)**
+  - *Förslag:* `scripts/simulation/paket_b_steg7/compare_main.py` kör novembers stängning med main:s kod
+    och med branchens kod på samma databas. Den prövar steg 6:s fem lägen och två nya:
+    - `steg6`: alla main:s tabeller och den första månadsrätten;
+    - `steg6-avliden`: en person med status `deceased`.
+
+    Utan steg 7:s tabeller ska granskningssumma, verifikation, rader, ärenden och blockering vara identiska.
+    Ett regressionstest låser resultatet, och jämförelsen görs mot den main som gäller före merge.
+  - *Alternativ:* bara regressionstestet.
+  - *Motivering:* steg 7 ändrar `month_close.py` och journalens villkor. Novembers stängning körs med main:s
+    kod, så stängningen ska vara oförändrad där dödsfallstabellerna saknas.
+  - *Regel:* B-052, B-053 och X10.
+- **Y14 Simulatorns dödsfallsbesked**
+  - *Förslag:*
+    - `death_notice_file` i `src/simulation/counterparties.py` har källan `population-register-sim`. Filen är
+      folkbokföringens avisering med personnummer, dödsdag, aviseringsdag och besked-id.
+    - Scenarierna gäller per person:
+      - dödsfall i månaden;
+      - sent besked efter betalda månader (fall 31);
+      - dödsfall under paus eller på startdagen (fall 28).
+    - Filen läses med `import_death_notices`. Varje besked registreras som `suspected` med källan, och
+      handläggaren verifierar.
+    - Samma fil igen ger ingen ny effekt, och facit hålls separat (PA8).
+    - Anhörigas besked registreras manuellt och simuleras inte. Kundbegäran kommer i ett senare steg.
+  - *Alternativ:* aviseringen registreras direkt som verifierad.
+  - *Motivering:* X11 sköt dödsfallsbeskedet till steg 7. En fil som går genom samma operation och samma
+    verifiering som ett manuellt besked prövar flödet utan en genväg.
+  - *Regel:* PR-ITP1-010, B-046 PA8 och X11.
+
+**Verifiering:** fall 26–31 verifieras lokalt. Migrationen och fall 26 och 29 verifieras hela vägen mot
+`svc_test`. Jämförelsen med main enligt Y13 görs före merge.
+
+**Utanför steg 7:**
+- sen dödsfallsrättelse efter avräkningen, alltså ändrad dödsdag eller tillbakadraget verifierat besked;
+- verkställt återkrav och återbetalt belopp till poolen;
+- dröjsmålsränta;
+- KU och AGI;
+- handläggarsidan (steg 8).
+
 ## 10. Operationer, befogenheter och samordning (PB12)
 
 | Operation | Typ | Agentnivå | Kommentar |
@@ -779,7 +1101,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning. *Byggt 2026-11-21 (§5.4, val V1–V11), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg4/`. Mergat till main 2026-11-22 (B-052). Inte infört i Lakebase; migrationen tidigast efter novembers stängning (2026-12-01)* | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd. *Byggt 2026-11-22 (§5.5, val W1–W12, B-053), verifierat lokalt och mot `svc_test`, med slutavräkningen (W6); körskript i `scripts/simulation/paket_b_steg5/`. Mergat till main 2026-11-23. Inte infört i Lakebase; migrationen efter steg 4:s* | 1, 5, 6, 14, 32, 33, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida. *Valen X1–X13 godkända 2026-11-24 (§8.3); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg6/`. Mergat till main 2026-11-24. Inte infört i Lakebase; migrationen efter steg 5:s* | 18–25, 34 |
-| 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6 | 26–31 |
+| 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 föreslagna 2026-11-24 (§9.1); väntar på Karls svar* | 26–31 |
 | 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll | – |
 | 9 | Lakebase enligt ovan, med separat OK för varje ingrepp | – |
 
@@ -806,6 +1128,9 @@ Steg 6 kan byggas parallellt med steg 7 först när anspråkskontraktet i steg 5
   *November avgjord 2026-11-19 (S5, §7.2): AVK-SIM-2026-02 enligt P6-MANAD-001 D5. December står öppen.*
 - **Bolagskapitalets startinsättning:** beloppet bestäms med aktuariens E_min. För dagens
   bestånd utan pågående pension är likviditetsdelen noll; stressgapet återstår att räkna.
+- **Skatt vid utbetalning till dödsbo (Y10):** gäller gränserna för småbelopp, 100 och 1 000 kr, när
+  pensionen betalas till ett dödsbo? Förslaget i steg 7 är att de inte tillämpas och att avdraget blir 30 %
+  som engångsbelopp, om inget individuellt beslut finns. Projekt 4 bekräftar tolkningen.
 - **Agentens roll:** handläggaragenten kan senare förbereda `payout_request`-ärenden. Det
   kräver eget beslut om ärendepolicyn, som B-043 för löneunderlag.
 
