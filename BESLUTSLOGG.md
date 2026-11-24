@@ -8,6 +8,55 @@
 
 ## Beslut
 
+### B-055 | 2026-11-24 | Paket B steg 7: dödsfall och arvsvinst
+
+**Beslut:** Operatören godkände valen Y1–Y14 för byggsteg 7 i paket B
+([P1-PENSION-001 §9.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#91-val-för-steg-7-dödsfall-och-arvsvinst))
+enligt förslagen i chatten 2026-11-24: ”Godkänn alla”. Loggningen och byggstarten godkändes
+samma dag: ”Logga och bygg”.
+
+1. **Datamodell (Y1).** Fyra tabeller där rader bara läggs till: `death_reports`,
+   `death_settlements`, `pension_claim_reversals` och `estate_authorities`. Anspråket ändras aldrig
+   (W1), och delens slut står som `ended` med orsaken `death`.
+2. **Besked (Y2–Y3).**
+   - Ett besked registreras som misstänkt eller, med handling, som verifierat.
+   - Verifieringen sätter personens status till `deceased`.
+   - Ett misstänkt besked stoppar bara bankuppdragen.
+   - Efter avräkningen kan beskedet inte ändras; en sen ändring blir ett manuellt ärende.
+3. **Rätten och anspråken (Y4–Y5).**
+   - Rätten gäller till och med dödsmånaden. En pausad del får ingen dödsmånadsrätt, och dödsfall
+     på startdagen ger en hel rätt.
+   - Obetalda anspråk efter dödsmånaden återförs med motposter.
+   - Utförda betalningar efter dödsmånaden ger ärendet `death_recovery`, utan journalpost,
+     kvittning eller negativ arvsvinst.
+4. **Avräkning och arvsvinst (Y6–Y9).**
+   - Avräkningen görs i PR-020 steg 6–7, i verifikationen `month_close`.
+   - Återstående C går till poolen (`pool_in`), och G skrivs ned till 0 med orsaken `death`.
+   - Poolen fördelas samma månad (`pool_out`) med vikten C_öppning × q/(1 − q) ur SIM-R, i ören.
+   - Den nya orsaken är `death_reversal`, och poolen får aldrig bli negativ.
+   - En rättelse av en månad med dödsfall blockeras.
+   - Kontrollerna *dödsfall* och *arvsvinstpool* tillkommer.
+5. **Dödsboet (Y10).** Dödsboet får anspråk till och med dödsmånaden via steg 6:s bankfil, efter
+   att behörighet och konto prövats. Skatten är 30 % som engångsbelopp, och gränserna för
+   småbelopp tillämpas inte (projekt 4 bekräftar).
+6. **Befogenheter, migration och jämförelse (Y11–Y14).**
+   - Fem operationer, alla `HUMAN_ONLY`, och tre ärendetyper utanför ärendepolicyn.
+   - `migrate_death_reports.py` körs efter steg 6:s migration, var och en med eget OK.
+   - `compare_main.py` har sju lägen.
+   - Simulatorn får folkbokföringens avisering som misstänkta besked.
+
+**Motivering:** PR-010 och PR-020 lägger avräkningen i stängningen. Med återföring som egen rad
+bevaras anspråkskontraktet, och återkrav förblir ett beslut av en människa (PR-019, PR-031).
+
+**Konsekvenser:**
+- Steg 5:s och 6:s kod ändras i `month_close`, `outstanding_unfunded`, `_payable` och `build_file`,
+  och fem villkor vidgas.
+- Utan steg 7:s tabeller ska stängningen vara identisk med main (B-052).
+
+**Preciserar** B-047 punkt 7 och PB9–PB10. **Bygger på** B-053 och B-054.
+
+---
+
 ### B-054 | 2026-11-24 | Paket B steg 6: skatt, konto, bankuppdrag och kvitton
 
 **Beslut:** Operatören godkände valen X1–X13 för byggsteg 6 i paket B

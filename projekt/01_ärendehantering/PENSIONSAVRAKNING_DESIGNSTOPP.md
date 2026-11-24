@@ -649,8 +649,8 @@ ingen betalning rapporteras som lyckad. Startbeloppet E_min beräknas av aktuari
 
 ### 9.1 Val för steg 7: dödsfall och arvsvinst
 
-**Godkända av Karl i chatten 2026-11-24 (”Godkänn alla”) enligt förslagen. Ingenting är byggt, och loggning
-i beslutsloggen väntar på Karls OK.** Valen preciserar PB9, PB10 och §9
+**Godkända av Karl i chatten 2026-11-24 (”Godkänn alla”) enligt förslagen. Loggade som B-055 samma dag
+efter Karls OK (”Logga och bygg”).** Valen preciserar PB9, PB10 och §9
 ovan och ändrar inga produktregler. Varje val har ett förslag, ett alternativ, en motivering och en
 regelreferens.
 
