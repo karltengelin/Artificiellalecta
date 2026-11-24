@@ -72,9 +72,12 @@ postgres = ["tests/test_c.py::test_pg"]
 
 def test_repo_katalogen_klassificerar_alla_testfiler_och_markerar_malbilden():
     catalog = load_catalog()
-    for name in ("payments", "economy", "compliance", "communication"):
+    for name in ("economy", "compliance", "communication"):
         assert catalog.suites[name].status == "planned"
         assert not catalog.suites[name].tests
+    # Bankuppdrag och kvitton för utbetalningar finns sedan paket B steg 6 (B-054)
+    assert catalog.suites["payments"].status == "partial"
+    assert "tests/test_payout_orders.py" in catalog.suites["payments"].tests
     # Kapital- och garantijournalen finns sedan paket B steg 2 (B-047); pensioner och utbetalning återstår
     assert catalog.suites["pensions"].status == "partial"
     assert "tests/test_capital_ledger.py" in catalog.suites["pensions"].tests
