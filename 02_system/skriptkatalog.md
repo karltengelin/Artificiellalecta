@@ -86,6 +86,12 @@ körning och läser samt skriver i arbetskopians `logs/simulation/paket-c/`. Bö
 Granska oktoberfilen och använd dess kör-ID, revision och kontrollsumma vid beslut. Novemberavstämningen och
 decemberuppföljningen sparas var för sig. [Kommandon och acceptans](manadssimulator_designstopp.md)
 
+För samprovet A → B används `python scripts/simulation/premium_calendar.py start partial --savings`.
+Granska och boka med `open-ledger`, `approve` och `close-month` i visad ordning, med revision,
+aktuell granskningssumma och motivering. I samma körkatalog finns novemberprotokollet,
+`sparande.md` med kapitalbryggan och `sparande.json` med verifikation och allokeringsspår.
+[Körkommandon och öresfacit](manadssimulator_designstopp.md#samprova-delbetalningen-med-sparandets-novemberstängning)
+
 ## Körskript för operativa perioder (2026-11-14)
 
 Körningar av en verklig period i Lakebase versioneras i `scripts/simulation/<period>/`. Skripten är
