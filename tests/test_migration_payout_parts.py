@@ -28,10 +28,11 @@ from utils.migration_payout_parts import (
     stale_checks,
 )
 from utils.migration_pension_claims import TABLES as STEP5_TABLES
+from utils.migration_death_reports import TABLES as STEP7_TABLES
 from utils.migration_payout_orders import TABLES as STEP6_TABLES
 
 #: Tabeller som finns i modellerna men inte i Lakebase före steg 1 (journalen kom i steg 2, planerna i steg 4)
-NOT_IN_LAKEBASE = {*STEP6_TABLES, *STEP5_TABLES, *TABLES, "portfolios", "portfolio_holdings", "trades", "ledger_batches", "ledger_guarantee_parts", "ledger_capital_entries", "ledger_controls",
+NOT_IN_LAKEBASE = {*STEP7_TABLES, *STEP6_TABLES, *STEP5_TABLES, *TABLES, "portfolios", "portfolio_holdings", "trades", "ledger_batches", "ledger_guarantee_parts", "ledger_capital_entries", "ledger_controls",
                    "payout_requests", "payout_plans", "payout_splits"}
 TODAY = date(2026, 11, 14)
 needs_postgres = pytest.mark.skipif(not TEST_URL, reason="SERVICES_TEST_POSTGRES_URL saknas – ingen isolerad Postgres")

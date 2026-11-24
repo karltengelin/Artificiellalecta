@@ -15,13 +15,14 @@ from tests.conftest import seed_insurance
 from tests.test_services_postgres import TEST_URL, isolated_schema
 from utils.migration_cases import compile_ddl, migrate_cases
 from utils.migration_pension_claims import TABLES as STEP5_TABLES
+from utils.migration_death_reports import TABLES as STEP7_TABLES
 from utils.migration_payout_orders import TABLES as STEP6_TABLES
 
 #: Tabeller som finns i modellerna men inte i Lakebase före migrationen
 NOT_IN_LAKEBASE = {"cases", "case_work", "case_messages", "case_work_days", "portfolios", "portfolio_holdings", "trades", "flows", "flow_steps", "flow_gate_decisions",
                    # Paket B steg 2–5 kom efter cases; planerna refererar till cases och journalen till planerna
                    "payout_requests", "payout_plans", "payout_splits", "ledger_batches", "ledger_guarantee_parts",
-                   "ledger_capital_entries", "ledger_controls", *STEP5_TABLES, *STEP6_TABLES}
+                   "ledger_capital_entries", "ledger_controls", *STEP5_TABLES, *STEP6_TABLES, *STEP7_TABLES}
 
 
 def test_migrationen_kraver_postgres():

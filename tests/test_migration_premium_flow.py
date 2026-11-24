@@ -19,6 +19,7 @@ from models import Base, Case
 from tests.conftest import seed_insurance
 from tests.test_services_postgres import TEST_URL, isolated_schema
 from utils.migration_pension_claims import TABLES as STEP5_TABLES
+from utils.migration_death_reports import TABLES as STEP7_TABLES
 from utils.migration_payout_orders import TABLES as STEP6_TABLES
 from utils.migration_premium_flow import (
     CASE_CHECKS,
@@ -32,7 +33,7 @@ from utils.migration_premium_flow import (
 )
 
 #: Tabeller som finns i modellerna men inte i Lakebase före migrationen
-NOT_IN_LAKEBASE = {*STEP6_TABLES, *STEP5_TABLES, *TABLES, "portfolios", "portfolio_holdings", "trades", "ledger_batches", "ledger_guarantee_parts", "ledger_capital_entries", "ledger_controls"}  # journalen: paket B
+NOT_IN_LAKEBASE = {*STEP7_TABLES, *STEP6_TABLES, *STEP5_TABLES, *TABLES, "portfolios", "portfolio_holdings", "trades", "ledger_batches", "ledger_guarantee_parts", "ledger_capital_entries", "ledger_controls"}  # journalen: paket B
 #: Villkoren på cases som de infördes i Lakebase 2026-10-24 (F5-1, före paket A)
 OLD_CASE_CHECKS = CASE_CHECKS_BEFORE
 

@@ -41,6 +41,12 @@ def test_fall_20_granserna(gross, year_total, tax, method):
     assert result.net == D(gross) - D(tax)
 
 
+@pytest.mark.parametrize("gross, year_total, tax", [("99.99", "12000.00", "29.00"), ("500.00", "0.00", "150.00")])
+def test_y10_dodsboet_utan_smabeloppsgranser(gross, year_total, tax):
+    result = withholding(D(gross), SIDE, D(year_total), thresholds=False)
+    assert (result.tax, result.method) == (D(tax), "percent")
+
+
 def test_granserna_galler_inte_sink():
     result = withholding(D("50.00"), TaxRule("sink", D("0.25")), D("50.00"))
     assert (result.tax, result.method) == (D("12.00"), "percent")

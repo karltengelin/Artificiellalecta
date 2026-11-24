@@ -27,6 +27,7 @@ from tests import test_premium_month_export as export_tests
 from tests.conftest import seed_insurance
 from tests.test_migration_payout_parts import _signature
 from tests.test_services_postgres import TEST_URL, isolated_schema
+from utils.migration_death_reports import TABLES as STEP7_TABLES
 from utils.migration_payout_orders import (
     CHECKS,
     CHECKS_BEFORE,
@@ -35,7 +36,7 @@ from utils.migration_payout_orders import (
     migrate_payout_orders,
 )
 
-NOT_IN_LAKEBASE = {"portfolios", "portfolio_holdings", "trades"}
+NOT_IN_LAKEBASE = {*STEP7_TABLES, "portfolios", "portfolio_holdings", "trades"}
 HUMAN = OperationContext(actor=Actor.human("karl"), reason="Bankuppdrag (prov)")
 needs_postgres = pytest.mark.skipif(not TEST_URL, reason="SERVICES_TEST_POSTGRES_URL saknas – ingen isolerad Postgres")
 

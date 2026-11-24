@@ -32,9 +32,10 @@ from utils.migration_month_close import (
     migrate_month_close,
 )
 from utils.migration_pension_claims import TABLES as STEP5_TABLES
+from utils.migration_death_reports import TABLES as STEP7_TABLES
 from utils.migration_payout_orders import TABLES as STEP6_TABLES
 
-NOT_IN_LAKEBASE = {*STEP6_TABLES, *STEP5_TABLES, "portfolios", "portfolio_holdings", "trades"}
+NOT_IN_LAKEBASE = {*STEP7_TABLES, *STEP6_TABLES, *STEP5_TABLES, "portfolios", "portfolio_holdings", "trades"}
 HUMAN = OperationContext(actor=Actor.human("karl"), reason="Månadsstängning (prov)")
 needs_postgres = pytest.mark.skipif(not TEST_URL, reason="SERVICES_TEST_POSTGRES_URL saknas – ingen isolerad Postgres")
 
@@ -117,7 +118,7 @@ def test_delvis_inford_migration_stoppar():
             migrate_month_close(schema.engine, dry_run=False)
     with isolated_schema() as schema:
         Base.metadata.create_all(schema.engine, tables=[t for t in Base.metadata.sorted_tables
-                                                        if not t.name.startswith("ledger_") and t.name not in {*STEP5_TABLES, *STEP6_TABLES}])
+                                                        if not t.name.startswith("ledger_") and t.name not in {*STEP5_TABLES, *STEP6_TABLES, *STEP7_TABLES}])
         with pytest.raises(RuntimeError, match="migrate_capital_ledger"):
             migrate_month_close(schema.engine)
 
