@@ -58,6 +58,12 @@ anspråken först (W8). Den första stängningen med en rätt kräver en registr
 premie på en del som startar eller har startat hålls utanför journalen med ett ärende (W9). Rättelse av
 en månad med anspråk tillåts bara om varje anspråks brutto och kapitaldel är oförändrade (W10). Utan
 steg 5:s tabeller beter sig stängningen som i steg 4.
+
+**Utbetalningar (paket B steg 6, Karls val X10).** När steg 6:s migration är körd
+(`payout_orders.orders_present`) räknar stängningen in månadens verifikationer `payout_settlement` i
+skuldens utgående saldo och lägger kontrollen *utbetalningar*: skuldens och skatteskuldens poster stämmer
+med kvittofilernas summor, verkställt netto + skatt = utbetalt brutto, och ingen av skulderna blir negativ. Utan steg 6:s tabeller beter sig
+stängningen som i steg 5 – samma sektion, kontroller och kontrollsumma.
 """
 
 from __future__ import annotations
@@ -92,6 +98,7 @@ from models import (
 )
 from services import capital_ledger as cl
 from services import parameters
+from services import payout_orders as po
 from services import payout_plans as pl
 from services import pension_claims as pc
 from services import valuation_bases as vb
@@ -891,6 +898,10 @@ def _payouts(session: Session, month: date, previous_end: date, in_force: dict, 
     open_claims = sum(1 for v in left if v > 0) + sum(1 for r in claim_rows if r["unfunded_sek"] > 0)
     total_unfunded = unfunded + still_open
     liability_close = liability_open + from_capital + support + funded_later
+    # Steg 6 (X10): månadens utförda och återkomna betalningar, bokade som egna verifikationer före stängningen
+    settled = po.settlements_in(session, month) if booking and po.orders_present(session) else None
+    if settled is not None:
+        liability_close += settled["liability_sek"]
     entries_liability = sum((e["amount_sek"] for e in entries if e["account"] == pc.LIABILITY), ZERO)
     entries_company = sum((e["amount_sek"] for e in entries if e["account"] == pc.COMPANY), ZERO)
     liquidity = 12 * sum((m for _, m in decided.values()), ZERO)
@@ -923,6 +934,19 @@ def _payouts(session: Session, month: date, previous_end: date, in_force: dict, 
     else:
         controls.append(Control("skuld och bolagskonto", True,
                                 "Rättelsen ändrar inte anspråk, skuld eller bolagskonto (W10)", sources=sources))
+    if settled is not None:
+        paid = settled["paid_gross_sek"] - settled["returned_gross_sek"]
+        withheld = settled["withholding_sek"] - settled["withholding_returned_sek"]
+        tax_close = pc.account_balance(session, po.TAX_LIABILITY, month)
+        controls.append(Control(
+            "utbetalningar",
+            settled["liability_sek"] == -paid and settled["tax_liability_sek"] == withheld
+            and settled["net_sek"] + withheld == paid and liability_close >= 0 and tax_close >= 0,
+            f"{settled['batches']} kvittofiler: utbetalt brutto {settled['paid_gross_sek']} kr − återkommet "
+            f"{settled['returned_gross_sek']} kr = {paid} kr ur skulden; skatteavdrag {withheld} kr till "
+            f"skatteskulden ({tax_close} kr); verkställt netto {settled['net_sek']} kr + skatt = brutto (PR-ITP1-026, X9–X10)",
+            expected=str(-paid), actual=str(settled["liability_sek"]),
+            difference=settled["liability_sek"] + paid, sources=sources))
 
     company_case = None
     economic_block = None
@@ -948,6 +972,9 @@ def _payouts(session: Session, month: date, previous_end: date, in_force: dict, 
         "liability": ({"opening_sek": str(liability_open), "closing_sek": str(liability_close)} if booking else None),
         "economic_block": economic_block,
     }
+    if settled is not None:  # steg 6: nyckeln finns bara när bankuppdragen är införda (B-052)
+        section["settlements"] = {k: (str(v) if isinstance(v, Decimal) else v) for k, v in settled.items()}
+        section["liability"]["settled_sek"] = str(settled["liability_sek"])
     totals = {"pension_debits_sek": str(from_capital), "claims": len(claim_rows), "amount_decisions": len(new_amounts),
               "claims_gross_sek": str(gross), "company_support_sek": str(support + funded_later),
               "unfunded_sek": str(total_unfunded), "fundings": len(funding_rows), "state_changes": len(states)}

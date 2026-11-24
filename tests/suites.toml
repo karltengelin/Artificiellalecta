@@ -17,15 +17,16 @@ dependents = ["services", "agents", "web", "insights", "data", "tooling"]
 [suites.pensions]
 description = "Pensionsplaner, garanti och kapitalavräkning; den operativa kapital- och garantijournalen med övergången från S-04 och månadsstängningen för sparandet finns"
 status = "partial"
-# payments och economy läggs till som beroenden när de får tester (paket B steg 3 och senare)
+# economy läggs till som beroende när den får tester; payments har bankuppdragen från steg 6
 tests = ["tests/test_capital_ledger.py", "tests/test_migration_capital_ledger.py", "tests/test_month_close.py", "tests/test_migration_month_close.py", "tests/test_payout_plan_calculation.py", "tests/test_payout_plans.py", "tests/test_migration_payout_plans.py", "tests/test_pension_claim_calculation.py", "tests/test_pension_claims.py", "tests/test_migration_pension_claims.py"]
-dependents = ["risk", "simulation", "reporting"]
+dependents = ["risk", "simulation", "reporting", "payments"]
 
 [suites.payments]
-description = "Bankflöden, pensionsskuld och betalningskvitton"
-status = "planned"
-tests = []
-dependents = ["economy", "reporting"]
+description = "Bankflöden, pensionsskuld och betalningskvitton; skattestatus, konto, bankuppdrag och kvitton för utbetalningar finns (paket B steg 6)"
+status = "partial"
+tests = ["tests/test_payout_tax.py", "tests/test_payout_orders.py", "tests/test_migration_payout_orders.py"]
+# economy läggs till som beroende när den får tester
+dependents = ["reporting"]
 
 [suites.capital]
 description = "Portföljmodeller; handel och förvaltningsmotor återstår"
@@ -108,7 +109,7 @@ dependents = ["tooling"]
 [suites.data]
 description = "Datamodeller, backup och migrationer"
 status = "active"
-tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_capital_ledger.py", "tests/test_migration_month_close.py", "tests/test_migration_payout_plans.py", "tests/test_migration_pension_claims.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
+tests = ["tests/test_premium_month.py", "tests/test_actuarial_workspace.py", "tests/test_case_workspace_postgres.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_capital_ledger.py", "tests/test_migration_month_close.py", "tests/test_migration_payout_plans.py", "tests/test_migration_pension_claims.py", "tests/test_migration_payout_orders.py", "tests/test_migration_t3.py", "tests/test_models_cases.py", "tests/test_models_uuid.py", "tests/test_portfolio_models.py", "tests/test_product_parameters.py"]
 dependents = []
 
 [suites.design]
@@ -153,8 +154,9 @@ postgres = [
   "tests/test_migration_payout_plans.py::test_delningen_mot_postgres",
   "tests/test_migration_payout_plans.py::test_plan_och_delning_med_kapital_mot_postgres",
   "tests/test_migration_pension_claims.py",
+  "tests/test_migration_payout_orders.py",
 ]
-integration = ["tests/test_company_missions.py", "tests/test_web_actuary.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_capital_ledger.py", "tests/test_migration_month_close.py", "tests/test_migration_payout_plans.py", "tests/test_migration_pension_claims.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py"]
+integration = ["tests/test_company_missions.py", "tests/test_web_actuary.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_services_postgres.py", "tests/test_agents_postgres_role.py", "tests/test_services_transactions.py", "tests/test_web_cases.py", "tests/test_agents_case_runs.py", "tests/test_backup.py", "tests/test_migration_cases.py", "tests/test_migration_premium_flow.py", "tests/test_migration_payout_parts.py", "tests/test_migration_capital_ledger.py", "tests/test_migration_month_close.py", "tests/test_migration_payout_plans.py", "tests/test_migration_pension_claims.py", "tests/test_migration_payout_orders.py", "tests/test_product_parameters.py", "tests/test_portfolio_impact.py", "tests/test_agents_teams.py"]
 security = ["tests/test_company_missions.py", "tests/test_web_actuary.py", "tests/test_web_valuations.py", "tests/test_web_development.py", "tests/test_web_auth.py", "tests/test_services_access.py", "tests/test_services_transactions.py", "tests/test_agents_dispatcher.py", "tests/test_agents_ecosystem.py", "tests/test_agents_gateways.py", "tests/test_agents_journal.py", "tests/test_agents_skills.py", "tests/test_agents_postgres_role.py", "tests/test_ai_boundaries.py", "tests/test_portfolio_impact.py::TestIngaIndividuppgifter", "tests/test_portfolio_impact.py::TestAtkomst", "tests/test_agents_teams.py::TestGatewayverktyg", "tests/test_agents_teams.py::TestParametermandatet"]
 
 # Alla matchande regler förenas. dependents utvidgar sedan kodändringens urval transitivt.
@@ -164,6 +166,7 @@ paths = [
   "tests/test_agents_loop.py", "tests/test_services_postgres.py", "tests/test_services_transactions.py",
   "tests/case_work_helpers.py", "tests/test_premium_month_export.py", "tests/test_migration_payout_parts.py",
   "tests/test_services_write_ops.py", "tests/test_services_enrollment.py", "tests/test_web_changes.py",
+  "tests/test_pension_claims.py", "tests/test_payout_orders.py",
   "pyproject.toml", "src/models/**", "src/utils/checksums.py", "src/testing/**", "scripts/testing/**", ".github/**",
 ]
 full = true
@@ -177,7 +180,7 @@ paths = ["src/skills/calculation/actuarial_annuity.py", "src/skills/calculation/
 suites = ["risk"]
 
 [[rules]]
-paths = ["src/services/capital_ledger.py", "src/services/ledger_*.py", "src/services/month_close.py", "src/services/operations/capital_ledger.py", "src/services/operations/month_close.py", "src/utils/migration_capital_ledger.py", "src/utils/migration_month_close.py", "scripts/simulation/paket_b_*/**", "src/services/payout_plans.py", "src/services/operations/payout_plans.py", "src/skills/calculation/payout_plan.py", "src/utils/migration_payout_plans.py", "scripts/migrations/migrate_payout_plans.py", "src/services/pension_claims.py", "src/services/operations/pension_claims.py", "src/skills/calculation/pension_claim.py", "src/utils/migration_pension_claims.py", "scripts/migrations/migrate_pension_claims.py"]
+paths = ["src/services/capital_ledger.py", "src/services/ledger_*.py", "src/services/month_close.py", "src/services/operations/capital_ledger.py", "src/services/operations/month_close.py", "src/utils/migration_capital_ledger.py", "src/utils/migration_month_close.py", "scripts/simulation/paket_b_*/**", "src/services/payout_plans.py", "src/services/operations/payout_plans.py", "src/skills/calculation/payout_plan.py", "src/utils/migration_payout_plans.py", "scripts/migrations/migrate_payout_plans.py", "src/services/pension_claims.py", "src/services/operations/pension_claims.py", "src/skills/calculation/pension_claim.py", "src/utils/migration_pension_claims.py", "scripts/migrations/migrate_pension_claims.py", "src/services/payout_orders.py", "src/services/operations/payout_orders.py", "src/skills/calculation/payout_tax.py", "src/utils/migration_payout_orders.py", "scripts/migrations/migrate_payout_orders.py"]
 suites = ["pensions", "risk", "simulation"]
 
 [[rules]]
@@ -371,5 +374,14 @@ postgres = [
   "tests/test_migration_pension_claims.py",
   "tests/test_migration_payout_plans.py::test_migrationen_infor_uttagsplanerna_och_blir_identisk_med_create_all",
   "tests/test_migration_payout_plans.py::test_plan_och_delning_med_kapital_mot_postgres",
+  "tests/test_migration_month_close.py::test_novemberstangningen_mot_postgres",
+]
+
+# Paket B steg 6 (X1–X13): skatt, konto, bankuppdrag och kvitton; stängningens kontroll utbetalningar och migrationen
+[[rules]]
+paths = ["src/models/payout_order.py", "src/services/payout_orders.py", "src/services/operations/payout_orders.py", "src/skills/calculation/payout_tax.py", "src/services/month_close.py", "src/simulation/counterparties.py", "src/utils/migration_payout_orders.py", "scripts/migrations/migrate_payout_orders.py", "scripts/simulation/paket_b_steg6/**"]
+postgres = [
+  "tests/test_migration_payout_orders.py",
+  "tests/test_migration_pension_claims.py",
   "tests/test_migration_month_close.py::test_novemberstangningen_mot_postgres",
 ]

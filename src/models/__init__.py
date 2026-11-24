@@ -21,6 +21,7 @@ from .employer import Employer
 from .insured_person import InsuredPerson
 from .invoice import Invoice, InvoiceLineRecord
 from .operation_event import OperationEventRecord
+from .payout_order import PayoutAccount, PayoutFile, PayoutOrder, PayoutOrderLine, PayoutReceipt, TaxStatus
 from .payout_part import PayoutPart, PayoutPartState
 from .payout_plan import PayoutPlan, PayoutRequest, PayoutSplit
 from .pension_claim import PayoutAmount, PensionClaim, PensionClaimFunding
@@ -61,10 +62,15 @@ __all__ = [
     "LedgerGuaranteePart",
     "OperationEventRecord",
     "PaymentAllocation",
+    "PayoutAccount",
     "PayoutAmount",
+    "PayoutFile",
+    "PayoutOrder",
+    "PayoutOrderLine",
     "PayoutPart",
     "PayoutPartState",
     "PayoutPlan",
+    "PayoutReceipt",
     "PayoutRequest",
     "PayoutSplit",
     "PensionClaim",
@@ -81,6 +87,7 @@ __all__ = [
     "ProductParameter",
     "SalaryFile",
     "SalaryReport",
+    "TaxStatus",
     "Trade",
     "ValuationBasis",
     "ValuationExtractRecord",

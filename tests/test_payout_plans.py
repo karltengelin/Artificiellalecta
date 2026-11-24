@@ -127,9 +127,10 @@ def decide(db, request_id, name="decide_payout_plan"):
 
 
 def without_step5(db):
-    """Som Lakebase före steg 5:s migration: inga tabeller för belopp, anspråk och finansiering (B-052)."""
+    """Som Lakebase före steg 5:s migration: inga tabeller för belopp, anspråk och finansiering och därmed inte
+    heller steg 6:s bankuppdrag (B-052)."""
     with db.engine.begin() as conn:
-        for table in ("pension_claim_fundings", "pension_claims", "payout_amounts"):
+        for table in ("payout_receipts", "payout_order_lines", "payout_orders", "payout_files", "payout_accounts", "tax_statuses", "pension_claim_fundings", "pension_claims", "payout_amounts"):
             conn.exec_driver_sql(f"DROP TABLE {table}")
     return db
 

@@ -42,8 +42,12 @@ _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgres
 #: utan plan (PB2, V4–V6)
 #: company_capital: bolagskontot räcker inte till ett anspråk – ekonomiskt blockerad körning, eskalerad till
 #: operatören (PR-ITP1-028, paket B steg 5, Karls val W8). Ärendet gäller bolaget, inte en person
+#: payout_hindrance: utbetalningshinder – saknat, overifierat, avvisat eller återkommet konto; skulden står
+#: kvar, och det är varken paus eller uppskov (PR-ITP1-026, paket B steg 6, Karls val X6)
+#: tax_status: skattestatus saknas för utbetalningsdagens år, eller huvudinkomst utan skattetabell (PR-ITP1-026, X4–X5)
 CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue", "payment_unmatched",
-              "payout_reconstruction", "payout_request", "payout_review", "company_capital")
+              "payout_reconstruction", "payout_request", "payout_review", "company_capital", "payout_hindrance",
+              "tax_status")
 #: Ärendetyper som får sakna både försäkrad och arbetsgivare
 SUBJECTLESS_CASE_TYPES = ("payment_unmatched", "company_capital")
 CASE_STATUSES = ("open", "in_progress", "waiting_approval", "waiting_info", "closed")

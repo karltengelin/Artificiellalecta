@@ -37,8 +37,9 @@ from utils.migration_pension_claims import (
     compile_ddl,
     migrate_pension_claims,
 )
+from utils.migration_payout_orders import TABLES as STEP6_TABLES
 
-NOT_IN_LAKEBASE = {"portfolios", "portfolio_holdings", "trades"}
+NOT_IN_LAKEBASE = {*STEP6_TABLES, "portfolios", "portfolio_holdings", "trades"}
 HUMAN = OperationContext(actor=Actor.human("karl"), reason="Månadsrätter (prov)")
 needs_postgres = pytest.mark.skipif(not TEST_URL, reason="SERVICES_TEST_POSTGRES_URL saknas – ingen isolerad Postgres")
 ACCOUNTS_CHECK = "ck_ledger_capital_entries_accounts"

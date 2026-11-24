@@ -25,9 +25,10 @@ from tests.test_migration_payout_parts import _signature
 from tests.test_services_postgres import TEST_URL, isolated_schema
 from utils.migration_capital_ledger import TABLES, compile_ddl, migrate_capital_ledger
 from utils.migration_pension_claims import TABLES as STEP5_TABLES
+from utils.migration_payout_orders import TABLES as STEP6_TABLES
 
 #: Tabeller som finns i modellerna men inte i Lakebase efter steg 1
-NOT_IN_LAKEBASE = {*STEP5_TABLES, *TABLES, "portfolios", "portfolio_holdings", "trades"}
+NOT_IN_LAKEBASE = {*STEP6_TABLES, *STEP5_TABLES, *TABLES, "portfolios", "portfolio_holdings", "trades"}
 OPENING = date(2026, 10, 31)
 HUMAN = OperationContext(actor=Actor.human("karl"), reason="Kapitaljournalens ingående läge (prov)")
 needs_postgres = pytest.mark.skipif(not TEST_URL, reason="SERVICES_TEST_POSTGRES_URL saknas – ingen isolerad Postgres")

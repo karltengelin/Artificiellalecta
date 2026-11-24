@@ -457,7 +457,7 @@ class TestSparrar:
 
     def test_startad_del_med_kapital_blockerar(self, ready):
         with ready.engine.begin() as conn:  # som före steg 5: premien på den startade delen blockerar mottagningen
-            for table in ("pension_claim_fundings", "pension_claims", "payout_amounts"):
+            for table in ("payout_receipts", "payout_order_lines", "payout_orders", "payout_files", "payout_accounts", "tax_statuses", "pension_claim_fundings", "pension_claims", "payout_amounts"):
                 conn.exec_driver_sql(f"DROP TABLE {table}")
         with ready.factory() as s:
             part = s.scalars(select(PayoutPart)).first()

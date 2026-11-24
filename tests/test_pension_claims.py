@@ -43,6 +43,7 @@ from models import (
 from services import Actor, BlockedError, OperationContext
 from services import capital_ledger as cl
 from services import month_close as mc
+from services import payout_orders as po
 from services import payout_plans as pl
 from services import pension_claims as pc
 from services import valuation_bases as vb
@@ -123,9 +124,10 @@ def part_id(db, key, number=1):
 
 
 def without_step5(db):
-    """Som Lakebase före steg 5:s migration: inga tabeller för belopp, anspråk och finansiering (B-052)."""
+    """Som Lakebase före steg 5:s migration: inga tabeller för belopp, anspråk och finansiering och därmed inte
+    heller steg 6:s bankuppdrag (B-052)."""
     with db.engine.begin() as conn:
-        for table in pc.CLAIM_TABLES[::-1]:
+        for table in (*po.ORDER_TABLES[::-1], *pc.CLAIM_TABLES[::-1]):
             conn.exec_driver_sql(f"DROP TABLE {table}")
     return db
 

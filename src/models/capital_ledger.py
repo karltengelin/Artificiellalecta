@@ -50,18 +50,21 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
 #: Verifikationens slag: ingående läge (steg 2), månadsstängning och rättelse av en stängd månad (steg 3) och
-#: bolagets kapitalinsättning (steg 5, PR-ITP1-028, Karls val W7)
-BATCH_KINDS = ("opening_s04", "month_close", "month_correction", "company_capital")
+#: bolagets kapitalinsättning (steg 5, PR-ITP1-028, Karls val W7) och en kvittofils verkställda och återkomna
+#: utbetalningar (steg 6, PR-ITP1-026, Karls val X9)
+BATCH_KINDS = ("opening_s04", "month_close", "month_correction", "company_capital", "payout_settlement")
 #: Märkning av posternas ursprung, samma värden som värderingsmotorns källor (`valuation_runs.source`)
 SOURCES = ("reconstructed_s04", "ledger")
 #: Journalens konton (P1-PENSION-001 §6.1). Steg 2 använder bara kundkapitalet
 ACCOUNTS = ("customer_capital", "payment_liability", "tax_liability", "inheritance_pool", "company", "suspense")
 #: Kapitalpostens orsak (§6.1). `opening` är det ingående saldot från S-04 (beslutat av Karl 2026-11-14);
-#: `company_capital` är ägarens dokumenterade insättning på bolagskontot (steg 5, Karls val W7)
+#: `company_capital` är ägarens dokumenterade insättning på bolagskontot (steg 5, Karls val W7); `payout`,
+#: `withholding` och `payout_returned` är utbetalt brutto, skatteavdraget och en återkommen betalning (steg 6, X9)
 ENTRY_REASONS = ("opening", "premium", "return", "fee", "tax", "pension_debit", "company_support",
-                 "pool_in", "pool_out", "split", "company_capital")
-#: Konton som aldrig får bli negativa utöver kundkapitalet (steg 5): betalningsskulden och bolagskontot
-NON_NEGATIVE_ACCOUNTS = ("payment_liability", "company")
+                 "pool_in", "pool_out", "split", "company_capital", "payout", "withholding", "payout_returned")
+#: Konton som aldrig får bli negativa utöver kundkapitalet: betalningsskulden och bolagskontot (steg 5) och
+#: skatteskulden (steg 6, X9)
+NON_NEGATIVE_ACCOUNTS = ("payment_liability", "company", "tax_liability")
 #: Garantidelens ursprung: en premierad i S-04 eller en allokering i paket A (PA6)
 GUARANTEE_ORIGINS = ("s04_premium", "payment_allocation")
 #: Varför en garantidelsversion finns: premien själv (version 1), delning eller omräkning (steg 4)

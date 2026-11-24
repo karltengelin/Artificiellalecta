@@ -1,4 +1,4 @@
-"""Motpartssimulatorn: arbetsgivarens löneunderlagsfil och bankens fil (B-046, PA8, P1-PREMIE-001 §9).
+"""Motpartssimulatorn: arbetsgivarens löneunderlagsfil och bankens filer (B-046, PA8, P1-PREMIE-001 §9).
 
 Simulatorn läser beståndet och skapar filer som om de kom utifrån. Den skriver aldrig i
 affärstabellerna. Filerna lämnas till `import_salary_file` och `import_bank_file` som vilken
@@ -8,6 +8,10 @@ i filreferensen och i `label`. Facit hålls separat i `facit` och skrivs aldrig 
 
 Samma seed, scenario och bestånd ger samma fil, byte för byte. En fil som lämnas in två gånger
 blir därför samma intag (fall 6 och 15).
+
+Bankens kvittofil för utbetalningar (paket B steg 6, Karls val X11) är bara banksidan: den läser den
+godkända bankfilen som banken fått och svarar per uppdrag med utfört, avvisat, återkommet eller okänt.
+Kunden och Skatteverket simuleras inte.
 """
 
 from __future__ import annotations
@@ -36,11 +40,13 @@ from models import (
 from services.operations.common import luhn_valid, month_of
 from services.operations.payments import bank_file_checksum
 from services.operations.salary_files import file_checksum
+from services.payout_orders import receipt_file_checksum
 from utils.bank_calendar import next_bank_day
 
 SIMULATOR = "motpartssimulator"
 VERSION = "1"
 BANK_SOURCE = "bank-sim"
+PAYOUT_BANK_SOURCE = "bank-sim-payout"
 CENT = Decimal("0.01")
 #: Lön för en okänd person i filen; beloppet spelar ingen roll, raden registreras aldrig
 UNKNOWN_SALARY = Decimal(40000)
@@ -53,7 +59,7 @@ UNKNOWN_SALARY = Decimal(40000)
 class SimulatedFile:
     """En fil från en motpart: indata till operationen, märkning och facit var för sig."""
 
-    kind: Literal["salary_file", "bank_file"]
+    kind: Literal["salary_file", "bank_file", "payout_receipt_file"]
     operation: str
     payload: dict[str, Any]
     label: dict[str, Any]
@@ -65,6 +71,8 @@ class SimulatedFile:
 
     @property
     def empty(self) -> bool:
+        if self.kind == "payout_receipt_file":
+            return not self.payload["receipts"]
         return self.kind == "bank_file" and not self.payload["events"]
 
     def write(self, directory: Path) -> tuple[Path, Path]:
@@ -378,3 +386,43 @@ def _stranger(session, rng: random.Random) -> str:
         org = f"559{rng.randint(0, 9_999_999):07d}"
         if session.scalar(select(Employer.id).where(Employer.org_number == org)) is None:
             return org
+
+
+# --- bankens kvittofil för utbetalningar (paket B steg 6) -----------------------------------------
+
+PayoutOutcome = Literal["executed", "rejected", "returned", "unknown"]
+#: Bankens orsakskod per utfall (ISO 20022-liknande): felaktigt konto och stängt konto
+REASON_CODES = {"rejected": "AC01", "returned": "AC04"}
+
+
+def payout_receipt_file(bank_file: Mapping[str, Any], outcomes: Mapping[str, PayoutOutcome] | None = None, *,
+                        bank_date: date, seed: int, round_number: int = 1,
+                        file_reference: str | None = None) -> SimulatedFile:
+    """Bankens kvittofil för en godkänd bankfil (`approve_payout_order` → `bank_file`).
+
+    Varje uppdrag får utfallet i `outcomes` (referens → utfall), annars utfört. Kvitto-id:t är stabilt per
+    seed, uppdrag och omgång, så samma omgång igen ger samma kvitton (ingen ny effekt), medan en senare
+    omgång – t.ex. retur efter utförande eller svar efter okänt – ger nya kvitton. Alla uppdrag i filen
+    besvaras.
+    """
+    outcomes = dict(outcomes or {})
+    unknown_refs = set(outcomes) - {o["reference"] for o in bank_file["orders"]}
+    if unknown_refs:
+        raise ValueError(f"Okända uppdrag i utfallen: {sorted(unknown_refs)}")
+    receipts, facit = [], []
+    for order in sorted(bank_file["orders"], key=lambda o: o["reference"]):
+        outcome = outcomes.get(order["reference"], "executed")
+        receipts.append({"receipt_id": f"SIM{VERSION}-PR-S{seed}-{order['reference']}-{round_number}",
+                         "reference": order["reference"], "outcome": outcome, "bank_date": bank_date.isoformat(),
+                         "reason_code": REASON_CODES.get(outcome)})
+        facit.append({"reference": order["reference"], "outcome": outcome, "amount_sek": order["amount_sek"]})
+    reference = file_reference or f"SIM{VERSION}-PAYRCPT-{bank_date:%Y%m%d}-S{seed}-R{round_number}"
+    checksum = receipt_file_checksum(PAYOUT_BANK_SOURCE, reference, receipts)
+    payload = {"source_system": PAYOUT_BANK_SOURCE, "file_reference": reference, "checksum": checksum,
+               "receipts": receipts}
+    executed = sum((Decimal(f["amount_sek"]) for f in facit if f["outcome"] == "executed"), Decimal(0))
+    label = _label(seed, {"bank_file": bank_file["file_reference"], "round": round_number,
+                          "outcomes": dict(sorted(outcomes.items()))})
+    return SimulatedFile("payout_receipt_file", "import_payout_receipts", payload, label,
+                         {"receipts": facit, "executed_net_sek": _money(executed),
+                          "bank_file_checksum": bank_file["checksum"]})

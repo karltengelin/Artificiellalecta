@@ -33,6 +33,12 @@ operations:
   get_payout_part: HUMAN_ONLY          # delens planer och begäran; agentmontering prövas när ett uppdrag behöver den
   register_company_capital: HUMAN_ONLY # ägarens insättning på bolagskontot (paket B steg 5, PR-ITP1-028, Karls val W7); bara människa
   list_pension_claims: HUMAN_ONLY      # månadsrätter och bolagskonto; individrader, agenter får inga rättigheter (W12)
+  register_tax_status: HUMAN_ONLY      # skattestatus per person och år (paket B steg 6, PR-ITP1-026, Karls val X5); bara människa
+  register_payout_account: HUMAN_ONLY  # utbetalningskonto med verifiering (X6); bara människa
+  create_payout_orders: HUMAN_ONLY     # bankfil med skatt per uppdrag (X2, X3, X7); bara människa
+  approve_payout_order: HUMAN_ONLY     # hashbundet godkännande av bankfilen – den externa handlingen (X7, X12)
+  import_payout_receipts: HUMAN_ONLY   # bankens kvitton och verifikationen payout_settlement (X8, X9); bara människa
+  list_payout_orders: HUMAN_ONLY       # bankfiler och maskerade konton; individrader, agenter får inga rättigheter (X12)
   get_premium_month: HUMAN_ONLY        # månadsstatus; agenten använder avgränsad analysgateway
   approve_premium_month: HUMAN_ONLY    # mänsklig analysgranskning, aldrig baslås
   register_actuarial_dataset: HUMAN_ONLY  # observerat utfall; människa/betrodd dataproducent
