@@ -8,6 +8,74 @@
 
 ## Beslut
 
+### B-054 | 2026-11-24 | Paket B steg 6: skatt, konto, bankuppdrag och kvitton
+
+**Beslut:** Operatören godkände valen X1–X13 för byggsteg 6 i paket B
+([P1-PENSION-001 §8.3](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#83-val-för-steg-6-skatt-konto-bankuppdrag-och-kvitton))
+enligt rekommendationerna i chatten 2026-11-24: ”Godkänn alla”. Loggningen och byggstarten
+godkändes samma dag: ”Logga och bygg”.
+
+1. **Datamodell (X1).** Sex tabeller där rader bara läggs till och som pekar på `pension_claims`:
+   `tax_statuses`, `payout_accounts`, `payout_files`, `payout_orders`, `payout_order_lines` och
+   `payout_receipts`. Betalningsläget härleds ur raderna, och anspråket ändras aldrig (W1).
+2. **Betalbart anspråk (X2).** Bara ett helt finansierat anspråk utan öppen eller verkställd rad
+   betalas, med hela bruttot i en rad (W8).
+3. **Skatt (X3–X5).**
+   - Skatten räknas per uppdrag (person och betalningsdag) på summan av personens delar, med
+     utbetalningsdagens år, i hela kronor och aldrig över bruttot.
+   - Gränserna 100 och 1 000 kr är strikt mindre än och gäller A-skatt, inte SINK. Förväntad
+     årssumma är det som verkställts i året plus återstående rätter i året enligt planerna.
+   - Skattestatus registreras per person och år i en versionskedja. Saknad status ger ett
+     ärende `tax_status` och blockerar personens uppdrag.
+   - Huvudinkomst registreras men blockerar tills skattetabellen byggs som eget steg, när Karl
+     hämtat Skatteverkets tabeller för 2026 och 2027.
+4. **Konto och hinder (X6).** Konto per person i en versionskedja med verifiering. Saknat,
+   overifierat, avvisat eller återkommet konto ger ett ärende `payout_hindrance`; skulden står
+   kvar, och delens läge rörs inte.
+5. **Bankfil och kvitton (X7–X8).**
+   - Bankfilen per betalningsdag har en kontrollsumma ur innehållet. En ej godkänd fil ersätts
+     vid ändrat underlag; en godkänd fil ändras aldrig.
+   - Godkännandet binder filens kontrollsumma och är den externa handlingen.
+   - Kvitton läses in idempotent. Ett nytt försök använder samma anspråk när ett konto
+     verifierats efter kvittot, och okänt utfall avvaktar ett senare kvitto.
+6. **Journalen (X9–X10).**
+   - Varje kvittofil blir en egen verifikation `payout_settlement` i första öppna månaden:
+     skulden minskar med bruttot (`payout`) och skatteskulden ökar med skatten (`withholding`).
+     En återkommen betalning ger exakta motposter (`payout_returned`).
+   - Skatteskulden blir aldrig negativ, ingår inte i FTA och går till projekt 6.
+   - Stängningen räknar in månadens utbetalningar i skulden och får kontrollen *utbetalningar*,
+     bara när steg 6:s tabeller finns.
+7. **Simulatorn (X11).** Bara bankens utbetalningssida. Dödsfallsbesked kommer i steg 7 och
+   kundbegäran senare.
+8. **Befogenheter och migration (X12–X13).**
+   - Sex nya operationer, alla `HUMAN_ONLY`. Systemaktören och agenterna nekas godkännandet, och
+     agentrollerna får inga rättigheter. Ärendetyperna `payout_hindrance` och `tax_status` ligger
+     utanför ärendepolicyn.
+   - `migrate_payout_orders.py` förutsätter steg 5:s migration. Ordningen i Lakebase är novembers
+     stängning och sedan migrationerna för steg 4, 5 och 6, var och en efter separat OK.
+
+**Motivering:**
+- Anspråket från steg 5 är kontraktet. Med försök som egna rader ger ett nytt bankförsök aldrig
+  en ny rätt eller en ny kapitaldebitering (PR-ITP1-026).
+- Skatt på uppdragets summa följer PR-026:s krav att personens delar räknas tillsammans och
+  undviker avrundningsfel mellan delarna.
+- Att skatteskulden bokas vid verkställd betalning och motbokas vid retur ger en enda
+  skatteredovisning även efter avvisning och nytt försök.
+- Huvudinkomst kräver en versionsbunden tabell. Lakebase har inga pensioner, så ingenting
+  väntar på den.
+
+**Konsekvenser:**
+- Ändringar i steg 5:s kod och villkor: skuldens saldo i `month_close._payouts`, kontot
+  `tax_liability` blir icke-negativt och villkoren för verifikationens slag, postens orsak och
+  ärendetypen vidgas. Utan steg 6:s tabeller ska stängningen vara identisk med main (B-052).
+- Dröjsmålsränta, dödsbo, KU och AGI, skatteinbetalning och prognos till projekt 5 ligger
+  utanför steg 6.
+
+**Preciserar** B-047 punkt 6 och PB7, PB8 och PB12. **Bygger på** B-053 (anspråket) och B-052
+(jämförelsen mot main).
+
+---
+
 ### B-053 | 2026-11-23 | Paket B steg 5: månadsrätt, skuld, bolagskonto och bolagsstöd
 
 **Beslut:** Operatören godkände valen W1–W12 för byggsteg 5 i paket B

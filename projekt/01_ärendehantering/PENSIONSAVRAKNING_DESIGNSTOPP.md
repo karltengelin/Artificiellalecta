@@ -544,7 +544,7 @@ dödsfallsbesked. Den skriver aldrig i affärstabellerna, och facit hålls separ
 
 ### 8.3 Val för steg 6: skatt, konto, bankuppdrag och kvitton
 
-**Godkända av Karl i chatten 2026-11-24 (”Godkänn alla”) enligt rekommendationerna. Inte byggt; inte loggat i beslutsloggen.**
+**Godkända av Karl i chatten 2026-11-24 (”Godkänn alla”) enligt rekommendationerna. Loggade som B-054 samma dag efter Karls OK (”Logga och bygg”).**
 
 Steg 5:s kontrakt består: `pension_claims`, `pension_claim_fundings` och `payout_amounts` ändras inte, och
 anspråkets `payment_day` ligger fast. Tre ändringar i steg 5:s kod och villkor följer av valen och

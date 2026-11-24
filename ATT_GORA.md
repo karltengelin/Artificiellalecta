@@ -78,7 +78,7 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
 **Därefter, paket B steg 6** (skatt, konto, bankuppdrag och kvitton):
 
 - [x] **Valen X1–X13** *2026-11-24* godkända av Karl ([designstoppet §8.3](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#83-val-för-steg-6-skatt-konto-bankuppdrag-och-kvitton)).
-- [ ] **B-054** loggas efter Karls OK.
+- [x] **B-054** *2026-11-24* loggad efter Karls OK (”Logga och bygg”).
 - [ ] **Bygget** på branchen `claude/paket-b-steg-6-design-03306f`, med jämförelsen mot main före merge (X10, B-052).
 - [ ] **Skattetabellen för huvudinkomst** (X4) blir ett eget steg när Karl hämtat Skatteverkets tabeller för 2026 och 2027.
 
