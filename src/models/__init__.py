@@ -14,14 +14,27 @@ from .approval_request import ApprovalRequestRecord
 from .bank import BankEvent, PaymentAllocation
 from .base import Base
 from .base_amount import BaseAmount
-from .capital_ledger import LedgerBatch, LedgerCapitalEntry, LedgerControl, LedgerGuaranteePart
+from .capital_ledger import (
+    LedgerBatch,
+    LedgerCapitalEntry,
+    LedgerControl,
+    LedgerGuaranteePart,
+)
 from .case import Case
 from .case_work import CaseMessage, CaseWork, CaseWorkDay
+from .death import DeathReport, DeathSettlement, EstateAuthority, PensionClaimReversal
 from .employer import Employer
 from .insured_person import InsuredPerson
 from .invoice import Invoice, InvoiceLineRecord
 from .operation_event import OperationEventRecord
-from .payout_order import PayoutAccount, PayoutFile, PayoutOrder, PayoutOrderLine, PayoutReceipt, TaxStatus
+from .payout_order import (
+    PayoutAccount,
+    PayoutFile,
+    PayoutOrder,
+    PayoutOrderLine,
+    PayoutReceipt,
+    TaxStatus,
+)
 from .payout_part import PayoutPart, PayoutPartState
 from .payout_plan import PayoutPlan, PayoutRequest, PayoutSplit
 from .pension_claim import PayoutAmount, PensionClaim, PensionClaimFunding
@@ -52,7 +65,10 @@ __all__ = [
     "CaseMessage",
     "CaseWork",
     "CaseWorkDay",
+    "DeathReport",
+    "DeathSettlement",
     "Employer",
+    "EstateAuthority",
     "InsuredPerson",
     "Invoice",
     "InvoiceLineRecord",
@@ -74,6 +90,7 @@ __all__ = [
     "PayoutRequest",
     "PayoutSplit",
     "PensionClaim",
+    "PensionClaimReversal",
     "PensionClaimFunding",
     "Policy",
     "PolicyBenefit",

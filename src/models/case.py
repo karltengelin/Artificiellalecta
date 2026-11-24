@@ -45,11 +45,15 @@ _JSON = JSON(none_as_null=True).with_variant(JSONB(none_as_null=True), "postgres
 #: payout_hindrance: utbetalningshinder – saknat, overifierat, avvisat eller återkommet konto; skulden står
 #: kvar, och det är varken paus eller uppskov (PR-ITP1-026, paket B steg 6, Karls val X6)
 #: tax_status: skattestatus saknas för utbetalningsdagens år, eller huvudinkomst utan skattetabell (PR-ITP1-026, X4–X5)
+#: death_report: dödsfallsbesked, avräkning, premie efter dödsfallet och dödsbo (PR-ITP1-010, paket B steg 7, Y2)
+#: death_recovery: återkravsprövning av ett utfört anspråk efter dödsmånaden (PR-ITP1-010, -031, Y5)
+#: inheritance_pool: arvsvinstpoolen står kvar – inga mottagare, ΣE = 0 eller ingen riskgrund (PR-ITP1-011, Y7).
+#: Ärendet gäller kollektivet, inte en person
 CASE_TYPES = ("salary_report", "salary_file_deviation", "payment_overdue", "payment_unmatched",
               "payout_reconstruction", "payout_request", "payout_review", "company_capital", "payout_hindrance",
-              "tax_status")
+              "tax_status", "death_report", "death_recovery", "inheritance_pool")
 #: Ärendetyper som får sakna både försäkrad och arbetsgivare
-SUBJECTLESS_CASE_TYPES = ("payment_unmatched", "company_capital")
+SUBJECTLESS_CASE_TYPES = ("payment_unmatched", "company_capital", "inheritance_pool")
 CASE_STATUSES = ("open", "in_progress", "waiting_approval", "waiting_info", "closed")
 CASE_OUTCOMES = ("approved", "rejected", "supplement_requested", "manual_review", "no_action")
 #: system: betrodd bevakning som upptäcker ärendet själv, t.ex. förfallen faktura (B-046)

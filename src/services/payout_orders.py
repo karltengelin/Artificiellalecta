@@ -16,6 +16,12 @@ för utbetalningsdagens år eller med huvudinkomst utan skattetabell blockeras m
 En avliden person stoppas. En ej godkänd fil ersätts när underlaget ändrats; samma underlag igen ger samma
 fil. Godkännandet binder filens kontrollsumma och är den externa handlingen.
 
+**Dödsfall (paket B steg 7, Y3, Y5 och Y10).** Ett misstänkt dödsfall stoppar personen med skälet
+`death_suspected`. Ett återfört anspråk efter dödsmånaden är inte betalbart. Efter ett verifierat dödsfall
+betalas bara anspråk med rätt senast dödsmånaden, till dödsboets verifierade konto när delarna är avräknade
+och behörigheten prövad – annars blockeras personen med skälet `estate_missing`. Skatten är dödsboets
+registrerade skattestatus utan gränserna för småbelopp, och uppdraget märks som dödsbo.
+
 **Kvitton (X8–X9).** Varje kvitto sparas en gång per källsystem och kvitto-id; samma kvitto igen ger ingen
 effekt, och samma id med ändrat innehåll ger konflikt för hela filen. Utförda och återkomna betalningar i en
 kvittofil bokas som en egen verifikation `payout_settlement` i första öppna månaden: skulden minskar med
@@ -54,6 +60,7 @@ from models import (
     TaxStatus,
 )
 from services import capital_ledger as cl
+from services import death_reports as dr
 from services import payout_plans as pl
 from services import pension_claims as pc
 from services.valuation_extract import month_end
@@ -358,8 +365,9 @@ class FilePlan:
 
 
 def _payable(session: Session, payment_day: date) -> list[tuple[PensionClaim, list[LineState]]]:
-    """Betalbara anspråk med betalningsdag senast dagen (X2) och deras tidigare försök."""
-    claims = list(session.scalars(select(PensionClaim).where(PensionClaim.payment_day <= payment_day)
+    """Betalbara anspråk med betalningsdag senast dagen (X2) och deras tidigare försök. Ett återfört anspråk efter
+    dödsmånaden (steg 7, Y5) är inte betalbart."""
+    claims = list(session.scalars(pc.not_reversed(session, select(PensionClaim).where(PensionClaim.payment_day <= payment_day))
                                   .order_by(PensionClaim.right_month, PensionClaim.payout_part_id)))
     later = pc.funded_later(session, [c.id for c in claims])
     states = line_states(session, [c.id for c in claims])
@@ -386,11 +394,21 @@ def build_file(session: Session, payment_day: date, today: date) -> FilePlan:
         by_person[owners[c.payout_part_id].person_id].append((c, active))
     orders, blocked, cases = [], [], []
     year = execution.year
+    reports = dr.current_reports(session, by_person) if dr.deaths_present(session) else {}
     for person_id in sorted(by_person, key=str):
         items = by_person[person_id]
         status = next(owners[c.payout_part_id].status for c, _ in items)
         base = {"person_id": str(person_id), "claims": [str(c.id) for c, _ in items]}
-        if status == "deceased":  # misstänkt dödsfall byggs i steg 7
+        report = reports.get(person_id)
+        if report is not None and report.status == "suspected":  # steg 7: misstänkt dödsfall stoppar (Y3)
+            blocked.append({**base, "reason": "death_suspected"})
+            continue
+        if report is not None and report.status == "verified":  # steg 7: dödsboet (Y10)
+            order = _estate_order(session, person_id, report, items, execution, year, base, blocked, cases)
+            if order is not None:
+                orders.append(order)
+            continue
+        if status == "deceased":  # avliden utan verifierat besked (steg 7: register_death_report)
             blocked.append({**base, "reason": "deceased"})
             continue
         account = current_account(session, person_id)
@@ -427,6 +445,45 @@ def build_file(session: Session, payment_day: date, today: date) -> FilePlan:
     logical = {"method": METHOD, "payment_day": payment_day.isoformat(), "execution_date": execution.isoformat(),
                "orders": orders}
     return FilePlan(payment_day, execution, orders, blocked, cases, content_checksum(logical))
+
+
+def _estate_order(session: Session, person_id: uuid.UUID, report, items: list, execution: date, year: int, base: dict,
+                  blocked: list, cases: list) -> dict | None:
+    """Uppdraget till dödsboet (Y10): bara anspråk med rätt senast dödsmånaden, när delarna är avräknade och
+    behörigheten och kontot är verifierade. Skatten är 30 % eller beslutet, utan gränserna för småbelopp."""
+    death_month = report.death_date.replace(day=1)
+    items = [(c, active) for c, active in items if c.right_month <= death_month]  # efter D: återförs i stängningen
+    if not items:
+        return None
+    base = {**base, "claims": [str(c.id) for c, _ in items]}
+    estate, account = dr.estate_for_payment(session, person_id)
+    if estate is None or not dr.person_settled(session, person_id):
+        blocked.append({**base, "reason": "estate_missing"})
+        return None
+    if any(active and active[-1].state in RETRY_STATES and active[-1].order.account_id == account.id
+           for _, active in items):
+        blocked.append({**base, "reason": "account_after_rejection"})
+        return None
+    tax_status = status_for(session, person_id, year, execution)
+    if tax_status is None:
+        blocked.append({**base, "reason": "tax_status_missing", "tax_year": year})
+        cases.append({"type": "tax_status", "person_id": person_id, "reason": "missing", "tax_year": year})
+        return None
+    gross = sum((c.gross_sek for c, _ in items), ZERO)
+    rule = tx.TaxRule(tax_status.kind, tax_status.rate, tax_status.fixed_amount_sek)
+    try:
+        result = tx.withholding(gross, rule, ZERO, thresholds=False)
+    except tx.TaxBlocked as exc:
+        blocked.append({**base, "reason": f"tax_{exc.reason}", "tax_year": year})
+        cases.append({"type": "tax_status", "person_id": person_id, "reason": exc.reason, "tax_year": year})
+        return None
+    lines = [{"claim_id": str(c.id), "payout_part_id": str(c.payout_part_id), "right_month": c.right_month.isoformat(),
+              "gross_sek": str(c.gross_sek), "lump_sum": _lump_sum(c, execution)} for c, _ in items]
+    # Underlaget för kontrolluppgiften märks som dödsbo (Y10, projekt 6)
+    return {"person_id": str(person_id), "account_id": str(account.id), "tax_status_id": str(tax_status.id),
+            "tax_year": year, **result.plain(), "lines": lines,
+            "lump_sum_sek": str(sum((c.gross_sek for c, _ in items if _lump_sum(c, execution)), ZERO)),
+            "estate": True, "estate_authority_id": str(estate.id)}
 
 
 def _person_parts(session: Session, person_id: uuid.UUID) -> list[uuid.UUID]:

@@ -64,6 +64,18 @@ steg 5:s tabeller beter sig stängningen som i steg 4.
 skuldens utgående saldo och lägger kontrollen *utbetalningar*: skuldens och skatteskuldens poster stämmer
 med kvittofilernas summor, verkställt netto + skatt = utbetalt brutto, och ingen av skulderna blir negativ. Utan steg 6:s tabeller beter sig
 stängningen som i steg 5 – samma sektion, kontroller och kontrollsumma.
+
+**Dödsfall och arvsvinst (paket B steg 7, PR-ITP1-020 steg 6–7, Karls val Y1–Y14).** När steg 7:s migration
+är körd (`death_reports.deaths_present`) gäller rätten till och med dödsmånaden D, och en avräknad del lämnar
+planerna (Y4). Steg 6 avräknar varje del vars ägare har ett verifierat besked med D senast månadens slut:
+anspråk efter D återförs (Y5, orsaken `death_reversal` på skuld, kundkapital och bolagskonto), ett utfört
+anspråk efter D ger ärendet `death_recovery`, delens återstående C förs till poolen (`pool_in`), varje
+garantidel får G = 0 (orsaken `death`), delen blir avslutad (`death`) och en rad skrivs i `death_settlements`.
+Steg 7 fördelar hela poolen samma månad (`pool_out`) med vikten E = C_öppning × q/(1 − q) ur SIM-R, i ören och
+inom delen efter spårens öppningssaldo; utan mottagare, ΣE = 0 eller SIM-R står poolen kvar med ärendet
+`inheritance_pool` (Y7). Premien på en avliden del hålls utanför journalen med W9:s mekanism. Rättelse av en
+månad med dödsfallsavräkning eller poolfördelning blockeras (Y8). Utan steg 7:s tabeller beter sig
+stängningen som i steg 6 – samma sektion, kontroller och kontrollsumma (B-052, Y13).
 """
 
 from __future__ import annotations
@@ -73,6 +85,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
+from types import SimpleNamespace
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -80,6 +93,7 @@ from sqlalchemy.orm import Session
 from analytics.portfolio_snapshot import birth_date
 from models import (
     Case,
+    DeathSettlement,
     InsuredPerson,
     LedgerBatch,
     LedgerCapitalEntry,
@@ -90,13 +104,16 @@ from models import (
     PayoutPart,
     PayoutPartState,
     PayoutPlan,
+    PayoutReceipt,
     PayoutSplit,
     PensionClaim,
     PensionClaimFunding,
+    PensionClaimReversal,
     Policy,
     PolicyBenefit,
 )
 from services import capital_ledger as cl
+from services import death_reports as dr
 from services import parameters
 from services import payout_orders as po
 from services import payout_plans as pl
@@ -117,6 +134,7 @@ from services.valuation_extract import ExtractError, _returns, month_end
 from skills.calculation import actuarial_annuity as aa
 from skills.calculation import payout_plan as pp
 from skills.calculation import pension_claim as pcalc
+from skills.calculation.capital_rollforward import allocate_cents
 from skills.calculation.premium_origin_ledger import (
     Origin,
     origin_code_version,
@@ -135,6 +153,13 @@ PENSION_AGE = 66
 DEBIT = "pension_debit"
 ORDER = (*REASONS, DEBIT)
 STANDARD_REASON = "Standardstart vid 66 (PR-ITP1-025) i månadsstängningen"
+#: Steg 7: postorsakerna för dödsfallsavräkning och arvsvinst (Y8); de görs inte om vid en rättelse
+POOL_IN, POOL_OUT, REVERSAL = "pool_in", "pool_out", dr.REVERSAL
+DEATH_REASONS = (POOL_IN, POOL_OUT, REVERSAL)
+#: Betalningslägen för ett anspråk efter dödsmånaden: återförs, väntar på kvitto eller ger återkravsärende (Y5)
+UNPAID_STATES = ("funded", "unfunded", "rejected", "returned", "bank_prepared")
+WAITING_STATES = ("sent", "unknown")
+DECEASED_PROBLEM = "ägaren är registrerad som avliden"
 
 
 class CloseError(LedgerError):
@@ -173,6 +198,11 @@ class MonthPlan:
     funding_rows: list[dict] = field(default_factory=list)
     state_changes: list[dict] = field(default_factory=list)
     company_case: dict | None = None
+    #: Steg 7: avräknade delar, återförda anspråk, ärenden om besked och återkrav och ärendet om poolen
+    settlement_rows: list[dict] = field(default_factory=list)
+    reversal_rows: list[dict] = field(default_factory=list)
+    death_cases: list[dict] = field(default_factory=list)
+    pool_case: dict | None = None
 
     @property
     def kind(self) -> str:
@@ -254,12 +284,13 @@ def _booked_amounts(session: Session, chain: list[LedgerBatch], home: dict) -> d
     """Månadens bokade belopp per (spår, orsak) över stängningen och dess rättelser.
 
     Delningens poster (steg 4) räknas inte: delningen görs om på samma föregående månadsslut vid en rättelse.
+    Dödsfallsavräkningens och arvsvinstens poster (steg 7) räknas inte heller: de görs inte om (Y8).
     """
     rows = session.execute(
         select(LedgerCapitalEntry.payout_part_id, LedgerCapitalEntry.origin_id, LedgerCapitalEntry.reason,
                func.sum(LedgerCapitalEntry.amount_sek))
         .where(LedgerCapitalEntry.batch_id.in_([b.id for b in chain]), LedgerCapitalEntry.account == CUSTOMER,
-               LedgerCapitalEntry.reason != "split")
+               LedgerCapitalEntry.reason != "split", LedgerCapitalEntry.reason.notin_(DEATH_REASONS))
         .group_by(LedgerCapitalEntry.payout_part_id, LedgerCapitalEntry.origin_id, LedgerCapitalEntry.reason)).all()
     return {(_key(home, p, o), r): Decimal(total).quantize(Decimal("0.01")) for p, o, r, total in rows}
 
@@ -307,11 +338,19 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
     # delar samma ursprung. Spårnyckeln är ursprunget på dess egen del (som i steg 3) och `ursprung@del` annars
     steg4 = pl.plans_present(session)
     steg5 = steg4 and pc.claims_present(session)
+    steg7 = steg5 and po.orders_present(session) and dr.deaths_present(session)
+    death = dr.death_month(session, month, end) if steg7 else None
     home = _homes(session)
     opening_tracks = cl.tracks(session, previous_end)
+    problems: list[str] = []
+    if death is not None:  # steg 7: en avräknad del har inget kapital och lämnar stängningen (Y6)
+        left = sorted({str(t.payout_part_id) for t in opening_tracks
+                       if t.payout_part_id in death.settled and t.balance != 0})
+        if left:
+            problems.append(f"{len(left)} avräknade uttagsdelar har kapital kvar (t.ex. {left[0]}) – manuell prövning")
+        opening_tracks = [t for t in opening_tracks if t.payout_part_id not in death.settled or t.balance != 0]
     origins = [Origin(_key(home, t.payout_part_id, t.origin_id), str(t.payout_part_id), t.balance)
                for t in opening_tracks]
-    problems: list[str] = []
 
     # Steg 1 (steg 4): delningar och planer med ändringsmånaden, genomförda på föregående månadsslut (V2, V9)
     splits = pl.splits_in(session, month) if steg4 else []
@@ -377,6 +416,15 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
     if steg5:  # steg 5: en startad del följer sin plan; bara en startad del utan plan blockerar
         in_force = pl.plans_in_force(session, stored, month)
         started = [p for p in started if uuid.UUID(p) not in in_force]
+    death_info = None
+    if death is not None:  # steg 7: en avliden dels läge sätts av avräkningen; status utan besked blockerar (Y9)
+        started = [p for p in started if uuid.UUID(p) not in death.parts]
+        person_of = dr.persons_of_parts(session, [uuid.UUID(p) for p in deceased])
+        deceased = [p for p in deceased if (r := death.reports.get(person_of.get(uuid.UUID(p)))) is None
+                    or r.status != "verified"]
+        death_info = {"suspected": len(death.suspected),
+                      "verified": len({death.owner[p] for p in death.settling}),
+                      "unreported": len(deceased)}
     if started:
         problems.append(f"{len(started)} uttagsdelar med kapital har startat, pausats eller avslutats under "
                         f"{month:%Y-%m} (t.ex. {started[0]}); "
@@ -384,7 +432,9 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
                            "månadsrätt och slutavräkning byggs i paket B steg 5–7"))
     if deceased:
         problems.append(f"{len(deceased)} uttagsdelar tillhör en person registrerad som avliden (t.ex. "
-                        f"{deceased[0]}); dödsfallsavräkningen byggs i paket B steg 7")
+                        f"{deceased[0]}); " + ("ett verifierat dödsfallsbesked med dödsdag krävs – "
+                                               "register_death_report" if death is not None else
+                                               "dödsfallsavräkningen byggs i paket B steg 7"))
     if unknown_birth:
         problems.append(f"{len(unknown_birth)} uttagsdelar saknar ägarens födelsedag (t.ex. {unknown_birth[0]})")
 
@@ -393,7 +443,11 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
     candidates = (stored & pending_ids) - set(unknown_ids(owners))
     if steg5:  # en standardstart kräver kapital att räkna planen på
         candidates &= {uuid.UUID(o.policy_id) for o in origins}
-    start = (_standard_start(session, month, previous_end, candidates)
+    if death is not None:  # steg 7: bara den som lever när 66-månaden börjar får standardstart (Y4)
+        candidates -= {p for p in candidates & set(death.settling)
+                       if pp.sixty_six_month(owners[p][0], PENSION_AGE) != month
+                       or death.settling[p].death_date < month}
+    start = (_standard_start(session, month, previous_end, candidates, death=death)
              if steg4 else {"planned": [], "standard": [], "cases": [], "plans": {}})
     standard_plans: list[PayoutPlan] = []
     if steg5:
@@ -401,12 +455,16 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
         in_force.update({sp.payout_part_id: sp for sp in standard_plans})
         starting = {part for part, plan in in_force.items()
                     if pc.state_in(pl.schedule_of(plan), month) != "not_started"}
-        if current is None and withhold is None and starting & {a.payout_part_id for a in additions_src}:
-            return _plan(session, month, today, starting)  # premien på en del som startar hålls utanför (W9)
+        hold = starting | (death.parts if death is not None else set())  # steg 7: även en avliden del (Y6)
+        if current is None and withhold is None and hold & {a.payout_part_id for a in additions_src}:
+            return _plan(session, month, today, hold)  # premien på en del som startar hålls utanför (W9)
         for plan in standard_plans:  # standardplanens omräkning av garantidelarna (V7)
             rows, problem = _recalculation(month, plan, guarantees_before, split_from={s.from_part_id for s in splits})
             version_rows += rows if current is None else []
             problems += problem
+        if death is not None:  # steg 7: rätten gäller till och med dödsmånaden; en avräknad del lämnar planerna (Y4)
+            for part in death.without_right():
+                in_force.pop(part, None)
     with_right = sorted(str(part) for part, plan in (in_force if steg5 else pl.plans_in_force(session, stored, month))
                         .items() if pl.schedule_of(plan).has_right(month)) if steg4 else []
     if with_right and not steg5:
@@ -422,20 +480,36 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
         raise CloseError(f"Avräkningen per kapitalspår går inte ihop: {exc}") from exc
 
     opening_balance = {o.id: o.capital for o in origins}
-    payouts, pre_debit = None, computed
+    payouts, pre_debit, settlement = None, computed, None
     if steg5:  # steg 5: månadsrätt, debitering, bolagsstöd och skuld (PR-020 steg 5)
+        reversals = _reversals(session, death, home) if death is not None and current is None else None
+        deaths = ({p for p in death.settling if death.death_month(p) == month and p in in_force}
+                  if death is not None else set())
         payouts = _payouts(session, month, previous_end, in_force, origins, computed, guarantees_before,
-                           booking=current is None, today=today)
+                           booking=current is None, today=today, reversals=reversals, deaths=deaths)
         problems += payouts.problems
         if payouts.claims and not pc.capital_registered(session):
             problems.append("Bolagskontot saknar en registrerad startinsättning – den första stängningen med en "
                             "månadsrätt kräver den (PB11, PR-ITP1-028); register_company_capital först")
         computed = _after_debit(computed, payouts.debits)
-        payouts.review_cases = _premium_cases(session, month, withheld) if current is None else []
+        dead = death.parts if death is not None else set()
+        payouts.review_cases = (_premium_cases(session, month, [w for w in withheld
+                                                                if uuid.UUID(w["payout_part_id"]) not in dead])
+                                if current is None else [])
+        if reversals is not None:  # steg 7: dödsfallsavräkning och arvsvinst (PR-020 steg 6–7, Y5–Y7)
+            problems += reversals["problems"]
+            settlement = _death_step(session, month, death, origins, computed, payouts, reversals, guarantees_before,
+                                     version_rows, owners, in_force,
+                                     [w for w in withheld if uuid.UUID(w["payout_part_id"]) in dead])
+            problems += settlement.problems
+            computed = settlement.computed
+            version_rows += settlement.version_rows
     if current is None:
         status, entry_rows = "open", split_entries + _close_entries(month, origins, additions, pre_debit)
         if payouts is not None:
             entry_rows += _debit_entries(month, origins, pre_debit, payouts.debits) + payouts.entries
+        if settlement is not None:
+            entry_rows += settlement.entries
     else:
         booked = _booked_amounts(session, chain, home)
         diff = {k: computed.amounts.get(k, ZERO) - booked.get(k, ZERO) for k in {*computed.amounts, *booked}}
@@ -446,6 +520,10 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
         if any(e > end for e in closed):
             raise CloseError(f"{month:%Y-%m} ger andra belopp än den stängda versionen, men en senare månad är "
                              "stängd. Bara den senast stängda månaden kan rättas i första versionen")
+        if death is not None and _death_activity(chain):
+            raise CloseError(f"{month:%Y-%m} ger andra belopp än den stängda versionen, och månaden har "
+                             "dödsfallsavräkning eller poolfördelning. En sådan rättelse blockeras i första versionen "
+                             "och prövas manuellt (Y8)")
         status = "correction"
         current_balance = {_key(home, t.payout_part_id, t.origin_id): t.balance for t in cl.tracks(session, end)}
         entry_rows = _correction_entries(month, len(chain) + 1, diff, current_balance,
@@ -456,12 +534,15 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
         sum((g.guarantee_sek_per_month for g in booked_parts), Decimal(0))
     versions = version_rows if current is None else _chain_versions(session, chain)
     replaced = {g.id: g.guarantee_sek_per_month for g in guarantees_before}
+    # En version som ersätter en av månadens egna versioner (steg 7: dödsfall efter omräkning) räknas mot den
+    replaced.update({r["id"]: r["guarantee_sek_per_month"] for r in versions if "id" in r})
     g_change = (sum((r["guarantee_sek_per_month"] for r in versions), Decimal(0))
                 - sum((replaced.get(i, Decimal(0)) for i in {r["supersedes_id"] for r in versions}), Decimal(0)))
     controls = _controls(month, computed, origins, additions, opening_balance, avk, fee_label, tax_label,
                          intake_summary, started, deceased, pending_start, g_before, g_added, guarantee_rows,
                          previous, start=start if steg4 else None, g_change=g_change, splits=len(splits),
-                         plans=len(effective_plans) + len(standard_plans), with_right=with_right, payouts=payouts)
+                         plans=len(effective_plans) + len(standard_plans), with_right=with_right, payouts=payouts,
+                         death_info=death_info, settlement=settlement)
     version = len(chain) + 1
     rows_digest = vb.checksum({"guarantee_parts": [_plain(r) for r in guarantee_rows],
                                "entries": [_plain(r) for r in entry_rows],
@@ -471,7 +552,11 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
                                **({"payout_amounts": payouts.section["amounts"],
                                    "pension_claims": payouts.section["claims"],
                                    "fundings": payouts.section["fundings"], "states": payouts.section["states"]}
-                                  if payouts is not None and current is None else {})})
+                                  if payouts is not None and current is None else {}),
+                               **({"death_settlements": [_plain(r) for r in settlement.settlement_rows],
+                                   "reversals": [_plain(r) for r in settlement.reversal_rows]}
+                                  if settlement is not None and (settlement.settlement_rows or settlement.reversal_rows)
+                                  else {})})
     content = {
         "method": METHOD, "origin_method": origin_code_version(), "design": "P1-PENSION-001 §7, B-047",
         "kind": CORRECTION_KIND if status == "correction" else CLOSE_KIND, "version": version,
@@ -493,7 +578,8 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
                    "entries": len(entry_rows),
                    **({"guarantee_versions": len(version_rows), "guarantee_change_sek_per_month": str(g_change),
                        "splits": len(splits), "plans": len(effective_plans)} if steg4 else {}),
-                   **(payouts.totals if payouts is not None else {})},
+                   **(payouts.totals if payouts is not None else {}),
+                   **(settlement.totals if settlement is not None else {})},
         "standard_start_pending": pending_start,
         **({"payout": {"plans": [str(p.id) for p in effective_plans], "splits": [str(s.id) for s in splits],
                        "planned_parts": start["planned"], "standard_start": start["standard"],
@@ -505,6 +591,10 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
                         "premium_review_cases": [{k: str(v) for k, v in c.items() if k != "person_id"}
                                                  for c in payouts.review_cases]}}
            if payouts is not None else {}),
+        # Steg 7: avsnittet finns bara när dödsfallstabellerna är införda (B-052, Y8)
+        **({"death": settlement.section if settlement is not None else
+            {"correction": "Dödsfallsavräkning och poolfördelning görs inte om vid en rättelse (Y8)"}}
+           if death is not None else {}),
         "rows_checksum": rows_digest,
         "controls": [c.as_dict() for c in controls],
     }
@@ -517,8 +607,13 @@ def _plan(session: Session, month: date, today: date, withhold: set | None) -> M
                      amount_rows=[pc.amount_row(a) for a in payouts.section["amounts"]] if booking else [],
                      claim_rows=payouts.claim_rows if booking else [],
                      funding_rows=payouts.funding_rows if booking else [],
-                     state_changes=payouts.state_changes if booking else [],
-                     company_case=payouts.company_case if booking else None)
+                     state_changes=(payouts.state_changes + (settlement.state_changes if settlement else []))
+                     if booking else [],
+                     company_case=payouts.company_case if booking else None,
+                     settlement_rows=settlement.settlement_rows if settlement else [],
+                     reversal_rows=settlement.reversal_rows if settlement else [],
+                     death_cases=settlement.cases if settlement else [],
+                     pool_case=settlement.pool_case if settlement else None)
 
 
 def unknown_ids(owners: dict) -> list:
@@ -627,8 +722,13 @@ def _recalculation(month: date, plan: PayoutPlan, guarantees: list, *, split_fro
     return rows, []
 
 
-def _standard_start(session: Session, month: date, valuation: date, part_ids: set) -> dict:
-    """66-årsmånaden (PR-ITP1-025, V4, V6): standardplan för verifierad ägare, annars ärende; inga tysta starter."""
+def _standard_start(session: Session, month: date, valuation: date, part_ids: set,
+                    death: dr.DeathMonth | None = None) -> dict:
+    """66-årsmånaden (PR-ITP1-025, V4, V6): standardplan för verifierad ägare, annars ärende; inga tysta starter.
+
+    Steg 7 (Y4): kravet på levande ägare prövas mot dödsdagen i ett verifierat besked – den som lever när
+    66-månaden börjar får standardplanen och dess första rätt.
+    """
     out = {"planned": [], "standard": [], "cases": [], "plans": {}}
     if not part_ids:
         return out
@@ -644,6 +744,9 @@ def _standard_start(session: Session, month: date, valuation: date, part_ids: se
         sixty_six = pp.sixty_six_month(owner.birth, PENSION_AGE)
         if sixty_six == month:
             problems = owner.verification(session)
+            report = death.reports.get(owner.person_id) if death is not None else None
+            if report is not None and report.status == "verified" and report.death_date >= month:
+                problems = [p for p in problems if p != DECEASED_PROBLEM]
             if not problems:
                 bases = bases or pl.Bases.load(session, month)
                 plan = pl.standard_plan(session, owner, month, bases=bases, valuation=valuation,
@@ -686,6 +789,8 @@ class Payouts:
     totals: dict
     company_case: dict | None = None
     review_cases: list[dict] = field(default_factory=list)
+    #: Steg 7: skulden per del efter steg 5 och återföringen (dödsboets kvarstående skuld, Y6)
+    liability_after: dict = field(default_factory=dict)
 
 
 def _standard_record(month: date, data: dict) -> PayoutPlan:
@@ -760,8 +865,11 @@ def _decided_amounts(session: Session, month: date, previous_end: date, rights: 
 
 
 def _state_changes(session: Session, month: date, in_force: dict, schedules: dict,
-                   finals: set) -> tuple[list[dict], list[str]]:
-    """Delens läge enligt planen (W4): pågående, pausad, återstartad och avslutad efter slutavräkning."""
+                   finals: set, deaths: set = frozenset()) -> tuple[list[dict], list[str]]:
+    """Delens läge enligt planen (W4): pågående, pausad, återstartad och avslutad efter slutavräkning.
+
+    Steg 7 (Y4): en del vars ägare dör i månaden (`deaths`) avslutas med orsaken `death` från månaden efter.
+    """
     if not in_force:
         return [], []
     rows: dict = defaultdict(list)
@@ -778,6 +886,7 @@ def _state_changes(session: Session, month: date, in_force: dict, schedules: dic
             problems.append(f"Uttagsdelen {part} saknar läge för {month:%Y-%m}")
             continue
         now, final = covering[-1].state, part in finals
+        died = part in deaths and now != "ended"
         changed = now != expected
         if changed and (now == "ended" or expected in ("ended", "not_started") or open_row is not covering[-1]
                         or open_row.valid_from >= month):
@@ -786,18 +895,25 @@ def _state_changes(session: Session, month: date, in_force: dict, schedules: dic
         if changed:
             changes.append({"payout_part_id": part, "close_id": open_row.id, "close_to": day_before,
                             "state": expected, "end_reason": None, "valid_from": month,
-                            "valid_to": month_end(month) if final else None, "from_state": now})
-        if final:  # sista rätten: avslutad från månaden efter (PR-ITP1-027)
+                            "valid_to": month_end(month) if final or died else None, "from_state": now})
+        if final or died:  # sista rätten eller dödsfall: avslutad från månaden efter (PR-ITP1-027, Y4)
             changes.append({"payout_part_id": part, "close_id": None if changed else open_row.id,
                             "close_to": None if changed else month_end(month), "state": "ended",
-                            "end_reason": "final_settlement", "valid_from": aa.add_months(month, 1),
-                            "valid_to": None, "from_state": expected})
+                            "end_reason": "death" if died else "final_settlement",
+                            "valid_from": aa.add_months(month, 1), "valid_to": None, "from_state": expected,
+                            **({"note": f"Dödsfallsavräkningen {month:%Y-%m}: {expected} → ended (death), "
+                                        "dödsmånaden (PR-ITP1-010, Y4)"} if died else {})})
     return changes, problems
 
 
 def _payouts(session: Session, month: date, previous_end: date, in_force: dict, origins: list[Origin],
-             computed: Computed, guarantees: list, *, booking: bool, today: date) -> Payouts:
-    """PR-020 steg 5: belopp, anspråk, debitering per spår, bolagsstöd och skuld (W2, W5–W8, W10)."""
+             computed: Computed, guarantees: list, *, booking: bool, today: date, reversals: dict | None = None,
+             deaths: set = frozenset()) -> Payouts:
+    """PR-020 steg 5: belopp, anspråk, debitering per spår, bolagsstöd och skuld (W2, W5–W8, W10).
+
+    Steg 7 (Y5): `reversals` är anspråken efter dödsmånaden som återförs i månaden. Skulden minskar och
+    bolagskontot får tillbaka sitt stöd efter månadens rätter; kontrollen *skuld och bolagskonto* tar med dem.
+    """
     previous_month = aa.add_months(month, -1)
     schedules = {part: pl.schedule_of(plan) for part, plan in in_force.items()}
     rights = {part: in_force[part] for part in sorted(in_force, key=str) if schedules[part].has_right(month)}
@@ -823,6 +939,9 @@ def _payouts(session: Session, month: date, previous_end: date, in_force: dict, 
 
     # Senare finansiering: äldsta ej finansierade anspråk först, innan månadens nya (W8)
     outstanding = pc.outstanding_unfunded(session, before=month) if booking else []
+    if reversals is not None:  # steg 7: ett anspråk som återförs i månaden finansieras inte (Y5)
+        reversing = {r["claim"].id for r in reversals["reverse"]}
+        outstanding = [(c, rest) for c, rest in outstanding if c.id not in reversing]
     for claim, rest in outstanding:
         amount = min(rest, company)
         if amount <= 0:
@@ -887,7 +1006,28 @@ def _payouts(session: Session, month: date, previous_end: date, in_force: dict, 
                 before_part += funding.company_support
             liability[part] = before_part
 
-    states, state_problems = (_state_changes(session, month, in_force, schedules, finals) if booking else ([], []))
+    # Steg 7 (Y5): återförda anspråk efter dödsmånaden – skulden minskar och bolagskontot får tillbaka sitt stöd
+    rev_liability = rev_company = ZERO
+    if reversals is not None and booking:
+        by_part: dict = defaultdict(lambda: [ZERO, ZERO])
+        for r in reversals["reverse"]:
+            by_part[r["part"]][0] += r["liability"]
+            by_part[r["part"]][1] += r["company"]
+        for part in sorted(by_part, key=str):
+            amount, back = by_part[part]
+            before_part = liability.get(part, ZERO)
+            if amount:
+                entries.append(_account_entry(month, pc.LIABILITY, part, REVERSAL, -amount, before_part, "death",
+                                              part))
+                liability[part] = before_part - amount
+            if back:
+                entries.append(_account_entry(month, pc.COMPANY, None, REVERSAL, back, company, "death", part))
+                company += back
+            rev_liability += amount
+            rev_company += back
+
+    states, state_problems = (_state_changes(session, month, in_force, schedules, finals, deaths)
+                              if booking else ([], []))
     problems += state_problems
     gross, from_capital, support, unfunded = (sum((r[k] for r in claim_rows), ZERO) for k in (
         "gross_sek", "from_capital_sek", "company_support_sek", "unfunded_sek"))
@@ -897,7 +1037,7 @@ def _payouts(session: Session, month: date, previous_end: date, in_force: dict, 
     still_open = sum(left, ZERO)
     open_claims = sum(1 for v in left if v > 0) + sum(1 for r in claim_rows if r["unfunded_sek"] > 0)
     total_unfunded = unfunded + still_open
-    liability_close = liability_open + from_capital + support + funded_later
+    liability_close = liability_open + from_capital + support + funded_later - rev_liability
     # Steg 6 (X10): månadens utförda och återkomna betalningar, bokade som egna verifikationer före stängningen
     settled = po.settlements_in(session, month) if booking and po.orders_present(session) else None
     if settled is not None:
@@ -921,7 +1061,19 @@ def _payouts(session: Session, month: date, previous_end: date, in_force: dict, 
                 f"förbrukade rätter (t.ex. {consumed_off[0]})",
                 expected="0", actual=str(len(consumed_off)), sources=sources),
     ]
-    if booking:
+    if booking and reversals is not None:  # steg 7: med återförda anspråk efter dödsmånaden (Y5, Y9)
+        company_close = company_open + inserted - support - funded_later + rev_company
+        controls.append(Control(
+            "skuld och bolagskonto",
+            entries_liability == from_capital + support + funded_later - rev_liability
+            and entries_company == -(support + funded_later) + rev_company
+            and company == company_close and company_close >= 0 and liability_close >= 0,
+            f"Skuld {liability_open} + {from_capital} ur kapital + {support} bolagsstöd + {funded_later} senare "
+            f"finansiering − {rev_liability} återfört efter dödsfall = {liability_close} kr; bolagskonto "
+            f"{company_open} + insättning {inserted} − {support + funded_later} + {rev_company} återfört = "
+            f"{company_close} kr; ej finansierat {total_unfunded} kr",
+            expected=str(company_close), actual=str(company), difference=company - company_close, sources=sources))
+    elif booking:
         company_close = company_open + inserted - support - funded_later
         controls.append(Control(
             "skuld och bolagskonto",
@@ -975,12 +1127,389 @@ def _payouts(session: Session, month: date, previous_end: date, in_force: dict, 
     if settled is not None:  # steg 6: nyckeln finns bara när bankuppdragen är införda (B-052)
         section["settlements"] = {k: (str(v) if isinstance(v, Decimal) else v) for k, v in settled.items()}
         section["liability"]["settled_sek"] = str(settled["liability_sek"])
+    if reversals is not None and booking:  # steg 7: nycklarna finns bara när dödsfallstabellerna är införda
+        section["liability"]["death_reversed_sek"] = str(rev_liability)
+        section["company"]["death_reversed_sek"] = str(rev_company)
     totals = {"pension_debits_sek": str(from_capital), "claims": len(claim_rows), "amount_decisions": len(new_amounts),
               "claims_gross_sek": str(gross), "company_support_sek": str(support + funded_later),
               "unfunded_sek": str(total_unfunded), "fundings": len(funding_rows), "state_changes": len(states)}
     return Payouts(debits=debits, claims=claims, claim_rows=claim_rows, funding_rows=funding_rows, entries=entries,
                    state_changes=states, controls=controls, problems=problems, section=section, totals=totals,
-                   company_case=company_case)
+                   company_case=company_case, liability_after=dict(liability))
+
+
+# --- steg 7: dödsfallsavräkning och arvsvinst (PR-020 steg 6–7, Karls val Y4–Y9) ------------------
+
+
+def _reversals(session: Session, death: dr.DeathMonth, home: dict) -> dict:
+    """Anspråk efter dödsmånaden för de avlidnas delar (Y5): återförs, väntar på kvitto eller ger återkravsärende.
+
+    Ej betalt (finansierat, ej finansierat, avvisat, återkommet eller i en förberedd fil) återförs; skickat eller
+    okänt väntar på kvittot; utfört ger ärendet `death_recovery` en gång per anspråk.
+    """
+    out = {"reverse": [], "waiting": [], "recover": [], "problems": []}
+    parts = sorted(death.parts, key=str)
+    if not parts:
+        return out
+    claims = []
+    for start in range(0, len(parts), 5000):
+        claims += session.scalars(select(PensionClaim).where(PensionClaim.payout_part_id.in_(parts[start:start + 5000]))
+                                  .order_by(PensionClaim.right_month, PensionClaim.payout_part_id)).all()
+    claims = [c for c in claims if c.right_month > death.death_month(c.payout_part_id)]
+    done = dr.reversed_claims(session, [c.id for c in claims])
+    claims = [c for c in claims if c.id not in done]
+    if not claims:
+        return out
+    later = pc.funded_later(session, [c.id for c in claims])
+    states = po.line_states(session, [c.id for c in claims])
+    recovered = {(c.details or {}).get("claim_id") for c in session.scalars(
+        select(Case).where(Case.case_type == "death_recovery"))}
+    debit_rows = session.execute(
+        select(LedgerCapitalEntry.payout_part_id, LedgerCapitalEntry.origin_id, LedgerCapitalEntry.month,
+               func.sum(LedgerCapitalEntry.amount_sek))
+        .where(LedgerCapitalEntry.account == CUSTOMER, LedgerCapitalEntry.reason == DEBIT,
+               LedgerCapitalEntry.payout_part_id.in_({c.payout_part_id for c in claims}))
+        .group_by(LedgerCapitalEntry.payout_part_id, LedgerCapitalEntry.origin_id, LedgerCapitalEntry.month)).all()
+    debits: dict = defaultdict(dict)
+    for part, origin, month, total in debit_rows:
+        amount = -Decimal(str(total)).quantize(Decimal("0.01"))
+        if amount:
+            debits[(part, month)][_key(home, part, origin)] = amount
+    for c in claims:
+        rest = c.unfunded_sek - later.get(c.id, ZERO)
+        lines = states.get(c.id, [])
+        state = po.claim_state(c, rest, lines)
+        base = {"claim": c, "part": c.payout_part_id, "state": state}
+        if state in UNPAID_STATES:
+            own = debits.get((c.payout_part_id, c.right_month), {})
+            if sum(own.values(), ZERO) != c.from_capital_sek:
+                out["problems"].append(f"Anspråket {c.id} kan inte återföras: kundkapitalets debitering "
+                                       f"({sum(own.values(), ZERO)} kr) stämmer inte med anspråkets kapitaldel "
+                                       f"({c.from_capital_sek} kr) – manuell prövning")
+                continue
+            company = c.company_support_sek + later.get(c.id, ZERO)
+            out["reverse"].append({**base, "debits": own, "capital": c.from_capital_sek, "company": company,
+                                   "liability": c.from_capital_sek + company, "dropped": rest})
+        elif state in WAITING_STATES:
+            out["waiting"].append(base)
+        elif state == "paid" and str(c.id) not in recovered:
+            active = [s for s in lines if s.state != "withdrawn"][-1]
+            receipt = session.scalar(select(PayoutReceipt).where(PayoutReceipt.order_id == active.order.id,
+                                                                 PayoutReceipt.outcome == "executed")
+                                     .order_by(PayoutReceipt.sequence.desc()).limit(1))
+            out["recover"].append({**base, "order": active.order, "file": active.file, "line": active.line,
+                                   "receipt": receipt})
+    return out
+
+
+@dataclass
+class DeathStep:
+    """Månadens dödsfallsavräkning och arvsvinst: poster, nollversioner, lägen, rader, ärenden och kontroller."""
+
+    computed: Computed
+    entries: list[dict]
+    version_rows: list[dict]
+    state_changes: list[dict]
+    settlement_rows: list[dict]
+    reversal_rows: list[dict]
+    cases: list[dict]
+    pool_case: dict | None
+    controls: list[Control]
+    section: dict
+    totals: dict
+    problems: list[str]
+
+
+def _death_versions(month: date, settling: set, guarantees: list, version_rows: list[dict]) -> list[dict]:
+    """G_j = 0 med orsaken `death` för varje gällande garantidel på de avräknade delarna (Y6 punkt 4)."""
+    latest: dict = {g.id: g for g in guarantees if g.payout_part_id in settling}
+    for r in version_rows:  # månadens egna versioner (omräkning) ersätter den de bygger på
+        if r["payout_part_id"] in settling:
+            latest.pop(r["supersedes_id"], None)
+            latest[r["id"]] = SimpleNamespace(**{"plan_id": None, **r})
+    rows = []
+    for source in sorted(latest.values(), key=lambda g: str(g.id)):
+        if source.guarantee_sek_per_month == 0:
+            continue
+        row = _version_row(month, "death", source, source.payout_part_id, "death", Decimal(0))
+        if source.plan_kind == "plan":
+            row["plan_id"] = source.plan_id
+        rows.append(row)
+    return rows
+
+
+def _death_states(session: Session, month: date, death: dr.DeathMonth, handled: set) -> tuple[list[dict], list[str]]:
+    """Läget `ended` (`death`) för avräknade delar som planen inte redan avslutar (Y4): från månaden efter D,
+    eller från avräkningsmånaden när D redan är stängd."""
+    parts = [p for p in sorted(death.settling, key=str) if p not in handled]
+    if not parts:
+        return [], []
+    open_rows = {r.payout_part_id: r for r in session.scalars(select(PayoutPartState).where(
+        PayoutPartState.payout_part_id.in_(parts), PayoutPartState.valid_to.is_(None)))}
+    changes, problems = [], []
+    for part in parts:
+        row = open_rows.get(part)
+        if row is None:
+            problems.append(f"Uttagsdelen {part} saknar ett öppet läge – avräkningen kan inte avsluta den")
+            continue
+        if row.state == "ended":
+            continue
+        start = aa.add_months(month, 1) if death.death_month(part) == month else month
+        close_to = date.fromordinal(start.toordinal() - 1)
+        if row.valid_from > close_to:
+            problems.append(f"Uttagsdelen {part} har ett läge från {row.valid_from} som inte kan avslutas {start}")
+            continue
+        changes.append({"payout_part_id": part, "close_id": row.id, "close_to": close_to, "state": "ended",
+                        "end_reason": "death", "valid_from": start, "valid_to": None, "from_state": row.state,
+                        "note": f"Dödsfallsavräkningen {month:%Y-%m}: {row.state} → ended (death), dödsmånad "
+                                f"{death.death_month(part):%Y-%m} (PR-ITP1-010, Y4)"})
+    return changes, problems
+
+
+def _risk_basis(session: Session, month: date):
+    """Den antagna SIM-R som gäller månaden (A4), eller None."""
+    basis = vb.in_force(session, dr.RISK_FAMILY, month)
+    if basis is None:
+        return None, None
+    vb.verify_checksum(basis)
+    return basis, aa.basis_from_assumptions(basis.assumptions)[0]
+
+
+def _death_step(session: Session, month: date, death: dr.DeathMonth, origins: list[Origin], computed: Computed,
+                payouts: Payouts, reversals: dict, guarantees: list, version_rows: list[dict], owners: dict,
+                in_force: dict, withheld: list[dict]) -> DeathStep:
+    """PR-020 steg 6–7: återföring, kapital till poolen, nollversioner, avslut och poolens fördelning (Y5–Y9)."""
+    problems: list[str] = []
+    tag = f"{CLOSE_KIND}:1"
+    previous_month = aa.add_months(month, -1)
+    settling = set(death.settling)
+    tracks_of: dict = defaultdict(list)
+    for o in sorted(origins, key=lambda o: o.id):
+        tracks_of[uuid.UUID(o.policy_id)].append(o.id)
+    opening = {o.id: o.capital for o in origins}
+    balance = dict(computed.closing)
+    part_of = {o.id: uuid.UUID(o.policy_id) for o in origins}
+    entries: list[dict] = []
+    amounts: dict = defaultdict(lambda: ZERO)
+
+    # Steg 6a: återförda anspråk tillbaka till kundkapitalet per spår (Y5)
+    back: dict = defaultdict(lambda: ZERO)
+    for r in reversals["reverse"]:
+        for key, amount in r["debits"].items():
+            back[key] += amount
+            part_of[key] = r["part"]
+    for key in sorted(back):
+        before = balance.get(key, ZERO)
+        entries.append(_entry(month, tag, key, str(part_of[key]), REVERSAL, back[key], before))
+        balance[key] = before + back[key]
+        amounts[(key, REVERSAL)] += back[key]
+
+    # Steg 6b: delens återstående C till poolen (Y6 punkt 3), spår för spår
+    pool_open = pc.account_balance(session, dr.POOL, previous_month)
+    pool, pool_entries, to_pool = pool_open, [], defaultdict(lambda: ZERO)
+    dead_keys = sorted({k for p in settling for k in tracks_of.get(p, [])} | set(back))
+    for key in dead_keys:
+        amount = balance.get(key, ZERO)
+        if amount > 0:
+            entries.append(_entry(month, tag, key, str(part_of[key]), POOL_IN, -amount, amount))
+            balance[key] = ZERO
+            amounts[(key, POOL_IN)] -= amount
+            to_pool[part_of[key]] += amount
+    for part in sorted(to_pool, key=str):
+        pool_entries.append(_account_entry(month, dr.POOL, part, POOL_IN, to_pool[part], pool, "death", part))
+        pool += to_pool[part]
+    inflow = pool - pool_open
+
+    # Steg 6c: G_j = 0 och delens slut (Y6 punkt 4–5)
+    death_versions = _death_versions(month, settling, guarantees, version_rows)
+    handled = {c["payout_part_id"] for c in payouts.state_changes if c.get("end_reason") == "death"}
+    states, state_problems = _death_states(session, month, death, handled)
+    problems += state_problems
+
+    # Steg 7: arvsvinsten – hela poolen fördelas efter E = C_öppning × q/(1 − q) (Y7)
+    finals = {r["payout_part_id"] for r in payouts.claim_rows if r["final_settlement"]}
+    opening_by_part: dict = defaultdict(lambda: ZERO)
+    for o in origins:
+        opening_by_part[uuid.UUID(o.policy_id)] += o.capital
+    basis, model = _risk_basis(session, month)
+    recipients, weights = [], []
+    for part in sorted(opening_by_part, key=str):
+        capital = opening_by_part[part]
+        born, status = owners.get(part, (None, ""))
+        if capital <= 0 or part in death.parts or part in finals or status == "deceased" or born is None:
+            continue
+        if part in in_force and pc.state_in(pl.schedule_of(in_force[part]), month) == "ended":
+            continue
+        if model is not None:
+            q = Decimal(repr(aa.monthly_q(model, born if born.day == 1 else born.replace(day=2), month)))
+            weights.append((capital * q / (1 - q)).quantize(Decimal("1e-10")))
+        recipients.append(part)
+    weight_sum = sum(weights, Decimal(0))
+    distributed, left_reason, inheritance = ZERO, None, {}
+    if pool <= 0:
+        left_reason = None
+    elif basis is None:
+        left_reason = f"ingen antagen {dr.RISK_FAMILY} gäller {month:%Y-%m}"
+    elif not recipients:
+        left_reason = "inga mottagare med öppningskapital"
+    elif weight_sum <= 0:
+        left_reason = "ΣE = 0"
+    else:
+        for part, h in zip(recipients, allocate_cents(pool, weights)):
+            if not h:
+                continue
+            keys = tracks_of[part]
+            for key, amount in zip(keys, allocate_cents(h, [opening[k] for k in keys])):
+                if amount:
+                    entries.append(_entry(month, tag, key, str(part), POOL_OUT, amount, balance[key]))
+                    balance[key] += amount
+                    amounts[(key, POOL_OUT)] += amount
+            inheritance[part] = h
+            distributed += h
+        pool_entries.append(_account_entry(month, dr.POOL, None, POOL_OUT, -distributed, pool, "distribution"))
+        pool -= distributed
+    entries += pool_entries
+
+    # Avräkningsrader, återföringsrader och ärenden
+    claimed = {(r["payout_part_id"], r["right_month"]): r["id"] for r in payouts.claim_rows}
+    stored_claims = {(c.payout_part_id, c.right_month): c.id for c in session.scalars(select(PensionClaim).where(
+        PensionClaim.payout_part_id.in_(list(settling))))} if settling else {}
+    settlement_rows, reversal_rows = [], []
+    for r in reversals["reverse"]:
+        c = r["claim"]
+        reversal_rows.append({
+            "id": stable_id(CLOSE_KIND, "death_reversal", str(c.id)), "claim_id": c.id, "payout_part_id": c.payout_part_id,
+            "report_id": death.report_id(c.payout_part_id), "payment_state": r["state"],
+            "liability_sek": r["liability"], "capital_sek": r["capital"], "company_sek": r["company"],
+            "unfunded_dropped_sek": r["dropped"],
+            "content": {"right_month": c.right_month.isoformat(), "gross_sek": str(c.gross_sek),
+                        "death_month": death.death_month(c.payout_part_id).isoformat(),
+                        "debits": {k: str(v) for k, v in sorted(r["debits"].items())}}})
+    for part in sorted(settling, key=str):
+        d = death.death_month(part)
+        own = [r for r in reversals["reverse"] if r["part"] == part]
+        settlement_rows.append({
+            "id": stable_id(CLOSE_KIND, "death_settlement", str(part)), "payout_part_id": part,
+            "report_id": death.settling[part].id, "death_month": d,
+            "death_month_claim_id": claimed.get((part, d)) or stored_claims.get((part, d)),
+            "reversed_claims": len(own), "capital_to_pool_sek": to_pool.get(part, ZERO),
+            "estate_liability_sek": payouts.liability_after.get(part, ZERO),
+            "content": {"method": METHOD, "rules": ["PR-ITP1-010", "PR-ITP1-020"], "month": month.isoformat(),
+                        "death_date": death.settling[part].death_date.isoformat(),
+                        "report_version": death.settling[part].version,
+                        "waiting_claims": [str(w["claim"].id) for w in reversals["waiting"] if w["part"] == part],
+                        "recovery_claims": [str(w["claim"].id) for w in reversals["recover"] if w["part"] == part],
+                        "guarantee_released_sek_per_month": str(sum(
+                            (g.guarantee_sek_per_month for g in guarantees if g.payout_part_id == part), Decimal(0)))}})
+    cases = []
+    for w in reversals["recover"]:
+        c, order = w["claim"], w["order"]
+        cases.append({"type": "death_recovery", "person_id": death.owner.get(c.payout_part_id), "details": {
+            "reason": "death_recovery", "text": dr.CASE_TEXT["death_recovery"], "claim_id": str(c.id),
+            "payout_part_id": str(c.payout_part_id), "right_month": c.right_month.isoformat(),
+            "death_month": death.death_month(c.payout_part_id).isoformat(), "gross_sek": str(w["line"].gross_sek),
+            "order_reference": order.reference, "order_gross_sek": str(order.gross_sek),
+            "order_tax_sek": str(order.tax_sek), "order_net_sek": str(order.net_sek),
+            "execution_date": w["file"].execution_date.isoformat(),
+            "receipt_id": w["receipt"].receipt_id if w["receipt"] is not None else None, "month": month.isoformat()}})
+    by_person: dict = defaultdict(lambda: {"parts": [], "capital_to_pool_sek": ZERO, "reversed": 0, "premiums": []})
+    for row in settlement_rows:
+        entry = by_person[death.owner[row["payout_part_id"]]]
+        entry["parts"].append(str(row["payout_part_id"]))
+        entry["capital_to_pool_sek"] += row["capital_to_pool_sek"]
+        entry["reversed"] += row["reversed_claims"]
+    persons_of = dr.persons_of_parts(session, {uuid.UUID(w["payout_part_id"]) for w in withheld}) if withheld else {}
+    for w in withheld:  # premien efter dödsfallet ligger kvar i paket A för manuell avräkning (Y6)
+        by_person[persons_of[uuid.UUID(w["payout_part_id"])]]["premiums"].append(w)
+    for person, e in sorted(by_person.items(), key=lambda kv: str(kv[0])):
+        cases.append({"type": "death_report", "person_id": person, "event": {
+            "action": "settled" if e["parts"] else "premium_after_death", "month": month.isoformat(),
+            "parts": e["parts"], "capital_to_pool_sek": str(e["capital_to_pool_sek"]), "reversed_claims": e["reversed"],
+            "withheld_premiums": [{"payment_allocation_id": p["payment_allocation_id"],
+                                   "payout_part_id": p["payout_part_id"], "premium_sek": p["premium_sek"]}
+                                  for p in e["premiums"]]}})
+    pool_case = None
+    if pool > 0:
+        open_case = session.scalar(select(Case).where(Case.case_type == "inheritance_pool", Case.status != "closed")
+                                   .order_by(Case.created_at).limit(1))
+        pool_case = {"case_id": open_case.id if open_case is not None else None,
+                     "details": {"reason": "inheritance_pool_left", "month": month.isoformat(),
+                                 "pool_sek": str(pool), "cause": left_reason, "text": dr.CASE_TEXT["inheritance_pool"]}}
+
+    # Kontrollerna dödsfall och arvsvinstpool (Y9)
+    after_d = sorted(str(r["id"]) for r in payouts.claim_rows
+                     if r["payout_part_id"] in settling and r["right_month"] > death.death_month(r["payout_part_id"]))
+    customer_in = -sum((e["amount_sek"] for e in entries if e["account"] == CUSTOMER and e["reason"] == POOL_IN), ZERO)
+    customer_back = sum((e["amount_sek"] for e in entries if e["account"] == CUSTOMER and e["reason"] == REVERSAL), ZERO)
+    capital_back = sum((r["capital"] for r in reversals["reverse"]), ZERO)
+    liability_back = sum((r["liability"] for r in reversals["reverse"]), ZERO)
+    company_back = sum((r["company"] for r in reversals["reverse"]), ZERO)
+    sources = {"month": month.isoformat()}
+    out_entries = sum((e["amount_sek"] for e in entries if e["account"] == CUSTOMER and e["reason"] == POOL_OUT), ZERO)
+    controls = [
+        Control("dödsfall",
+                len(settlement_rows) == len(settling) and not after_d and customer_in == inflow
+                and customer_back == capital_back and liability_back == capital_back + company_back,
+                f"{len(settling)} delar med verifierat dödsfall senast {month_end(month)} avräknas: {inflow} kr till "
+                f"poolen, {len(reversals['reverse'])} anspråk efter dödsmånaden återförda ({liability_back} kr ur "
+                f"skulden, varav {capital_back} kr till kundkapitalet och {company_back} kr till bolagskontot), "
+                f"{len(reversals['waiting'])} väntar på kvitto och {len(reversals['recover'])} nya återkravsärenden; "
+                f"inget anspråk efter dödsmånaden i månaden (PR-ITP1-010, -020 steg 6)" if settling or reversals["reverse"]
+                else "Inget verifierat dödsfall att avräkna och inget anspråk att återföra",
+                expected=str(len(settling)), actual=str(len(settlement_rows)), sources=sources),
+        Control("arvsvinstpool",
+                pool == pool_open + inflow - distributed and pool >= 0 and out_entries == distributed
+                and sum(inheritance.values(), ZERO) == distributed,
+                f"Pool {pool_open} + inflöde {inflow} − fördelat {distributed} = {pool} kr; {len(inheritance)} mottagare, "
+                f"ΣE {weight_sum}" + (f" ur {basis.code}" if basis is not None else "")
+                + (f"; poolen står kvar: {left_reason}" if left_reason else "")
+                + "; arvsvinsten ökar C, aldrig G (PR-ITP1-011, -020 steg 7)",
+                expected=str(pool_open + inflow - distributed), actual=str(pool),
+                difference=pool - (pool_open + inflow - distributed), sources=sources),
+    ]
+
+    # Månadens avräkning efter steg 6–7
+    closing = {k: balance[k] for k in computed.closing}
+    reversed_total = sum(back.values(), ZERO)
+    totals = {**computed.totals, "death_reversals_sek": reversed_total, "pool_in_sek": inflow,
+              "inheritance_sek": distributed,
+              "closing_sek": computed.totals["closing_sek"] + reversed_total - inflow + distributed}
+    merged = dict(computed.amounts)
+    for k, v in amounts.items():
+        merged[k] = merged.get(k, ZERO) + v
+    g_released = sum((r["guarantee_sek_per_month"] for r in death_versions), Decimal(0))
+    section = {
+        "reports": {"suspected": len(death.suspected), "settling_parts": len(settling),
+                    "settled_before": len(death.settled)},
+        "settlements": [_plain({k: v for k, v in r.items() if k != "content"}) for r in settlement_rows],
+        "reversals": [_plain({k: v for k, v in r.items() if k != "content"}) for r in reversal_rows],
+        "waiting": [{"claim_id": str(w["claim"].id), "payout_part_id": str(w["part"]), "state": w["state"]}
+                    for w in reversals["waiting"]],
+        "recoveries": [str(w["claim"].id) for w in reversals["recover"]],
+        "withheld_premiums": withheld,
+        "guarantee_versions": len(death_versions), "guarantee_released_sek_per_month": str(-g_released),
+        "pool": {"opening_sek": str(pool_open), "inflow_sek": str(inflow), "distributed_sek": str(distributed),
+                 "closing_sek": str(pool), "recipients": len(inheritance), "weight_sum": str(weight_sum),
+                 "basis": {"code": basis.code, "checksum": basis.checksum} if basis is not None else None,
+                 "left_reason": left_reason},
+    }
+    return DeathStep(computed=Computed(merged, closing, totals), entries=entries, version_rows=death_versions,
+                     state_changes=states, settlement_rows=settlement_rows, reversal_rows=reversal_rows, cases=cases,
+                     pool_case=pool_case, controls=controls, section=section,
+                     totals={"death_settlements": len(settlement_rows), "death_reversals": len(reversal_rows),
+                             "inheritance_recipients": len(inheritance)},
+                     problems=problems)
+
+
+def _death_activity(chain: list[LedgerBatch]) -> bool:
+    """Har månaden dödsfallsavräkning, återföring eller poolfördelning (Y8)?"""
+    for b in chain:
+        section = b.content.get("death") or {}
+        if section.get("settlements") or section.get("reversals") or \
+                Decimal((section.get("pool") or {}).get("distributed_sek", "0")) > 0 or \
+                Decimal((section.get("pool") or {}).get("inflow_sek", "0")) > 0:
+            return True
+    return False
 
 
 def _premium_cases(session: Session, month: date, withheld: list[dict]) -> list[dict]:
@@ -1068,12 +1597,16 @@ def _correction_entries(month: date, version: int, diff: dict, balance: dict[str
 
 def _controls(month, computed, origins, additions, opening_balance, avk, fee_label, tax_label, intake_summary,
               started, deceased, pending_start, g_before, g_added, guarantee_rows, previous, *, start=None,
-              g_change=Decimal(0), splits=0, plans=0, with_right=(), payouts=None) -> list[Control]:
+              g_change=Decimal(0), splits=0, plans=0, with_right=(), payouts=None, death_info=None,
+              settlement=None) -> list[Control]:
     t = computed.totals
     flow = t["opening_sek"] + t["returns_sek"] - t["fees_sek"] - t["taxes_sek"] + t["premiums_sek"]
     debit = t.get("pension_debits_sek")  # steg 5: pensionsdebiteringen (PR-020 steg 5)
     if debit is not None:
         flow -= debit
+    death_flow = "pool_in_sek" in t  # steg 7: återföring, kapital till poolen och arvsvinst (Y9)
+    if death_flow:
+        flow += t["death_reversals_sek"] - t["pool_in_sek"] + t["inheritance_sek"]
     track_sum = sum(computed.closing.values(), ZERO)
     negative = [o for o, v in computed.closing.items() if v < 0]
     opening_sum = sum(opening_balance.values(), ZERO)
@@ -1096,7 +1629,9 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
         Control("kapital totalt", flow == t["closing_sek"],
                 f"IB {t['opening_sek']} + avkastning {t['returns_sek']} − avgift {t['fees_sek']} − skatt "
                 f"{t['taxes_sek']} + premier {t['premiums_sek']}"
-                + (f" − pensionsdebitering {debit}" if debit is not None else "") + f" = UB {t['closing_sek']} kr",
+                + (f" − pensionsdebitering {debit}" if debit is not None else "")
+                + (f" + återfört efter dödsfall {t['death_reversals_sek']} − till poolen {t['pool_in_sek']} + arvsvinst "
+                   f"{t['inheritance_sek']}" if death_flow else "") + f" = UB {t['closing_sek']} kr",
                 expected=str(flow), actual=str(t["closing_sek"]), difference=t["closing_sek"] - flow, sources=sources),
         Control("garanti totalt", True, f"ΣG {g_before} + {g_added} = {g_before + g_added} kr/mån; avkastning ändrar "
                 "aldrig G", expected=str(g_before + g_added), actual=str(g_before + g_added), sources=sources)
@@ -1104,7 +1639,14 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
         Control("garanti totalt", True, f"ΣG {g_before} + premier {g_added} + omräkning och delning {g_change} = "
                 f"{g_before + g_added + g_change} kr/mån; {plans} planer och {splits} delningar genomförs; "
                 "avkastning ändrar aldrig G", expected=str(g_before + g_added + g_change),
-                actual=str(g_before + g_added + g_change), sources=sources),
+                actual=str(g_before + g_added + g_change), sources=sources)
+        if settlement is None else
+        Control("garanti totalt", True, f"ΣG {g_before} + premier {g_added} + omräkning, delning och dödsfall {g_change} "
+                f"= {g_before + g_added + g_change} kr/mån; {plans} planer och {splits} delningar genomförs, "
+                f"{settlement.section['guarantee_versions']} garantidelar får G = 0 vid dödsfall "
+                f"({settlement.section['guarantee_released_sek_per_month']} kr/mån); avkastning och arvsvinst ändrar "
+                "aldrig G", expected=str(g_before + g_added + g_change), actual=str(g_before + g_added + g_change),
+                sources=sources),
     ]
     if intake_summary is not None:
         intake_sum = Decimal(intake_summary["premium_sek"])
@@ -1125,7 +1667,13 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
                 else "Alla startade delar följer en beslutad plan" if payouts is not None
                 else "Alla delar i stängningen är ej startade hela månaden", actual=str(len(started)), sources=sources),
         Control("levandestatus", not deceased, f"{len(deceased)} delar med registrerat dödsfall" if deceased
-                else "Inget registrerat dödsfall bland delarnas ägare", actual=str(len(deceased)), sources=sources),
+                else "Inget registrerat dödsfall bland delarnas ägare", actual=str(len(deceased)), sources=sources)
+        if death_info is None else
+        Control("levandestatus", not deceased,
+                f"{death_info['suspected']} misstänkta dödsfall (förvaltas som vanligt, PR-ITP1-010), "
+                f"{death_info['verified']} personer med verifierat dödsfall avräknas i steg 6 och {len(deceased)} delar "
+                "har en ägare med status avliden utan verifierat besked" + (" – blockerar" if deceased else ""),
+                expected="0", actual=str(len(deceased)), sources=sources),
     ]
     if start is None:  # steg 4:s migration inte körd: som i steg 3
         # Exakt steg 3:s kontrollpost, så att stängningen före migrationen är identisk med steg 3 (B-052)
@@ -1146,7 +1694,7 @@ def _controls(month, computed, origins, additions, opening_balance, avk, fee_lab
             "sedan tidigare; startmånaden flyttas aldrig tyst (PR-ITP1-025)"
             if pending_start else f"Ingen ägare har fyllt {PENSION_AGE} senast {month:%Y-%m}",
             expected=str(len(start["standard"])), actual=str(len(start["standard"])), sources=sources))
-        return controls + payouts.controls
+        return controls + payouts.controls + (settlement.controls if settlement is not None else [])
     controls += [
         Control("standardstart", not start["standard"],
                 f"{len(pending_start)} ej startade delar vars ägare fyllt {PENSION_AGE} senast {month:%Y-%m}: "
@@ -1224,11 +1772,27 @@ def apply_month(session: Session, month: date, actor: str, reviewed_checksum: st
         session.add(PayoutPartState(payout_part_id=change["payout_part_id"], state=change["state"],
                                     end_reason=change["end_reason"], valid_from=change["valid_from"],
                                     valid_to=change["valid_to"],
-                                    note=f"Månadsstängningen {plan.month:%Y-%m}: {change['from_state']} → "
-                                         f"{change['state']} enligt planen"))
+                                    note=change.get("note") or f"Månadsstängningen {plan.month:%Y-%m}: "
+                                                               f"{change['from_state']} → {change['state']} enligt planen"))
         session.flush()
     if plan.company_case is not None:  # steg 5: ekonomiskt blockerad körning (W8)
         _company_case(session, plan, actor, today)
+    if plan.settlement_rows:  # steg 7: avräknade delar och återförda anspråk (Y5, Y6)
+        session.bulk_insert_mappings(DeathSettlement, [{**r, **stamp} for r in plan.settlement_rows])
+    if plan.reversal_rows:
+        session.bulk_insert_mappings(PensionClaimReversal, [{**r, **stamp} for r in plan.reversal_rows])
+    for c in plan.death_cases:  # steg 7: ärenden om besked och återkrav, i samma transaktion som stängningen
+        if c["type"] == "death_report":
+            dr.report_case(session, c["person_id"], c["event"], channel="system", received=today, actor=actor)
+            continue
+        session.add(Case(id=stable_id(plan.kind, plan.period_end.isoformat(), "death_recovery", c["details"]["claim_id"]),
+                         case_number=pl.next_case_number(session), case_type="death_recovery", status="open",
+                         insured_person_id=c["person_id"], channel="system", received_date=today,
+                         source_reference=f"month_close:{plan.period_end.isoformat()}", details=c["details"],
+                         created_by=actor))
+        session.flush()
+    if plan.pool_case is not None:  # steg 7: poolen står kvar (Y7)
+        _pool_case(session, plan, actor, today)
     for c in plan.review_cases:  # steg 4: ärenden vid 66 (V4, V6), i samma transaktion som stängningen
         tag = (c["id_tag"],) if c.get("id_tag") else ()
         session.add(Case(id=stable_id(plan.kind, plan.period_end.isoformat(), "review", c["payout_part_id"], *tag),
@@ -1265,6 +1829,21 @@ def _company_case(session: Session, plan: MonthPlan, actor: str, today: date) ->
     session.flush()
 
 
+def _pool_case(session: Session, plan: MonthPlan, actor: str, today: date) -> None:
+    """Öppnar ärendet om arvsvinstpoolen eller fyller på det öppna med månaden (Y7, som W8)."""
+    details = plan.pool_case["details"]
+    if plan.pool_case["case_id"] is not None:
+        case = session.get(Case, plan.pool_case["case_id"])
+        case.details = {**(case.details or {}), **details, "months": [*(case.details or {}).get("months", []), details]}
+    else:
+        session.add(Case(id=stable_id(plan.kind, plan.period_end.isoformat(), "inheritance_pool"),
+                         case_number=pl.next_case_number(session), case_type="inheritance_pool", status="open",
+                         channel="system", received_date=today,
+                         source_reference=f"month_close:{plan.period_end.isoformat()}",
+                         details={**details, "months": [details]}, created_by=actor))
+    session.flush()
+
+
 def verify_month(session: Session, batch: LedgerBatch) -> None:
     """Prövar en bokad stängning eller rättelse mot sin sammanställning, och månadens saldon mot totalerna."""
     if vb.checksum(batch.content) != batch.checksum:
@@ -1282,6 +1861,14 @@ def verify_month(session: Session, batch: LedgerBatch) -> None:
         claims = session.scalar(select(func.count()).select_from(PensionClaim).where(PensionClaim.batch_id == batch.id))
         if claims != totals["claims"]:
             raise CloseError(f"Verifikationens anspråk stämmer inte ({claims} mot {totals['claims']})")
+    if "death_settlements" in totals and batch.kind == CLOSE_KIND:  # steg 7: avräkningarna bokas med stängningen
+        settled = session.scalar(select(func.count()).select_from(DeathSettlement)
+                                 .where(DeathSettlement.batch_id == batch.id))
+        reversed_ = session.scalar(select(func.count()).select_from(PensionClaimReversal)
+                                   .where(PensionClaimReversal.batch_id == batch.id))
+        if (settled, reversed_) != (totals["death_settlements"], totals["death_reversals"]):
+            raise CloseError(f"Verifikationens dödsfallsavräkningar stämmer inte ({settled} och {reversed_} mot "
+                             f"{totals['death_settlements']} och {totals['death_reversals']})")
     closing = sum((t.balance for t in cl.tracks(session, batch.period_end)), ZERO)
     if closing != Decimal(totals["closing_sek"]):
         raise CloseError(f"Journalens kundkapital per {batch.period_end} är {closing} kr, inte "

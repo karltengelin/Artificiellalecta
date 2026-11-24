@@ -24,7 +24,7 @@ from collections import defaultdict
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import func, inspect, select
+from sqlalchemy import column, func, inspect, select, table
 from sqlalchemy.orm import Session
 
 from models import (
@@ -49,6 +49,8 @@ CAPITAL_KIND = "company_capital"
 COMPANY = "company"
 LIABILITY = "payment_liability"
 ZERO = Decimal("0.00")
+#: Steg 7:s tabell för återförda anspråk (Y5); läses bara när den finns
+REVERSALS = "pension_claim_reversals"
 #: Hur stressgapet i E_min redovisas tills aktuarien räknar det (projekt 6, A8; Karls val W7)
 STRESS_GAP = "ej beräknat – E_min räknas av aktuarien i projekt 6 (A8)"
 
@@ -171,9 +173,19 @@ def funded_later(session: Session, claim_ids) -> dict[uuid.UUID, Decimal]:
     return {c: Decimal(str(total)).quantize(Decimal("0.01")) for c, total in rows}
 
 
+def not_reversed(session: Session, query):
+    """Steg 7 (Y5): ett återfört anspråk efter dödsmånaden är varken ej finansierat eller betalbart. Utan steg 7:s
+    tabell är frågan oförändrad (B-052)."""
+    if not inspect(session.connection()).has_table(REVERSALS):
+        return query
+    reversed_ids = select(table(REVERSALS, column("claim_id")).c.claim_id)
+    return query.where(PensionClaim.id.notin_(reversed_ids))
+
+
 def outstanding_unfunded(session: Session, before: date | None = None) -> list[tuple[PensionClaim, Decimal]]:
-    """Anspråk med ej finansierad rest, äldsta först (rättighetsmånad, del): (anspråk, rest)."""
-    query = select(PensionClaim).where(PensionClaim.unfunded_sek > 0)
+    """Anspråk med ej finansierad rest, äldsta först (rättighetsmånad, del): (anspråk, rest). Ett återfört anspråk
+    (steg 7) räknas inte."""
+    query = not_reversed(session, select(PensionClaim).where(PensionClaim.unfunded_sek > 0))
     if before is not None:
         query = query.where(PensionClaim.right_month < before)
     claims = list(session.scalars(query.order_by(PensionClaim.right_month, PensionClaim.payout_part_id)))
@@ -308,5 +320,5 @@ def per_part_counts(claims: list[dict]) -> dict[str, int]:
 __all__ = ["CAPITAL_KIND", "CLAIM_TABLES", "COMPANY", "LIABILITY", "METHOD", "STRESS_GAP", "ClaimServiceError",
            "account_balance", "amount_from_plan", "amount_row", "amounts_by_part", "capital_registered",
            "claim_id", "claims_before", "claims_present", "claims_view", "company_view", "compute_amount",
-           "first_open_month", "funded_later", "liability_by_part", "outstanding_unfunded", "payment_day",
+           "first_open_month", "funded_later", "liability_by_part", "not_reversed", "outstanding_unfunded", "payment_day",
            "register_capital", "state_in"]

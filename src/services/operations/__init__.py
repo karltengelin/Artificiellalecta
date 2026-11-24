@@ -8,6 +8,7 @@ from services.operations import (  # noqa: F401
     capital_ledger,
     cases,
     corrections,
+    death_reports,
     employers,
     enrollment,
     insured,

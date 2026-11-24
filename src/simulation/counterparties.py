@@ -12,6 +12,11 @@ blir därför samma intag (fall 6 och 15).
 Bankens kvittofil för utbetalningar (paket B steg 6, Karls val X11) är bara banksidan: den läser den
 godkända bankfilen som banken fått och svarar per uppdrag med utfört, avvisat, återkommet eller okänt.
 Kunden och Skatteverket simuleras inte.
+
+Folkbokföringens avisering om dödsfall (paket B steg 7, Karls val Y14) har källan `population-register-sim`:
+personnummer, dödsdag, aviseringsdag och besked-id. Den läses med `import_death_notices`, där varje besked
+registreras som misstänkt och verifieras av handläggaren. Anhörigas besked registreras manuellt och simuleras
+inte.
 """
 
 from __future__ import annotations
@@ -37,6 +42,7 @@ from models import (
     PolicyState,
     SalaryReport,
 )
+from services.death_reports import POPULATION_SOURCE, notice_file_checksum
 from services.operations.common import luhn_valid, month_of
 from services.operations.payments import bank_file_checksum
 from services.operations.salary_files import file_checksum
@@ -59,7 +65,7 @@ UNKNOWN_SALARY = Decimal(40000)
 class SimulatedFile:
     """En fil från en motpart: indata till operationen, märkning och facit var för sig."""
 
-    kind: Literal["salary_file", "bank_file", "payout_receipt_file"]
+    kind: Literal["salary_file", "bank_file", "payout_receipt_file", "death_notice_file"]
     operation: str
     payload: dict[str, Any]
     label: dict[str, Any]
@@ -73,6 +79,8 @@ class SimulatedFile:
     def empty(self) -> bool:
         if self.kind == "payout_receipt_file":
             return not self.payload["receipts"]
+        if self.kind == "death_notice_file":
+            return not self.payload["notices"]
         return self.kind == "bank_file" and not self.payload["events"]
 
     def write(self, directory: Path) -> tuple[Path, Path]:
@@ -426,3 +434,41 @@ def payout_receipt_file(bank_file: Mapping[str, Any], outcomes: Mapping[str, Pay
     return SimulatedFile("payout_receipt_file", "import_payout_receipts", payload, label,
                          {"receipts": facit, "executed_net_sek": _money(executed),
                           "bank_file_checksum": bank_file["checksum"]})
+
+
+# --- folkbokföringens avisering om dödsfall (paket B steg 7) --------------------------------------
+
+#: Scenarierna per person (Y14): dödsfall i månaden, sent besked efter betalda månader (fall 31) och dödsfall
+#: under paus eller på startdagen (fall 28)
+DeathScenario = Literal["death_in_month", "late_notice", "paused_or_start_day"]
+
+
+@dataclass(frozen=True)
+class DeathCase:
+    """Ett dödsfall i aviseringen: personen, dödsdagen och scenariot (bara i facit)."""
+
+    personal_id_number: str
+    death_date: date
+    scenario: DeathScenario = "death_in_month"
+
+
+def death_notice_file(deaths: list[DeathCase], *, notified_on: date, seed: int,
+                      file_reference: str | None = None) -> SimulatedFile:
+    """Folkbokföringens avisering: ett besked per dödsfall med stabilt besked-id per seed och person.
+
+    Samma seed och dödsfall ger samma fil, så samma fil igen registrerar inget nytt (Y14). Scenariot står bara i
+    facit, aldrig i filen till operationen (PA8).
+    """
+    if any(d.death_date > notified_on for d in deaths):
+        raise ValueError("En dödsdag ligger efter aviseringsdagen")
+    notices, facit = [], []
+    for d in sorted(deaths, key=lambda d: (d.death_date, d.personal_id_number)):
+        notice_id = f"SIM{VERSION}-DN-S{seed}-{d.personal_id_number[-4:]}{d.death_date:%Y%m%d}"
+        notices.append({"notice_id": notice_id, "personal_id_number": d.personal_id_number,
+                        "death_date": d.death_date.isoformat(), "notified_on": notified_on.isoformat()})
+        facit.append({"notice_id": notice_id, "scenario": d.scenario, "death_date": d.death_date.isoformat()})
+    reference = file_reference or f"SIM{VERSION}-DEATH-{notified_on:%Y%m%d}-S{seed}"
+    payload = {"source_system": POPULATION_SOURCE, "file_reference": reference,
+               "checksum": notice_file_checksum(POPULATION_SOURCE, reference, notices), "notices": notices}
+    label = _label(seed, {"notified_on": notified_on.isoformat(), "deaths": len(deaths)})
+    return SimulatedFile("death_notice_file", "import_death_notices", payload, label, {"notices": facit})

@@ -39,6 +39,11 @@ operations:
   approve_payout_order: HUMAN_ONLY     # hashbundet godkännande av bankfilen – den externa handlingen (X7, X12)
   import_payout_receipts: HUMAN_ONLY   # bankens kvitton och verifikationen payout_settlement (X8, X9); bara människa
   list_payout_orders: HUMAN_ONLY       # bankfiler och maskerade konton; individrader, agenter får inga rättigheter (X12)
+  register_death_report: HUMAN_ONLY    # dödsfallsbesked, misstänkt eller verifierat (paket B steg 7, PR-ITP1-010, -031, Karls val Y2, Y11); bara människa
+  verify_death_report: HUMAN_ONLY      # verifiering, ny dödsdag eller tillbakadragning före avräkningen (Y2); bara människa
+  import_death_notices: HUMAN_ONLY     # folkbokföringens avisering som misstänkta besked (Y14); bara människa
+  register_estate_authority: HUMAN_ONLY  # dödsboets behörighet och konto (Y10); bara människa
+  get_death_settlement: HUMAN_ONLY     # besked, avräkning, återkrav och dödsbo; individrader, agenter får inga rättigheter (Y11)
   get_premium_month: HUMAN_ONLY        # månadsstatus; agenten använder avgränsad analysgateway
   approve_premium_month: HUMAN_ONLY    # mänsklig analysgranskning, aldrig baslås
   register_actuarial_dataset: HUMAN_ONLY  # observerat utfall; människa/betrodd dataproducent

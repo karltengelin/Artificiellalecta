@@ -59,16 +59,19 @@ SOURCES = ("reconstructed_s04", "ledger")
 ACCOUNTS = ("customer_capital", "payment_liability", "tax_liability", "inheritance_pool", "company", "suspense")
 #: Kapitalpostens orsak (§6.1). `opening` är det ingående saldot från S-04 (beslutat av Karl 2026-11-14);
 #: `company_capital` är ägarens dokumenterade insättning på bolagskontot (steg 5, Karls val W7); `payout`,
-#: `withholding` och `payout_returned` är utbetalt brutto, skatteavdraget och en återkommen betalning (steg 6, X9)
+#: `withholding` och `payout_returned` är utbetalt brutto, skatteavdraget och en återkommen betalning (steg 6, X9);
+#: `death_reversal` är ett återfört anspråk efter dödsmånaden på skulden, kundkapitalet och bolagskontot (steg 7, Y5)
 ENTRY_REASONS = ("opening", "premium", "return", "fee", "tax", "pension_debit", "company_support",
-                 "pool_in", "pool_out", "split", "company_capital", "payout", "withholding", "payout_returned")
-#: Konton som aldrig får bli negativa utöver kundkapitalet: betalningsskulden och bolagskontot (steg 5) och
-#: skatteskulden (steg 6, X9)
-NON_NEGATIVE_ACCOUNTS = ("payment_liability", "company", "tax_liability")
+                 "pool_in", "pool_out", "split", "company_capital", "payout", "withholding", "payout_returned",
+                 "death_reversal")
+#: Konton som aldrig får bli negativa utöver kundkapitalet: betalningsskulden och bolagskontot (steg 5),
+#: skatteskulden (steg 6, X9) och arvsvinstpoolen (steg 7, Y8)
+NON_NEGATIVE_ACCOUNTS = ("payment_liability", "company", "tax_liability", "inheritance_pool")
 #: Garantidelens ursprung: en premierad i S-04 eller en allokering i paket A (PA6)
 GUARANTEE_ORIGINS = ("s04_premium", "payment_allocation")
-#: Varför en garantidelsversion finns: premien själv (version 1), delning eller omräkning (steg 4)
-GUARANTEE_REASONS = ("premium", "split", "recalculation")
+#: Varför en garantidelsversion finns: premien själv (version 1), delning eller omräkning (steg 4) och
+#: dödsfall, då G_j blir 0 (steg 7, Y6)
+GUARANTEE_REASONS = ("premium", "split", "recalculation", "death")
 #: Planen som A_g räknas på: referensplanen (aktuariell_grund.md §3) eller en beslutad uttagsplan
 #: (`plan`, paket B steg 4, V1) – då pekar `plan_id` på planversionen
 PLAN_KINDS = ("reference_lifelong", "plan")
@@ -230,7 +233,8 @@ class LedgerCapitalEntry(Base):
         CheckConstraint("account <> 'customer_capital' OR (balance_before_sek >= 0 AND balance_after_sek >= 0)",
                         name="ck_ledger_capital_entries_non_negative"),
         CheckConstraint("reason <> 'opening' OR balance_before_sek = 0", name="ck_ledger_capital_entries_opening"),
-        # Betalningsskuld och bolagskonto blir aldrig negativa; ett ej finansierat anspråk står på anspråket (W8)
+        # Betalningsskuld, bolagskonto, skatteskuld och pool blir aldrig negativa; ett ej finansierat anspråk står
+        # på anspråket (W8)
         CheckConstraint(f"account NOT IN {NON_NEGATIVE_ACCOUNTS!r} OR (balance_before_sek >= 0 AND balance_after_sek >= 0)",
                         name="ck_ledger_capital_entries_accounts"),
         CheckConstraint("EXTRACT(DAY FROM month) = 1", name="ck_ledger_capital_entries_month").ddl_if(

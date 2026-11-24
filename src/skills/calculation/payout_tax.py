@@ -72,10 +72,12 @@ def whole_kronor(value: Decimal) -> Decimal:
     return value.quantize(KRONA, rounding=ROUND_FLOOR).quantize(CENT)
 
 
-def withholding(gross: Decimal, rule: TaxRule, expected_year_total: Decimal) -> TaxResult:
+def withholding(gross: Decimal, rule: TaxRule, expected_year_total: Decimal, *, thresholds: bool = True) -> TaxResult:
     """Skatteavdraget på ett uppdrag med bruttot `gross` (summan av personens rader).
 
     `expected_year_total` är den förväntade årssumman från bolaget till personen under utbetalningsåret.
+    `thresholds` nej: gränserna för småbelopp tillämpas inte – utbetalning till dödsbo i första versionen
+    (paket B steg 7, Karls val Y10; tolkningsfrågan ligger hos projekt 4).
     """
     gross = Decimal(str(gross))
     if gross <= 0 or gross != gross.quantize(CENT):
@@ -88,7 +90,7 @@ def withholding(gross: Decimal, rule: TaxRule, expected_year_total: Decimal) -> 
                                           "versionen; betalningen blockeras och skulden står kvar (X4)")
     if rule.kind not in (*A_TAX_KINDS, "sink"):
         raise TaxError(f"Okänt skatteslag {rule.kind}")
-    if rule.kind in A_TAX_KINDS:
+    if rule.kind in A_TAX_KINDS and thresholds:
         if gross < PAYMENT_LIMIT:
             return TaxResult(gross, ZERO, gross, "below_100", basis)
         if expected_year_total < YEAR_LIMIT:
