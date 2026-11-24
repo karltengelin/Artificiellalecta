@@ -542,6 +542,57 @@ Simulatorn får en utbetalningssida: banken svarar på bankfilen enligt scenario
 avvisad konto, återkommen, okänt), och nya händelsetyper för kundbegäran och
 dödsfallsbesked. Den skriver aldrig i affärstabellerna, och facit hålls separat (PA8).
 
+### 8.3 Val för steg 6: skatt, konto, bankuppdrag och kvitton
+
+**Godkända av Karl i chatten 2026-11-24 (”Godkänn alla”) enligt rekommendationerna. Inte byggt; inte loggat i beslutsloggen.**
+
+Steg 5:s kontrakt består: `pension_claims`, `pension_claim_fundings` och `payout_amounts` ändras inte, och
+anspråkets `payment_day` ligger fast. Tre ändringar i steg 5:s kod och villkor följer av valen och
+flaggas här: skuldens utgående saldo i `month_close._payouts` räknar in utbetalningar (X10), `tax_liability`
+blir ett konto som aldrig får bli negativt (X9), och villkoren för verifikationens slag, postens orsak och
+ärendetypen vidgas (X5, X6, X9).
+
+- **X1 Datamodell:** sex tabeller där rader bara läggs till, alla med pekare till `pension_claims`:
+  - `tax_statuses`: skattestatus per person och år i en versionskedja;
+  - `payout_accounts`: konto per person i en versionskedja;
+  - `payout_files`: bankfilen per betalningsdag, med kontrollsumma och godkännande;
+  - `payout_orders`: ett uppdrag per mottagare, med kontoversion, skattestatusversion, skatteår, brutto, skatt, netto och beräkningsunderlag;
+  - `payout_order_lines`: en rad per anspråk och försök, unik på (anspråk, försöksnummer);
+  - `payout_receipts`: bankens kvitton, unika på (källsystem, kvitto-id), med innehållskontrollsumma.
+  
+  Betalningslägena i §4 härleds ur raderna. Anspråket ändras aldrig (W1).
+- **X2 Betalbart anspråk (W8):** bara ett helt finansierat anspråk utan öppen eller verkställd rad. Hela bruttot betalas i en rad.
+- **X3 Skatteberäkning (fall 18–20):**
+  - per uppdrag (person och betalningsdag) på summan av personens delar, med utbetalningsdagens år;
+  - hela kronor, öretalet bortfaller, och netto blir aldrig negativt;
+  - gränserna 100 och 1 000 kr är strikt mindre än och gäller A-skatt, inte SINK;
+  - förväntad årssumma är det som verkställts i året plus återstående rätter i året enligt planerna och M, över personens alla delar, sparad i uppdraget;
+  - engångsbelopp (sena betalningar och nya försök) särredovisas, och skatten bokas på uppdraget, inte per del.
+- **X4 Huvudinkomst (§13):** registreras med tabellnummer, kolumn och eventuellt förhöjt avdrag men betalas inte ut. Uppdraget blockeras med ärende `tax_status` (`table_missing`) och skulden står kvar (fall 21). Skattetabellen byggs som ett eget steg när Karl hämtat Skatteverkets tabeller för 2026 och 2027, med engångstabellen, i en egen versionsbunden tabell med källa och kontrollsumma.
+- **X5 Skattestatus:** `register_tax_status` per person och år med kanal och verifierad aktör; en ny version ersätter den förra uttryckligen. SINK kräver beslutsreferens. Frivilligt högre sidoavdrag är ett heltal på minst 30 % och gäller från första betalningen två veckor efter begäran. Saknad status för utbetalningsdagens år blockerar personens uppdrag med ett ärende `tax_status` en gång per person och år.
+- **X6 Konto och hinder (fall 22):** `register_payout_account` sparar en versionskedja per person med verifieringssätt och dokumentreferens; kontobyte är en ny version. Saknat, overifierat, avvisat eller återkommet konto ger ärende `payout_hindrance`; skulden står kvar och delens läge rörs inte. Läsningarna maskerar kontonumret.
+- **X7 Bankfil och godkännande:**
+  - `create_payout_orders(dag)` efter stängd månad, med alla betalbara anspråk, även nya försök och senare finansierade, och en kontrollsumma ur innehållet;
+  - ändrat underlag före godkännandet ersätter den förberedda filen; en godkänd fil ändras aldrig;
+  - utförandedagen är den senare av betalningsdagen och nästa bankdag från i dag, och en försening redovisas (dröjsmålsränta senare steg);
+  - `approve_payout_order` binder filens kontrollsumma, en gång per fil, och är den externa handlingen;
+  - en person med status `deceased` stoppas; misstänkt dödsfall kommer i steg 7.
+- **X8 Kvitton och nytt försök (fall 23–25):** `import_payout_receipts` som `import_bank_file`: samma kvitto igen ger ingen effekt, samma id med ändrat innehåll ger konflikt för hela filen.
+  - *Utförd:* bokas (X9).
+  - *Avvisad:* inget bokas; hinderärende.
+  - *Återkommen:* motposter; hinderärende.
+  - *Okänt:* inget nytt försök förrän ett senare kvitto för samma uppdrag ger utförd eller avvisad.
+  - Ett nytt försök är en ny rad med samma anspråk, när ett konto verifierats efter kvittot. Det ger aldrig nytt anspråk, belopp eller kapitaldebitering.
+- **X9 Journalen och skatteskulden:** varje kvittofil bokas som en egen verifikation `payout_settlement` i första öppna månaden, som `company_capital`. Utförd: betalningsskulden −brutto per del (`payout`) och skatteskulden +skatt (`withholding`). Återkommen: exakta motposter (`payout_returned`), så att ett nytt försök ger en skatteredovisning (fall 23). Skatteskulden blir aldrig negativ, ingår inte i FTA och går till projekt 6.
+- **X10 Stängningen och B-052:** steg 8 räknar in månadens utbetalningar i skuldens saldo och får kontrollen *utbetalningar* (verkställt netto + skatt = utbetalt brutto), bara när steg 6:s tabeller finns. `scripts/simulation/paket_b_steg6/compare_main.py` prövar main:s fyra lägen och `steg5` med en startad del, och ett regressionstest låser resultatet. `ledger_premiums.py` ändras inte.
+- **X11 Simulatorn:** bara banksidan, `payout_receipt_file` med källan `bank-sim-payout`; scenarier per person är utförd, avvisad, återkommen och okänt med senare utfall. Facit hålls separat (PA8). Dödsfallsbesked i steg 7, kundbegäran senare.
+- **X12 Befogenheter:** sex nya operationer, alla `HUMAN_ONLY`: `register_tax_status`, `register_payout_account`, `create_payout_orders`, `approve_payout_order`, `import_payout_receipts` och `list_payout_orders`. Systemaktören och agenterna nekas godkännandet, och agentrollerna får inga rättigheter. Ärendetyperna `payout_hindrance` och `tax_status` ligger utanför ärendepolicyn.
+- **X13 Migration och Lakebase:** `migrate_payout_orders.py` förutsätter steg 5:s migration. Ordningen är novembers stängning, därefter steg 4:s, steg 5:s och steg 6:s migration, var och en med backup, torrkörning och eget OK.
+
+**Verifiering:** fall 18–25 och 34 lokalt; migrationen och fall 18 och 23 hela vägen mot `svc_test`; jämförelsen
+mot main enligt X10 före merge. **Utanför steg 6:** dröjsmålsränta, dödsbo, KU och AGI, skatteinbetalning,
+prognos till projekt 5 och handläggarsidan (steg 8).
+
 ## 9. Dödsfall, slutavräkning och bolagskapital (PB9–PB11)
 
 **Dödsfall (PR-010).** `register_death_report` sparar dödsdatum, källa och rapportdatum
@@ -594,7 +645,7 @@ ingen betalning rapporteras som lyckad. Startbeloppet E_min beräknas av aktuari
 | `register_company_capital` | skrivning | HUMAN_ONLY | Operatören |
 | `get_payout_part`, `list_pension_claims`, `get_month_close` | läsning | AGENT för aggregat utan PII, annars HUMAN_ONLY | Poddmontering prövas när ett agentuppdrag behöver dem |
 
-Nya ärendetyper: `payout_request`, `payout_hindrance`, `death_report` och `tax_status`. *Steg 4 byggde `payout_request` och dessutom `payout_review` för systemets egna fynd vid 66 (§5.4); `payout_hindrance` byggs i steg 6.*
+Nya ärendetyper: `payout_request`, `payout_hindrance`, `death_report` och `tax_status`. *Steg 4 byggde `payout_request` och dessutom `payout_review` för systemets egna fynd vid 66 (§5.4); `payout_hindrance` och `tax_status` byggs i steg 6 (§8.3, X5–X6), som också lägger till läsningen `list_payout_orders` (X12).*
 De ligger inte i ärendepolicyn och kan inte lämnas till agenten i första versionen.
 Agenter föreslår inga planer, betalningar eller dödsfallsbeslut.
 
@@ -708,7 +759,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 3 | Månadsstängning steg 1–4 och 8 för sparandet, med granskning och rättelseversion. **Första leverans med nytta i Lakebase.** *Byggt 2026-11-19 (§7, val S1–S7), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg3/`. Migrationen införd i Lakebase 2026-11-19 (B-050); novembers AVK och stängning tidigast 2026-12-01* | 13, 15–17 |
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning. *Byggt 2026-11-21 (§5.4, val V1–V11), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg4/`. Mergat till main 2026-11-22 (B-052). Inte infört i Lakebase; migrationen tidigast efter novembers stängning (2026-12-01)* | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd. *Byggt 2026-11-22 (§5.5, val W1–W12, B-053), verifierat lokalt och mot `svc_test`, med slutavräkningen (W6); körskript i `scripts/simulation/paket_b_steg5/`. Mergat till main 2026-11-23. Inte infört i Lakebase; migrationen efter steg 4:s* | 1, 5, 6, 14, 32, 33, 35 |
-| 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida | 18–25, 34 |
+| 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida. *Valen X1–X13 godkända 2026-11-24 (§8.3); inte byggt* | 18–25, 34 |
 | 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6 | 26–31 |
 | 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll | – |
 | 9 | Lakebase enligt ovan, med separat OK för varje ingrepp | – |
@@ -729,6 +780,8 @@ Steg 6 kan byggas parallellt med steg 7 först när anspråkskontraktet i steg 5
 - **Huvudinkomst med skattetabell:** ska en versionsbunden tabell för 2026 och 2027 läggas
   in som parameter från Skatteverkets källa, som Karl hämtar? Utan den kan bara sidoinkomst
   och individuella beslut betalas ut.
+  *Avgjord 2026-11-24 (X4, §8.3): huvudinkomst registreras men blockerar med ärende tills tabellen byggs som
+  eget steg, efter att Karl hämtat Skatteverkets tabeller för 2026 och 2027.*
 - **AVK för november och december 2026:** antar Karl syntetiska versioner i A4 för den
   operativa stängningen, som i P6-MANAD-001 (+0,20 % i november)? Det är beroendet mot projekt 5.
   *November avgjord 2026-11-19 (S5, §7.2): AVK-SIM-2026-02 enligt P6-MANAD-001 D5. December står öppen.*

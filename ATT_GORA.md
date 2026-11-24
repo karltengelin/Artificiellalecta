@@ -75,6 +75,13 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
 - [ ] **Migrationen i Lakebase** körs efter steg 4:s migration. Stegen är `survey.py`, backup, torrkörning av `migrate_pension_claims.py`, `--apply --backup` och `verify.py --backup`. Skripten ligger i `scripts/simulation/paket_b_steg5/`, och varje steg kräver Karls separata OK.
 - [ ] **Bolagskapitalets startinsättning** (`register_company_capital`) behövs före den första stängningen med en månadsrätt (PB11). Karl bestämmer beloppet, helst efter aktuariens E_min (projekt 6, A8).
 
+**Därefter, paket B steg 6** (skatt, konto, bankuppdrag och kvitton):
+
+- [x] **Valen X1–X13** *2026-11-24* godkända av Karl ([designstoppet §8.3](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#83-val-för-steg-6-skatt-konto-bankuppdrag-och-kvitton)).
+- [ ] **B-054** loggas efter Karls OK.
+- [ ] **Bygget** på branchen `claude/paket-b-steg-6-design-03306f`, med jämförelsen mot main före merge (X10, B-052).
+- [ ] **Skattetabellen för huvudinkomst** (X4) blir ett eget steg när Karl hämtat Skatteverkets tabeller för 2026 och 2027.
+
 ### Paket A steg 8: period 2026-10 – kvar att följa upp
 
 Första operativa perioden 2026-10 är körd i Lakebase med verklig kalender: filintag och fakturering 2026-11-08,
