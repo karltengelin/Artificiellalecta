@@ -79,7 +79,9 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
 
 - [x] **Valen X1–X13** *2026-11-24* godkända av Karl ([designstoppet §8.3](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#83-val-för-steg-6-skatt-konto-bankuppdrag-och-kvitton)).
 - [x] **B-054** *2026-11-24* loggad efter Karls OK (”Logga och bygg”).
-- [ ] **Bygget** på branchen `claude/paket-b-steg-6-design-03306f`, med jämförelsen mot main före merge (X10, B-052).
+- [x] **Bygget** *2026-11-24* på branchen `claude/paket-b-steg-6-design-03306f` ([rapport](scripts/simulation/paket_b_steg6/RAPPORT.md)). Jämförelsen mot main `2ed556d` är identisk i alla fem lägen (X10, B-052).
+- [ ] **Merge till main** efter Karls OK för just den mergen.
+- [ ] **Migrationen i Lakebase** (`migrate_payout_orders.py`) efter steg 4:s och steg 5:s, med backup, torrkörning och Karls separata OK (X13).
 - [ ] **Skattetabellen för huvudinkomst** (X4) blir ett eget steg när Karl hämtat Skatteverkets tabeller för 2026 och 2027.
 
 ### Paket A steg 8: period 2026-10 – kvar att följa upp

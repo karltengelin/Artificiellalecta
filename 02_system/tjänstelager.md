@@ -726,7 +726,7 @@ Beslutat i **B-047** punkt 3 och [P1-PENSION-001](../projekt/01_ärendehantering
 - **Steg 1:** öppningskapitalet är föregående lägets kapitalspår: det ingående läget eller förra månadens stängning. Ägarnas levandestatus och uttagsdelarnas lägen prövas.
 - **Steg 2–3:** avkastning enligt den antagna AVK:n för månaden (PR-ITP1-021). Kapitalavgift och skattebelastning tas ut på öppningsbasen med månadens parameterversioner, satsen delad med 12 (PR-ITP1-022, PR-ITP1-023). Beräkningen görs med `close_month` och `roll_origins` per uttagsdel och fördelas på spåren i ören. Belopp som inte kunde tas ut syns bara i sammanställningen.
 - **Steg 4:** månadens premier ur paket A (§9.15) blir en garantidel och ett nytt kapitalspår per allokering, med värdedag vid månadsslutet och utan avkastning denna månad.
-- **Steg 8:** elva kontrollposter (tolv med steg 4, §9.17, och fjorton med steg 5, §9.18), bland dem föregående läge, kapital per spår och totalt, garanti, premier och avstämningskontot.
+- **Steg 8:** elva kontrollposter (tolv med steg 4, §9.17, fjorton med steg 5, §9.18, och femton med steg 6, §9.19), bland dem föregående läge, kapital per spår och totalt, garanti, premier och avstämningskontot.
 - **Fall 13:** C0 = 100 000,00 kr och r = 1 % ger +1 000,00, −16,67 och −29,50 kr, alltså C1 = 100 953,83 kr.
 
 **Granskning, idempotens och rättelse (§7.2):**
@@ -814,7 +814,7 @@ Beslutat i **B-047** punkt 4 och 6 och [P1-PENSION-001](../projekt/01_ärendehan
   - bokningen i stängningens steg 1 och 5 i `src/services/month_close.py` (§9.16).
 - **Tabeller och migration:** `payout_amounts`, `pension_claims` och `pension_claim_fundings`, se [databasschema §7e och §12](databasschema.md#7e-tabeller-payout_amounts-pension_claims-och-pension_claim_fundings--beloppsbeslut-månadsrätt-och-bolagsstöd). Mergade till main 2026-11-23; inte införda i Lakebase.
 - **Befogenheter:** två nya operationer, båda `HUMAN_ONLY`, och inga nya agentbefogenheter.
-- **Avgränsning:** anspråket skuldförs i stängningen. Skatt, bankuppdrag och kvitton byggs i steg 6, och dödsfall och arvsvinst i steg 7.
+- **Avgränsning:** anspråket skuldförs i stängningen. Skatt, bankuppdrag och kvitton finns i steg 6 (§9.19), och dödsfall och arvsvinst byggs i steg 7.
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|
@@ -848,6 +848,49 @@ Beslutat i **B-047** punkt 4 och 6 och [P1-PENSION-001](../projekt/01_ärendehan
   - en rättelse som ändrar ett anspråks brutto eller del ur kundkapitalet (W10).
 - *Nekas:* agenter i båda operationerna och systemaktören i insättningen.
 - **Lakebase:** körskripten finns i `scripts/simulation/paket_b_steg5/`. De körs efter steg 4:s migration (W12, [databasschema §12](databasschema.md#12-migrationer-och-versionering)).
+
+### 9.19 Skatt, konto, bankuppdrag och kvitton (paket B steg 6, B-047) – vad som stöds och vad som blockeras
+
+Beslutat i **B-047** punkt 6 och [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §8 (PB7, PB8), med Karls val X1–X13 2026-11-24 (**B-054**).
+- **Kod:**
+  - `src/skills/calculation/payout_tax.py`: preliminärskatten per uppdrag, utan databas;
+  - `src/services/payout_orders.py`: skattestatus, konto, bankfil, godkännande, kvitton, verifikationen `payout_settlement` och läsningar;
+  - `src/services/operations/payout_orders.py`: operationerna;
+  - `src/simulation/counterparties.py`: bankens kvittofil (`payout_receipt_file`, källan `bank-sim-payout`, X11);
+  - kontrollen *utbetalningar* i stängningens steg 8 i `src/services/month_close.py` (§9.16).
+- **Tabeller och migration:** `tax_statuses`, `payout_accounts`, `payout_files`, `payout_orders`, `payout_order_lines` och `payout_receipts`, se [databasschema §7f och §12](databasschema.md#7f-tabeller-tax_statuses-payout_accounts-payout_files-payout_orders-payout_order_lines-och-payout_receipts--skatt-konto-bankuppdrag-och-kvitton). Inte mergade och inte införda i Lakebase.
+- **Befogenheter:** sex nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter (X12).
+- **Avgränsning:** anspråket från steg 5 ändras aldrig. Skattetabellen för huvudinkomst, dröjsmålsränta, dödsbo, KU och AGI, skatteinbetalning och handläggarsidan ligger utanför steg 6.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `register_tax_status` | `write` | Ja | `HUMAN_ONLY` | Ny version av personens skattestatus för ett år: sidoinkomst (minst 30 % i hela procent; frivilligt högre gäller från mottagandet + 14 dagar), huvudinkomst med tabell och pensionskolumn, individuellt beslut eller SINK med beslutsreferens. Samma uppgift igen ger ingen ny version; ett öppet `tax_status`-ärende för året stängs |
+| `register_payout_account` | `write` | Ja | `HUMAN_ONLY` | Ny version av utbetalningskontot med verifieringssätt och referens. Ett verifierat konto stänger öppna `payout_hindrance`-ärenden. Kontonumret visas maskerat |
+| `create_payout_orders` | `write` | Ja | `HUMAN_ONLY` | Bankfilen för en betalningsdag: helt finansierade anspråk utan öppen eller betald rad, ett uppdrag per person med skatten på summan (X2, X3). Blockerade personer får ärende, och skulden står kvar. En ej godkänd fil ersätts när underlaget ändrats; samma underlag ger samma fil (X7) |
+| `approve_payout_order` | `external` | Ja | `HUMAN_ONLY` | Godkänner bankfilen med dess kontrollsumma och lämnar den till banken – den externa handlingen. Ändrat underlag eller ändrad utförandedag sedan filen skapades ger konflikt |
+| `import_payout_receipts` | `write` | Ja | `HUMAN_ONLY` | Bankens kvittofil, idempotent per källsystem och kvitto-id. Utfört och återkommet bokas som verifikationen `payout_settlement`; avvisat och återkommet ger ärende om nytt konto (X8, X9) |
+| `list_payout_orders` | `read` | Ja | `HUMAN_ONLY` | Bankfilerna med uppdrag, skatt, maskerade konton och bankens utfall, och varje anspråks betalningsläge och försök |
+
+**Skatten (X3–X5, fall 18–20):**
+- Räknas per uppdrag på summan av personens rader, med utbetalningsdagens år och den skattestatusversion som gäller på utförandedagen.
+- Procentavdrag i hela kronor, öretalet bortfaller; nettot blir aldrig negativt.
+- Inget A-skatteavdrag när uppdraget understiger 100 kr eller den förväntade årssumman 1 000 kr. Årssumman är det som verkställts i året, obetalda rätter med betalningsdag i året och återstående rätter i året enligt planerna och M, över personens alla delar. Gränserna gäller inte SINK.
+- Huvudinkomst blockeras med ärendet `tax_status` (`table_missing`) tills skattetabellen byggts (X4, fall 21).
+
+**Bankfilen och kvittona (X6–X9, fall 21–25 och 34):**
+- Utförandedagen är den senare av betalningsdagen och närmaste bankdag från i dag; en försening redovisas.
+- Saknat eller overifierat konto, saknad skattestatus och avliden person blockerar personens uppdrag. Avliden ger inget ärende (steg 7).
+- Kvittots övergångar: skickat eller okänt → utfört, avvisat eller okänt; utfört → återkommet. Allt annat ger konflikt för hela filen.
+- Efter avvisning eller retur blockeras nästa försök tills ett nytt verifierat konto registrerats. Försöket är en ny rad med samma anspråk.
+- Verifikationen `payout_settlement` bokas i första öppna månaden: skulden −brutto per del (`payout`) och skatteskulden +skatt (`withholding`); retur ger exakta motposter (`payout_returned`).
+
+**Stängningen (X10):** med steg 6:s tabeller räknar steg 8 in månadens verifikationer i skuldens utgående saldo och lägger kontrollen *utbetalningar*. Utan tabellerna är stängningen identisk med steg 5, prövat mot main:s kod med `scripts/simulation/paket_b_steg6/compare_main.py` (B-052).
+
+**Spärras:**
+- *Blockeras:* operationerna innan migrationen är körd; kvittofil med fel kontrollsumma, dubbla kvitto-id eller bankdag i framtiden.
+- *Konflikt:* fel eller ersatt kontrollsumma vid godkännande, ändrat underlag sedan filen skapades, kvitto-id med ändrat innehåll, okänt eller ej godkänt uppdrag och otillåten övergång.
+- *Nekas:* agenter i alla sex operationerna och systemaktören i de skrivande.
+- **Lakebase:** migrationen körs efter steg 5:s, med backup, torrkörning och Karls separata OK (X13, [databasschema §12](databasschema.md#12-migrationer-och-versionering)).
 
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.
