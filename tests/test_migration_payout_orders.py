@@ -20,6 +20,7 @@ from models import Base, PayoutFile
 from services import Actor, OperationContext, ProductRuleCatalog, ServiceLayer
 from services import capital_ledger as cl
 from services import payout_orders as po
+from services import valuation_bases as vb
 from services.errors import BlockedError
 from tests import test_payout_orders as orders
 from tests import test_premium_month_export as export_tests
@@ -54,6 +55,9 @@ def _lakebase_like(schema) -> ServiceLayer:
     Base.metadata.create_all(schema.engine, tables=[t for t in Base.metadata.sorted_tables
                                                     if t.name not in NOT_IN_LAKEBASE])
     seed_insurance(schema.session_factory)
+    with schema.session_factory() as s:
+        vb.add_missing_defaults(s)
+        s.commit()
     service = ServiceLayer(session_factory=schema.session_factory, rules=ProductRuleCatalog())
     review = service.execute("preview_ledger_opening", HUMAN, {}).output.payload
     assert review["passed"], review["problems"]

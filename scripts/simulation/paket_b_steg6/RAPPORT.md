@@ -1,7 +1,7 @@
 # Paket B steg 6 – skatt, konto, bankuppdrag och kvitton: rapport och körordning
 
 > **Design:** [P1-PENSION-001 §8](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) och §8.3, PB7 och PB8, PR-ITP1-026, B-047 punkt 6, Karls val X1–X13 (2026-11-24, ”Godkänn alla”). Loggade som **B-054** samma dag efter Karls OK (”Logga och bygg”).
-> **Status 2026-11-24:** byggt och verifierat lokalt på branchen `claude/paket-b-steg-6-design-03306f`. Jämförelsen med main `2ed556d` är identisk i alla fem lägen. **Inte mergat och inte infört i Lakebase.**
+> **Status 2026-11-24:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg-6-design-03306f`. Jämförelsen med main `2ed556d` är identisk i alla fem lägen. **Inte mergat och inte infört i Lakebase.**
 
 ## Vad som är byggt
 
@@ -39,7 +39,8 @@
 | X10 | lokalt | Decembers stängning efter en utbetalning: kontrollen *utbetalningar* godkänd, skulden 10 000 + (−10 000) + decembers rätt = 10 000 kr, och verifikationen kontrolleras |
 | B-052 | lokalt | Utan steg 6:s tabeller saknar stängningen kontrollen och sektionen, och operationerna blockeras med hänvisning till migrationen |
 | Befogenheter | lokalt | Agenter nekas alla sex operationerna och systemaktören de fem skrivande |
-| Migrationen och fall 22 | `svc_test` | Se nedan |
+| Migrationen | `svc_test` | Från läget efter steg 5 blockeras bankuppdragen; torrkörningen skriver inget; migrationen ger tabellerna, journalens villkor och `cases` identiska med `create_all`, är idempotent och lämnar det ingående läget orört. Delvis införd migration och saknat steg 5 stoppar |
+| 22 | `svc_test` | Bankfil, godkännande och utfört kvitto bokar `payout_settlement`: skulden 0 och skatteskulden 3 000 kr. Villkoret tillåter bara en förberedd fil, och skatteskulden kan inte bli negativ |
 
 ### Jämförelsen med main (B-052, X10)
 

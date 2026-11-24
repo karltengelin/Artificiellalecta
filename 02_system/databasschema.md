@@ -1417,7 +1417,7 @@ ingenting. Erfarenhetsdata importeras separat, aldrig från fabricerade modellut
   - **Förutsättning:** steg 1–5 är införda, med anspråken och bolagskontots villkor; annars stoppar migrationen.
   - **Torrkörning** är standard och körs `READ ONLY`. **Skarp körning:** `--apply` kräver `--backup`. Samma kontroller i transaktionen som i steg 5; minsta avvikelse rullar tillbaka allt.
   - **Idempotent:** är allt infört görs ingenting. Är bara en del av tabellerna införd stoppar migrationen.
-  - **Prov** mot isolerad Postgres i `tests/test_migration_payout_orders.py`: från läget efter steg 5 ska tabellerna, journalens villkor och `cases` bli identiska med `create_all`; delvis införd och saknat steg 5 stoppar; en månadsrätt betalas med kvitto och verifikation (fall 22).
+  - **Verifierat** mot isolerad Postgres (`tests/test_migration_payout_orders.py`): från läget efter steg 5 blir de sex tabellerna, journalens villkor och `cases` identiska med `create_all`. Migrationen är idempotent; delvis införd och saknat steg 5 stoppar. Paket A:s testbestånd i Postgres betalar en månadsrätt med bankfil, godkännande, utfört kvitto och verifikationen `payout_settlement` (fall 22).
   - **Kodens beroende:** utan tabellerna beter sig stängningen som i steg 5. Det prövas mot main:s kod på samma databas (`scripts/simulation/paket_b_steg6/compare_main.py`, B-052). Operationerna blockeras med hänvisning till migrationen.
   - **Ordning i Lakebase** (Karls val X13): steg 4:s och steg 5:s migrationer och därefter backup → torrkörning → `--apply`. Varje skarpt steg kräver Karls separata OK och samordning enligt AGENTS.md §4.5.
   - **Inte mergad och inte införd i Lakebase.**
