@@ -86,7 +86,10 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
 
 **Därefter, paket B steg 7** (dödsfall och arvsvinst, fall 26–31):
 
-- [ ] **Valen Y1–Y14** föreslogs 2026-11-24 i [designstoppet §9.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#91-val-för-steg-7-dödsfall-och-arvsvinst) och väntar på Karls svar. Inget är byggt.
+- [x] **Valen Y1–Y14** *2026-11-24* godkända av Karl ([designstoppet §9.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#91-val-för-steg-7-dödsfall-och-arvsvinst)).
+- [ ] **B-055** i beslutsloggen, efter Karls OK.
+- [ ] **Bygget** på branchen `claude/paket-b-steg-7-design-c61002`, med jämförelsen mot main enligt Y13 före merge.
+- [ ] **Migrationen i Lakebase** (`migrate_death_reports.py`) efter steg 6:s, med backup, torrkörning och Karls separata OK (Y12).
 
 ### Paket A steg 8: period 2026-10 – kvar att följa upp
 
