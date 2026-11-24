@@ -858,7 +858,7 @@ Beslutat i **B-047** punkt 6 och [P1-PENSION-001](../projekt/01_ärendehantering
   - `src/services/operations/payout_orders.py`: operationerna;
   - `src/simulation/counterparties.py`: bankens kvittofil (`payout_receipt_file`, källan `bank-sim-payout`, X11);
   - kontrollen *utbetalningar* i stängningens steg 8 i `src/services/month_close.py` (§9.16).
-- **Tabeller och migration:** `tax_statuses`, `payout_accounts`, `payout_files`, `payout_orders`, `payout_order_lines` och `payout_receipts`, se [databasschema §7f och §12](databasschema.md#7f-tabeller-tax_statuses-payout_accounts-payout_files-payout_orders-payout_order_lines-och-payout_receipts--skatt-konto-bankuppdrag-och-kvitton). Inte mergade och inte införda i Lakebase.
+- **Tabeller och migration:** `tax_statuses`, `payout_accounts`, `payout_files`, `payout_orders`, `payout_order_lines` och `payout_receipts`, se [databasschema §7f och §12](databasschema.md#7f-tabeller-tax_statuses-payout_accounts-payout_files-payout_orders-payout_order_lines-och-payout_receipts--skatt-konto-bankuppdrag-och-kvitton). Mergade till main 2026-11-24, inte införda i Lakebase.
 - **Befogenheter:** sex nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter (X12).
 - **Avgränsning:** anspråket från steg 5 ändras aldrig. Skattetabellen för huvudinkomst, dröjsmålsränta, dödsbo, KU och AGI, skatteinbetalning och handläggarsidan ligger utanför steg 6.
 

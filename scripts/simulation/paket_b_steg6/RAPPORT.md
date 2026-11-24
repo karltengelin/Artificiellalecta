@@ -1,7 +1,7 @@
 # Paket B steg 6 – skatt, konto, bankuppdrag och kvitton: rapport och körordning
 
 > **Design:** [P1-PENSION-001 §8](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) och §8.3, PB7 och PB8, PR-ITP1-026, B-047 punkt 6, Karls val X1–X13 (2026-11-24, ”Godkänn alla”). Loggade som **B-054** samma dag efter Karls OK (”Logga och bygg”).
-> **Status 2026-11-24:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg-6-design-03306f`. Jämförelsen med main `2ed556d` är identisk i alla fem lägen. **Inte mergat och inte infört i Lakebase.**
+> **Status 2026-11-24:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg-6-design-03306f`. Jämförelsen med main `2ed556d` är identisk i alla fem lägen. **Mergat till main 2026-11-24** efter Karls OK; **inte infört i Lakebase.**
 
 ## Vad som är byggt
 
