@@ -20,6 +20,10 @@ from analytics.portfolio_snapshot import birth_date
 from models import (
     Case,
     InsuredPerson,
+    LedgerBatch,
+    LedgerCapitalEntry,
+    LedgerControl,
+    LedgerGuaranteePart,
     PayoutAccount,
     PayoutPart,
     PayoutPartState,
@@ -34,10 +38,12 @@ from services import payout_plans as plans
 from services import pension_claims as pc
 from skills.calculation import actuarial_annuity as aa
 from skills.calculation import payout_plan as pp
-from utils.migration_capital_ledger import TABLES as LEDGER_TABLES
-from utils.migration_payout_parts import TABLES as PART_TABLES
 
 ZERO = Decimal("0.00")
+#: Steg 1:s och 2:s tabeller, samma som migreringarna inför. De läses ur modellerna och inte ur
+#: utils.migration_*: migreringsmodulerna importerar tjänstelagret, och det blir en cirkelimport.
+PART_TABLES = tuple(m.__tablename__ for m in (PayoutPart, PayoutPartState))
+LEDGER_TABLES = tuple(m.__tablename__ for m in (LedgerBatch, LedgerGuaranteePart, LedgerCapitalEntry, LedgerControl))
 #: Alla saldon räknas efter alla bokningar, också den öppna månadens (insättning, bankkvitton)
 LAST_MONTH = date(9999, 12, 1)
 

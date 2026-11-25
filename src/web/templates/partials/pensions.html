@@ -47,7 +47,7 @@
 {% macro operator_only() %}
 <div class="alert alert--info" role="status">
   <strong class="alert__title">Kräver inloggad operatör</strong>
-  <p>{% if operator_auth_enabled %}<a href="/logga-in">Logga in som operatör</a> för att utföra åtgärden.{% else %}Operatörsinloggningen är inte konfigurerad i den här miljön.{% endif %}</p>
+  <p>{% if operator_auth_enabled %}<a href="/logga-in" hx-boost="false">Logga in som operatör</a> för att utföra åtgärden.{% else %}Operatörsinloggningen är inte konfigurerad i den här miljön.{% endif %}</p>
 </div>
 {% endmacro %}
 

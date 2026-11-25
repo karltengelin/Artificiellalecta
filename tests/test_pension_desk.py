@@ -200,6 +200,14 @@ def test_registret_har_dem_som_human_only():
     assert all(register[name] == "HUMAN_ONLY" for name in READS)
 
 
+def test_stegens_tabeller_ar_migreringarnas():
+    # Sidan läser steg 1:s och 2:s tabellnamn ur modellerna för att slippa en cirkelimport
+    from utils import migration_capital_ledger, migration_payout_parts
+    tables = {number: names for number, _, names, _ in desk.STEPS}
+    assert tables[1] == migration_payout_parts.TABLES
+    assert tables[2] == migration_capital_ledger.TABLES
+
+
 # --- Postgres -------------------------------------------------------------------------------------
 
 
