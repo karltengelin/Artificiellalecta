@@ -31,6 +31,15 @@ def os_user():
 
 
 def show_review(state):
+    if state["status"] in ("waiting_opening", "waiting_close"):
+        view = state["ledger_review"]
+        # Äldre Windows-konsoler kan inte skriva alla symboler i B:s kontrolltexter.
+        output = json.dumps(view, ensure_ascii=False, indent=2)
+        encoding = sys.stdout.encoding or "utf-8"
+        print(output.encode(encoding, errors="backslashreplace").decode(encoding))
+        action = "open-ledger" if state["status"] == "waiting_opening" else "close-month"
+        print(f"Beslutsunderlag {action} {state['id']} --revision {state['cursor']} --digest {view['review_checksum']}")
+        return
     view = state["review"]
     print(f"Fil {view['file_reference']} för {view['employer_org_number']}, period {view['period_month']}")
     for row in view["rows"]:
@@ -51,6 +60,32 @@ def publish(directory, state):
         write_file(directory / name, json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
     save("manifest.json", state["manifest"])
+    if "savings_report" in state:
+        report = state["savings_report"]
+        save("sparande.json", report)
+        totals = report["close"]["totals"]
+        rows = ["# Novembers bokade sparande", "",
+                f"Handläggare {report['actor']} · affärsdag {report['day']} · körning `{state['id']}`.",
+                f"Motivering: {report['note']}", "",
+                "| Försäkring | IB | Avkastning | Avgift | Skattebelastning | Nettopremie | UB |",
+                "|---|---:|---:|---:|---:|---:|---:|"]
+        for policy, values in report["bridge"].items():
+            cells = [money(values.get(k, "0")) for k in ("opening", "return", "fee", "tax", "premium", "closing")]
+            rows.append(f"| {policy} | " + " | ".join(cells) + " |")
+        total_row = [totals["opening_sek"], totals["returns_sek"], -Decimal(totals["fees_sek"]),
+                     -Decimal(totals["taxes_sek"]), totals["premiums_sek"], totals["closing_sek"]]
+        rows.append("| Totalt | " + " | ".join(money(v) for v in total_row) + " |")
+        rows.extend(["", "| Försäkring | Bankallokering | Bokad nettopremie | Garantigrund |",
+                     "|---|---:|---:|---:|"])
+        for trace in report["traces"]:
+            rows.append(f"| {trace['policy']} | {money(trace['allocated'])} | {money(trace['net_premium'])} | "
+                        f"{money(trace['guarantee_base'])} |")
+        rows.extend(["",
+                     f"Öppen premiefordran {money(report['balances']['receivables_sek'])} kr.",
+                     f"Verifikation `{report['close']['batch_id']}`, granskningssumma `{report['close']['review_checksum']}`.",
+                     "Underkänd avstämning." if report["failures"] else "Godkänd avstämning.",
+                     *report["failures"], "", "[Bokade källspår och kontroller](sparande.json)"])
+        write_file(directory / "sparande.md", "\n".join(rows) + "\n")
     for key, item in state["files"].items():
         save(f"{key}.json", {**item["payload"], "_label": item["label"]})
         save(f"{key}.facit.json", {"label": item["label"], "facit": item["facit"]})
@@ -88,16 +123,17 @@ def main():
     commands = parser.add_subparsers(dest="action", required=True)
     new = commands.add_parser("start", help="Ny körning från fryst startbild, fram till filbeslut")
     new.add_argument("scenario", choices=SCENARIOS)
-    for name in ("status", "resume", "approve", "reject"):
+    new.add_argument("--savings", action="store_true", help="Samprova delbetalningen med novembers journalstängning")
+    for name in ("status", "resume", "approve", "reject", "open-ledger", "close-month"):
         command = commands.add_parser(name)
         command.add_argument("run_id")
-        if name in ("approve", "reject"):
+        if name not in ("status", "resume"):
             command.add_argument("--revision", type=int, required=True)
             command.add_argument("--digest", required=True)
             command.add_argument("--note", required=True)
     args = parser.parse_args()
     if args.action == "start":
-        ident = start(RUNS, args.scenario)
+        ident = start(RUNS, args.scenario, with_savings=args.savings)
         state = advance(RUNS, ident)
     elif args.action == "status":
         state = review(RUNS, args.run_id, Actor.human(os_user()))
@@ -106,12 +142,14 @@ def main():
     else:
         state = advance(RUNS, args.run_id, revision=args.revision,
                         decision=(Actor.human(os_user()), args.action, args.digest, args.note))
+    if args.action != "status" and state["status"] in ("waiting_opening", "waiting_close"):
+        state = review(RUNS, state["id"], Actor.human(os_user()))
     directory = RUNS / state["id"]
     publish(directory, state)
     print(f"{state['id']}  {state['status']}  {state['day']}  {directory}")
-    if state["status"] == "waiting_review":
+    if state["status"] in ("waiting_review", "waiting_opening", "waiting_close"):
         show_review(state)
-    return int(any(report["failures"] for report in state["reports"].values()))
+    return int(state["status"] == "failed" or any(report["failures"] for report in state["reports"].values()))
 
 
 if __name__ == "__main__":

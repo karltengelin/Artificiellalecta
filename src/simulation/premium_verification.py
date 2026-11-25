@@ -29,7 +29,7 @@ FACIT = {
 }
 
 
-def observation(session, balances):
+def observation(session, balances, *, premium_period=None):
     rows = []
     traces = []
     for line, premium, policy in session.execute(
@@ -60,6 +60,9 @@ def observation(session, balances):
                                      "amount": str(a.amount_sek)} for a, e in payments]})
     counts = {m.__tablename__: session.scalar(select(func.count()).select_from(m))
               for m in (SalaryReport, PremiumTransaction, Invoice, InvoiceLineRecord, BankEvent, PaymentAllocation)}
+    if premium_period is not None:
+        counts["premium_transactions"] = session.scalar(select(func.count()).select_from(PremiumTransaction)
+                                                        .where(PremiumTransaction.period_month == premium_period))
     cases = [{"case": c.case_number, "type": c.case_type, "date": str(c.received_date), "status": c.status,
               "amount": c.details.get("open_sek") or c.details.get("unallocated_sek")}
              for c in session.scalars(select(Case).order_by(Case.case_number))]
