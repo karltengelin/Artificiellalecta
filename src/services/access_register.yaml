@@ -44,6 +44,9 @@ operations:
   import_death_notices: HUMAN_ONLY     # folkbokföringens avisering som misstänkta besked (Y14); bara människa
   register_estate_authority: HUMAN_ONLY  # dödsboets behörighet och konto (Y10); bara människa
   get_death_settlement: HUMAN_ONLY     # besked, avräkning, återkrav och dödsbo; individrader, agenter får inga rättigheter (Y11)
+  get_pension_status: HUMAN_ONLY       # uttagsflödets läge utan personuppgifter för handläggarsidan (paket B steg 8, B-056, Z4)
+  list_payout_parts: HUMAN_ONLY        # uttagsdelarna med ägarens namn, läge och plan; individrader, inget personnummer (Z4, Z6)
+  get_payout_person: HUMAN_ONLY        # personens skattestatus och konton i alla versioner, maskerade konton (Z4)
   get_premium_month: HUMAN_ONLY        # månadsstatus; agenten använder avgränsad analysgateway
   approve_premium_month: HUMAN_ONLY    # mänsklig analysgranskning, aldrig baslås
   register_actuarial_dataset: HUMAN_ONLY  # observerat utfall; människa/betrodd dataproducent

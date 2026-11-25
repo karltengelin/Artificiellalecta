@@ -21,6 +21,7 @@ from services.operations import (  # noqa: F401
     payout_orders,
     payout_plans,
     pension_claims,
+    pension_desk,
     persons,
     policies,
     portfolio_impact,
