@@ -29,7 +29,7 @@ EXPECTED = {
 }
 
 
-def report(session, receipt, balances):
+def report(session, receipt, balances, *, extra_opening=None):
     batch = UUID(receipt["batch_id"])
     failures = []
 
@@ -52,13 +52,16 @@ def report(session, receipt, balances):
     for number, amounts in sorted(postings.items()):
         amounts["closing"] = sum(amounts.values())
         bridge[number] = {key: str(amount) for key, amount in amounts.items()}
-    check("kapitalbrygga per försäkring", bridge,
-          {number: dict(zip(FIELDS, values)) for number, values in EXPECTED.items()})
+    expected_bridge = {number: dict(zip(FIELDS, values)) for number, values in {**EXPECTED, **(extra_opening or {})}.items()}
+    for number in extra_opening or {}:
+        if number in bridge:
+            bridge[number].setdefault("premium", "0.00")
+    check("kapitalbrygga per försäkring", bridge, expected_bridge)
     totals = receipt["totals"]
     close_totals = (totals["opening_sek"], totals["returns_sek"], -Decimal(totals["fees_sek"]),
                     -Decimal(totals["taxes_sek"]), totals["premiums_sek"], totals["closing_sek"])
     check("verifikationens summor", tuple(map(Decimal, close_totals)),
-          tuple(sum(map(Decimal, column)) for column in zip(*EXPECTED.values())))
+          tuple(sum(Decimal(row[key]) for row in expected_bridge.values()) for key in FIELDS))
     check("stängningskontroller", all(c["passed"] for c in receipt["controls"]), True)
     check("nya garantidelar", totals["new_guarantee_parts"], 2)
 

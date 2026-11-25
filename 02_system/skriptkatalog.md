@@ -94,6 +94,11 @@ aktuell granskningssumma och motivering. I samma körkatalog finns novemberproto
 `sparande.md` med kapitalbryggan och `sparande.json` med verifikation och allokeringsspår.
 [Körkommandon och öresfacit](manadssimulator_designstopp.md#samprova-delbetalningen-med-sparandets-novemberstängning)
 
+`python scripts/simulation/premium_calendar.py start partial --pension` fortsätter med
+decembers pensionsrätt, verifierat dödsfall, arvsvinst och bankkvitto den simulerade 4 januari 2027.
+I körkatalogen finns `pension.md`, `pension.json` och de syntetiska motpartsfilerna.
+[Körordning och öresfacit](manadssimulator_designstopp.md#samprova-decemberpension-dödsfall-och-arvsvinst)
+
 ## Körskript för operativa perioder (2026-11-14)
 
 Körningar av en verklig period i Lakebase versioneras i `scripts/simulation/<period>/`. Skripten är

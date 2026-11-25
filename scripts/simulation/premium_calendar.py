@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from services import Actor
+from simulation.pension_calendar import ACTIONS as PENSION_ACTIONS
 from simulation.premium_calendar import SCENARIOS, advance, review, start
 
 RUNS = ROOT / "logs" / "simulation" / "paket-c"
@@ -31,6 +32,12 @@ def os_user():
 
 
 def show_review(state):
+    if state["status"] == "waiting_pension":
+        pending = state["pension_review"]
+        print(json.dumps(pending["view"], ensure_ascii=True, indent=2))
+        print(f"Beslutsunderlag {pending['action']} {state['id']} --revision {state['cursor']} "
+              f"--digest {pending['digest']}")
+        return
     if state["status"] in ("waiting_opening", "waiting_close"):
         view = state["ledger_review"]
         # Äldre Windows-konsoler kan inte skriva alla symboler i B:s kontrolltexter.
@@ -60,6 +67,26 @@ def publish(directory, state):
         write_file(directory / name, json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
     save("manifest.json", state["manifest"])
+    if "pension_report" in state:
+        pension = state["pension_report"]
+        save("pension.json", pension)
+        save("payout-bank.json", state["outgoing_bank"])
+        outcome = pension["outcome"]
+        rows = ["# Decemberpension, dödsfallsavräkning och arvsvinst", "",
+                f"Bankdag {state['day']} · körning `{state['id']}`.", "",
+                "| Brutto | Preliminär skatt | Netto | Kvarvarande betalningsskuld | Skatteskuld |",
+                "|---:|---:|---:|---:|---:|",
+                "| " + " | ".join(money(outcome[k]) for k in
+                                  ("gross", "tax", "net", "payment_liability", "tax_liability")) + " |",
+                "", "| Försäkring | Arvsvinst | Utgående kundkapital |",
+                "|---|---:|---:|"]
+        rows.extend(f"| {policy} | {money(outcome['inheritance'].get(policy, '0'))} | {money(balance)} |"
+                    for policy, balance in outcome["balances"].items())
+        rows.extend(["", f"Ur arvsvinstpoolen fördelades {money(outcome['pool'])} kr.",
+                     f"Återleveransen gav {pension['retry']['new']} nya kvitton.",
+                     "Underkänd avstämning." if pension["failures"] else "Godkänd avstämning.",
+                     *pension["failures"], "", "[Anspråk, bankkvitto, avräkning och kontroller](pension.json)"])
+        write_file(directory / "pension.md", "\n".join(rows) + "\n")
     if "savings_report" in state:
         report = state["savings_report"]
         save("sparande.json", report)
@@ -123,8 +150,10 @@ def main():
     commands = parser.add_subparsers(dest="action", required=True)
     new = commands.add_parser("start", help="Ny körning från fryst startbild, fram till filbeslut")
     new.add_argument("scenario", choices=SCENARIOS)
-    new.add_argument("--savings", action="store_true", help="Samprova delbetalningen med novembers journalstängning")
-    for name in ("status", "resume", "approve", "reject", "open-ledger", "close-month"):
+    mode = new.add_mutually_exclusive_group()
+    mode.add_argument("--savings", action="store_true", help="Samprova delbetalningen med novembers journalstängning")
+    mode.add_argument("--pension", action="store_true", help="Fortsätt med decemberpension, dödsfall och arvsvinst")
+    for name in ("status", "resume", "approve", "reject", "open-ledger", "close-month", *sorted(PENSION_ACTIONS)):
         command = commands.add_parser(name)
         command.add_argument("run_id")
         if name not in ("status", "resume"):
@@ -133,7 +162,7 @@ def main():
             command.add_argument("--note", required=True)
     args = parser.parse_args()
     if args.action == "start":
-        ident = start(RUNS, args.scenario, with_savings=args.savings)
+        ident = start(RUNS, args.scenario, with_savings=args.savings, with_pension=args.pension)
         state = advance(RUNS, ident)
     elif args.action == "status":
         state = review(RUNS, args.run_id, Actor.human(os_user()))
@@ -147,7 +176,7 @@ def main():
     directory = RUNS / state["id"]
     publish(directory, state)
     print(f"{state['id']}  {state['status']}  {state['day']}  {directory}")
-    if state["status"] in ("waiting_review", "waiting_opening", "waiting_close"):
+    if state["status"] in ("waiting_review", "waiting_opening", "waiting_close", "waiting_pension"):
         show_review(state)
     return int(state["status"] == "failed" or any(report["failures"] for report in state["reports"].values()))
 

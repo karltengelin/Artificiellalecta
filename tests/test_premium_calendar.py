@@ -293,3 +293,48 @@ def test_partial_savings_close_from_same_image_and_retry(tmp_path, monkeypatch, 
             assert inventory(session) == before
         outcomes.append((opening["manifest"]["opening"]["sha256"], report["hash"]))
     assert outcomes[0] == outcomes[1]
+
+
+def test_pension_and_death_flow_through_calendar(tmp_path, monkeypatch, capsys):
+    import json
+    import sys
+
+    from scripts.simulation import premium_calendar as cli
+
+    monkeypatch.setattr(cli, "RUNS", tmp_path)
+    monkeypatch.setattr(cli, "os_user", lambda: REVIEWER.id)
+
+    def command(*args):
+        monkeypatch.setattr(sys, "argv", ["premium_calendar.py", *args])
+        assert cli.main() == 0
+        return capsys.readouterr().out
+
+    expected = ["open-ledger", "approve", "close-month", "pension-inputs", "verify-death",
+                "close-month", "prepare-bank", "approve-bank", "import-receipt"]
+    results = []
+    for _ in range(2):
+        ident = command("start", "partial", "--pension").split()[0]
+        for action in expected:
+            state = cal.status(tmp_path, ident)
+            if state["status"] == "waiting_pension":
+                assert state["pension_review"]["action"] == action
+                checksum = state["pension_review"]["digest"]
+            elif state["status"] == "waiting_review":
+                assert action == "approve"
+                checksum = state["review"]["review_digest"]
+            else:
+                checksum = state["ledger_review"]["review_checksum"]
+            if action == "approve-bank":
+                with pytest.raises(ValueError, match="aktuell granskningssumma"):
+                    command(action, ident, "--revision", str(state["cursor"]), "--digest", "0" * 64, "--note", "Prov")
+            command(action, ident, "--revision", str(state["cursor"]), "--digest", checksum, "--note", "Granskat samprov")
+        completed = cal.status(tmp_path, ident)
+        report = json.loads((tmp_path / ident / "pension.json").read_text(encoding="utf-8"))
+        assert completed["status"] == "completed", report["failures"]
+        assert completed["day"] == "2027-01-04" and report["close"]["month"] == "2026-12-01"
+        assert completed["savings_report"]["close"]["totals"]["premiums_sek"] == "4000.00"
+        assert report["retry"]["already_received"] == 1 and report["retry"]["settlement"] is None
+        assert (tmp_path / ident / "pension.md").is_file()
+        assert report["outcome"]["gross"] == "2040.07" and report["outcome"]["pool"] == "22817.23"
+        results.append((completed["manifest"]["opening"]["sha256"], report["hash"]))
+    assert results[0] == results[1]

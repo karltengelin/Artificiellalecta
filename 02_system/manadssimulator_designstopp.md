@@ -53,6 +53,30 @@ Provet startar två körningar med samma bildsumma och jämför det ekonomiska u
 
 **Verifierat 2026-11-24.** Båda körningarna gav tabellens öresutfall. Ombokningen gav samma verifikation och noll nya poster. Ändringsurvalet gav 108 godkända och ett bortvalt Postgres-prov. Simuleringsgruppen med beroenden, kompletterad med Postgres-proven för S-04-öppning och novemberstängning, gav 111 godkända med en lokal PostgreSQL 16-instans och databasen `svc_test`.
 
+### Samprova decemberpension, dödsfall och arvsvinst
+
+```powershell
+python scripts/simulation/premium_calendar.py start partial --pension
+```
+
+Körvarianten använder en egen fryst SQLite-bild. Oktoberlönerna, fakturan och de två bankallokeringarna är desamma som i delbetalningsprovet. Lägg till den syntetiska försäkringen AL-000003 med 600 000,00 kr i oktober-IB och ej startad livsvarig pension. Personen fyller 66 i december och har fribrev, så novemberfakturan får fortfarande två rader. AVK för november är B-050:s +0,20 %. Den lokala decembergrunden AVK-SIM-2026-03 har 0 % avkastning.
+
+Använd det visade kör-ID:t, revisionen och granskningssumman med `--note` vid varje beslut. `status` återger den aktuella granskningen och `resume` går fram till nästa beslut.
+
+| Simulerad affärsdag | Handläggarens steg |
+|---|---|
+| 1 november, 25 november och 1 december | `open-ledger`, `approve`, `close-month` för november. Mottaget och bokat 4 000,00 kr, restfordran 2 733,13 kr. |
+| 15 december | `pension-inputs` registrerar det syntetiska insättningsbeslutet, ett verifierat provkonto, 2027 års skattestatus (sidoinkomst) och den simulerade folkbokföringsaviseringen. Med `verify-death` prövar handläggaren aviseringen för AL-000002 i ett eget beslut. |
+| 4 januari 2027 | `close-month` för december bokar AL-000003:s första månadsrätt, avräknar AL-000002 och fördelar arvsvinsten enligt SIM-R. `prepare-bank` tar fram bankfilen. `approve-bank` godkänner filens kontrollsumma. `import-receipt` bokar bankens utförda kvitto och provar återleverans av samma fil. |
+
+**Öresfacit.** Vid standardstart är pensionen 2 040,07 kr. Avdraget för sidoinkomst är 30 % avrundat nedåt till hela kronor, alltså 612,00 kr. Nettot är 1 428,07 kr. Efter kvittot är betalningsskulden 0,00 kr och skatteskulden 612,00 kr. Återleveransen återanvänder kvittot och skapar ingen ny verifikation. Utbetalningsåret är 2027 och rätten gäller december 2026.
+
+AL-000002 har 22 827,76 kr i december-IB. Kapitalavgiften är 3,80 kr och skattebelastningen 6,73 kr. Resterande 22 817,23 kr tillförs poolen. Efter fördelning enligt SIM-R:s vikter `C_öppning × q / (1 − q)` får AL-000001 44,49 kr och AL-000003 22 772,74 kr. Poolen och den avlidnes kundkapital är 0,00 kr. Totalt utgående kundkapital är 632 635,95 kr. Provet använder utfört bankkvitto och ett verifierat besked om en sparares dödsfall.
+
+I körkatalogen finns `sparande.md` för november och `pension.md` för december, med anspråk, bankkvitto, beskedsversioner, avräkning och verifikationer i `pension.json`. `death-notice.json` och `payout-receipt.json` är de simulerade motpartsfilerna. `payout-bank.json` är den godkända filen till provbanken. Kördatabasen bevarar besluten och tjänstelagrets logg.
+
+**Verifierat 2026-11-25.** Två körningar från samma startbild gav samma ekonomiska utfall. Fel kontrollsumma stoppade bankgodkännandet och ett återlevererat kvitto skapade noll nya verifikationer. Det ändringsstyrda lokala urvalet gav 109 godkända och 1 bortvalt. Simulering, pension och betalning med beroenden gav 476 godkända och 33 bortvalda Postgres-prov.
+
 ## 1. Vad månaden ska visa
 
 En operatör ska kunna följa två oktoberlöner från arbetsgivarens fil till en novemberfaktura, bankens betalning och ett avstämt belopp per fakturarad. Operatören ska också kunna se vad som återstår att betala om banken bara har fått en delbetalning. Samma händelser ska ge samma ekonomiska utfall efter en omkörning.

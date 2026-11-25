@@ -19,16 +19,16 @@ from services.db import session_factory_for
 from services.operations.common import business_day
 from services.operations.payments import bank_file_checksum
 from simulation import counterparties as cp
+from simulation import pension_calendar as pension
 from simulation import savings_verification as savings
 from simulation.premium_opening import (
     DB,
     EMPLOYER,
-    OPENING,
     PERIOD,
-    SAVINGS_OPENING,
     copy_opening,
     digest,
     local_engine,
+    opening_name,
     publish_directory,
 )
 from simulation.premium_verification import (
@@ -51,7 +51,7 @@ SYSTEM = Actor.system("system:premium_simulation")
 REPO = Path(__file__).resolve().parents[2]
 
 
-def schedule(scenario, with_savings=False):
+def schedule(scenario, with_savings=False, with_pension=False):
     steps = [(ISSUE, "salary"), (ISSUE, "review"), (ISSUE, "invoice")]
     if with_savings:
         beginning = date(2026, 11, 1)
@@ -68,6 +68,8 @@ def schedule(scenario, with_savings=False):
         if with_savings and day == CUTOFF:
             closing_day = next_bank_day(day + timedelta(days=1))
             steps.extend([(closing_day, "prepare_close"), (closing_day, "close-month")])
+            if with_pension:
+                steps.extend(pension.STEPS)
             break
         day += timedelta(days=1)
     return [(d.isoformat(), name) for d, name in steps]
@@ -91,7 +93,8 @@ def source_hash():
     return canonical_hash({p.relative_to(REPO).as_posix(): digest(p) for p in paths})
 
 
-def start(root, scenario, *, with_savings=False):
+def start(root, scenario, *, with_savings=False, with_pension=False):
+    with_savings = with_savings or with_pension
     if scenario not in SCENARIOS:
         raise ValueError("Okänt betalningsscenario")
     if with_savings and scenario != "partial":
@@ -102,8 +105,8 @@ def start(root, scenario, *, with_savings=False):
     with TemporaryDirectory(dir=root) as tmp:
         stage = Path(tmp) / ident
         stage.mkdir()
-        opening = copy_opening(root, stage / DB, savings=with_savings)
-        steps = schedule(scenario, with_savings)
+        opening = copy_opening(root, stage / DB, savings=with_savings, pension=with_pension)
+        steps = schedule(scenario, with_savings, with_pension)
         manifest = {"opening": opening, "scenario": scenario, "version": VERSION, "seed": 1, "steps": steps,
                     "payment": {"kind": SCENARIOS[scenario], "share": "0.594077", "days_after_invoice": 5},
                     "simulator": cp.VERSION, "facit": FACIT_VERSION, "facit_hash": canonical_hash(FACIT),
@@ -112,6 +115,8 @@ def start(root, scenario, *, with_savings=False):
                     "model": None, "instructions": None}
         if with_savings:
             manifest["savings_facit"] = canonical_hash(savings.EXPECTED)
+        if with_pension:
+            manifest["pension"] = canonical_hash({"november": pension.NOVEMBER_EXTRA, "december": pension.EXPECTED})
         state = {"id": ident, "manifest": manifest, "manifest_hash": canonical_hash(manifest),
                  "cursor": 0, "status": "ready", "day": "2026-11-01", "journal": [], "files": {},
                  "reports": {}, "active_seconds": 0.0, "wait_seconds": 0.0, "started_at": now()}
@@ -173,7 +178,7 @@ def review(root, ident, actor):
                     state["review"] = view.model_dump(mode="json")
                 else:
                     ctx = OperationContext(actor=actor, run_id=f"{ident}/{state['cursor']}")
-                    operation, data = _ledger_preview(state["status"])
+                    operation, data = _ledger_preview(state["status"], day)
                     state["ledger_review"] = service.execute(operation, ctx, data).output.payload
                     state["ledger_reviewer"] = actor.id
         return state
@@ -242,10 +247,11 @@ def _report(conn, state, call, day, rejected=False):
             "unverified": ["agentkvalitet", "kapital", "garanti", "FTA", "portfölj", "huvudbok"]}
 
 
-def _ledger_preview(status):
+def _ledger_preview(status, day):
     if status == "waiting_opening":
         return "preview_ledger_opening", {}
-    return "prepare_month_close", {"month": "2026-11-01"}
+    month_end = day.replace(day=1) - timedelta(days=1)
+    return "prepare_month_close", {"month": str(month_end.replace(day=1))}
 
 
 def _execute(conn, state, day, step, decision):
@@ -279,17 +285,40 @@ def _execute(conn, state, day, step, decision):
             receipt = call("open_capital_ledger", data, actor, note)["payload"]
             state["status"] = "ready"
         else:
-            receipt = call("close_policy_month", {**data, "month": "2026-11-01"}, actor, note)["payload"]
-            balances = call("get_receivables", {})
-            with Session(conn) as session:
-                report = savings.report(session, receipt, balances)
-            state["savings_report"] = {**report, "run": state["id"], "manifest_hash": state["manifest_hash"],
-                                       "reviewer": state["ledger_reviewer"],
-                                       "actor": actor.id, "note": note, "day": str(day)}
-            state["status"] = "failed" if report["failures"] else "completed"
+            month = _ledger_preview("waiting_close", day)[1]["month"]
+            receipt = call("close_policy_month", {**data, "month": month}, actor, note)["payload"]
+            if month == str(pension.DECEMBER):
+                state["december_close"] = receipt
+                state["status"] = "ready"
+            else:
+                balances = call("get_receivables", {})
+                with Session(conn) as session:
+                    report = savings.report(session, receipt, balances,
+                                            extra_opening=pension.NOVEMBER_EXTRA if manifest.get("pension") else None)
+                state["savings_report"] = {**report, "run": state["id"], "manifest_hash": state["manifest_hash"],
+                                           "reviewer": state["ledger_reviewer"],
+                                           "actor": actor.id, "note": note, "day": str(day)}
+                state["status"] = "ready" if manifest.get("pension") else "completed"
+                if report["failures"]:
+                    state["status"] = "failed"
         entry.update(reviewer=state["ledger_reviewer"], actor=actor.id, note=note,
                      reviewed_checksum=checksum, batch_id=receipt["batch_id"])
         state["wait_seconds"] += (datetime.now(UTC) - datetime.fromisoformat(state.pop("waiting_since"))).total_seconds()
+    elif step in ("prepare-pension-inputs", "review-bank-preparation"):
+        pension.next_decision(state, step)
+        state["waiting_since"] = now()
+    elif step in pension.ACTIONS:
+        actor, verdict, checksum, note = decision
+        pending = state["pension_review"]
+        if (actor.type != "human" or not actor.id.strip() or verdict != step or not note.strip()
+                or pending["action"] != step or checksum != pending["digest"]):
+            raise ValueError("Pensionssteget kräver ett handläggarbeslut mot aktuell granskningssumma")
+        with Session(conn) as session:
+            pension.act(session, state, call, step, day, actor, note)
+        entry.update(actor=actor.id, note=note, reviewed_checksum=checksum)
+        state["wait_seconds"] += (datetime.now(UTC) - datetime.fromisoformat(state.pop("waiting_since"))).total_seconds()
+        if state["status"] == "waiting_pension":
+            state["waiting_since"] = now()
     elif step == "salary":
         with Session(conn) as session:
             file = cp.salary_file(session, EMPLOYER, PERIOD, received_date=day, seed=seed)
@@ -361,7 +390,7 @@ def advance(root, ident, *, decision=None, revision=None, one=False):
         with run_connection(root, ident, write=True) as (conn, state):
             manifest = state["manifest"]
             if not checked:
-                opening = SAVINGS_OPENING if "savings_facit" in manifest else OPENING
+                opening = opening_name(savings="savings_facit" in manifest, pension="pension" in manifest)
                 if (manifest["version"] != VERSION or manifest["code"] != code_revision()
                         or manifest["source_hash"] != source_hash()
                         or manifest["facit_hash"] != canonical_hash(FACIT)
@@ -370,7 +399,7 @@ def advance(root, ident, *, decision=None, revision=None, one=False):
                     raise ValueError("Startbild, kod eller facit har ändrats sedan körstart")
                 _check_checkpoint(conn, state)
                 checked = True
-            waiting = state["status"] in ("waiting_review", "waiting_opening", "waiting_close")
+            waiting = state["status"] in ("waiting_review", "waiting_opening", "waiting_close", "waiting_pension")
             if decision is not None and (not waiting or state["cursor"] != revision):
                 raise ValueError("Beslutet gäller en äldre körrevision")
             if state["status"] in ("completed", "failed", "rejected") or (

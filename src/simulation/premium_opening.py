@@ -42,6 +42,8 @@ EMPLOYER = "5560000001"
 PEOPLE = [("198505151234", "AL-000001", 45000), ("197803031234", "AL-000002", 60000)]
 OPENING = "premiebestand-20261031-v1"
 SAVINGS_OPENING = "sparbestand-20261031-v1"
+PENSION_OPENING = "pensionsbestand-20261031-v1"
+PENSIONER = ("196012151234", "AL-000003", 0)
 DB = "premium.sqlite"
 
 
@@ -66,12 +68,13 @@ def publish_directory(source, destination):
     return source.rename(destination)
 
 
-def _seed(session, savings):
+def _seed(session, savings, pension):
     start = date(2020, 1, 1)
     employer = Employer(org_number=EMPLOYER, name="Premieprov AB", affiliation_date=start)
     session.add_all([employer, BaseAmount(year=2026, income_base_amount_sek=83400), *default_rows()])
     session.flush()
-    for pnr, number, salary in PEOPLE:
+    for pnr, number, salary in [*PEOPLE, PENSIONER] if pension else PEOPLE:
+        state = "paid_up" if pnr == PENSIONER[0] else "premium_paying"
         person = InsuredPerson(personal_id_number=pnr, first_name="Simulerad", last_name=number,
                                employer_id=employer.id, employment_start_date=start, employment_rate=100,
                                monthly_salary_sek=salary, itp1_start_date=start, status="active")
@@ -81,13 +84,13 @@ def _seed(session, savings):
         session.add(policy)
         session.flush()
         benefit = PolicyBenefit(policy_id=policy.id, benefit_type="retirement_dc", start_date=start)
-        session.add_all([benefit, PolicyState(policy_id=policy.id, state="premium_paying", valid_from=start)])
+        session.add_all([benefit, PolicyState(policy_id=policy.id, state=state, valid_from=start)])
         session.flush()
         create_initial_part(session, benefit)
         if savings:
             session.add(PremiumTransaction(
                 benefit_id=benefit.id, period_month=date(2026, 9, 1), transaction_type="premium",
-                amount_sek={"AL-000001": 10000, "AL-000002": 20000}[number],
+                amount_sek={"AL-000001": 10000, "AL-000002": 20000, "AL-000003": 600000}[number],
                 status="paid", paid_date=date(2026, 10, 30)))
     if savings:
         # Antagna syntetiska grunder ingår i den frysta provbilden (B-050 S5).
@@ -100,17 +103,27 @@ def _seed(session, savings):
             code="AVK-SIM-2026-02", title="November i isolerat sparprov", family=previous.family,
             purpose=previous.purpose, assumptions=content, checksum=valuation_bases.checksum(content),
             supersedes_code=previous.code, valid_from=date(2026, 11, 1), status="adopted",
+            valid_to=date(2026, 11, 30) if pension else None,
             source_refs="B-050 S5", decision_ref="Paket C, syntetisk startbild",
             proposal_reason="Isolerat samprov", created_by="system:seed", adopted_by="system:seed"))
+        if pension:
+            december = {**content, "description": "Lokalt pensionsprov, nollavkastning i december.",
+                        "months": [*content["months"], {"month": "2026-12-01", "rate": "0"}]}
+            session.add(ValuationBasis(
+                code="AVK-SIM-2026-03", title="December i isolerat pensionsprov", family=previous.family,
+                purpose=previous.purpose, assumptions=december, checksum=valuation_bases.checksum(december),
+                supersedes_code="AVK-SIM-2026-02", valid_from=date(2026, 12, 1), status="adopted",
+                source_refs="Paket C, isolerat pensionsprov", decision_ref="Paket C, syntetisk startbild",
+                proposal_reason="Isolerat samprov", created_by="system:seed", adopted_by="system:seed"))
 
 
-def _inspect(session, savings):
+def _inspect(session, opening, savings, pension):
     empty = (SalaryReport, SalaryFile, PremiumTransaction, Invoice, InvoiceLineRecord, BankEvent, PaymentAllocation, Case)
     counts = {model.__tablename__: session.scalar(select(func.count()).select_from(model)) for model in empty}
     sizes = {m.__tablename__: session.scalar(select(func.count()).select_from(m))
              for m in (Employer, InsuredPerson, Policy, PolicyBenefit, PayoutPart, PayoutPartState, PolicyState)}
-    if sizes != {"employers": 1, "insured_persons": 2, "policies": 2, "policy_benefits": 2,
-                 "payout_parts": 2, "payout_part_states": 2, "policy_states": 2}:
+    population_size = 3 if pension else 2
+    if sizes != {**dict.fromkeys(sizes, population_size), "employers": 1}:
         raise ValueError("Fel antal arbetsgivare, försäkrade eller mottagande delar i startbeståndet")
     population = session.execute(
         select(InsuredPerson.personal_id_number, Policy.policy_number, InsuredPerson.monthly_salary_sek)
@@ -126,17 +139,33 @@ def _inspect(session, savings):
     ).all()
     expected_counts = dict.fromkeys(counts, 0)
     if savings:
-        expected_counts["premium_transactions"] = 2
+        expected_counts["premium_transactions"] = population_size
     if counts != expected_counts or population != PEOPLE or session.get(BaseAmount, 2026).income_base_amount_sek != 83400:
         raise ValueError("Startbeståndet stämmer inte med premieprovet")
-    return {"opening": SAVINGS_OPENING if savings else OPENING, "period": PERIOD.isoformat(), "counts": {**sizes, **counts},
+    if pension:
+        paid_up = session.execute(
+            select(InsuredPerson.personal_id_number, Policy.policy_number, InsuredPerson.monthly_salary_sek)
+            .join(Policy).join(PolicyState).join(PolicyBenefit, PolicyBenefit.policy_id == Policy.id)
+            .join(PayoutPart).join(PayoutPartState)
+            .where(PolicyState.state == "paid_up", PayoutPart.part_number == 1, PayoutPartState.state == "not_started")
+        ).one_or_none()
+        if paid_up != PENSIONER:
+            raise ValueError("Fribrevet stämmer inte med pensionsprovet")
+    return {"opening": opening, "period": PERIOD.isoformat(), "counts": {**sizes, **counts},
             "policies": [row[1] for row in population], "ibb": 83400,
             "parameters": premium_parameters(session, PERIOD).versions}
 
 
-def copy_opening(root: Path, destination: Path, *, savings=False):
+def opening_name(*, savings, pension):
+    if pension:
+        return PENSION_OPENING
+    return SAVINGS_OPENING if savings else OPENING
+
+
+def copy_opening(root: Path, destination: Path, *, savings=False, pension=False):
     """Publicera en färdig startbild atomärt även vid samtidiga starter."""
-    opening = root / (SAVINGS_OPENING if savings else OPENING)
+    name = opening_name(savings=savings, pension=pension)
+    opening = root / name
     if not opening.exists():
         with TemporaryDirectory(dir=root) as tmp:
             build = Path(tmp) / "opening"
@@ -145,9 +174,9 @@ def copy_opening(root: Path, destination: Path, *, savings=False):
             try:
                 Base.metadata.create_all(engine)
                 with Session(engine) as session, session.begin():
-                    _seed(session, savings)
+                    _seed(session, savings, pension)
                     session.flush()
-                    manifest = _inspect(session, savings)
+                    manifest = _inspect(session, name, savings, pension)
             finally:
                 engine.dispose()
             manifest["sha256"] = digest(build / DB)
@@ -164,7 +193,7 @@ def copy_opening(root: Path, destination: Path, *, savings=False):
     engine = local_engine(destination)
     try:
         with Session(engine) as session:
-            if manifest != {**_inspect(session, savings), "sha256": manifest["sha256"]}:
+            if manifest != {**_inspect(session, name, savings, pension), "sha256": manifest["sha256"]}:
                 raise ValueError("Startmanifestet stämmer inte")
     finally:
         engine.dispose()
