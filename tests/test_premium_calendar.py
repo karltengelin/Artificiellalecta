@@ -195,3 +195,101 @@ def test_cli_publishes_reports_and_can_rebuild_them(tmp_path, monkeypatch, capsy
     report.unlink()
     monkeypatch.setattr(sys, "argv", ["premium_calendar.py", "status", ident])
     assert cli.main() == 0 and report.read_bytes() == november
+
+
+def test_publishes_opening_after_brief_windows_file_lock(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    from simulation.premium_opening import publish_directory
+
+    source, target = tmp_path / "staged", tmp_path / "published"
+    source.mkdir()
+    rename = Path.rename
+    attempts = []
+
+    def briefly_locked(path, destination):
+        attempts.append(path)
+        if len(attempts) == 1:
+            locked = PermissionError("temporärt lås")
+            locked.winerror = 5
+            raise locked
+        return rename(path, destination)
+
+    monkeypatch.setattr(Path, "rename", briefly_locked)
+    publish_directory(source, target)
+    assert attempts == [source, source] and target.is_dir() and not source.exists()
+
+
+def test_partial_savings_close_from_same_image_and_retry(tmp_path, monkeypatch, capsys):
+    import json
+    import sys
+
+    from models import (
+        LedgerBatch,
+        LedgerCapitalEntry,
+        LedgerControl,
+        LedgerGuaranteePart,
+    )
+    from scripts.simulation import premium_calendar as cli
+
+    monkeypatch.setattr(cli, "RUNS", tmp_path)
+    monkeypatch.setattr(cli, "os_user", lambda: REVIEWER.id)
+
+    def command(*args):
+        monkeypatch.setattr(sys, "argv", ["premium_calendar.py", *args])
+        assert cli.main() == 0
+        return capsys.readouterr().out
+
+    def book(action, state, checksum):
+        return command(action, state["id"], "--revision", str(state["cursor"]),
+                       "--digest", checksum, "--note", "Granskat i isolerat samprov")
+
+    def inventory(session):
+        return [set(session.scalars(select(model.id))) for model in
+                (LedgerBatch, LedgerCapitalEntry, LedgerGuaranteePart, LedgerControl)]
+
+    outcomes = []
+    for _ in range(2):
+        ident = command("start", "partial", "--savings").split()[0]
+        opening = cal.status(tmp_path, ident)
+        assert opening["ledger_review"]["totals"]["capital_sek"] == "30000.00"
+        book("open-ledger", opening, opening["ledger_review"]["review_checksum"])
+        salary = cal.status(tmp_path, ident)
+        book("approve", salary, salary["review"]["review_digest"])
+        waiting = cal.advance(tmp_path, ident)
+        assert waiting["status"] == "waiting_close" and waiting["day"] == "2026-12-01"
+        assert waiting["journal"][-2]["step"] == "report"
+        assert waiting["reports"]["2026-11-30"]["failures"] == []
+        assert waiting["ledger_review"]["premiums"]["allocations"] == 2
+        checksum = waiting["ledger_review"]["review_checksum"]
+        assert checksum in command("status", ident)
+        with pytest.raises(ValueError, match="aktuella underlag"):
+            book("close-month", waiting, "0" * 64)
+        with pytest.raises(ValueError, match="handläggarbeslut"):
+            cal.advance(tmp_path, ident, revision=waiting["cursor"],
+                        decision=(cal.SYSTEM, "close-month", checksum, "prov"))
+        with cal.run_connection(tmp_path, ident) as (conn, _), Session(conn) as session:
+            assert session.scalar(select(func.count()).select_from(LedgerBatch)) == 1
+        book("close-month", waiting, checksum)
+        state = cal.status(tmp_path, ident)
+        report = json.loads((tmp_path / ident / "sparande.json").read_text(encoding="utf-8"))
+        assert (tmp_path / ident / "sparande.md").is_file()
+        assert state["status"] == "completed" and not report["failures"]
+        assert report["reviewer"] == report["actor"] == REVIEWER.id
+        assert report["close"]["totals"]["closing_sek"] == "34046.15"
+        assert report["close"]["review_checksum"] == checksum and report["close"]["created"]
+        assert [row["net_premium"] for row in report["traces"]] == ["1203.01", "2796.99"]
+        assert {t["allocation"] for t in report["traces"]} == {
+            r["allocation"] for t in waiting["reports"]["2026-11-30"]["observed"]["traces"] for r in t["receipts"]}
+        with cal.run_connection(tmp_path, ident, write=True) as (conn, _), Session(conn) as session:
+            before = inventory(session)
+            assert [len(ids) for ids in before[:3]] == [2, 10, 4]
+            day = date.fromisoformat(state["day"])
+            service = ServiceLayer(session_factory=session_factory_for(conn), rules=ProductRuleCatalog(today=day))
+            with business_day(day):
+                retry = service.execute("close_policy_month", OperationContext(actor=REVIEWER, reason="Ombokningsprov"),
+                                        {"month": "2026-11-01", "reviewed_checksum": checksum}).output.payload
+            assert not retry["created"] and retry["batch_id"] == report["close"]["batch_id"]
+            assert inventory(session) == before
+        outcomes.append((opening["manifest"]["opening"]["sha256"], report["hash"]))
+    assert outcomes[0] == outcomes[1]

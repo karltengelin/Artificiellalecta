@@ -18,7 +18,40 @@ Under `logs/simulation/paket-c/<kör-id>/` finns den lokala databasen, körmanif
 
 **Genomförande av S-05.** Varje kalendersteg tar ett skrivlås i körningens SQLite-kopia. Ordinarie tjänsteanrop, tjänstelagrets händelselogg och kalenderkvittot avslutas i samma yttre transaktion. En process som dör mitt i steget lämnar föregående revision intakt. Vid fortsatt körning kontrolleras startbilden, versionen och domänspåren för redan genomförda beslut och banksteg. Rapporterna identifierar mottagaren med försäkringsnummer eftersom A:s tekniska fakturaradnummer kan variera mellan försök.
 
-**Verifierat lokalt 2026-11-22.** I [kalenderproven](../tests/test_premium_calendar.py) gav två försök per betalningsfall samma affärsutfall för november och december. Vid delbetalning blev beloppen 1 203,01 och 2 796,99 kr, med 2 733,13 kr kvar. Förfalloärendet öppnades den 29 december. Återleveransen gav en unik bankhändelse. Separata prov täcker konkurrerande beslut, nekad agent, avslag, ändrat facit med ett öre, avbrott före kvittens, motstridigt bankunderlag vid återstart och återgivning av rapporter från körningens databas. Detta avser den lokala premiemånaden på Paket A. Samprov med färdigt Paket B återstår.
+**Verifierat lokalt 2026-11-22.** I [kalenderproven](../tests/test_premium_calendar.py) gav två försök per betalningsfall samma affärsutfall för november och december. Vid delbetalning blev beloppen 1 203,01 och 2 796,99 kr, med 2 733,13 kr kvar. Förfalloärendet öppnades den 29 december. Återleveransen gav en unik bankhändelse. Separata prov täcker konkurrerande beslut, nekad agent, avslag, ändrat facit med ett öre, avbrott före kvittens, motstridigt bankunderlag vid återstart och återgivning av rapporter från körningens databas. Detta avser den lokala premiemånaden på Paket A. Delbetalningens fortsättning till B:s stängning för sparandet beskrivs nedan. Samprov för en full pensionsmånad återstår.
+
+### Samprova delbetalningen med sparandets novemberstängning
+
+Använd projektets Python från reporoten. Varje beslut visar vilket kommando, kör-ID, revision och granskningssumma som gäller för nästa bokning. Läs kontrollerna i terminalen. `status` hämtar den aktuella granskningen igen och `resume` återgår till samma beslut efter ett avbrott.
+
+```powershell
+python scripts/simulation/premium_calendar.py start partial --savings
+python scripts/simulation/premium_calendar.py open-ledger <kör-id> --revision <revision> --digest <öppningssumma> --note "Oktober-IB granskad"
+python scripts/simulation/premium_calendar.py approve <kör-id> --revision <revision> --digest <filsumma> --note "Oktoberlöner granskade"
+python scripts/simulation/premium_calendar.py close-month <kör-id> --revision <revision> --digest <stängningssumma> --note "Novemberpremier och kapitalbrygga granskade"
+```
+
+Samprovet har en egen fryst SQLite-bild. De två försäkringarna i §3 har där varsin historisk septemberpremie, mottagen den 30 oktober, om 10 000,00 respektive 20 000,00 kr. Bilden innehåller produktparametrarna, de antagna SIM-grunderna och B-050:s syntetiska novemberavkastning på +0,20 % (AVK-SIM-2026-02). Handläggaren granskar B:s S-04-öppning per 31 oktober och bokar den i körkopian. Efter lönebeslutet läses sista bankfilen den 30 november. Kalendern fryser A:s novemberprotokoll och stannar för granskning på nästa bankdag, den **1 december**. B räknar då november med värdedag 30 november. `close_policy_month` kontrollerar underlaget på nytt vid bokning.
+
+| Försäkring | IB | Avkastning | Kapitalavgift | Skattebelastning på kapital | Nettopremie | UB |
+|---|---:|---:|---:|---:|---:|---:|
+| AL-000001 | 10 000,00 | 20,00 | −1,67 | −2,95 | 1 203,01 | 11 218,39 |
+| AL-000002 | 20 000,00 | 40,00 | −3,33 | −5,90 | 2 796,99 | 22 827,76 |
+| **Totalt, kr** | **30 000,00** | **60,00** | **−5,00** | **−8,85** | **4 000,00** | **34 046,15** |
+
+Årsavgiften 0,20 % och den årliga skattebelastningen 0,354 % tas på IB med en tolftedel, avrundat per del. Premierna går in vid månadsslut. Fakturans 6 733,13 kr fördelar sig på 4 000,00 kr mottaget och 2 733,13 kr öppen premiefordran. B:s garantigrund och kapitaltillskott blir exakt 1 203,01 respektive 2 796,99 kr. Pensionsutbetalningens preliminära skatt, bankuppdrag, dödsfall och arvsvinst hör till senare samprov.
+
+I `logs/simulation/paket-c/<kör-id>/` finns A:s frysta `2026-11-30.md` med JSON och B:s bokade `sparande.md`. `sparande.json` innehåller den granskade stängningens verifikation och kontroller samt varje källkedja från bankhändelse och fakturarad via allokering och uttagsdel till kapitalpost och garantidel. Allokerings-ID:t knyter ihop rapporterna. Kördatabasen bevarar tjänstehändelser och kalenderkvitton. [Öresfacit och verifierare](../src/simulation/savings_verification.py) · [Prov av två körningar, inaktuell summa och ombokning](../tests/test_premium_calendar.py)
+
+För att upprepa samprovet tillsammans med simuleringsgruppens övriga prov:
+
+```powershell
+python scripts/testing/run_tests.py --suite simulation --dependents --run
+```
+
+Provet startar två körningar med samma bildsumma och jämför det ekonomiska utfallet. Efter varje stängning anropas B:s bokningsoperation igen med samma granskade summa. Den ska återge samma verifikation och samma uppsättning kapitalposter, garantidelar och kontrollposter.
+
+**Verifierat 2026-11-24.** Båda körningarna gav tabellens öresutfall. Ombokningen gav samma verifikation och noll nya poster. Ändringsurvalet gav 108 godkända och ett bortvalt Postgres-prov. Simuleringsgruppen med beroenden, kompletterad med Postgres-proven för S-04-öppning och novemberstängning, gav 111 godkända med en lokal PostgreSQL 16-instans och databasen `svc_test`.
 
 ## 1. Vad månaden ska visa
 
@@ -106,6 +139,8 @@ Följande åtta prov konkretiserar processöversiktens §6. Ett korrekt avslag e
 | Fullt bolag och övriga producenter | S-04 för hela bolaget kräver även fribrev, pensionsfall, ingående skulder/fordringar, historiska garantier, kassa, portfölj och eget kapital. B levererar operativa pensions- och kapitalposter. Portfölj/likviditet förutsätter projekt 5, bokföring, bokslut och aktuariell förklaring projekt 6. Kund- och rapportmottagare behöver egna kontrakt, beslut och kvitton. Dessa led redovisas med egen acceptans när ansvariga producenter finns. [Paket B:s designstopp](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) |
 
 Inför implementation jämförs på nytt ändringar i premiemottagare, kalender, tjänsteregister och testkatalog med Claudes aktuella branch. En ändring som kräver gemensamt schema eller nytt publikt kontrakt tas tillbaka till Karl före arbete där. Slutprovet för första månaden körs på den sammanslagna versionen med projektets testverktyg. [Teststrategi](teststrategi.md)
+
+**Avstämning 2026-11-24.** B steg 5 och Claudes steg 6-branch hade samma bas `2ed556d`. Det lokala samprovet ovan använder B:s befintliga öppning, premieintag och stängning för två ej startade delar. Steg 6 tar vid ett pensionsanspråk för att hantera skatt och bankuppdrag. Sparprovet avslutas vid bokad novemberverifikation och använder A:s identitet för inkommande bankhändelse.
 
 ## 7. Designval som låg till grund för byggstarten
 
