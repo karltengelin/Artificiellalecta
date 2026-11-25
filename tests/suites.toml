@@ -396,3 +396,12 @@ postgres = [
   "tests/test_migration_payout_orders.py",
   "tests/test_migration_month_close.py::test_novemberstangningen_mot_postgres",
 ]
+
+# Paket B steg 8 (Z1–Z14): handläggarsidan Pensioner och utbetalningar, läsningarna och den simulerade affärsdagen
+[[rules]]
+paths = ["src/services/pension_desk.py", "src/services/operations/pension_desk.py", "src/simulation/business_day.py", "scripts/simulation/paket_b_steg8/**"]
+suites = ["pensions", "web"]
+
+[[rules]]
+paths = ["src/services/pension_desk.py", "src/services/operations/pension_desk.py"]
+postgres = ["tests/test_pension_desk.py::test_lasningarna_mot_postgres"]

@@ -934,6 +934,19 @@ Beslutat i **B-047** punkt 7 och [P1-PENSION-001](../projekt/01_ärendehantering
 - *Nekas:* agenter i alla fem operationerna och systemaktören i de fyra skrivande.
 - **Lakebase:** migrationen körs efter steg 6:s, med backup, torrkörning och Karls separata OK; `scripts/simulation/paket_b_steg7/survey.py` räknar först personer med status `deceased` (Y12, [databasschema §12](databasschema.md#12-migrationer-och-versionering)).
 
+### 9.21 Läsningarna för handläggarsidan Pensioner och utbetalningar (paket B steg 8, B-056)
+
+Beslutat i [P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §10.1 med Karls val Z1–Z14 2026-11-25 (**B-056**). Sidan beskrivs i [handläggar-UI §4](handläggar-ui.md#4-sidor).
+- **Kod:** `src/services/pension_desk.py` (läget per steg, översikten, listan och personvyn) och `src/services/operations/pension_desk.py` (operationerna).
+- **Tabeller:** inga nya. Läsningarna kontrollerar vilka av steg 1–7:s tabeller som finns och visar ett steg som infört, delvis infört eller inte infört.
+- **Befogenheter:** tre nya läsningar, alla `HUMAN_ONLY`, och inga nya agentbefogenheter (Z14). Agenter nekas också inne i operationerna.
+
+| Operation | Typ | PII | Register | Vad den gör |
+|---|---|---|---|---|
+| `get_pension_status` | `read` | Nej | `HUMAN_ONLY` | Stegen 1–7 i vald databas med saknade tabeller, senast stängda och nästa öppna månad, delarna per läge, antal som fyller 66 inom tolv månader, öppna ärenden per paket B-typ och ärenden utan person, och saldona för betalningsskuld, skatteskuld, bolagskonto och arvsvinstpool. Ett steg som saknas ger `null` i stället för ett fel |
+| `list_payout_parts` | `read` | Ja | `HUMAN_ONLY` | Uttagsdelarna med urval på läge, 66-månad, ärendetyp, försäkringsnummer eller namn, och sidindelning. Raden har försäkring, ägarens namn, 66-månad, läge, plan och öppna ärenden – aldrig personnummer |
+| `get_payout_person` | `read` | Ja | `HUMAN_ONLY` | Personen bakom ett försäkringsnummer eller personnummer: delarna, skattestatusarna och kontona med maskerat kontonummer, utan verifieringsreferensen eftersom den kan bära kontonumret. Okänd försäkring eller person ger `not_found` |
+
 **Ärendeuppdrag 2026-10-31:** `amend_salary_case` är en ny `HUMAN_ONLY`-operation
 för komplettering av ärendets löneunderlag med hashkontroll och motivering.
 Den blockerar stängda ärenden, aktiva körningar och väntande förslag och skapar

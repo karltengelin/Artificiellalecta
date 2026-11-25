@@ -1,6 +1,6 @@
 # Handläggar-UI:t
 
-> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5); *Premier och betalningar* (paket A steg 7, B-046, lokalt). **Verifierat skarpt i Lakebase 2026-10-12** (S6, se ATT_GORA): verifieringsposten AL-000499.
+> **Status:** 🟡 Under uppbyggnad i Fas 4 (delprojekt 1). **Byggt:** sök, översikt, löneunderlag och premiehistorik (S1); formulär för löneunderlag, fribrev och premierättelse (S2); godkännandekö och händelselogg (S3); anslutning av ny försäkrad, aktuell lön, kontaktuppgifter och arbetsgivare (S5); *Premier och betalningar* (paket A steg 7, B-046, lokalt). *Pensioner och utbetalningar* (paket B steg 8, B-056, lokalt). **Verifierat skarpt i Lakebase 2026-10-12** (S6, se ATT_GORA): verifieringsposten AL-000499.
 > **Bygger på:** B-017 (människa som fullständig operatör), B-020 (handläggar-UI före kundportal), B-028 (tjänstelagret), B-032 (anslutning, stamdata och arbetsgivare), B-036 (försäkringsteamets område på plattformen)
 > **Kod:** `src/web/` · **Start:** `python scripts/web/start_ui.py` · **Tester:** `tests/test_web_*.py`
 > **Relaterat:** [tjänstelager.md](tjänstelager.md), [tjänstelager_operationer.md](tjänstelager_operationer.md), `projekt/01_ärendehantering/PROJEKTPLAN.md`
@@ -262,6 +262,40 @@ inför tabellerna och de vidgade villkoren på `cases` i samma transaktion, så 
 ärenden också kan skapas ([databasschema §12](databasschema.md#12-migrationer-och-versionering)). Migrationen är
 införd i Lakebase 2026-11-08, så notisen visas inte längre där. Alla operationer är `HUMAN_ONLY` för agenter;
 sidan ger ingen ny agentbefogenhet. När förfallobevakningen ska köras automatiskt är öppet (designstoppet §13).
+
+**Pensioner och utbetalningar (paket B steg 8, B-056).** Handläggarens sida för uttagsflödet:
+begäran och plan, månadsrätter och bolagskonto, skatt, konto och bankuppdrag, dödsfall och arvsvinst, och
+månadsstängningen ([designstoppet P1-PENSION-001](../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md) §10.1, Z1–Z14).
+Kod i `src/web/routes/pensions.py` och `src/services/pension_desk.py`, tester i `tests/test_web_pensions.py` och
+`tests/test_pension_desk.py`.
+
+| Adress | Innehåll | Operationer |
+|---|---|---|
+| `/pensioner?lage=&sextiosex=&sok=` | Översikt: senast stängda och nästa öppna månad, skulder, bolagskonto och pool, stegen i vald databas, öppna ärenden per typ och uttagsdelarna med urval. Inga personnummer och ingen sökning på personnummer | `get_pension_status`, `list_payout_parts` |
+| `/pensioner/forsakringar/{nr}` | Pensionsakten: personnumret bara i huvudet; delarna med kapital, garanti, planversioner, begäran, månadsrätter och betalningar; skattestatus och maskerade konton; dödsfallsbesked och dödsbo | `get_payout_person`, `get_payout_part`, `get_death_settlement` |
+| `…/begaran`, `…/begaran/{id}`, `…/begaran/{id}/beslut` (POST, GET) | Begäran i kanalen *manuell*, förhandsberäkning med granskningssumma och hashbundet planbeslut eller delning | `register_payout_request`, `preview_payout_plan`, `decide_payout_plan`, `split_payout_part` |
+| `…/skatt`, `…/konto` (POST) | Skattestatus och utbetalningskonto. Kontonumret visas bara maskerat och skrivs aldrig tillbaka i ett formulär med fel | `register_tax_status`, `register_payout_account` |
+| `…/dodsfall`, `…/dodsfall/andra`, `…/dodsbo` (POST) | Dödsfallsbesked, verifiering, ny dödsdag eller tillbakadragning, och dödsboets behörighet | `register_death_report`, `verify_death_report`, `register_estate_authority` |
+| `/pensioner/manadsratter` och `/bolagskonto` (POST, operatör) | Månadsrätterna per månad med finansiering, och ägarens insättning på bolagskontot | `list_pension_claims`, `register_company_capital` |
+| `/pensioner/bankfiler` och `/skapa`, `/godkann`, `/hamta`, `/kvitton` (POST) | Bankfiler med uppdrag och kontrollsumma; skapa för en betalningsdag; godkänn (operatör, kryssruta och kontrollsumma); hämta som JSON-bilaga (operatör); läs in bankens kvittofil | `list_payout_orders`, `create_payout_orders`, `approve_payout_order`, `import_payout_receipts` |
+| `/pensioner/dodsfall` och `/avisering` (POST) | Öppna besked, återkrav, avslutade delar och arvsvinstpoolen; läs in folkbokföringens avisering | `list_payout_parts`, `import_death_notices` |
+| `/pensioner/manadsstangning?manad=` och `/stang` (POST, operatör) | Granskningen med kontroller, summor och versionskedjan; bokning med granskningssumman | `prepare_month_close`, `get_month_close`, `close_policy_month` |
+| `/pensioner/arenden/{nr}` | Från ett paket B-ärende till rätt vy: akten, bolagskontot eller dödsfallen | – |
+
+- **Operatörsåtgärder:** bolagsinsättningen, godkännandet och hämtningen av bankfilen och bokningen av stängningen
+  kräver operatörsinloggning ([operatörsinloggning](operator_inloggning.md)) och operatörens token. Utan
+  inloggning svarar sidan 401, och med bara processens handläggartoken 403.
+- **Lakebase:** stängningen bokas aldrig från sidan i Lakebase, utan med körskriptet enligt B-050 S6. Sidan
+  visar granskningen och svarar 409 på bokningen.
+- **Steg som inte är införda:** saknas steg 4–7:s tabeller (som i Lakebase före migrationerna) visar varje vy
+  vilka steg och tabeller som saknas, med migreringsskriptet, och inga formulär. Varje POST mot ett sådant steg
+  svarar 409 utan anrop. Ett delvis infört steg varnas.
+- **Bankfilen** har omaskerade kontonummer och visas därför aldrig på sidan. Den hämtas som bilaga
+  (`no-store`), och hämtningen loggas.
+- **Agenter:** alla operationer är `HUMAN_ONLY`. Ärendepanelens agentstart svarar 409 för paket B:s ärendetyper
+  (Z11), och sidan ger ingen ny agentbefogenhet.
+- **Simulerad affärsdag** (`--affarsdag`, `--demo-fil`, `--behall-schema`, bara DEMO): sätter dagen för varje
+  förfrågan och visar en gul banderoll. Används av webbkontrollen i `scripts/simulation/paket_b_steg8/` (Z13).
 
 **Flöden (Fas 3c, 3c-3, B-035; avgränsat enligt B-037).** Flödet `rule_change_parameter` från regeländring till verifierad
 produktparameter ([flaggskeppsflöde.md](flaggskeppsflöde.md) §6–7). Sidorna och adaptern finns som

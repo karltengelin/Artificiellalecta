@@ -1391,6 +1391,42 @@ eller namn.
 - agentuppdrag för `payout_request`-ärenden (§13);
 - flytten av sidan till operatörscentralen.
 
+**Byggt i steg 8 (2026-11-25 på branchen `claude/nifty-lovelace-d19817`; inte mergat, rör inte Lakebase):**
+
+- **Var det finns:**
+  - sidan i `src/web/routes/pensions.py` och mallarna `src/web/templates/pensions*.html` ([handläggar-UI §4](../../02_system/handläggar-ui.md#4-sidor));
+  - de tre läsningarna i `src/services/pension_desk.py` och `src/services/operations/pension_desk.py`, alla `HUMAN_ONLY` ([tjänstelager §9.21](../../02_system/tjänstelager.md));
+  - den simulerade affärsdagen i `src/simulation/business_day.py` och `src/web/__main__.py`;
+  - webbkontrollen och rapporten i `scripts/simulation/paket_b_steg8/`.
+- **Verifierat lokalt:**
+  - `tests/test_pension_desk.py` och `tests/test_web_pensions.py`;
+  - webbkontrollen enligt Z13: paket C:s pensionsscenario dag för dag genom sidan på en SQLite-kopia. Utfallet är facit på öret, och varje verifikations kontrollsumma är densamma som i CLI-körningen;
+  - passet utan steg 4–7:s tabeller;
+  - jämförelsen med main `895da08` enligt Z14, som är identisk i alla sju lägen ([rapporten](../../scripts/simulation/paket_b_steg8/RAPPORT.md)).
+- **Preciseringar vid bygget** (inom valen):
+  - bankfilen hämtas genom ett nytt godkännande med samma kontrollsumma, som ger filen utan ny effekt, och skickas som JSON-bilaga. Kontonumret finns därmed aldrig i sidans HTML;
+  - `get_payout_person` tar inte med kontots verifieringsreferens, eftersom den kan bära kontonumret;
+  - ett POST mot ett steg som inte är infört svarar 409 innan motiveringen prövas och utan något anrop;
+  - kvittobeskedet räknar nya ärenden om konto och skiljer avvisade kvitton från utförda.
+
+**Kundportalens kontrakt (Z12).** Sidan anropar operationerna utan egen logik. Aktörstypen `customer`,
+kundautentiseringen och avgränsningen till en person byggs i [projekt 3](../03_kundportal/PROJEKTPLAN.md).
+
+| Operation | Kunden senare | Villkor |
+|---|---|---|
+| `register_payout_request` | Anropar | Start, uppskov, paus, förlängning och delning, i kanalen `customer_portal` |
+| `register_tax_status` | Anropar | Bara frivilligt högre avdrag |
+| `register_payout_account` | Anropar | Verifieringen görs i portalen |
+| `preview_payout_plan` | Anropar | Som prognos märkt som osäkert scenario (PR-ITP1-029) |
+| `get_payout_part`, `get_payout_person` | Läser | Bara sig själv |
+| `list_pension_claims`, `list_payout_orders` | Läser | Bara den egna delen |
+| `decide_payout_plan`, `split_payout_part` | Aldrig | Plan- och delningsbeslut fattas av handläggaren |
+| `prepare_month_close`, `close_policy_month`, `get_month_close` | Aldrig | Stängningen |
+| `create_payout_orders`, `approve_payout_order`, `import_payout_receipts` | Aldrig | Bankfil och kvitton |
+| `register_death_report`, `verify_death_report`, `import_death_notices`, `register_estate_authority`, `get_death_settlement` | Aldrig | Dödsfall och dödsbo |
+| `register_company_capital` | Aldrig | Bolagskontot |
+| `get_pension_status`, `list_payout_parts` | Aldrig | Bolagsövergripande |
+
 ## 11. Verifieringsfall
 
 Beloppen följer produktreglernas kontrollfall och 2026 års parametrar (avgift 0,20 %,

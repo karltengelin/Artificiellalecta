@@ -19,9 +19,13 @@ i portalen först efter ett nytt uttryckligt beslut om utökat scope och uppdate
 ## Beroenden
 
 - Samma FastAPI-backend som projekt 1 (B-020) – API:t ska redan vara designat för två klienter
-- Uttags-/utbetalningslogik (pausa/skjuta upp) finns inte än. Behovet ingår i portalens scope,
-  men motorerna måste samordnas som gemensamma försäkringsoperationer för handläggare, agent
-  och portal; portalbygget får inte få en separat implementation av produktreglerna
+- Uttags- och utbetalningslogiken (begäran, uppskov, paus, plan, skatt, konto och bankuppdrag) finns
+  som gemensamma försäkringsoperationer i paket B steg 4–7. Handläggarsidan *Pensioner och utbetalningar*
+  (steg 8, B-056) använder dem utan egen logik. Portalbygget får inte få en separat implementation av
+  produktreglerna. **Kontraktet** – vilka operationer kunden senare får anropa, vilka kunden får läsa
+  avgränsat till sig själv och vilka som aldrig blir kundens – står i
+  [P1-PENSION-001 §10.1, Z12](../01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#101-val-för-steg-8-handläggarsidan-pensioner-och-utbetalningar).
+  Aktörstypen `customer`, kundautentiseringen och avgränsningen till en person byggs här
 - Endast ålderspensionsförmånen (`retirement_dc`) ingår i portalens produktfunktioner.
   TGL/familjeskydd är tekniskt förberedda i datamodellen (B-022), men ingår inte i uppdraget
 
