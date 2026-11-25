@@ -385,6 +385,9 @@ class TestMigration:
         if not TEST_URL:
             pytest.skip("SERVICES_TEST_POSTGRES_URL saknas – ingen isolerad Postgres")
         not_in_lakebase = {*TABLES, "portfolios", "portfolio_holdings", "trades", "ledger_batches", "ledger_guarantee_parts", "ledger_capital_entries", "ledger_controls"}  # journalen: paket B
+        for table in Base.metadata.sorted_tables:  # och allt som pekar på journalen (paket B steg 5–7)
+            if any(fk.column.table.name in not_in_lakebase for fk in table.foreign_keys):
+                not_in_lakebase.add(table.name)
         with isolated_schema() as lakebase_like:
             tables = [t for t in Base.metadata.sorted_tables if t.name not in not_in_lakebase]
             Base.metadata.create_all(lakebase_like.engine, tables=[t for t in tables if t.name != "valuation_bases"])
