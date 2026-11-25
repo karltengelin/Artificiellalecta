@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% from "partials/pensions.html" import subnav, step_notice, reason_field, f, v, kv, pill_state with context %}
+{% from "partials/forms.html" import csrf, op_info with context %}
+{% block title %}Pensionsakt {{ policy }}{% endblock %}
+{% block content %}
+<section class="person">
+  <div class="person__name">
+    <h1>{{ person.name }}</h1>
+    <span class="pnr">{{ person.personal_id_number | pnr }}</span>
+    <span class="badge badge--{{ person.status }}">{{ person.status | label('person_status') }}</span>
+  </div>
+  <dl class="facts">
+    <div><dt>Pensionsakt</dt><dd>{{ policy }}</dd></div>
+    <div><dt>66 år</dt><dd>{{ person.sixty_six_month | month }}</dd></div>
+    <div><dt>Försäkringar</dt><dd>{% for p in person.policies %}{% if p == policy %}{{ p }}{% else %}<a href="/pensioner/forsakringar/{{ p }}">{{ p }}</a>{% endif %}{{ ", " if not loop.last }}{% endfor %}</dd></div>
+    <div><dt>Utbetalningskonto</dt><dd>{% if person.current_account %}{{ person.current_account.clearing_number }} {{ person.current_account.account_number }} · {{ person.current_account.bank_name }} {% if person.current_account.verified %}<span class="pill pill--approved">Verifierat</span>{% else %}<span class="pill pill--rejected">Ej verifierat</span>{% endif %}{% elif person.orders_introduced %}saknas{% else %}–{% endif %}</dd></div>
+  </dl>
+</section>
+{{ subnav("") }}
+{% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+{% include "partials/error_box.html" %}
+
+{% for pv in part_views %}
+<section class="panel" id="del-{{ pv.part_number }}">
+  <div class="panel__head">
+    <div><h2>Uttagsdel {{ pv.part_number }}</h2>
+      <span class="muted small">Andel av ursprunget {{ pv.share_of_origin }} · per {{ pv.on | iso_date }}</span></div>
+    {{ pill_state(pv.state) }}
+  </div>
+  <dl class="metrics metrics--amounts">
+    <div class="metric"><dt>Kapital</dt><dd>{{ pv.capital_sek | sek }}</dd></div>
+    <div class="metric"><dt>Garanti per månad</dt><dd>{{ pv.guarantee_sek_per_month | sek }}</dd></div>
+  </dl>
+  {% if not steps[4].introduced %}{{ step_notice(4) }}{% else %}
+  <h3>Planversioner</h3>
+  {% if pv.plans %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Version</th><th>Ursprung</th><th>Från</th><th>Form</th><th>Första rätt</th><th class="num">Utbetalningar</th><th>Slut</th><th class="num">M</th><th>Beslutad av</th></tr></thead>
+    <tbody>{% for p in pv.plans %}<tr>
+      <td class="num">{{ p.version }}</td><td>{{ p.origin }}</td><td class="nowrap">{{ p.effective_month | month }}</td>
+      <td>{{ p.form | label('payout_form') }}</td><td class="nowrap">{{ p.first_right | month }}</td>
+      <td class="num">{{ p.payments or "–" }}</td><td class="nowrap">{{ (p.end_month | month) if p.end_month else "–" }}</td>
+      <td class="num">{{ p.m_sek | sek }}</td><td>{{ p.decided_by or "–" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Ingen planversion ännu.</p>{% endif %}
+  <h3>Begäran</h3>
+  {% if pv.requests %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Typ</th><th>Ändringsmånad</th><th>Mottagen</th><th>Utfall</th><th>Föreslagen månad</th><th>Saknas</th><th></th></tr></thead>
+    <tbody>{% for r in pv.requests %}<tr>
+      <td>{{ r.kind | label('payout_request_kind') }}</td><td class="nowrap">{{ r.change_month | month }}</td>
+      <td class="nowrap">{{ r.received_date | iso_date }}</td><td>{{ r.outcome }}</td>
+      <td class="nowrap">{{ (r.proposed_month | month) if r.proposed_month else "–" }}</td>
+      <td class="small">{{ r.missing | join(", ") if r.missing else "–" }}</td>
+      <td><a href="{{ url }}/begaran/{{ r.id }}#forhand">Förhandsberäkna</a></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Ingen begäran.</p>{% endif %}
+  {% if pv.splits %}
+  <h3>Delningar</h3>
+  <ul>{% for s in pv.splits %}<li>Del {{ s.new_part_number }} med andel {{ s.share }} från {{ s.effective_month | month }} · premiemottagare del {{ s.premium_receiver_number }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% endif %}
+</section>
+{% endfor %}
+
+{% if preview %}
+<section class="panel" id="forhand">
+  <div class="panel__head"><h2>Förhandsberäkning – {{ (preview.kind or preview.change or "") }}</h2>
+    {% if preview.bindable %}<span class="pill pill--approved">Kan beslutas</span>{% else %}<span class="pill pill--pending">Vägledande</span>{% endif %}</div>
+  {% if preview.note %}<p>{{ preview.note }}</p>{% endif %}
+  {{ kv(preview, skip=("design", "method", "request_id", "payout_part_id", "note", "bindable", "review_checksum")) }}
+  {% if preview.amount is mapping %}<h3>Belopp</h3>{{ kv(preview.amount) }}{% endif %}
+  <p class="small">Granskningssumma <code>{{ preview.review_checksum }}</code></p>
+  <div class="formgrid">
+    <form method="post" action="{{ url }}/begaran/{{ preview.request_id }}/beslut" class="form">
+      {{ csrf() }}
+      <input type="hidden" name="reviewed_checksum" value="{{ preview.review_checksum }}">
+      <input type="hidden" name="kind" value="{{ 'split' if preview.kind == 'split' else 'plan' }}">
+      {{ reason_field("decide", "T.ex. kundens begäran mottagen i tid, underlaget granskat") }}
+      <div class="form__actions"><button type="submit">{{ "Besluta delningen" if preview.kind == "split" else "Besluta planversionen" }}</button></div>
+      <p class="small muted">Har underlaget ändrats sedan beräkningen stoppas beslutet – granska då igen.</p>
+    </form>
+    {{ op_info(ops.split_payout_part if preview.kind == "split" else ops.decide_payout_plan) }}
+  </div>
+</section>
+{% endif %}
+
+{% if steps[4].introduced %}
+<section class="panel">
+  <details{% if values.request is defined %} open{% endif %}>
+    <summary>Registrera begäran om uttag</summary>
+    <div class="formgrid">
+      <form method="post" action="{{ url }}/begaran" class="form">
+        {{ csrf() }}
+        <div class="row">
+          {% call f("request", "part_number", "Uttagsdel") %}<select id="f-request-part_number" name="part_number">{% for p in parts %}<option value="{{ p.part_number }}"{% if v("request", "part_number") == p.part_number|string %} selected{% endif %}>{{ p.part_number }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("request", "kind", "Typ") %}<select id="f-request-kind" name="kind">{% for k in ("start", "pause", "extend", "split") %}<option value="{{ k }}"{% if v("request", "kind") == k %} selected{% endif %}>{{ k | label('payout_request_kind') }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("request", "received_date", "Mottagen") %}<input id="f-request-received_date" type="date" name="received_date" value="{{ v('request', 'received_date', today) }}" required>{% endcall %}
+        </div>
+        <fieldset><legend>Start, uppskov eller ändrad start</legend><div class="row">
+          {% call f("request", "first_right", "Första rättighetsmånad") %}<input id="f-request-first_right" type="month" name="first_right" value="{{ v('request', 'first_right') }}">{% endcall %}
+          {% call f("request", "form", "Form") %}<select id="f-request-form" name="form">{% for k in ("lifelong", "fixed_term") %}<option value="{{ k }}"{% if v("request", "form") == k %} selected{% endif %}>{{ k | label('payout_form') }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("request", "payments", "Antal utbetalningar", "Tidsbegränsad") %}<input id="f-request-payments" type="number" name="payments" min="1" value="{{ v('request', 'payments') }}">{% endcall %}
+        </div></fieldset>
+        <fieldset><legend>Paus</legend><div class="row">
+          {% call f("request", "first", "Första pausade månad") %}<input id="f-request-first" type="month" name="pause_first" value="{{ v('request', 'pause_first') }}">{% endcall %}
+          {% call f("request", "resume", "Återstart") %}<input id="f-request-resume" type="month" name="pause_resume" value="{{ v('request', 'pause_resume') }}">{% endcall %}
+        </div></fieldset>
+        <fieldset><legend>Förlängning</legend><div class="row">
+          {% call f("request", "month", "Från månad") %}<input id="f-request-month" type="month" name="extend_month" value="{{ v('request', 'extend_month') }}">{% endcall %}
+          {% call f("request", "extend_form", "Form") %}<select id="f-request-extend_form" name="extend_form">{% for k in ("lifelong", "fixed_term") %}<option value="{{ k }}">{{ k | label('payout_form') }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("request", "extend_payments", "Antal utbetalningar") %}<input id="f-request-extend_payments" type="number" name="extend_payments" min="1" value="{{ v('request', 'extend_payments') }}">{% endcall %}
+        </div></fieldset>
+        <fieldset><legend>Delning (ej startad del)</legend><div class="row">
+          {% call f("request", "split_month", "Från månad") %}<input id="f-request-split_month" type="month" name="split_month" value="{{ v('request', 'split_month') }}">{% endcall %}
+          {% call f("request", "share", "Andel till ny del", "0,1–0,9") %}<input id="f-request-share" name="split_share" inputmode="decimal" value="{{ v('request', 'split_share') }}">{% endcall %}
+          {% call f("request", "premium_receiver", "Premiemottagare (del)") %}<input id="f-request-premium_receiver" type="number" name="premium_receiver" min="1" max="3" value="{{ v('request', 'premium_receiver') }}">{% endcall %}
+        </div></fieldset>
+        <div class="row">
+          {% call f("request", "requester", "Begärd av") %}<select id="f-request-requester" name="requester"><option value="insured">Den försäkrade</option><option value="representative"{% if v("request", "requester") == "representative" %} selected{% endif %}>Ombud</option></select>{% endcall %}
+          {% call f("request", "authority_verified", "Ombudets behörighet") %}<label><input id="f-request-authority_verified" type="checkbox" name="authority_verified"> Verifierad</label>{% endcall %}
+        </div>
+        <p class="small muted">Kanal: manuell registrering. Begäran från kundportalen och chattboten kommer in på egna vägar.</p>
+        {{ reason_field("request", "T.ex. kundens brev mottaget, begär start från januari") }}
+        <div class="form__actions"><button type="submit">Registrera begäran</button></div>
+      </form>
+      {{ op_info(ops.register_payout_request) }}
+    </div>
+  </details>
+</section>
+{% endif %}
+
+<section class="panel" id="manadsratter">
+  <h2>Månadsrätter och betalningar</h2>
+  {% if not steps[5].introduced %}{{ step_notice(5) }}{% elif claims %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Del</th><th>Månad</th><th class="num">Brutto</th><th class="num">Ur kapital</th><th class="num">Bolagsstöd</th><th class="num">Ej finansierat</th><th>Betalningsdag</th><th>Betalning</th></tr></thead>
+    <tbody>{% for c in claims %}{% set pay = payment.get(c.claim_id) %}<tr>
+      <td class="num">{{ part_numbers.get(c.payout_part_id) }}</td><td class="nowrap">{{ c.right_month | month }}</td>
+      <td class="num">{{ c.gross_sek | sek }}</td><td class="num">{{ c.from_capital_sek | sek }}</td>
+      <td class="num">{{ c.company_support_sek | sek }}</td><td class="num">{{ c.unfunded_remaining_sek | sek }}</td>
+      <td class="nowrap">{{ c.payment_day | iso_date }}</td>
+      <td class="small">{% if pay %}{{ pay.state | label('claim_payment_state') }}{% if pay.attempts | length > 1 %} · {{ pay.attempts | length }} försök{% endif %}{% elif steps[6].introduced %}–{% else %}steg 6 ej infört{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Inga månadsrätter ännu.</p>{% endif %}
+</section>
+
+<section class="panel" id="skatt-konto">
+  <h2>Skatt och utbetalningskonto</h2>
+  {% if not steps[6].introduced %}{{ step_notice(6) }}{% else %}
+  <h3>Skattestatus</h3>
+  {% if person.tax_statuses %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>År</th><th>Version</th><th>Slag</th><th class="num">Sats</th><th>Tabell</th><th>Beslut</th><th>Gäller från</th><th>Mottagen</th></tr></thead>
+    <tbody>{% for t in person.tax_statuses %}<tr>
+      <td class="num">{{ t.tax_year }}</td><td class="num">{{ t.version }}</td><td>{{ t.kind | label('tax_kind') }}</td>
+      <td class="num">{{ t.rate or "–" }}</td><td>{% if t.table_number %}{{ t.table_number }} kol {{ t.table_column }}{% else %}–{% endif %}</td>
+      <td class="small">{{ t.decision_ref or "–" }}</td><td class="nowrap">{{ t.valid_from | iso_date }}</td><td class="nowrap">{{ t.received_date | iso_date }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Ingen skattestatus registrerad – bankfilen blockerar personen tills den finns.</p>{% endif %}
+  <h3>Konton</h3>
+  {% if person.accounts %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Version</th><th>Clearing</th><th>Konto</th><th>Bank</th><th>Verifierat</th><th>Sätt</th><th>Mottaget</th></tr></thead>
+    <tbody>{% for a in person.accounts %}<tr>
+      <td class="num">{{ a.version }}</td><td>{{ a.clearing_number }}</td><td><code>{{ a.account_number }}</code></td><td>{{ a.bank_name }}</td>
+      <td>{{ "ja" if a.verified else "nej" }}</td><td>{{ a.verification_method or "–" }}</td><td class="nowrap">{{ a.received_date | iso_date }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Inget konto registrerat.</p>{% endif %}
+  <details{% if values.tax is defined %} open{% endif %}>
+    <summary>Registrera skattestatus</summary>
+    <div class="formgrid">
+      <form method="post" action="{{ url }}/skatt" class="form">
+        {{ csrf() }}
+        <div class="row">
+          {% call f("tax", "tax_year", "Inkomstår") %}<input id="f-tax-tax_year" type="number" name="tax_year" min="2026" value="{{ v('tax', 'tax_year', today[:4]) }}" required>{% endcall %}
+          {% call f("tax", "kind", "Slag") %}<select id="f-tax-kind" name="kind">{% for k in ("side_income", "main_income", "individual_decision", "sink") %}<option value="{{ k }}"{% if v("tax", "kind") == k %} selected{% endif %}>{{ k | label('tax_kind') }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("tax", "received_date", "Mottagen") %}<input id="f-tax-received_date" type="date" name="received_date" value="{{ v('tax', 'received_date', today) }}" required>{% endcall %}
+        </div>
+        <div class="row">
+          {% call f("tax", "rate", "Sats", "Andel, t.ex. 0,30; frivilligt högre gäller från mottagandet + 14 dagar") %}<input id="f-tax-rate" name="rate" inputmode="decimal" value="{{ v('tax', 'rate') }}">{% endcall %}
+          {% call f("tax", "fixed_amount_sek", "Fast avdrag (kr)") %}<input id="f-tax-fixed_amount_sek" name="fixed_amount_sek" inputmode="decimal" value="{{ v('tax', 'fixed_amount_sek') }}">{% endcall %}
+          {% call f("tax", "table_number", "Tabell") %}<input id="f-tax-table_number" type="number" name="table_number" min="29" max="42" value="{{ v('tax', 'table_number') }}">{% endcall %}
+          {% call f("tax", "table_column", "Kolumn") %}<input id="f-tax-table_column" type="number" name="table_column" min="1" max="6" value="{{ v('tax', 'table_column') }}">{% endcall %}
+        </div>
+        <div class="row">
+          {% call f("tax", "decision_ref", "Skatteverkets beslut", "Krävs för SINK och individuellt beslut") %}<input id="f-tax-decision_ref" name="decision_ref" value="{{ v('tax', 'decision_ref') }}">{% endcall %}
+          {% call f("tax", "raised_deduction", "Förhöjt avdrag") %}<label><input id="f-tax-raised_deduction" type="checkbox" name="raised_deduction"> Begärt</label>{% endcall %}
+        </div>
+        {{ reason_field("tax", "T.ex. kundens blankett om sidoinkomst mottagen") }}
+        <div class="form__actions"><button type="submit">Registrera skattestatus</button></div>
+      </form>
+      {{ op_info(ops.register_tax_status) }}
+    </div>
+  </details>
+  <details{% if values.account is defined %} open{% endif %}>
+    <summary>Registrera utbetalningskonto</summary>
+    <div class="formgrid">
+      <form method="post" action="{{ url }}/konto" class="form" autocomplete="off">
+        {{ csrf() }}
+        <div class="row">
+          {% call f("account", "clearing_number", "Clearingnummer") %}<input id="f-account-clearing_number" name="clearing_number" inputmode="numeric" pattern="\d{4,5}" value="{{ v('account', 'clearing_number') }}" required>{% endcall %}
+          {% call f("account", "account_number", "Kontonummer", "Visas maskerat efter registreringen") %}<input id="f-account-account_number" name="account_number" inputmode="numeric" pattern="\d{1,20}" required>{% endcall %}
+          {% call f("account", "bank_name", "Bank") %}<input id="f-account-bank_name" name="bank_name" value="{{ v('account', 'bank_name') }}" required>{% endcall %}
+        </div>
+        <div class="row">
+          {% call f("account", "verified", "Verifiering") %}<label><input id="f-account-verified" type="checkbox" name="verified"{% if v("account", "verified") %} checked{% endif %}> Verifierat mot kontoinnehavaren</label>{% endcall %}
+          {% call f("account", "verification_method", "Sätt", "T.ex. kontouppslag eller BankID") %}<input id="f-account-verification_method" name="verification_method" value="{{ v('account', 'verification_method') }}">{% endcall %}
+          {% call f("account", "verification_ref", "Referens") %}<input id="f-account-verification_ref" name="verification_ref">{% endcall %}
+          {% call f("account", "received_date", "Mottaget") %}<input id="f-account-received_date" type="date" name="received_date" value="{{ v('account', 'received_date', today) }}" required>{% endcall %}
+        </div>
+        {{ reason_field("account", "T.ex. kontouppgift från kunden, verifierad med kontouppslag") }}
+        <div class="form__actions"><button type="submit">Registrera konto</button></div>
+      </form>
+      {{ op_info(ops.register_payout_account) }}
+    </div>
+  </details>
+  {% endif %}
+</section>
+
+<section class="panel" id="dodsfall">
+  <h2>Dödsfall och dödsbo</h2>
+  {% if not steps[7].introduced %}{{ step_notice(7) }}{% else %}
+  {% if death.reports %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Version</th><th>Läge</th><th>Dödsdag</th><th>Rapportdag</th><th>Mottaget</th><th>Källa</th><th>Verifiering</th></tr></thead>
+    <tbody>{% for r in death.reports %}<tr>
+      <td class="num">{{ r.version }}</td><td>{{ r.status | label('death_report_status') }}</td><td class="nowrap">{{ (r.death_date | iso_date) if r.death_date else "–" }}</td>
+      <td class="nowrap">{{ r.reported_on | iso_date }}</td><td class="nowrap">{{ r.received_date | iso_date }}</td>
+      <td>{{ r.source | label('death_source') }} <span class="muted small">{{ r.source_ref }}</span></td>
+      <td>{{ (r.verification_method | label('death_verification')) if r.verification_method else "–" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Inget dödsfallsbesked.</p>{% endif %}
+  {% if death.settlements %}
+  <h3>Avräkning</h3>
+  <ul>{% for s in death.settlements %}<li>Del {{ part_numbers.get(s.payout_part_id, "?") }}: dödsmånad {{ s.death_month | month }}, {{ s.capital_to_pool_sek | sek }} till arvsvinstpoolen, {{ s.reversed_claims }} återförda anspråk, skuld till dödsboet {{ s.estate_liability_sek | sek }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if death.recoveries %}
+  <h3>Återkrav</h3>
+  <ul>{% for c in death.recoveries %}<li><a href="/arenden/{{ c.case_number }}">{{ c.case_number }}</a> ({{ c.status | label('case_status') }})</li>{% endfor %}</ul>
+  {% endif %}
+  {% if death.estate %}<p>Dödsbo: {{ death.estate.role | label('estate_role') }}, {{ death.estate.document_kind | label('estate_document') }}, {{ "verifierad" if death.estate.verified else "ej verifierad" }}.</p>{% endif %}
+  <details{% if values.death is defined %} open{% endif %}>
+    <summary>Registrera dödsfallsbesked</summary>
+    <div class="formgrid">
+      <form method="post" action="{{ url }}/dodsfall" class="form">
+        {{ csrf() }}
+        <div class="row">
+          {% call f("death", "status", "Läge") %}<select id="f-death-status" name="status"><option value="suspected">Misstänkt – stoppar bara bankuppdragen</option><option value="verified"{% if v("death", "status") == "verified" %} selected{% endif %}>Verifierat med handling</option></select>{% endcall %}
+          {% call f("death", "death_date", "Dödsdag") %}<input id="f-death-death_date" type="date" name="death_date" value="{{ v('death', 'death_date') }}">{% endcall %}
+          {% call f("death", "reported_on", "Rapportdag") %}<input id="f-death-reported_on" type="date" name="reported_on" value="{{ v('death', 'reported_on', today) }}" required>{% endcall %}
+          {% call f("death", "received_date", "Mottaget") %}<input id="f-death-received_date" type="date" name="received_date" value="{{ v('death', 'received_date', today) }}" required>{% endcall %}
+        </div>
+        <div class="row">
+          {% call f("death", "source", "Källa") %}<select id="f-death-source" name="source">{% for k in ("relative", "employer", "case_handler", "population_register", "other") %}<option value="{{ k }}"{% if v("death", "source") == k %} selected{% endif %}>{{ k | label('death_source') }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("death", "source_ref", "Källans referens") %}<input id="f-death-source_ref" name="source_ref" value="{{ v('death', 'source_ref') }}" required minlength="3">{% endcall %}
+          {% call f("death", "verification_method", "Verifiering") %}<select id="f-death-verification_method" name="verification_method"><option value="">–</option>{% for k in ("population_register", "death_certificate", "other_document") %}<option value="{{ k }}"{% if v("death", "verification_method") == k %} selected{% endif %}>{{ k | label('death_verification') }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("death", "document_ref", "Handling") %}<input id="f-death-document_ref" name="document_ref" value="{{ v('death', 'document_ref') }}">{% endcall %}
+        </div>
+        {{ reason_field("death", "T.ex. anhörig har ringt; handling begärd") }}
+        <div class="form__actions"><button type="submit">Registrera beskedet</button></div>
+      </form>
+      {{ op_info(ops.register_death_report) }}
+    </div>
+  </details>
+  {% if death.reports %}
+  <details{% if values.verify is defined %} open{% endif %}>
+    <summary>Verifiera, ändra dödsdag eller dra tillbaka</summary>
+    <div class="formgrid">
+      <form method="post" action="{{ url }}/dodsfall/andra" class="form">
+        {{ csrf() }}
+        <div class="row">
+          {% call f("verify", "action", "Åtgärd") %}<select id="f-verify-action" name="action"><option value="verify">Verifiera</option><option value="change_date"{% if v("verify", "action") == "change_date" %} selected{% endif %}>Ny dödsdag</option><option value="withdraw"{% if v("verify", "action") == "withdraw" %} selected{% endif %}>Dra tillbaka</option></select>{% endcall %}
+          {% call f("verify", "death_date", "Dödsdag") %}<input id="f-verify-death_date" type="date" name="death_date" value="{{ v('verify', 'death_date') }}">{% endcall %}
+          {% call f("verify", "received_date", "Mottaget") %}<input id="f-verify-received_date" type="date" name="received_date" value="{{ v('verify', 'received_date', today) }}" required>{% endcall %}
+        </div>
+        <div class="row">
+          {% call f("verify", "verification_method", "Verifiering") %}<select id="f-verify-verification_method" name="verification_method"><option value="">–</option>{% for k in ("population_register", "death_certificate", "other_document") %}<option value="{{ k }}">{{ k | label('death_verification') }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("verify", "document_ref", "Handling") %}<input id="f-verify-document_ref" name="document_ref" value="{{ v('verify', 'document_ref') }}">{% endcall %}
+          {% call f("verify", "note", "Anteckning", "Krävs vid tillbakadragning") %}<input id="f-verify-note" name="note" value="{{ v('verify', 'note') }}">{% endcall %}
+        </div>
+        {{ reason_field("verify", "T.ex. dödsfallsintyg mottaget") }}
+        <div class="form__actions"><button type="submit">Spara ny version</button></div>
+      </form>
+      {{ op_info(ops.verify_death_report) }}
+    </div>
+  </details>
+  <details{% if values.estate is defined %} open{% endif %}>
+    <summary>Registrera dödsboets behörighet</summary>
+    {% if person.accounts %}
+    <div class="formgrid">
+      <form method="post" action="{{ url }}/dodsbo" class="form">
+        {{ csrf() }}
+        <div class="row">
+          {% call f("estate", "role", "Företrädare") %}<select id="f-estate-role" name="role">{% for k in ("estate_member", "estate_administrator", "representative") %}<option value="{{ k }}">{{ k | label('estate_role') }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("estate", "representative", "Namn eller beteckning") %}<input id="f-estate-representative" name="representative" value="{{ v('estate', 'representative') }}" required>{% endcall %}
+          {% call f("estate", "document_kind", "Handling") %}<select id="f-estate-document_kind" name="document_kind">{% for k in ("death_certificate_with_family", "estate_inventory", "power_of_attorney") %}<option value="{{ k }}">{{ k | label('estate_document') }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("estate", "document_ref", "Handlingens referens") %}<input id="f-estate-document_ref" name="document_ref" value="{{ v('estate', 'document_ref') }}" required>{% endcall %}
+        </div>
+        <div class="row">
+          {% call f("estate", "account_id", "Dödsboets konto") %}<select id="f-estate-account_id" name="account_id">{% for a in person.accounts | reverse %}<option value="{{ a.account_id }}">v{{ a.version }} · {{ a.clearing_number }} {{ a.account_number }}</option>{% endfor %}</select>{% endcall %}
+          {% call f("estate", "verified", "Prövning") %}<label><input id="f-estate-verified" type="checkbox" name="verified"> Behörigheten är prövad</label>{% endcall %}
+          {% call f("estate", "verification_method", "Sätt") %}<input id="f-estate-verification_method" name="verification_method" value="{{ v('estate', 'verification_method') }}">{% endcall %}
+          {% call f("estate", "verification_ref", "Referens") %}<input id="f-estate-verification_ref" name="verification_ref" value="{{ v('estate', 'verification_ref') }}">{% endcall %}
+          {% call f("estate", "received_date", "Mottaget") %}<input id="f-estate-received_date" type="date" name="received_date" value="{{ v('estate', 'received_date', today) }}" required>{% endcall %}
+        </div>
+        {{ reason_field("estate", "T.ex. bouppteckning mottagen") }}
+        <div class="form__actions"><button type="submit">Registrera behörigheten</button></div>
+      </form>
+      {{ op_info(ops.register_estate_authority) }}
+    </div>
+    {% else %}<p class="empty">Registrera först dödsboets konto under Skatt och utbetalningskonto.</p>{% endif %}
+  </details>
+  {% endif %}
+  {% endif %}
+</section>
+{% endblock %}

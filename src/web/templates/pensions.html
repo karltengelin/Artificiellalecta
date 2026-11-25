@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "partials/pensions.html" import subnav, step_notice, part_ref, pill_state with context %}
+{% block title %}Pensioner och utbetalningar{% endblock %}
+{% block content %}
+{% set m = status.months %}
+{% set b = status.balances %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <div><h1>Pensioner och utbetalningar</h1>
+      <span class="muted small">Uttagsflödet i {{ settings.database_label }} · dag {{ today }}</span></div>
+  </div>
+  <dl class="metrics metrics--amounts metrics--summary">
+    <div class="metric"><dt>Senast stängda månad</dt><dd>{{ (m.last_closed | month) if m and m.last_closed else "ingen" }}</dd></div>
+    <div class="metric"><dt>Nästa öppna månad</dt><dd>{{ (m.next_open | month) if m and m.next_open else "–" }}</dd></div>
+    <div class="metric"><dt>Betalningsskuld</dt><dd>{{ b.payment_liability_sek | sek if b.payment_liability_sek is defined else "–" }}</dd></div>
+    <div class="metric"><dt>Skatteskuld</dt><dd>{{ b.tax_liability_sek | sek if b.tax_liability_sek is defined else "–" }}</dd></div>
+    <div class="metric"><dt>Bolagskonto</dt><dd>{{ b.company_sek | sek if b.company_sek is defined else "–" }}</dd></div>
+    <div class="metric"><dt>Arvsvinstpool</dt><dd>{{ b.inheritance_pool_sek | sek if b.inheritance_pool_sek is defined else "–" }}</dd></div>
+  </dl>
+  {% if status.company_capital_registered == false %}
+  <div class="alert alert--approval" role="status"><strong class="alert__title">Bolagskontot saknar startinsättning</strong>
+    <p>Ingen dokumenterad insättning är bokad (PB11). <a href="/pensioner/manadsratter#bolagskonto">Registrera insättningen</a>.</p></div>
+  {% endif %}
+  <details class="context-details">
+    <summary>Stegen i vald databas</summary>
+    <div class="table-wrap"><table class="table table--compact">
+      <thead><tr><th>Steg</th><th>Innehåll</th><th>Läge</th><th>Skript</th></tr></thead>
+      <tbody>{% for s in status.steps %}<tr>
+        <td class="num">{{ s.step }}</td><td>{{ s.title }}</td>
+        <td>{% if s.introduced %}<span class="pill pill--approved">Infört</span>{% elif s.partial %}<span class="pill pill--rejected">Delvis infört</span>{% else %}<span class="pill pill--pending">Inte infört</span>{% endif %}</td>
+        <td><code>{{ s.script }}</code></td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+  </details>
+</section>
+{{ subnav("overview") }}
+
+<section class="panel">
+  <div class="panel__head"><h2>Öppna ärenden i uttagsflödet</h2></div>
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Typ</th><th class="num">Öppna</th><th>Hanteras i</th></tr></thead>
+    <tbody>{% for t, n in status.cases.items() %}<tr>
+      <td>{{ t | label('case_type') }}</td><td class="num">{{ n }}</td>
+      <td class="small">{% if t in ("payout_request", "payout_review", "payout_reconstruction") %}Pensionsakten{% elif t == "company_capital" %}<a href="/pensioner/manadsratter">Bolagskontot</a>{% elif t in ("payout_hindrance", "tax_status") %}Pensionsakten och <a href="/pensioner/bankfiler">bankfilerna</a>{% else %}<a href="/pensioner/dodsfall">Dödsfallen</a>{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% if status.subjectless_cases %}
+  <h3>Ärenden utan person</h3>
+  <ul>{% for c in status.subjectless_cases %}<li><a href="/arenden/{{ c.case_number }}">{{ c.case_number }}</a> – {{ c.case_type | label('case_type') }} ({{ c.status | label('case_status') }}, mottaget {{ c.received_date | iso_date }})</li>{% endfor %}</ul>
+  {% endif %}
+</section>
+
+<section class="panel" id="delar">
+  <div class="panel__head">
+    <div><h2>Uttagsdelar</h2>
+      <span class="muted small">{% for st, n in status.parts.by_state.items() %}{{ st | label('payout_state') }} {{ n }}{{ " · " if not loop.last }}{% endfor %} · fyller 66 inom 12 månader: {{ status.parts.turning_66_within_12_months }}</span></div>
+    <form method="get" action="/pensioner" class="filter" aria-label="Urval">
+      <label for="f-lage">Läge</label>
+      <select id="f-lage" name="lage">
+        <option value="">Alla</option>
+        {% for st in ("not_started", "in_payout", "paused", "ended") %}<option value="{{ st }}"{% if filters.lage == st %} selected{% endif %}>{{ st | label('payout_state') }}</option>{% endfor %}
+      </select>
+      <label><input type="checkbox" name="sextiosex" value="1"{% if filters.sextiosex %} checked{% endif %}> Fyller 66 inom 12 månader</label>
+      <label for="f-sok">Sök</label>
+      <input id="f-sok" type="search" name="sok" value="{{ filters.sok }}" placeholder="Försäkringsnummer eller namn">
+      <button type="submit" class="secondary">Visa</button>
+      {% if filters.lage or filters.sextiosex or filters.sok %}<a href="/pensioner">Rensa</a>{% endif %}
+    </form>
+  </div>
+  {% if parts is none %}
+  <div class="alert alert--info" role="status"><p>Sök på försäkringsnummer eller namn. Personnummer används aldrig som sökord på sidan.</p></div>
+  {% elif parts.parts %}
+  {% if not steps[4].introduced %}{{ step_notice(4) }}{% endif %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Försäkring</th><th>Ägare</th><th>66 år</th><th>Läge</th><th>Plan</th><th class="num">M</th><th>Öppna ärenden</th></tr></thead>
+    <tbody>{% for p in parts.parts %}<tr>
+      <td class="nowrap">{{ part_ref(p) }}</td>
+      <td>{{ p.owner_name }}{% if p.person_status == "deceased" %} <span class="pill pill--rejected">Avliden</span>{% endif %}</td>
+      <td class="nowrap">{{ p.sixty_six_month | month }}</td>
+      <td>{{ pill_state(p.state) }}{% if p.end_reason %} <span class="muted small">({{ p.end_reason | label('end_reason') }})</span>{% endif %}</td>
+      <td class="small">{% if p.plan %}v{{ p.plan.version }} · {{ p.plan.form | label('payout_form') }} från {{ p.plan.first_right | month }}{% else %}–{% endif %}</td>
+      <td class="num">{{ p.plan.m_sek | sek if p.plan else "–" }}</td>
+      <td class="small">{% for c in p.open_cases %}<a href="/arenden/{{ c.case_number }}">{{ c.case_type | label('case_type') }}</a>{{ ", " if not loop.last }}{% else %}–{% endfor %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% if pages > 1 %}
+  <nav class="pager" aria-label="Sidor">
+    {% if page > 1 %}<a href="{{ page_url(page - 1) }}">Föregående</a>{% endif %}
+    <span class="muted small">Sida {{ page }} av {{ pages }} · {{ parts.total }} delar</span>
+    {% if page < pages %}<a href="{{ page_url(page + 1) }}">Nästa</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}<p class="empty">Inga uttagsdelar{% if filters.lage or filters.sextiosex or filters.sok %} i urvalet{% endif %}.</p>{% endif %}
+</section>
+{% endblock %}

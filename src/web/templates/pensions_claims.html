@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "partials/pensions.html" import subnav, reason_field, f, v, operator_only, opcsrf, part_ref with context %}
+{% from "partials/forms.html" import op_info with context %}
+{% block title %}Månadsrätter och bolagskonto{% endblock %}
+{% block content %}
+{% set co = claims.company %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <div><h1>Månadsrätter och bolagskonto</h1><span class="muted small">Dag {{ today }}</span></div>
+    <form method="get" action="/pensioner/manadsratter" class="filter" aria-label="Urval">
+      <label for="f-manad">Rättighetsmånad</label>
+      <input id="f-manad" type="month" name="manad" value="{{ month }}">
+      <button type="submit" class="secondary">Visa</button>
+      {% if month %}<a href="/pensioner/manadsratter">Alla månader</a>{% endif %}
+    </form>
+  </div>
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+  <dl class="metrics metrics--amounts metrics--summary">
+    <div class="metric"><dt>Betalningsskuld</dt><dd>{{ co.liability_sek | sek }}</dd></div>
+    <div class="metric"><dt>Bolagskonto</dt><dd>{{ co.balance_sek | sek }}</dd></div>
+    <div class="metric"><dt>Ej finansierade anspråk</dt><dd>{{ co.unfunded_claims }} · {{ co.unfunded_sek | sek }}</dd></div>
+  </dl>
+  <p class="small muted">Saldon per {{ co.month | month }}. {{ co.stress_gap }}.</p>
+</section>
+{{ subnav("claims") }}
+
+<section class="panel">
+  <h2>Månadsrätter{% if month %} {{ month }}{% endif %}</h2>
+  {% if claims.claims %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Del</th><th>Månad</th><th class="num">Nr</th><th class="num">Brutto</th><th class="num">Ur kapital</th><th class="num">Bolagsstöd</th><th class="num">Ej finansierat kvar</th><th>Betalningsdag</th><th>Slutavräkning</th></tr></thead>
+    <tbody>{% for c in claims.claims %}<tr>
+      <td class="nowrap">{{ part_ref(parts.get(c.payout_part_id)) }}</td><td class="nowrap">{{ c.right_month | month }}</td>
+      <td class="num">{{ c.right_number }}</td><td class="num">{{ c.gross_sek | sek }}</td><td class="num">{{ c.from_capital_sek | sek }}</td>
+      <td class="num">{{ c.company_support_sek | sek }}</td><td class="num">{{ c.unfunded_remaining_sek | sek }}</td>
+      <td class="nowrap">{{ c.payment_day | iso_date }}</td><td>{{ "ja" if c.final_settlement else "–" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Inga månadsrätter{% if month %} för {{ month }}{% endif %} – de bokas i månadsstängningen.</p>{% endif %}
+</section>
+
+<section class="panel" id="bolagskonto">
+  <h2>Bolagskontot</h2>
+  {% if co.insertions %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Beslutad</th><th>Månad</th><th class="num">Belopp</th><th>Underlag</th><th>E_min</th><th>Av</th></tr></thead>
+    <tbody>{% for i in co.insertions %}<tr>
+      <td class="nowrap">{{ i.decided_on | iso_date }}</td><td class="nowrap">{{ i.month | month }}</td><td class="num">{{ i.amount_sek | sek }}</td>
+      <td>{{ i.document_ref }}</td><td class="small">{{ i.emin_reference or "–" }}</td><td>{{ i.created_by }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Ingen insättning bokad (PB11).</p>{% endif %}
+  <details{% if values.capital is defined %} open{% endif %}>
+    <summary>Registrera ägarens insättning</summary>
+    {% if operator_user %}
+    <div class="formgrid">
+      <form method="post" action="/pensioner/manadsratter/bolagskonto" class="form" hx-boost="false">
+        {{ opcsrf() }}
+        <div class="row">
+          {% call f("capital", "amount_sek", "Belopp (kr)") %}<input id="f-capital-amount_sek" name="amount_sek" inputmode="decimal" value="{{ v('capital', 'amount_sek') }}" required>{% endcall %}
+          {% call f("capital", "decided_on", "Ägarens beslut") %}<input id="f-capital-decided_on" type="date" name="decided_on" value="{{ v('capital', 'decided_on', today) }}" required>{% endcall %}
+          {% call f("capital", "document_ref", "Beslutsunderlag") %}<input id="f-capital-document_ref" name="document_ref" value="{{ v('capital', 'document_ref') }}" required minlength="3">{% endcall %}
+        </div>
+        <div class="row">
+          {% call f("capital", "emin_reference", "E_min (projekt 6)", "Om aktuarien har räknat den") %}<input id="f-capital-emin_reference" name="emin_reference" value="{{ v('capital', 'emin_reference') }}">{% endcall %}
+          {% call f("capital", "note", "Kommentar") %}<input id="f-capital-note" name="note" value="{{ v('capital', 'note') }}">{% endcall %}
+        </div>
+        {{ reason_field("capital", "T.ex. ägarbeslut om startinsättning") }}
+        <div class="form__actions"><button type="submit">Boka insättningen</button></div>
+      </form>
+      {{ op_info(op) }}
+    </div>
+    {% else %}{{ operator_only() }}{% endif %}
+  </details>
+</section>
+{% endblock %}

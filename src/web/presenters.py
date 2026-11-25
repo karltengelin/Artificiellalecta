@@ -64,7 +64,9 @@ OPERATION_LABELS = {
 CASE_TYPES = {"salary_report": "Löneunderlag", "salary_file_deviation": "Avvikelse i lönefil",
               "payment_overdue": "Förfallen faktura", "payment_unmatched": "Oallokerad inbetalning",
               "payout_reconstruction": "Rekonstruktion av uttag", "payout_request": "Begäran om uttag",
-              "payout_review": "Pensionsfråga", "company_capital": "Bolagskapital"}
+              "payout_review": "Pensionsfråga", "company_capital": "Bolagskapital",
+              "payout_hindrance": "Utbetalningshinder", "tax_status": "Skattestatus", "death_report": "Dödsfall",
+              "death_recovery": "Återkrav efter dödsfall", "inheritance_pool": "Arvsvinstpool"}
 CASE_STATUS = {
     "open": "Öppet", "in_progress": "Pågår", "waiting_approval": "Väntar på godkännande",
     "waiting_info": "Väntar på komplettering", "closed": "Stängt",
@@ -73,6 +75,27 @@ CASE_OUTCOMES = {
     "approved": "Godkänt", "rejected": "Avslaget", "supplement_requested": "Komplettering begärd",
     "manual_review": "Manuell prövning", "no_action": "Ingen åtgärd",
 }
+#: Paket B steg 4–7 på handläggarsidan Pensioner och utbetalningar (steg 8, B-056)
+PAYOUT_REQUEST_KINDS = {"start": "Start, uppskov eller ändrad start", "pause": "Paus", "extend": "Förlängning",
+                        "split": "Delning"}
+PAYOUT_FORMS = {"lifelong": "Livsvarig", "fixed_term": "Tidsbegränsad"}
+TAX_KINDS = {"side_income": "Sidoinkomst", "main_income": "Huvudinkomst (skattetabell)",
+             "individual_decision": "Individuellt beslut", "sink": "SINK"}
+PAYOUT_FILE_STATUS = {"prepared": "Förberedd – väntar på godkännande", "approved": "Godkänd och lämnad till banken",
+                      "superseded": "Ersatt"}
+PAYOUT_OUTCOMES = {"executed": "Utförd", "rejected": "Avvisad", "returned": "Återkommen", "unknown": "Okänt utfall"}
+CLAIM_PAYMENT_STATES = {"unfunded": "Ej finansierad", "funded": "Finansierad", "bank_prepared": "I bankfil",
+                        "sent": "Skickad", "paid": "Betald", "rejected": "Avvisad", "returned": "Återkommen",
+                        "unknown": "Okänt utfall", "withdrawn": "Återtagen"}
+DEATH_REPORT_STATUS = {"suspected": "Misstänkt", "verified": "Verifierat", "withdrawn": "Tillbakadraget"}
+DEATH_SOURCES = {"population_register": "Folkbokföringen", "relative": "Anhörig", "employer": "Arbetsgivaren",
+                 "case_handler": "Handläggare", "other": "Annan källa"}
+DEATH_VERIFICATION = {"population_register": "Folkbokföringen", "death_certificate": "Dödsfallsintyg",
+                      "other_document": "Annan handling"}
+ESTATE_ROLES = {"estate_member": "Dödsbodelägare med fullmakt", "estate_administrator": "Boutredningsman",
+                "representative": "Ombud"}
+ESTATE_DOCUMENTS = {"death_certificate_with_family": "Dödsfallsintyg med släktutredning",
+                    "estate_inventory": "Bouppteckning", "power_of_attorney": "Fullmakt"}
 SALARY_FILE_STATUS = {"received": "Väntar på granskning", "approved": "Godkänd", "rejected": "Avslagen"}
 INVOICE_TYPES = {"debit": "Debet", "credit": "Kredit"}
 INVOICE_LINE_TYPES = {"ordinary": "Ordinarie", "rebill": "Ny debet", "additional": "Tillägg", "credit": "Kredit"}
@@ -115,6 +138,17 @@ LABELS = {
     "invoice_line_type": INVOICE_LINE_TYPES,
     "unmatched_reason": UNMATCHED_REASONS,
     "salary_file_reason": SALARY_FILE_REASONS,
+    "payout_request_kind": PAYOUT_REQUEST_KINDS,
+    "payout_form": PAYOUT_FORMS,
+    "tax_kind": TAX_KINDS,
+    "payout_file_status": PAYOUT_FILE_STATUS,
+    "payout_outcome": PAYOUT_OUTCOMES,
+    "claim_payment_state": CLAIM_PAYMENT_STATES,
+    "death_report_status": DEATH_REPORT_STATUS,
+    "death_source": DEATH_SOURCES,
+    "death_verification": DEATH_VERIFICATION,
+    "estate_role": ESTATE_ROLES,
+    "estate_document": ESTATE_DOCUMENTS,
 }
 
 

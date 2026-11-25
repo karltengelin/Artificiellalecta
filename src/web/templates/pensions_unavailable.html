@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "partials/pensions.html" import subnav with context %}
+{% block title %}Pensioner och utbetalningar{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head"><h1>Pensioner och utbetalningar</h1></div>
+  <div class="alert alert--info" role="status">
+    <strong class="alert__title">{{ view_title }} bygger på steg som inte är införda i {{ settings.database_label }}</strong>
+    {% for s in missing %}
+    <p>Steg {{ s.step }} – {{ s.title }}: {% if s.partial %}<strong>delvis infört</strong>, {% endif %}saknar
+      {% for t in s.missing_tables %}<code>{{ t }}</code>{{ ", " if not loop.last }}{% endfor %};
+      förs in med <code>{{ s.script }}</code>.</p>
+    {% endfor %}
+    <p>Migrationerna körs mot Lakebase tidigast {{ earliest }} och bara med Karls OK. Sidan visar inga formulär för stegen tills dess.</p>
+    {% if write_refused %}<p class="alert__nochange">Ingenting har ändrats.</p>{% endif %}
+  </div>
+</section>
+{% if status.steps[0].introduced %}{{ subnav("") }}{% endif %}
+<section class="panel">
+  <h2>Stegen i vald databas</h2>
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Steg</th><th>Innehåll</th><th>Läge</th><th>Skript</th></tr></thead>
+    <tbody>{% for s in status.steps %}<tr>
+      <td class="num">{{ s.step }}</td><td>{{ s.title }}</td>
+      <td>{% if s.introduced %}<span class="pill pill--approved">Infört</span>{% elif s.partial %}<span class="pill pill--rejected">Delvis infört</span>{% else %}<span class="pill pill--pending">Inte infört</span>{% endif %}</td>
+      <td><code>{{ s.script }}</code></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endblock %}

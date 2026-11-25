@@ -64,6 +64,7 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: .9em; }
 .nav-disclosure > summary.db { border: 1px solid var(--color-border); font-size: .8rem; }
 .nav-disclosure > summary.db--lakebase { background: var(--status-error-bg); border-color: var(--status-error-line); color: var(--status-error-text); font-weight: var(--font-weight-emphasis); }
 .prodbanner { background: var(--status-error-bg); color: var(--status-error-text); font-size: .875rem; font-weight: var(--font-weight-emphasis); border-bottom: 1px solid var(--status-error-line); }
+.prodbanner--simulation { background: var(--status-warning-bg); color: var(--status-warning-text); border-bottom-color: var(--status-warning-line); }
 
 .page { flex: 1; width: 100%; max-width: 1180px; margin: 0 auto; padding: var(--space-6) var(--space-5); }
 .footer { color: var(--color-text-muted); font-size: .8rem; padding: var(--space-4) var(--space-5); text-align: center; }

@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 
 from web.development_github import DEFAULT_REPOSITORY, REPOSITORY_PATTERN
@@ -59,6 +60,11 @@ class WebSettings:
     operator_password_hash: str | None = field(default=None, repr=False)
     development_github_repository: str = DEFAULT_REPOSITORY
     development_github_token: str | None = field(default=None, repr=False)
+    #: Simulerad affärsdag för en lokal provkörning (paket B steg 8, Z13): visas i sidhuvudet och sätts per
+    #: förfrågan av `python -m web --affarsdag`. Aldrig mot Lakebase.
+    business_day: date | None = None
+    #: Demodatabasens schema lämnas som det är (inga tabeller läggs till) – för prov utan steg 4–7 (Z13)
+    keep_schema: bool = False
 
     def __post_init__(self) -> None:
         if not _HANDLER_ID.match(self.handler_id):
@@ -69,6 +75,8 @@ class WebSettings:
             raise WebConfigError(
                 f"Okänd databas '{self.database}' – välj {', '.join(DATABASES)} (HANDLAGGARE_DB)"
             )
+        if (self.business_day is not None or self.keep_schema) and self.database != "demo":
+            raise WebConfigError("Simulerad affärsdag och oförändrat schema gäller bara den lokala demodatabasen")
         if self.operator_dataset_id is not None and not re.fullmatch(r"[a-zA-Z0-9_.:-]{1,100}", self.operator_dataset_id):
             raise WebConfigError("OPERATOR_DATASET_ID ska vara en kort datasetreferens utan personuppgifter")
         if not _HANDLER_ID.fullmatch(self.operator_id):

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% from "partials/pensions.html" import subnav, reason_field, f, part_ref with context %}
+{% from "partials/forms.html" import csrf, op_info with context %}
+{% block title %}Dödsfall{% endblock %}
+{% macro part_table(items) %}
+<div class="table-wrap"><table class="table table--compact">
+  <thead><tr><th>Försäkring</th><th>Ägare</th><th>Läge</th><th>Ärenden</th></tr></thead>
+  <tbody>{% for p in items %}<tr>
+    <td class="nowrap">{{ part_ref(p) }}</td><td>{{ p.owner_name }}</td>
+    <td>{{ p.state | label('payout_state') }}{% if p.end_reason %} ({{ p.end_reason | label('end_reason') }}){% endif %}</td>
+    <td class="small">{% for c in p.open_cases %}<a href="/arenden/{{ c.case_number }}">{{ c.case_number }}</a> {{ c.case_type | label('case_type') }}{{ ", " if not loop.last }}{% endfor %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% endmacro %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head"><div><h1>Dödsfall och arvsvinst</h1><span class="muted small">Dag {{ today }}</span></div></div>
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+  {% if outcome and outcome.op == "import_death_notices" %}
+  {% set unknown = outcome.result.outcomes | selectattr("status", "equalto", "unknown_person") | list %}
+  {% if unknown %}
+  <div class="alert alert--approval" role="status"><strong class="alert__title">Okända personnummer i aviseringen</strong>
+    <p>Aviseringen har besked för personer som inte finns i beståndet. De registreras inte; kontrollera dem mot aviseringsfilen.</p>
+    <ul>{% for o in unknown %}<li>Besked <code>{{ o.notice_id }}</code></li>{% endfor %}</ul></div>
+  {% endif %}
+  {% endif %}
+  <dl class="metrics metrics--amounts metrics--summary">
+    <div class="metric"><dt>Arvsvinstpool</dt><dd>{{ status.balances.inheritance_pool_sek | sek }}</dd></div>
+    <div class="metric"><dt>Öppna dödsfallsärenden</dt><dd>{{ status.cases.death_report }}</dd></div>
+    <div class="metric"><dt>Öppna återkrav</dt><dd>{{ status.cases.death_recovery }}</dd></div>
+  </dl>
+  {% for c in status.subjectless_cases if c.case_type == "inheritance_pool" %}
+  <div class="alert alert--approval" role="status"><p>Poolen står kvar: <a href="/arenden/{{ c.case_number }}">{{ c.case_number }}</a> ({{ c.status | label('case_status') }}).</p></div>
+  {% endfor %}
+</section>
+{{ subnav("deaths") }}
+
+<section class="panel">
+  <h2>Öppna dödsfallsbesked</h2>
+  <p class="small muted">Beskeden registreras, verifieras och dödsboet prövas i pensionsakten.</p>
+  {% if reported.parts %}{{ part_table(reported.parts) }}{% else %}<p class="empty">Inga öppna dödsfallsärenden.</p>{% endif %}
+</section>
+
+<section class="panel">
+  <h2>Återkravsprövning</h2>
+  {% if recovery.parts %}{{ part_table(recovery.parts) }}{% else %}<p class="empty">Inga öppna återkrav.</p>{% endif %}
+</section>
+
+<section class="panel">
+  <h2>Avslutade genom dödsfall</h2>
+  {% if ended %}{{ part_table(ended) }}{% else %}<p class="empty">Ingen del är avslutad genom dödsfall.</p>{% endif %}
+</section>
+
+<section class="panel">
+  <details{% if values.notices is defined %} open{% endif %}>
+    <summary>Läs in folkbokföringens avisering</summary>
+    <div class="formgrid">
+      <form method="post" action="/pensioner/dodsfall/avisering" enctype="multipart/form-data" class="form">
+        {{ csrf() }}
+        {% call f("notices", "file", "Aviseringsfil (JSON)", "Filen sparas inte; beskeden blir misstänkta tills de verifieras") %}<input id="f-notices-file" type="file" name="file" accept=".json,application/json" required>{% endcall %}
+        {{ reason_field("notices", "T.ex. veckans avisering från folkbokföringen") }}
+        <div class="form__actions"><button type="submit">Läs in aviseringen</button></div>
+      </form>
+      {{ op_info(op) }}
+    </div>
+  </details>
+</section>
+{% endblock %}

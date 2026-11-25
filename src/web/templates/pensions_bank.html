@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% from "partials/pensions.html" import subnav, reason_field, f, v, operator_only, opcsrf, part_ref with context %}
+{% from "partials/forms.html" import csrf, op_info with context %}
+{% block title %}Bankfiler{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head"><div><h1>Bankfiler</h1><span class="muted small">Dag {{ today }} · {{ orders.count }} filer</span></div></div>
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+  {% if outcome and outcome.op == "create_payout_orders" and outcome.result.summary %}
+  {% set s = outcome.result.summary %}
+  {% if s.blocked %}
+  <div class="alert alert--approval" role="status"><strong class="alert__title">Blockerade personer</strong>
+    <p>{{ s.blocked | length }} personer kom inte med i filen ({% for x in s.blocked %}{{ x.reason }}{{ ", " if not loop.last }}{% endfor %}); skulden står kvar och ärenden är öppnade. Se öppna ärenden under <a href="/pensioner">översikten</a>.</p></div>
+  {% endif %}
+  {% endif %}
+</section>
+{{ subnav("bank") }}
+
+<section class="panel">
+  <h2>Filer</h2>
+  {% for file in orders.files | reverse %}
+  <article class="panel" id="fil-{{ file.file_id }}">
+    <div class="panel__head">
+      <div><h3>{{ file.file_reference }}</h3>
+        <span class="muted small">Betalningsdag {{ file.payment_day | iso_date }} · utförs {{ file.execution_date | iso_date }}{% if file.approved_by %} · godkänd av {{ file.approved_by }}{% endif %}</span></div>
+      <span class="pill{% if file.status == 'approved' %} pill--approved{% elif file.status == 'superseded' %} pill--rejected{% else %} pill--pending{% endif %}">{{ file.status | label('payout_file_status') }}</span>
+    </div>
+    <dl class="metrics metrics--amounts">
+      <div class="metric"><dt>Uppdrag</dt><dd>{{ file.orders | length }}</dd></div>
+      <div class="metric"><dt>Brutto</dt><dd>{{ file.summary.gross_sek | sek if file.summary.gross_sek is defined else "–" }}</dd></div>
+      <div class="metric"><dt>Skatt</dt><dd>{{ file.summary.tax_sek | sek if file.summary.tax_sek is defined else "–" }}</dd></div>
+      <div class="metric"><dt>Netto</dt><dd>{{ file.summary.net_sek | sek if file.summary.net_sek is defined else "–" }}</dd></div>
+    </dl>
+    <p class="small">Kontrollsumma <code>{{ file.checksum }}</code></p>
+    <div class="table-wrap"><table class="table table--compact">
+      <thead><tr><th>Referens</th><th>Delar</th><th>Konto</th><th>Skatt</th><th class="num">Brutto</th><th class="num">Skatt</th><th class="num">Netto</th><th>Utfall</th></tr></thead>
+      <tbody>{% for o in file.orders %}<tr>
+        <td><code>{{ o.reference }}</code></td>
+        <td class="small">{% for l in o.lines %}{{ part_ref(parts.get(l.payout_part_id)) }}{% if l.attempt > 1 %} (försök {{ l.attempt }}){% endif %}{{ ", " if not loop.last }}{% endfor %}</td>
+        <td><code>{{ o.account.clearing_number }} {{ o.account.account_number }}</code></td>
+        <td class="small">{{ o.tax_kind | label('tax_kind') }} · {{ o.tax_method }}</td>
+        <td class="num">{{ o.gross_sek | sek }}</td><td class="num">{{ o.tax_sek | sek }}</td><td class="num">{{ o.net_sek | sek }}</td>
+        <td>{{ (o.outcome | label('payout_outcome')) if o.outcome else "–" }}</td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+    {% if file.status == "prepared" %}
+    {% if operator_user %}
+    <div class="formgrid">
+      <form method="post" action="/pensioner/bankfiler/godkann" class="form" hx-boost="false">
+        {{ opcsrf() }}
+        <input type="hidden" name="file_id" value="{{ file.file_id }}">
+        <input type="hidden" name="reviewed_checksum" value="{{ file.checksum }}">
+        {% call f("approve", "reviewed", "Granskning") %}<label><input id="f-approve-reviewed" type="checkbox" name="reviewed" required> Jag har granskat filen: {{ file.orders | length }} uppdrag, utförandedag {{ file.execution_date | iso_date }}</label>{% endcall %}
+        {{ reason_field("approve", "T.ex. bankfilen för december granskad mot anspråken") }}
+        <div class="form__actions"><button type="submit">Godkänn och lämna till banken</button></div>
+        <p class="small muted">Har underlaget ändrats sedan filen skapades stoppas godkännandet – skapa och granska filen igen.</p>
+      </form>
+      {{ op_info(ops.approve_payout_order) }}
+    </div>
+    {% else %}{{ operator_only() }}{% endif %}
+    {% elif file.status == "approved" and operator_user %}
+    <form method="post" action="/pensioner/bankfiler/hamta" class="form" hx-boost="false">
+      {{ opcsrf() }}
+      <input type="hidden" name="file_id" value="{{ file.file_id }}">
+      <input type="hidden" name="reviewed_checksum" value="{{ file.checksum }}">
+      <div class="form__actions"><button type="submit" class="secondary">Hämta bankfilen (JSON)</button></div>
+      <p class="small muted">Filen har omaskerade kontonummer och visas därför inte på sidan. Hämtningen loggas.</p>
+    </form>
+    {% endif %}
+  </article>
+  {% else %}<p class="empty">Inga bankfiler ännu.</p>{% endfor %}
+</section>
+
+<section class="panel">
+  <h2>Anspråkens betalningsläge</h2>
+  {% if orders.claims %}
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Del</th><th>Månad</th><th class="num">Brutto</th><th>Betalningsdag</th><th>Läge</th><th>Försök</th></tr></thead>
+    <tbody>{% for c in orders.claims %}<tr>
+      <td class="nowrap">{{ part_ref(parts.get(c.payout_part_id)) }}</td><td class="nowrap">{{ c.right_month | month }}</td>
+      <td class="num">{{ c.gross_sek | sek }}</td><td class="nowrap">{{ c.payment_day | iso_date }}</td>
+      <td>{{ c.state | label('claim_payment_state') }}</td>
+      <td class="small">{% for a in c.attempts %}{{ a.attempt }}: {{ a.state | label('claim_payment_state') }}{{ ", " if not loop.last }}{% else %}–{% endfor %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">Inga anspråk ännu.</p>{% endif %}
+</section>
+
+<section class="panel">
+  <details{% if values.create is defined %} open{% endif %}>
+    <summary>Skapa bankfil för en betalningsdag</summary>
+    <div class="formgrid">
+      <form method="post" action="/pensioner/bankfiler/skapa" class="form">
+        {{ csrf() }}
+        {% call f("create", "payment_day", "Betalningsdag", "Helt finansierade anspråk med betalningsdag senast denna dag tas med") %}<input id="f-create-payment_day" type="date" name="payment_day" value="{{ v('create', 'payment_day', today) }}" required>{% endcall %}
+        {{ reason_field("create", "T.ex. utbetalningarna för januari") }}
+        <div class="form__actions"><button type="submit">Skapa bankfilen</button></div>
+      </form>
+      {{ op_info(ops.create_payout_orders) }}
+    </div>
+  </details>
+  <details{% if values.receipts is defined %} open{% endif %}>
+    <summary>Läs in bankens kvittofil</summary>
+    <div class="formgrid">
+      <form method="post" action="/pensioner/bankfiler/kvitton" enctype="multipart/form-data" class="form">
+        {{ csrf() }}
+        {% call f("receipts", "file", "Kvittofil (JSON)", "Bankens fil i operationens format; filen sparas inte") %}<input id="f-receipts-file" type="file" name="file" accept=".json,application/json" required>{% endcall %}
+        {{ reason_field("receipts", "T.ex. bankens kvitton för utbetalningarna") }}
+        <div class="form__actions"><button type="submit">Läs in kvittona</button></div>
+        <p class="small muted">Samma kvitton igen ger ingen ny effekt.</p>
+      </form>
+      {{ op_info(ops.import_payout_receipts) }}
+    </div>
+  </details>
+</section>
+{% endblock %}

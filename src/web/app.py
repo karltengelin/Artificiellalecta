@@ -51,6 +51,7 @@ from web.routes import (
     mission_archive,
     operator,
     parameters,
+    pensions,
     premium_payments,
     premium_reports,
 )
@@ -108,6 +109,10 @@ def create_app(
     app.state.operator_auth = OperatorAuth(settings.operator_id, settings.operator_password_hash)
 
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.allowed_hosts))
+    if settings.business_day is not None:  # bara demodatabasen (WebSettings), paket B steg 8 Z13
+        from simulation.business_day import BusinessDayMiddleware
+
+        app.add_middleware(BusinessDayMiddleware, day=settings.business_day)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.include_router(auth.router)
     app.include_router(enrollment.router)  # före insured: /forsakrade/ny är inget personnummer
@@ -116,6 +121,7 @@ def create_app(
     app.include_router(journal.router)
     app.include_router(cases.router)
     app.include_router(premium_payments.router)
+    app.include_router(pensions.router)
     app.include_router(premium_reports.router)
     app.include_router(case_workspace.router)
     app.include_router(parameters.router)

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "partials/pensions.html" import subnav, reason_field, operator_only, opcsrf, kv with context %}
+{% from "partials/forms.html" import op_info with context %}
+{% block title %}Månadsstängning {{ month }}{% endblock %}
+{% block content %}
+<section class="panel panel--standalone">
+  <div class="panel__head">
+    <div><h1>Månadsstängning</h1><span class="muted small">Dag {{ today }} · senast stängd {{ (status.months.last_closed | month) if status.months.last_closed else "ingen" }}</span></div>
+    <form method="get" action="/pensioner/manadsstangning" class="filter" aria-label="Månad">
+      <label for="f-manad">Pensionsmånad</label>
+      <input id="f-manad" type="month" name="manad" value="{{ month }}" min="2026-11">
+      <button type="submit" class="secondary">Granska</button>
+    </form>
+  </div>
+  {% if message %}<div class="alert alert--success" role="status"><p class="alert__message">{{ message }}</p></div>{% endif %}
+  {% include "partials/error_box.html" %}
+</section>
+{{ subnav("close") }}
+
+<section class="panel">
+  <div class="panel__head"><h2>Granskning av {{ month }}</h2>
+    {% if review %}{% if review.passed %}<span class="pill pill--approved">Kontrollerna går igenom</span>{% else %}<span class="pill pill--rejected">Problem</span>{% endif %}{% endif %}</div>
+  {% if review_error %}
+  <div class="alert alert--{{ review_error.kind }}" role="status"><strong class="alert__title">Månaden kan inte granskas</strong><p>{{ review_error.message }}</p></div>
+  {% elif review %}
+  <p class="small">Läge <strong>{{ review.status }}</strong> · granskningssumma <code>{{ review.review_checksum }}</code></p>
+  {% if review.problems %}<h3>Problem</h3><ul>{% for p in review.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+  {% if review.totals %}<h3>Summor</h3>{{ kv(review.totals) }}{% endif %}
+  {% if review.controls %}
+  <h3>Kontroller</h3>
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Kontroll</th><th>Utfall</th><th>Detalj</th><th class="num">Förväntat</th><th class="num">Faktiskt</th><th class="num">Skillnad</th></tr></thead>
+    <tbody>{% for c in review.controls %}<tr>
+      <td>{{ c.step }}</td><td>{% if c.passed %}<span class="pill pill--approved">OK</span>{% else %}<span class="pill pill--rejected">Avvikelse</span>{% endif %}</td>
+      <td class="small">{{ c.detail or "" }}</td><td class="num">{{ c.expected if c.expected is not none else "–" }}</td>
+      <td class="num">{{ c.actual if c.actual is not none else "–" }}</td><td class="num">{{ c.difference or "–" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+  {% for key in ("claims", "payout", "death") if review[key] is defined and review[key] is mapping %}
+  <details class="context-details"><summary>Avsnittet <code>{{ key }}</code></summary>{{ kv(review[key]) }}
+    {% for sub, d in review[key].items() if d is mapping %}<h4><code>{{ sub }}</code></h4>{{ kv(d) }}{% endfor %}</details>
+  {% endfor %}
+
+  {% if review.passed and review.status != "closed" %}
+  {% if not can_book %}
+  <div class="alert alert--info" role="status"><strong class="alert__title">Bokas med körskriptet</strong>
+    <p>I Lakebase bokas månadsstängningen med körskriptet enligt B-050 S6, efter granskning och Karls OK – inte från sidan.</p></div>
+  {% elif operator_user %}
+  <div class="formgrid">
+    <form method="post" action="/pensioner/manadsstangning/stang" class="form" hx-boost="false">
+      {{ opcsrf() }}
+      <input type="hidden" name="month" value="{{ month }}">
+      <input type="hidden" name="reviewed_checksum" value="{{ review.review_checksum }}">
+      {{ reason_field("close", "T.ex. kontrollerna granskade, alla OK") }}
+      <div class="form__actions"><button type="submit">Boka stängningen för {{ month }}</button></div>
+      <p class="small muted">Har underlaget ändrats sedan granskningen stoppas bokningen – granska igen.</p>
+    </form>
+    {{ op_info(op) }}
+  </div>
+  {% else %}{{ operator_only() }}{% endif %}
+  {% endif %}
+  {% endif %}
+</section>
+
+{% if chain %}
+<section class="panel">
+  <h2>Versionskedjan för {{ month }}</h2>
+  <div class="table-wrap"><table class="table table--compact">
+    <thead><tr><th>Version</th><th>Slag</th><th>Kontrollsumma</th><th>Av</th><th>Tid</th></tr></thead>
+    <tbody>{% for b in chain.versions %}<tr>
+      <td class="num">{{ b.version }}</td><td>{{ "Stängning" if b.kind == "month_close" else "Rättelse" }}</td>
+      <td><code class="small">{{ b.checksum[:16] }}…</code></td><td>{{ b.created_by }}</td><td class="small">{{ b.created_at or "–" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endif %}
+{% endblock %}

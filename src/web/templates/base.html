@@ -83,6 +83,7 @@
         <span class="nav__full nav__stock">{{ stock_links() }}</span>
         {{ nav('/arenden', 'Ärenden', path.startswith('/arenden')) }}
         {{ nav('/premier', 'Premier och betalningar', path.startswith('/premier'), 'Premier') }}
+        {{ nav('/pensioner', 'Pensioner och utbetalningar', path.startswith('/pensioner'), 'Pensioner') }}
         {% call nav('/godkannanden', 'Godkännanden', path.startswith('/godkannanden')) %}{% if pending_approvals %}<span class="count" aria-label="{{ pending_approvals }} väntande förslag" title="Väntande förslag">{{ pending_approvals }}</span>{% endif %}{% endcall %}
         <details class="nav-disclosure nav__more">
           <summary{% if path.startswith(('/arbetsgivare', '/handelselogg', '/parametrar')) %} class="is-current"{% endif %}>Mer</summary>
@@ -99,6 +100,9 @@
   </header>
   {% if settings.is_production %}
   <div class="prodbanner" role="alert"><div class="topbar__bar">Lakebase-beståndet: ändringar sparas på riktigt och loggas i händelseloggen.</div></div>
+  {% endif %}
+  {% if settings.business_day %}
+  <div class="prodbanner prodbanner--simulation" role="status"><div class="topbar__bar">Simulerad affärsdag {{ settings.business_day.isoformat() }} – lokal provkörning, aldrig Lakebase.</div></div>
   {% endif %}
   <main class="page">
     {% if not database_available %}

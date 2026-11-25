@@ -79,14 +79,18 @@ def build_actuary_service(settings, service):
 
 def build_engine(settings: WebSettings) -> Engine:
     if settings.database == "demo":
-        return demo_engine(settings.demo_path)
+        return demo_engine(settings.demo_path, keep_schema=settings.keep_schema)
     if settings.database == "svc_test":
         return svc_test_engine()
     return lakebase_engine()
 
 
-def demo_engine(path: Path) -> Engine:
-    """Lokal SQLite-fil. Transaktionerna köas (BEGIN IMMEDIATE), som i tests/conftest.py."""
+def demo_engine(path: Path, *, keep_schema: bool = False) -> Engine:
+    """Lokal SQLite-fil. Transaktionerna köas (BEGIN IMMEDIATE), som i tests/conftest.py.
+
+    keep_schema: en befintlig fil öppnas som den är, utan nya tabeller – så att en provbild utan paket B:s
+    steg 4–7 visar det som i Lakebase före migrationerna (paket B steg 8, Z13).
+    """
     from utils.demo_data import create_demo_database
 
     created = not path.exists()
@@ -102,10 +106,12 @@ def demo_engine(path: Path) -> Engine:
         connection.exec_driver_sql("BEGIN IMMEDIATE")
 
     if created:
+        if keep_schema:
+            raise FileNotFoundError(f"{path} finns inte – ett oförändrat schema kräver en befintlig fil")
         create_demo_database(engine)
-    else:
+    elif not keep_schema:
         add_missing_tables(engine)
-    change_requests_table.metadata.create_all(engine)
+    change_requests_table.metadata.create_all(engine)  # utvecklingssidans egen tabell, utanför bolagets schema
     return engine
 
 

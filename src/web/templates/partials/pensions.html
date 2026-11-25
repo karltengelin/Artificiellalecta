@@ -1,0 +1,67 @@
+{# Gemensamt för Pensioner och utbetalningar (paket B steg 8, Z1–Z14). Importeras med context. #}
+
+{% macro subnav(active) %}
+<nav class="tabs" aria-label="Pensioner och utbetalningar">
+  <a href="/pensioner"{% if active == "overview" %} aria-current="page"{% endif %}>Översikt</a>
+  <a href="/pensioner/manadsratter"{% if active == "claims" %} aria-current="page"{% endif %}>Månadsrätter och bolagskonto</a>
+  <a href="/pensioner/bankfiler"{% if active == "bank" %} aria-current="page"{% endif %}>Bankfiler</a>
+  <a href="/pensioner/dodsfall"{% if active == "deaths" %} aria-current="page"{% endif %}>Dödsfall</a>
+  <a href="/pensioner/manadsstangning"{% if active == "close" %} aria-current="page"{% endif %}>Månadsstängning</a>
+</nav>
+{% endmacro %}
+
+{# Steget som en del av sidan bygger på: notis i stället för innehåll och formulär (Z9). #}
+{% macro step_notice(number) %}
+{% set s = steps[number] %}
+<div class="alert alert--info" role="status">
+  <strong class="alert__title">Steg {{ s.step }} – {{ s.title }} är inte infört i {{ settings.database_label }}</strong>
+  <p>Tabeller som saknas: {% for t in s.missing_tables %}<code>{{ t }}</code>{{ ", " if not loop.last }}{% endfor %}.
+    De förs in med <code>{{ s.script }}</code>, tidigast 2026-12-01 och med Karls OK.</p>
+  {% if s.partial %}<p><strong>Steget är delvis infört</strong> – migrationen har stannat halvvägs. Kontrollera databasen innan något körs.</p>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro reason_field(key, placeholder) %}
+{% set id = "f-reason-" ~ key %}
+{% set mine = values.get(key) is not none %}
+<div class="field{% if error and mine and error.field_errors.get('reason') %} field--error{% endif %}">
+  <label for="{{ id }}">Motivering</label>
+  <textarea id="{{ id }}" name="reason" rows="2" required minlength="3" placeholder="{{ placeholder }}">{{ values.get(key, {}).get("reason", "") }}</textarea>
+  <small class="field__help">Krävs för alla ändringar och sparas i händelseloggen.</small>
+</div>
+{% endmacro %}
+
+{# Ett fält med felmarkering bara när felet hör till just detta formulär. #}
+{% macro f(key, name, text, help=None) %}
+{% set mine = values.get(key) is not none %}
+<div class="field{% if error and mine and error.field_errors.get(name) %} field--error{% endif %}">
+  <label for="f-{{ key }}-{{ name }}">{{ text }}</label>
+  {{ caller() }}
+  {% if help %}<small class="field__help">{{ help }}</small>{% endif %}
+  {% if error and mine and error.field_errors.get(name) %}<small class="field__error">{{ error.field_errors[name] }}</small>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro v(key, name, default="") %}{{ values.get(key, {}).get(name, default) }}{% endmacro %}
+
+{% macro operator_only() %}
+<div class="alert alert--info" role="status">
+  <strong class="alert__title">Kräver inloggad operatör</strong>
+  <p>{% if operator_auth_enabled %}<a href="/logga-in">Logga in som operatör</a> för att utföra åtgärden.{% else %}Operatörsinloggningen är inte konfigurerad i den här miljön.{% endif %}</p>
+</div>
+{% endmacro %}
+
+{% macro opcsrf() %}<input type="hidden" name="csrf_token" value="{{ operator_csrf }}">{% endmacro %}
+
+{# Skalära värden ur en ordbok som en lista – för granskningsunderlag med många nycklar. #}
+{% macro kv(d, skip=()) %}
+<dl class="facts">
+  {% for k, x in d.items() if k not in skip and (x is string or x is number or x is boolean or x is none) %}
+  <div><dt><code>{{ k }}</code></dt><dd>{% if x is boolean %}{{ "ja" if x else "nej" }}{% elif x is none %}–{% else %}{{ x }}{% endif %}</dd></div>
+  {% endfor %}
+</dl>
+{% endmacro %}
+
+{% macro part_ref(p) %}{% if p %}<a href="/pensioner/forsakringar/{{ p.policy_number }}">{{ p.policy_number }}</a> del {{ p.part_number }}{% else %}–{% endif %}{% endmacro %}
+
+{% macro pill_state(state) %}<span class="pill{% if state == 'in_payout' %} pill--approved{% elif state == 'ended' %} pill--rejected{% else %} pill--pending{% endif %}">{{ state | label('payout_state') }}</span>{% endmacro %}
