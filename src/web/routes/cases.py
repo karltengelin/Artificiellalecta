@@ -140,6 +140,12 @@ def case_detail(request: Request, case_number: str, lasningar: str = ""):
 async def case_run_agent(request: Request, case_number: str):
     form = await request.form()
     check_csrf(request, form)
+    case_type = await run_in_threadpool(_case_type, request, case_number)
+    if case_type in PENSION_CASE_TYPES:  # paket B: agenter får inga rättigheter (PB12, B-056 Z11)
+        error = ErrorView("denied", "Ingen agent i pensionsärenden",
+                          "Uttag, skatt, konto och dödsfall handläggs av en människa på sidan Pensioner och "
+                          "utbetalningar.", 409, nothing_changed=True)
+        return await run_in_threadpool(_case_page, request, case_number, error=error)
     if getattr(request.app.state, "case_workspace", None) is not None:
         error = ErrorView("conflict", "Använd ärendets agentstöd",
                           "Beställ deluppdrag eller lämna över ärendet i den sparade ärendedialogen.", 409,
@@ -165,6 +171,18 @@ async def case_run_agent(request: Request, case_number: str):
     finally:
         _agent_lock.release()
     return await run_in_threadpool(_case_page, request, case_number, run=run)
+
+
+#: Paket B:s ärendetyper – handläggs på /pensioner, aldrig av handläggaragenten (B-056 Z11)
+PENSION_CASE_TYPES = ("payout_reconstruction", "payout_request", "payout_review", "company_capital",
+                      "payout_hindrance", "tax_status", "death_report", "death_recovery", "inheritance_pool")
+
+
+def _case_type(request: Request, case_number: str) -> str | None:
+    try:
+        return read(request, "get_case", {"case_number": case_number}).case_type
+    except ServiceError:
+        return None
 
 
 @router.post("/arenden/{case_number}/status")

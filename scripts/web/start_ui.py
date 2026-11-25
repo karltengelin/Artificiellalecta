@@ -8,6 +8,11 @@ Standardport: Lakebase 8765, svc_test 8766, demo 8767.
     python scripts/web/start_ui.py
     python scripts/web/start_ui.py --db svc_test --port 8766
     python scripts/web/start_ui.py --reset-demo
+
+Provkörning av ett scenario dag för dag (paket B steg 8, B-056 Z13), bara mot lokala SQLite-filer:
+
+    python scripts/web/start_ui.py --demo-fil KOPIA.db --affarsdag 2026-12-15
+    python scripts/web/start_ui.py --demo-fil UTAN_STEG_4_7.db --behall-schema
 """
 
 import sys

@@ -32,7 +32,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 from starlette.concurrency import run_in_threadpool
 
 from services import OperationContext, ServiceError
@@ -495,6 +495,26 @@ async def register_estate(request: Request, policy: str):
 
     return await _submit(request, form, "register_estate_authority", build, lambda **kw: _akt(request, policy, **kw),
                          form_key="estate", view="akt", message=lambda r: "Dödsboets behörighet är registrerad.")
+
+
+@router.get(BASE + "/arenden/{case_number}")
+def case_link(request: Request, case_number: str):
+    """Ärendesidans länk (Z11): till pensionsakten, bolagskontot eller dödsfallen – utan personnummer i adressen."""
+    try:
+        case = read(request, "get_case", {"case_number": case_number})
+        if case.case_type == "company_capital":
+            return RedirectResponse(f"{BASE}/manadsratter#bolagskonto", status_code=303)
+        if case.case_type == "inheritance_pool":
+            return RedirectResponse(f"{BASE}/dodsfall", status_code=303)
+        policy = case.policy_number
+        if policy is None and case.personal_id_number:
+            policies = read(request, "get_payout_person", {"personal_id_number": case.personal_id_number}).payload
+            policy = (policies["policies"] or [None])[0]
+    except ServiceError as exc:
+        return render_error(request, exc)
+    if policy is None:
+        raise HTTPException(404, "Ärendet hör inte till någon försäkring")
+    return RedirectResponse(f"{BASE}/forsakringar/{policy}", status_code=303)
 
 
 # --- månadsrätter och bolagskonto -----------------------------------------------------------------

@@ -434,3 +434,30 @@ def test_etiketterna_tacker_modellernas_varden():
 def test_inga_personnummer_i_testbestandets_lista(desk):
     text = desk.client.get("/pensioner").text
     assert not any(pnr in text for pnr in PERSONS.values())
+
+
+# --- ärendesidan (Z11) ----------------------------------------------------------------------------
+
+
+def test_arendet_leder_till_pensionsakten_och_agenten_startas_inte(desk):
+    post(desk, f"{AKT}/konto", ACCOUNT)
+    post(desk, "/pensioner/bankfiler/skapa", {"payment_day": "2026-12-01", "reason": "December"})  # utan skatt
+    with desk.db.factory() as s:
+        number = s.scalar(select(Case.case_number).where(Case.case_type == "tax_status"))
+    page = desk.client.get(f"/arenden/{number}")
+    assert f'href="/pensioner/arenden/{number}"' in page.text and "Starta agent" not in page.text
+    link = desk.client.get(f"/pensioner/arenden/{number}", follow_redirects=False)
+    assert link.status_code == 303 and link.headers["location"] == AKT
+    before = events(desk.db)
+    refused = post(desk, f"/arenden/{number}/agent")
+    assert refused.status_code == 409 and "Ingen agent i pensionsärenden" in refused.text
+    assert events(desk.db) == before
+
+
+def test_arenden_utan_person_leder_till_sina_floden(desk):
+    with desk.db.factory() as s:
+        numbers = dict(s.execute(select(Case.case_type, Case.case_number)
+                                 .where(Case.case_type.in_(("company_capital", "inheritance_pool")))).all())
+    for case_type, number in numbers.items():
+        target = desk.client.get(f"/pensioner/arenden/{number}", follow_redirects=False).headers["location"]
+        assert target.startswith("/pensioner/manadsratter" if case_type == "company_capital" else "/pensioner/dodsfall")

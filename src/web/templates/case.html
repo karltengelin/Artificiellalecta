@@ -49,6 +49,9 @@
       <p><a class="button secondary" href="/premier#avstamningskonto">Visa avstämningskontot</a></p>
       {% elif case.case_type == 'payment_overdue' and d.get('invoice_number') %}
       <p><a class="button secondary" href="/premier/fakturor/{{ d.invoice_number }}">Öppna fakturan</a></p>
+      {% elif case.case_type in ("payout_reconstruction", "payout_request", "payout_review", "company_capital", "payout_hindrance", "tax_status", "death_report", "death_recovery", "inheritance_pool") %}
+      <p><a class="button secondary" href="/pensioner/arenden/{{ case.case_number }}">Öppna i Pensioner och utbetalningar</a>
+        <span class="muted small">Ärendet hanteras där och stängs här (paket B steg 8)</span></p>
       {% endif %}
     </div>
 
