@@ -8,6 +8,49 @@
 
 ## Beslut
 
+### B-056 | 2026-11-25 | Paket B steg 8: handläggarsidan Pensioner och utbetalningar
+
+**Beslut:** Operatören godkände valen Z1–Z14 för byggsteg 8 i paket B
+([P1-PENSION-001 §10.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#101-val-för-steg-8-handläggarsidan-pensioner-och-utbetalningar))
+enligt förslagen i chatten 2026-11-25: ”Godkänn alla”. Loggningen och byggstarten godkändes
+samma dag: ”Logga och bygg”.
+
+1. **Sidan (Z1–Z2).** `/pensioner` i försäkringsteamets område, med en översikt och sex flöden: begäran
+   och plan, månadsrätt och skuld, skatt och konto, bankuppdrag och kvitton, dödsfall och dödsbo, och
+   månadsstängningen. Pensionsakten nås per försäkringsnummer.
+2. **Operationer (Z3–Z4).** Fjorton befintliga skrivoperationer, alla `HUMAN_ONLY`. Inga nya skrivningar.
+   Tre nya läsningar, alla `HUMAN_ONLY`: `get_pension_status` (utan PII), `list_payout_parts` och
+   `get_payout_person`. De ligger i en egen modul.
+3. **Aktör och kanal (Z5).** Handläggaren registrerar underlag. Stängningen, bankfilens godkännande och
+   insättningen på bolagskontot kräver verifierad operatör. Kanalen sätts i servern, och `customer_portal`
+   och `chatbot` nekas.
+4. **Personuppgifter (Z6–Z8).**
+   - Nya adresser innehåller inga personnummer, och kontonummer visas alltid maskerade.
+   - Motparternas filer laddas upp som JSON.
+   - Varje beslut är bundet till granskningens kontrollsumma.
+5. **Delar som saknas (Z9).** En del vars tabeller saknas visar notisen *Inte införd i vald databas*, utan
+   formulär. Varje POST dit svarar 409, och ingenting skrivs eller loggas. Stängningens kod ändras inte
+   (B-052).
+6. **Stängningen i Lakebase (Z10).** Bokningen kan göras från sidan bara i demo och `svc_test`. I Lakebase
+   görs den med körskriptet enligt B-050 S6 tills ett eget beslut i steg 9.
+7. **Ärenden och kundportalen (Z11–Z12).**
+   - Paket B:s ärenden länkar till sidan och har ingen agentstart.
+   - Kundportalens kontrakt skrivs som en tabell per operation.
+   - Aktörstypen `customer` byggs i projekt 3.
+8. **Webbkontroll och merge (Z13–Z14).**
+   - Prov även utan steg 4–7:s tabeller.
+   - Kontroll i webbläsaren med paket C:s affärsdag och öresfacit.
+   - Ingen kontakt med Lakebase i steg 8.
+   - `paket_b_steg7/compare_main.py` ska vara identisk med main före merge.
+   - Inga nya agenträttigheter.
+
+**Motivering:** Människan ska kunna utföra varje operation i paket B från ett gränssnitt (B-017). Sidan
+måste också fungera i Lakebase innan steg 4–7 är införda, utan att stängningen ändras.
+
+**Preciserar** B-047:s konsekvens om handläggarsidan och PB12. **Bygger på** B-046 steg 7 och B-050–B-055.
+
+---
+
 ### B-055 | 2026-11-24 | Paket B steg 7: dödsfall och arvsvinst
 
 **Beslut:** Operatören godkände valen Y1–Y14 för byggsteg 7 i paket B

@@ -1040,8 +1040,8 @@ tillgångssida kopplas in.
 
 ### 10.1 Val för steg 8: handläggarsidan *Pensioner och utbetalningar*
 
-**Godkända av Karl i chatten 2026-11-25 (”Godkänn alla”) enligt förslagen.** Posten i beslutsloggen
-(föreslagen B-056) och byggstarten väntar på Karls separata OK. Ingen kod för sidan är byggd. Valen preciserar B-047:s konsekvens om en ny handläggarsida och PB12. De ändrar inga
+**Godkända av Karl i chatten 2026-11-25 (”Godkänn alla”) enligt förslagen. Loggade som B-056 samma dag
+efter Karls OK (”Logga och bygg”).** Valen preciserar B-047:s konsekvens om en ny handläggarsida och PB12. De ändrar inga
 produktregler, inga operationer från steg 4–7 och inga befogenheter. Varje val har ett förslag, ett
 alternativ, en motivering och en grund.
 
@@ -1477,7 +1477,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd. *Byggt 2026-11-22 (§5.5, val W1–W12, B-053), verifierat lokalt och mot `svc_test`, med slutavräkningen (W6); körskript i `scripts/simulation/paket_b_steg5/`. Mergat till main 2026-11-23. Inte infört i Lakebase; migrationen efter steg 4:s* | 1, 5, 6, 14, 32, 33, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida. *Valen X1–X13 godkända 2026-11-24 (§8.3); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg6/`. Mergat till main 2026-11-24. Inte infört i Lakebase; migrationen efter steg 5:s* | 18–25, 34 |
 | 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 godkända 2026-11-24 (§9.1, B-055); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg7/`. Mergat till main 2026-11-25. Inte infört i Lakebase; migrationen efter steg 6:s* | 26–31 |
-| 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll. *Valen Z1–Z14 godkända 2026-11-25 (§10.1); loggningen och bygget väntar på Karls OK* | – |
+| 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll. *Valen Z1–Z14 godkända 2026-11-25 (§10.1, B-056); bygget pågår* | – |
 | 9 | Lakebase enligt ovan, med separat OK för varje ingrepp | – |
 
 Postgres-prov körs där ändringen kräver det (B-040). Steg 1–2 delar datamodell med allt
