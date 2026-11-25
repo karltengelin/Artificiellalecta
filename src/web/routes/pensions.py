@@ -587,7 +587,9 @@ async def create_orders(request: Request):
     form = await request.form()
     return await _submit(request, form, "create_payout_orders", lambda: {"payment_day": _date(form, "payment_day")},
                          lambda **kw: _bank(request, **kw), form_key="create", view="bank",
-                         message=lambda r: (r.get("note") or "Bankfilen är skapad.") if r.get("file") else
+                         message=lambda r: ("Bankfilen är skapad. Granska uppdragen och godkänn filen nedan." if r.get("created")
+                                            else "Bankfilen för dagen finns redan – inget nytt skapades.")
+                         if r.get("file") else
                          "Inga anspråk att betala för dagen – ingen bankfil.")
 
 
@@ -642,9 +644,12 @@ async def import_receipts(request: Request):
 def _receipt_message(r: dict) -> str:
     text = (f"Kvittofilen {r['file_reference']}: {r['receipts']} kvitton, {r['new']} nya och {r['already_received']} "
             f"redan inlästa")
-    if r.get("cases_opened"):
-        text += f"; {r['cases_opened']} nya ärenden om konto"
-    return text + (". Utbetalningarna är bokade." if r.get("settlement") else ". Ingenting nytt att boka.")
+    cases = r.get("cases_opened") or []
+    if cases:
+        text += f"; {len(cases)} nya ärenden om konto ({', '.join(cases)})"
+    if r.get("settlement"):
+        return text + ". Utbetalningarna är bokade."
+    return text + (". Inga utförda utbetalningar att boka." if r.get("new") else ". Ingenting nytt att boka.")
 
 
 # --- dödsfallen -----------------------------------------------------------------------------------

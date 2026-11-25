@@ -299,6 +299,29 @@ def test_bankfil_granskas_godkanns_hamtas_och_kvitteras(operator):
     assert "Betald" in operator.client.get(AKT).text
 
 
+def test_avvisad_betalning_oppnar_arende_om_konto(operator):
+    # fall 23: banken avvisar uppdraget – anspråket blir avvisat och ett ärende om kontot öppnas
+    post(operator, f"{AKT}/skatt", TAX)
+    post(operator, f"{AKT}/konto", ACCOUNT)
+    post(operator, "/pensioner/bankfiler/skapa", {"payment_day": "2026-12-01", "reason": "December"})
+    with operator.db.factory() as s:
+        file = s.scalar(select(PayoutFile))
+        file_id, checksum = str(file.id), file.checksum
+    approve = {"file_id": file_id, "reviewed_checksum": checksum, "reviewed": "on", "reason": "Bankfilen granskad"}
+    assert post(operator, "/pensioner/bankfiler/godkann", approve, csrf=operator.op_csrf()).status_code == 200
+    bank_file = post(operator, "/pensioner/bankfiler/hamta", {"file_id": file_id, "reviewed_checksum": checksum},
+                     csrf=operator.op_csrf()).json()
+    [order] = bank_file["orders"]
+    receipt = payout_receipt_file(bank_file, {order["reference"]: "rejected"}, bank_date=date(2026, 12, 4),
+                                  seed=7).payload
+    upload = {"file": ("kvitton.json", io.BytesIO(json.dumps(receipt).encode()), "application/json")}
+    page = post(operator, "/pensioner/bankfiler/kvitton", {"reason": "Bankens kvitton"}, files=upload)
+    assert page.status_code == 200 and "1 nya ärenden om konto (CASE-" in page.text, alerts(page.text)
+    assert "Inga utförda utbetalningar att boka" in page.text
+    assert "Avvisad" in page.text and "12345678" not in page.text
+    assert "Avvisad" in operator.client.get(AKT).text
+
+
 def test_trasig_kvittofil(desk):
     upload = {"file": ("x.json", io.BytesIO(b"inte json"), "application/json")}
     page = post(desk, "/pensioner/bankfiler/kvitton", {"reason": "Prov"}, files=upload)

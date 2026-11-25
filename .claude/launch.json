@@ -4,20 +4,95 @@
     {
       "name": "handlaggare-ui",
       "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
-      "runtimeArgs": ["scripts/web/start_ui.py", "--db", "lakebase", "--port", "8765"],
+      "runtimeArgs": [
+        "scripts/web/start_ui.py",
+        "--db",
+        "lakebase",
+        "--port",
+        "8765"
+      ],
       "port": 8765
     },
     {
       "name": "handlaggare-ui-demo",
       "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
-      "runtimeArgs": ["scripts/web/start_ui.py", "--db", "demo", "--port", "8767"],
+      "runtimeArgs": [
+        "scripts/web/start_ui.py",
+        "--db",
+        "demo",
+        "--port",
+        "8767"
+      ],
       "port": 8767
     },
     {
       "name": "handlaggare-ui-svc-test",
       "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
-      "runtimeArgs": ["scripts/web/start_ui.py", "--db", "svc_test", "--port", "8766"],
+      "runtimeArgs": [
+        "scripts/web/start_ui.py",
+        "--db",
+        "svc_test",
+        "--port",
+        "8766"
+      ],
       "port": 8766
+    },
+    {
+      "name": "pensioner-webbkontroll-2026-12-01",
+      "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "scripts/simulation/paket_b_steg8/web_check.py",
+        "serve",
+        "logs/simulation/paket_b_steg8/web/webb.sqlite",
+        "--day",
+        "2026-12-01",
+        "--port",
+        "8768"
+      ],
+      "port": 8768
+    },
+    {
+      "name": "pensioner-webbkontroll-2026-12-15",
+      "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "scripts/simulation/paket_b_steg8/web_check.py",
+        "serve",
+        "logs/simulation/paket_b_steg8/web/webb.sqlite",
+        "--day",
+        "2026-12-15",
+        "--port",
+        "8768"
+      ],
+      "port": 8768
+    },
+    {
+      "name": "pensioner-webbkontroll-2027-01-04",
+      "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "scripts/simulation/paket_b_steg8/web_check.py",
+        "serve",
+        "logs/simulation/paket_b_steg8/web/webb.sqlite",
+        "--day",
+        "2027-01-04",
+        "--port",
+        "8768"
+      ],
+      "port": 8768
+    },
+    {
+      "name": "pensioner-utan-steg-4-7",
+      "runtimeExecutable": "C:/Claude/Artificiellalecta/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "scripts/simulation/paket_b_steg8/web_check.py",
+        "serve",
+        "logs/simulation/paket_b_steg8/web/utan-steg.sqlite",
+        "--day",
+        "2026-12-15",
+        "--port",
+        "8769",
+        "--keep-schema"
+      ],
+      "port": 8769
     }
   ]
 }

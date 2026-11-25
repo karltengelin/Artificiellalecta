@@ -21,7 +21,7 @@
     <div class="metric"><dt>Bolagskonto</dt><dd>{{ co.balance_sek | sek }}</dd></div>
     <div class="metric"><dt>Ej finansierade anspråk</dt><dd>{{ co.unfunded_claims }} · {{ co.unfunded_sek | sek }}</dd></div>
   </dl>
-  <p class="small muted">Saldon per {{ co.month | month }}. {{ co.stress_gap }}.</p>
+  <p class="small muted">Saldon per {{ co.month | month }}. Stressgap: {{ co.stress_gap }}.</p>
 </section>
 {{ subnav("claims") }}
 

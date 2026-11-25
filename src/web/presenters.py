@@ -81,6 +81,8 @@ PAYOUT_REQUEST_KINDS = {"start": "Start, uppskov eller ändrad start", "pause": 
 PAYOUT_FORMS = {"lifelong": "Livsvarig", "fixed_term": "Tidsbegränsad"}
 TAX_KINDS = {"side_income": "Sidoinkomst", "main_income": "Huvudinkomst (skattetabell)",
              "individual_decision": "Individuellt beslut", "sink": "SINK"}
+TAX_METHODS = {"percent": "procentsats", "fixed": "fast belopp", "below_100": "inget avdrag under 100 kr",
+               "below_1000": "inget avdrag, under 1 000 kr på året"}
 PAYOUT_FILE_STATUS = {"prepared": "Förberedd – väntar på godkännande", "approved": "Godkänd och lämnad till banken",
                       "superseded": "Ersatt"}
 PAYOUT_OUTCOMES = {"executed": "Utförd", "rejected": "Avvisad", "returned": "Återkommen", "unknown": "Okänt utfall"}
@@ -141,6 +143,7 @@ LABELS = {
     "payout_request_kind": PAYOUT_REQUEST_KINDS,
     "payout_form": PAYOUT_FORMS,
     "tax_kind": TAX_KINDS,
+    "tax_method": TAX_METHODS,
     "payout_file_status": PAYOUT_FILE_STATUS,
     "payout_outcome": PAYOUT_OUTCOMES,
     "claim_payment_state": CLAIM_PAYMENT_STATES,

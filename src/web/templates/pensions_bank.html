@@ -39,7 +39,7 @@
         <td><code>{{ o.reference }}</code></td>
         <td class="small">{% for l in o.lines %}{{ part_ref(parts.get(l.payout_part_id)) }}{% if l.attempt > 1 %} (försök {{ l.attempt }}){% endif %}{{ ", " if not loop.last }}{% endfor %}</td>
         <td><code>{{ o.account.clearing_number }} {{ o.account.account_number }}</code></td>
-        <td class="small">{{ o.tax_kind | label('tax_kind') }} · {{ o.tax_method }}</td>
+        <td class="small">{{ o.tax_kind | label('tax_kind') }} · {{ o.tax_method | label('tax_method') }}</td>
         <td class="num">{{ o.gross_sek | sek }}</td><td class="num">{{ o.tax_sek | sek }}</td><td class="num">{{ o.net_sek | sek }}</td>
         <td>{{ (o.outcome | label('payout_outcome')) if o.outcome else "–" }}</td>
       </tr>{% endfor %}</tbody>
