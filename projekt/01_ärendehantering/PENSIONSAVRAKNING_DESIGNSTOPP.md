@@ -970,7 +970,7 @@ Kontrakten från steg 5 och 6 består. Ett anspråk ändras aldrig (W1), och ett
 - KU och AGI;
 - handläggarsidan (steg 8).
 
-**Byggt i steg 7 (2026-11-24 på branchen `claude/paket-b-steg-7-design-c61002`; inte mergat, inte infört i Lakebase):**
+**Byggt i steg 7 (2026-11-24 på branchen `claude/paket-b-steg-7-design-c61002`; mergat till main 2026-11-25, inte infört i Lakebase):**
 
 - **Var det finns:**
   - besked, avisering, dödsbo och läsningar i `src/services/death_reports.py`;
@@ -1123,7 +1123,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 4 | Begäran, plan, beslut, belopp, standardstart och delning. *Byggt 2026-11-21 (§5.4, val V1–V11), verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg4/`. Mergat till main 2026-11-22 (B-052). Inte infört i Lakebase; migrationen tidigast efter novembers stängning (2026-12-01)* | 1–12 |
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd. *Byggt 2026-11-22 (§5.5, val W1–W12, B-053), verifierat lokalt och mot `svc_test`, med slutavräkningen (W6); körskript i `scripts/simulation/paket_b_steg5/`. Mergat till main 2026-11-23. Inte infört i Lakebase; migrationen efter steg 4:s* | 1, 5, 6, 14, 32, 33, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida. *Valen X1–X13 godkända 2026-11-24 (§8.3); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg6/`. Mergat till main 2026-11-24. Inte infört i Lakebase; migrationen efter steg 5:s* | 18–25, 34 |
-| 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 godkända 2026-11-24 (§9.1, B-055); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg7/`. Inte mergat och inte infört i Lakebase; migrationen efter steg 6:s* | 26–31 |
+| 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 godkända 2026-11-24 (§9.1, B-055); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg7/`. Mergat till main 2026-11-25. Inte infört i Lakebase; migrationen efter steg 6:s* | 26–31 |
 | 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll | – |
 | 9 | Lakebase enligt ovan, med separat OK för varje ingrepp | – |
 

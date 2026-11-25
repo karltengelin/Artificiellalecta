@@ -901,7 +901,7 @@ Beslutat i **B-047** punkt 7 och [P1-PENSION-001](../projekt/01_ärendehantering
   - stängningens steg 6–7 i `src/services/month_close.py`: avräkning, återföring, poolen och arvsvinsten (§9.16);
   - dödsboets uppdrag och stoppet vid misstänkt dödsfall i `src/services/payout_orders.py` (§9.19);
   - `src/simulation/counterparties.py`: folkbokföringens avisering (`death_notice_file`, källan `population-register-sim`, Y14).
-- **Tabeller och migration:** `death_reports`, `death_settlements`, `pension_claim_reversals` och `estate_authorities`, se [databasschema §7g och §12](databasschema.md#7g-tabeller-death_reports-death_settlements-pension_claim_reversals-och-estate_authorities--dödsfall-avräkning-och-dödsbo). Inte mergade och inte införda i Lakebase.
+- **Tabeller och migration:** `death_reports`, `death_settlements`, `pension_claim_reversals` och `estate_authorities`, se [databasschema §7g och §12](databasschema.md#7g-tabeller-death_reports-death_settlements-pension_claim_reversals-och-estate_authorities--dödsfall-avräkning-och-dödsbo). Mergade till main 2026-11-25; inte införda i Lakebase.
 - **Befogenheter:** fem nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter (Y11).
 - **Avgränsning:** en ändrad dödsdag eller ett tillbakadraget besked efter avräkningen, verkställt återkrav, dröjsmålsränta, KU och AGI och handläggarsidan ligger utanför steg 7.
 

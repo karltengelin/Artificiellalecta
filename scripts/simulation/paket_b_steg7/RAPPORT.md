@@ -1,7 +1,7 @@
 # Paket B steg 7 – dödsfall, avräkning, arvsvinst och dödsbo: rapport och körordning
 
 > **Design:** [P1-PENSION-001 §9 och §9.1](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md), PB9 och PB10, PR-ITP1-010, -011 och -020 steg 6–7, B-047 punkt 7, Karls val Y1–Y14 (2026-11-24, ”Godkänn alla”). Loggade som **B-055** samma dag efter Karls OK (”Logga och bygg”).
-> **Status 2026-11-24:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg-7-design-c61002`. Jämförelsen med main `df93ea2` är identisk i alla sju lägen. **Inte mergat; inte infört i Lakebase.**
+> **Status 2026-11-24:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/paket-b-steg-7-design-c61002`. Jämförelsen med main `df93ea2` är identisk i alla sju lägen, och efter synken med main `70bba89` (paket C) också. **Mergat till main 2026-11-25** efter Karls OK; **inte infört i Lakebase.**
 
 ## Vad som är byggt
 
