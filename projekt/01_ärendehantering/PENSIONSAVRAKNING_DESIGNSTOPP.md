@@ -1038,6 +1038,359 @@ kommande anspråk, som projekt 5 senare kan använda för likviditet. Ingen för
 order eller portföljrörelse skapas, och utflödet räknas inte två gånger när en
 tillgångssida kopplas in.
 
+### 10.1 Val för steg 8: handläggarsidan *Pensioner och utbetalningar*
+
+**Föreslagna 2026-11-25. De väntar på Karls svar.** Ingen kod för sidan är byggd, och ingenting är loggat i
+beslutsloggen. Valen preciserar B-047:s konsekvens om en ny handläggarsida och PB12. De ändrar inga
+produktregler, inga operationer från steg 4–7 och inga befogenheter. Varje val har ett förslag, ett
+alternativ, en motivering och en grund.
+
+**Utgångsläge.** Steg 1–3 är införda i Lakebase. Steg 4–7 är mergade till main, men deras tabeller saknas i
+Lakebase till efter novembers stängning, tidigast 2026-12-01. I demo och `svc_test` finns alla tabeller.
+Sidan ska därför fungera i båda lägena. Förebilden är *Premier och betalningar* (paket A steg 7,
+`src/web/routes/premium_payments.py`). Den sidan visar en notis när tabellerna saknas och svarar 409 på varje
+POST. Steg 4–7 har i dag 18 operationer. Ingen av dem listar uttagsdelar eller visar en persons skattestatus och
+konton. Anspråk och bankuppdrag pekar på uttagsdelens och personens interna id, inte på försäkringsnummer
+eller namn.
+
+- **Z1 Sidans plats och adresser**
+  - *Förslag:*
+    - En ny sida i försäkringsteamets område, `/pensioner`, i den lokala menyn bredvid *Premier och
+      betalningar*. Koden ligger i `src/web/routes/pensions.py`, mallarna i `pensions_*.html` och testerna i
+      `tests/test_web_pensions.py`.
+    - Sidan har en översikt och fem undersidor:
+      - `/pensioner`: översikten;
+      - `/pensioner/forsakringar/{nr}`: pensionsakten per försäkring;
+      - `/pensioner/manadsratter`: månadsrätter och skuld;
+      - `/pensioner/bankfiler`: bankuppdrag och kvitton;
+      - `/pensioner/dodsfall`: dödsfall och dödsbo;
+      - `/pensioner/manadsstangning`: månadsstängningen.
+    - Sidan följer Digital klarhet (B-034) med befintliga komponenter i `app.css` och inga egna färgvärden.
+  - *Alternativ:* vyerna läggs som flikar i den befintliga översikten för en försäkrad (`/forsakrade/{pnr}`),
+    och månadsstängningen läggs i operatörscentralen.
+  - *Motivering:*
+    - B-047 och §10 nämner en egen sida.
+    - Månadsstängningen och bankfilen gäller hela kollektivet och passar därför inte i en persons översikt.
+    - Enligt projekt 10 stannar enskilda godkännanden i specialistytorna. Operatörscentralen visar trender.
+    - Samma mönster som *Premier och betalningar* gör sidan lätt att känna igen.
+  - *Grund:* B-047, B-046 steg 7, B-034, B-036 och B-038.
+- **Z2 Vyer och flöden**
+  - *Förslag:* översikten och sex flöden. Varje vy visar bara det som dess steg har infört (Z9).
+    1. **Översikt:** vilka steg som är införda (Z9), senast stängda och nästa öppna månad, betalningsskuld,
+       skatteskuld, bolagskonto och arvsvinstpool. Dessutom öppna ärenden per typ med länk till `/arenden`
+       (`payout_request`, `payout_review`, `payout_reconstruction`, `company_capital`, `payout_hindrance`,
+       `tax_status`, `death_report`, `death_recovery` och `inheritance_pool`). Sidan har ett urval av
+       uttagsdelar på läge och på ägare som fyller 66 inom tolv månader.
+    2. **Begäran och plan** i pensionsakten:
+       - delarna med läge, kapital, garanti, gällande plan och delningar;
+       - formulär för en ny begäran;
+       - förhandsberäkningen med G, B, M, kalender och granskningssumma;
+       - beslut om planen eller delningen med summan som visades.
+       
+       Efter en registrerad begäran visas förhandsberäkningen direkt, så att beslutet kan fattas i samma flöde.
+    3. **Månadsrätt och skuld:** anspråken per månad med brutto, del ur kapitalet, bolagsstöd, ej finansierat,
+       senare finansiering och betalningsdag, samt bolagskontots saldo och insättningar. Här finns också
+       formuläret för en insättning på bolagskontot.
+    4. **Skatt och konto** i pensionsakten: skattestatus per år i alla versioner, konton i alla versioner med
+       maskerat nummer, och formulär för en ny version av båda.
+    5. **Bankuppdrag och kvitton:**
+       - bankfilerna med uppdrag, skatt, netto, utförandedag, försening och bankens utfall;
+       - spärrade personer med skäl;
+       - formulär för att skapa filen för en betalningsdag;
+       - godkännande av filen med dess kontrollsumma;
+       - inläsning av bankens kvittofil.
+       
+       Varje anspråks försök och betalningsläge visas.
+    6. **Dödsfall och dödsbo:**
+       - öppna `death_report`- och `death_recovery`-ärenden;
+       - inläsning av folkbokföringens avisering;
+       - i pensionsakten beskeden i alla versioner, registrering, verifiering, ny dödsdag och tillbakadragning,
+         avräkningen per del, återförda anspråk, återkravsärenden och dödsboets företrädare med maskerat konto.
+    7. **Månadsstängningen:**
+       - granskningen av en månad med alla avsnitt: sparande, plan, månadsrätt, utbetalningar, dödsfall och
+         pool;
+       - kontrollposterna med utfall, hindren och granskningssumman;
+       - den stängda månadens versionskedja;
+       - bokningen med den granskade summan (Z10).
+  - *Alternativ:* en enda lång sida, eller bara läsvyer i första versionen med skrivningarna kvar i skripten.
+  - *Motivering:*
+    - Vyerna följer PR-020:s ordning och de sju byggstegen, så varje vy kan visas eller döljas för sig.
+    - Människan ska kunna utföra varje operation från ett gränssnitt (MASTER_CONTEXT §3.7).
+    - Skripten i `scripts/simulation/paket_b_steg*/` är till för Lakebase-ingreppen, inte för den löpande
+      handläggningen.
+  - *Grund:* B-017, PR-ITP1-020 och §7–9 ovan.
+- **Z3 Skrivoperationer**
+  - *Förslag:* sidan anropar fjorton befintliga skrivoperationer, alla `HUMAN_ONLY`, och inga nya:
+    - `register_payout_request`, `decide_payout_plan` och `split_payout_part` (steg 4);
+    - `register_company_capital` (steg 5);
+    - `register_tax_status`, `register_payout_account`, `create_payout_orders`, `approve_payout_order` och
+      `import_payout_receipts` (steg 6);
+    - `register_death_report`, `verify_death_report`, `import_death_notices` och `register_estate_authority`
+      (steg 7);
+    - `close_policy_month` (steg 3).
+
+    Granskningarna `preview_payout_plan` och `prepare_month_close` skriver inget och anropas före besluten.
+    `open_capital_ledger` och AVK:s antagande ingår inte. Övergången är redan gjord, och AVK antas i
+    aktuariens yta (A4). Varje skrivformulär kräver en motivering, och efter ett fel står det *Ingenting har
+    ändrats* (handläggar-UI §5).
+  - *Alternativ:* sidan får egna sammansatta operationer, till exempel *registrera begäran och besluta*.
+  - *Motivering:* människor, skript och den senare kundportalen ska använda samma operationer (B-028,
+    PB12). En sammansatt operation skulle kringgå granskningssumman mellan förhandsberäkning och beslut.
+  - *Grund:* B-028, PB12, X12 och Y11.
+- **Z4 Tre nya läsoperationer**
+  - *Förslag:* tre läsningar, alla `HUMAN_ONLY`. De ligger i en ny modul, `src/services/operations/pension_desk.py`,
+    och ändrar varken stängningen eller steg 4–7:s moduler:
+    - `get_pension_status`, utan PII:
+      - vilka stegs tabeller som finns, med samma prov som tjänstelagret redan använder
+        (`plans_present`, `claims_present`, `orders_present`, `deaths_present` och `month_close_present`);
+      - senast stängda månad;
+      - antal delar per läge;
+      - öppna ärenden per typ;
+      - saldona för skuld, skatteskuld, bolagskonto och pool när tabellerna finns.
+
+      Läsningen fallerar aldrig för att en tabell saknas.
+    - `list_payout_parts`, med PII: uttagsdelarna med försäkringsnummer, delnummer, ägarens namn, 66-månad,
+      läge och gällande plan. Den har urval och sidindelning. Sidan använder den också för att visa
+      försäkringsnummer och namn i stället för interna id i anspråk och bankuppdrag.
+    - `get_payout_person`, med PII: en persons skattestatus och konton i alla versioner med maskerat
+      kontonummer. Läsningen är avgränsad till en person (Z12).
+  - *Alternativ:* steg 4–7:s läsningar får fler fält, till exempel försäkringsnummer och namn i
+    `list_pension_claims`. Ett annat alternativ är att sidan läser `get_insured_overview` en gång per person.
+  - *Motivering:*
+    - Att ändra steg 4–7:s utdata ändrar deras kontrakt och tester, och det ligger nära koden som B-052 skyddar.
+    - En läsning per person ger lika många loggade personuppgiftsläsningar som rader på sidan.
+    - Webben får bara läsa genom tjänstelagret. En ny lista byggs därför som en läsoperation med en rad i
+      `access_register.yaml` (handläggar-UI §2), på samma sätt som `list_salary_files` i paket A.
+  - *Grund:* B-028, handläggar-UI §2 och B-046 steg 7.
+- **Z5 Aktör och kanal**
+  - *Förslag:*
+    - **Handläggaren** som i v1 (`Actor.human(HANDLAGGARE_ID)` med processens formulärtoken) registrerar
+      underlag: begäran, planbeslut och delning, skattestatus, konto, besked, verifiering, dödsbo, avisering och
+      kvittofil.
+    - **Verifierad operatör** (`operator_action`, samma inloggning som aktuariens värderingar) krävs för tre
+      beslut på bolagsnivå:
+      - `close_policy_month`;
+      - `approve_payout_order`, som är den externa handlingen;
+      - `register_company_capital`, som är ägarens insättning.
+
+      Utan inloggning visas formuläret inte, och ett POST svarar 401 utan att något ändras.
+    - **Kanalen** sätts i servern, inte i webbläsaren. Handläggarens formulär sänder `manual`. Kanalen `system`
+      sätts bara av operationerna för filerna (`import_death_notices`). `customer_portal` och `chatbot` nekas
+      från handläggarsidan, eftersom de hör till projekt 3 och 7.
+    - **Mottagningsdagen** anges i varje registrering och är förvald till dagens datum. Fristen räknas från den
+      (§5.1), och sen handläggning flyttar den aldrig.
+    - Ombud anges med `requester = representative` och kräver en bock för verifierad behörighet. Utan den
+      stoppar operationen begäran (V8).
+  - *Alternativ:* alla skrivningar med handläggaren som aktör, som på *Premier och betalningar*. Ett annat
+    alternativ är att alla skrivningar kräver verifierad operatör.
+  - *Motivering:*
+    - En bankfil flyttar pengar (MASTER_CONTEXT §3.5).
+    - Stängningen och insättningen gäller hela kollektivet och bolagets kapital (PB11).
+    - Med en egen inloggning för dessa tre syns en verifierad person i loggen, inte bara konfigurationens id.
+    - Övrig handläggning behåller v1:s väg, så sidan kräver ingen ny inloggning för vardagliga registreringar.
+    - Kanalen i servern gör att en handläggare inte kan registrera något som om det kom från kundportalen.
+  - *Grund:* MASTER_CONTEXT §3.5, PB12, S7, X7, W7 och OC-3a val H–I (operatörsinloggningen).
+- **Z6 Personuppgifter**
+  - *Förslag:*
+    - Nya adresser bär försäkringsnummer (AL-…), aldrig personnummer. Personnumret skickas i formulärets
+      POST-kropp. Det gäller också `HX-Push-Url`.
+    - Översikten, månadsrätterna, bankfilerna och månadsstängningen visar försäkringsnummer, del och namn,
+      inga personnummer. Personnumret visas bara i pensionsaktens sidhuvud, som på översikten för en försäkrad.
+    - Kontonummer visas alltid maskerat med de fyra sista siffrorna (X6). Formuläret för konto visar aldrig
+      det inskrivna numret igen efter sparandet.
+    - Personuppgiftsläsningar (`get_payout_part`, `get_death_settlement`, `list_payout_parts`,
+      `get_payout_person`, `list_payout_orders` och `list_pension_claims`) loggas av tjänstelagret som läsningar,
+      utan resultatet.
+    - Okända personnummer i en avisering visas bara på resultatsidan efter inläsningen. De sparas inte i någon
+      adress.
+    - Uppladdade filer sparas inte av webben. Bara operationens rader finns kvar.
+    - Sidan har ingen agentpanel och skickar inga personuppgifter till en modell.
+  - *Alternativ:* personnummer i adresserna som i resten av handläggar-UI:t.
+  - *Motivering:*
+    - Sidan samlar känsliga uppgifter: skatt, konto, dödsfall och dödsbo.
+    - Handläggar-UI §2 säger redan att adresserna bör byta personnummer mot andra id. En ny sida kan börja så.
+    - Minsta möjliga visning per vy följer B-006 och dataminimeringen.
+  - *Grund:* B-006, handläggar-UI §2, X6 och Y11.
+- **Z7 Filer från motparterna**
+  - *Förslag:*
+    - Bankens kvittofil (`payout_receipt_file`) och folkbokföringens avisering (`death_notice_file`) laddas upp
+      som JSON i simulatorns format, med samma gräns på 5 MB och samma borttagning av `_label` som paket A.
+    - Uppladdningen flyttas från `premium_payments.py` till en gemensam hjälpare, utan ändrat beteende.
+    - Sidan skapar inga motpartsfiler. Simulatorn skapar dem ur beståndet (PA8), och facit hålls separat.
+    - Den godkända bankfilen kan hämtas som JSON, så att den simulerade banken kan svara på den.
+  - *Alternativ:* ingen nedladdning av bankfilen. Kvittofilen skapas då av simulatorn direkt ur databasen.
+  - *Motivering:*
+    - Samma format som operationerna gör att samma fil kan läsas av sidan, skripten och röktestet.
+    - Med en nedladdning syns vad som har lämnats till banken, och det godkända innehållet går att jämföra
+      med kontrollsumman.
+  - *Grund:* B-046 PA8, X8, X11 och Y14.
+- **Z8 Granskning före beslut**
+  - *Förslag:*
+    - Fyra beslut är bundna till det som visades:
+      - planen och delningen till `preview_payout_plan`;
+      - stängningen till `prepare_month_close`;
+      - godkännandet till bankfilens kontrollsumma.
+
+      Formuläret bär summan som en dold uppgift.
+    - Har underlaget ändrats svarar operationen med konflikt. Sidan visar då 409, *Underlaget har ändrats –
+      granska igen*, och en ny granskning.
+    - Godkännandet av bankfilen visar antal uppdrag, summa brutto, skatt och netto, utförandedag och
+      kontrollsumma. Formuläret kräver en bock för *Jag har granskat filen* (X7).
+    - Ett formulär som skickas två gånger ger ingen dubbel effekt, eftersom operationerna är idempotenta.
+  - *Alternativ:* sidan räknar om granskningen vid beslutet och binder den nya summan.
+  - *Motivering:* B-047 och PB3, PB5 och PB8 kräver att beslutet gäller exakt det som granskades. Om summan
+    räknades om vid beslutet skulle det bindningen ska skydda mot gå förlorat.
+  - *Grund:* PB3, PB5, PB8, S7 och X7.
+- **Z9 När steg 4–7:s tabeller saknas**
+  - *Förslag:*
+    - Varje vy och varje formulär hör till ett steg:
+      - steg 1–3: översikten, delarna och månadsstängningen;
+      - steg 4: begäran och plan;
+      - steg 5: månadsrätter och bolagskonto;
+      - steg 6: skatt, konto och bankfiler;
+      - steg 7: dödsfall och dödsbo.
+
+      `get_pension_status` avgör vilka steg som är införda.
+    - En del som inte är införd visar en notis i stället för innehåll. Notisen säger *Inte införd i vald
+      databas*, med steget, tabellerna och migrationsskriptet, och att migrationen förs in efter novembers
+      stängning, tidigast 2026-12-01, med Karls OK. Formulären visas inte.
+    - Ett POST till en del som inte är införd svarar 409 utan att operationen anropas. Ingenting ändras, och
+      ingenting loggas, precis som på *Premier och betalningar*.
+    - Notisen skiljer *inte införd* från *inga rader*. En tom lista visas aldrig när tabellen saknas.
+    - Ett steg räknas som infört bara när alla dess tabeller finns. Ett delvis infört steg visas som inte infört,
+      med en varning att migrationen behöver kontrolleras.
+    - Om operationen ändå blockeras för att tabellerna saknas fångar sidan felet och visar notisen.
+    - I Lakebase i dag syns alltså översikten, uttagsdelarna (499 delar nr 1 i `not_started`) och
+      månadsstängningens granskning. Steg 4–7 visas som inte införda.
+    - Sidan ändrar inte stängningens beteende (B-052):
+      - `month_close.py`, `ledger_premiums.py`, `payout_orders.py` och `death_reports.py` ändras inte;
+      - de nya läsningarna läser bara;
+      - granskningen på sidan är samma anrop som körskriptet gör och ger därför samma granskningssumma.
+  - *Alternativ:* sidan döljs helt tills alla steg är införda. Ett annat alternativ är att sidan visar fel från
+    operationerna som de är.
+  - *Motivering:*
+    - Lakebase saknar steg 4–7 åtminstone till december, men översikten och stängningens granskning är
+      användbara redan nu.
+    - Notisen gör läget tydligt och pekar på nästa steg.
+    - Att inga formulär visas och att varje POST svarar 409 gör att ingenting kan skrivas halvvägs.
+  - *Grund:* B-052, B-053, B-054, B-055 och B-046 steg 7.
+- **Z10 Månadsstängningen på sidan och Lakebase**
+  - *Förslag:*
+    - Granskningen och versionskedjan visas i alla databaser.
+    - Bokningen (`close_policy_month`) kan göras från sidan i demo och `svc_test`.
+    - I Lakebase visar sidan i stället att bokningen görs med körskriptet enligt B-050 S6. Det gäller tills Karl
+      har beslutat att bokningen får göras från sidan, som ett eget val i steg 9. Spärren ligger i servern
+      och följer databasvalet, inte en inställning som kan ändras i webbläsaren.
+    - Skrivningarna i steg 4–7 blir tillgängliga i Lakebase först när respektive migration är införd (Z9).
+      Bankfilens godkännande kräver dessutom verifierad operatör (Z5).
+  - *Alternativ:* bokningen kan göras från sidan även i Lakebase, eller så är stängningen bara en läsvy överallt.
+  - *Motivering:*
+    - Novembers stängning är den första operativa stängningen. Ordningen backup, AVK, granskning, bokning och
+      skrivskyddad kontroll är redan godkänd för skripten (S6).
+    - Sidan ska inte bli en andra väg till samma första ingrepp.
+    - I demo och `svc_test` behövs bokningen för att webbkontrollen ska kunna följa en hel månad.
+  - *Grund:* B-050 S6–S7, B-052 och AGENTS.md §4.5.
+- **Z11 Ärenden**
+  - *Förslag:*
+    - Paket B:s ärendetyper ligger utanför ärendepolicyn och handläggs av en människa.
+    - Ärendesidan `/arenden/{nummer}` får för dessa typer en länk *Öppna i Pensioner och utbetalningar* till
+      pensionsakten eller vyn. Ärenden utan person går till översikten, månadsrätterna eller stängningen.
+    - Ärendet stängs som i dag med `close_case`.
+    - Knappen för att starta handläggaragenten visas inte för dessa typer, eftersom de inte kan lämnas till
+      agenten.
+  - *Alternativ:* sidan stänger ärendena själv.
+  - *Motivering:* ärendet har redan status, historik och stängning. Pensionssidan gör bara det som ärendet
+    kräver, så ingen ny ärendelogik byggs.
+  - *Grund:* B-033, §10, X12 och Y11.
+- **Z12 Kundportalens kontrakt (projekt 3)**
+  - *Förslag:*
+    - Sidan använder operationerna utan logik för just sidan, så kundportalen kan senare använda samma
+      operationer med en egen aktörstyp.
+    - Kontraktet skrivs in i detta avsnitt när sidan byggs, och [projekt 3:s plan](../03_kundportal/PROJEKTPLAN.md)
+      får en hänvisning hit. Kontraktet har en rad per operation:
+      - *kund kan senare anropa*: `register_payout_request` (start, uppskov, paus, förlängning och delning),
+        `register_tax_status` (bara frivilligt högre avdrag), `register_payout_account` (verifieringen görs då
+        i portalen) och `preview_payout_plan` som prognos märkt som osäkert scenario (PR-ITP1-029);
+      - *kund kan senare läsa, avgränsat till sig själv*: `get_payout_part`, `get_payout_person` och den egna
+        delen av `list_pension_claims` och `list_payout_orders`;
+      - *aldrig kund*: planbeslut, delningsbeslut, stängning, bankfil, kvitton, dödsfall, dödsbo och bolagskonto.
+    - Aktörstypen `customer`, kundautentisering och avgränsningen till en person byggs i projekt 3. Steg 8
+      bygger dem inte.
+  - *Alternativ:* aktörstypen `customer` och en läsning per person med kundens egen avgränsning byggs redan nu.
+  - *Motivering:*
+    - PB12 kräver bara att kontraktet förbereds.
+    - Kundautentisering är ett eget säkerhetsbeslut.
+    - Med en tabell per operation vet projekt 3 vad det kan bygga på utan att läsa koden.
+  - *Grund:* PB12, B-020, §10 och PR-ITP1-029.
+- **Z13 Webbkontrollen**
+  - *Förslag:* två delar.
+    - **Automatiska prov** i `tests/test_web_pensions.py` med testklienten mot SQLite:
+      - varje vy visas;
+      - varje formulär anropar rätt operation med rätt aktör och kanal, och kanalen `customer_portal` nekas;
+      - formulärtoken och operatörsinloggningen prövas;
+      - konflikt vid ändrad summa ger 409;
+      - fel visas med *Ingenting har ändrats*;
+      - schemat utan steg 4–7:s tabeller, och med bara steg 4, 5 eller 6: varje sida svarar 200 med notisen,
+        varje POST svarar 409, och inga rader eller händelser skrivs;
+      - inget personnummer i nya adresser, `HX-Push-Url` eller listvyer, och inget omaskerat kontonummer i
+        någon HTML;
+      - de befintliga gränsproven (`test_webbkoden_ror_varken_modeller_eller_sessioner` och designproven) är
+        gröna;
+      - de nya läsningarna prövas också mot Postgres (`--postgres`, B-040).
+    - **Kontroll i webbläsaren** i en lokal databas, startad som `handlaggare-ui-demo` i `.claude/launch.json`:
+      - affärsdagen sätts med tjänstelagrets `business_day`, samma klocka som paket C:s månadssimulator (S-01).
+        En mellanprogramvara i webben sätter dagen för varje anrop;
+      - `start_ui.py` får flaggan `--affarsdag` och kan öppna en kopia av paket C:s frysta startbild för
+        pensionsprovet (`premium_calendar.py start partial --pension`). Båda godtas bara för lokala databaser,
+        aldrig för `lakebase`, och sidhuvudet visar *Simulerad affärsdag*;
+      - kontrollen följer paket C:s pensionsprov genom sidan i stället för skripten:
+        - den 1 december: novembers stängning;
+        - den 15 december: insättningen på bolagskontot, kontot, skattestatusen för 2027 och aviseringen, och
+          sedan verifieringen av beskedet;
+        - den 4 januari 2027: decembers stängning med standardstarten, avräkningen och arvsvinsten, och sedan
+          bankfilen, godkännandet och kvittot;
+      - utfallet jämförs med paket C:s öresfacit: brutto 2 040,07 kr, skatt 612,00 kr, netto 1 428,07 kr,
+        pool 22 817,23 kr och arvsvinst 44,49 kr och 22 772,74 kr;
+      - dessutom prövas fall 23 (avvisning och nytt försök), fall 30 (misstänkt dödsfall) och samma kvittofil
+        två gånger;
+      - kontrollen görs en gång med steg 4–7:s tabeller borttagna, som i `compare_main.py`, och då ska sidan
+        visa notiserna;
+      - skärmbilder och utfall skrivs i `scripts/simulation/paket_b_steg8/RAPPORT.md`.
+    - **Ingen kontakt med Lakebase i steg 8.** Att öppna sidan mot Lakebase är bara läsning, men det görs
+      först i steg 9 efter Karls OK.
+  - *Alternativ:* bara automatiska prov, eller en egen kedja för webbkontrollen i stället för paket C:s prov.
+  - *Motivering:*
+    - Ett facit som redan är verifierat två gånger gör kontrollen oberoende av sidans egen kod.
+    - Den gemensamma klockan finns redan (S-01). Paket A:s webbkontroll satte dagen med ett eget lokalt
+      startskript, och det behövs inte nu.
+    - Att ta bort tabellerna prövar exakt Lakebases läge före migrationerna utan att röra Lakebase.
+  - *Grund:* B-040, B-046 steg 7, B-052 och projektets teststrategi.
+- **Z14 Befogenheter, dokumentation och merge**
+  - *Förslag:*
+    - **Befogenheter:** de tre nya läsningarna är `HUMAN_ONLY`. Inga agentroller får rättigheter, och sidan
+      monteras inte i någon agentpodd.
+    - **Dokumentation:** sidan beskrivs i handläggar-UI §4 och läsningarna i tjänstelager §9.21.
+      `tjänstelager_operationer.md` genereras om. Databasschemat ändras inte, eftersom steg 8 inte inför några
+      tabeller.
+    - **Jämförelse före merge:** `paket_b_steg7/compare_main.py` körs på branchen och ska vara identisk med
+      main i alla sju lägen. Hela sviten körs.
+    - **Merge** till main görs efter Karls OK. Byggordningens steg 9 (Lakebase) påverkas inte.
+  - *Alternativ:* `get_pension_status` får nivån `AGENT`, eftersom den saknar PII (§10).
+  - *Motivering:*
+    - §10 säger att poddmontering prövas när ett agentuppdrag behöver läsningen. Inget sådant uppdrag finns.
+    - Jämförelsen visar att B-052 fortfarande gäller efter bygget.
+  - *Grund:* PB12, B-040, B-048 och B-052.
+
+**Verifiering:** proven och webbkontrollen enligt Z13 och jämförelsen enligt Z14.
+
+**Utanför steg 8:**
+- Lakebase och bokningen från sidan i Lakebase (steg 9, Z10);
+- kundportalens aktörstyp och autentisering (projekt 3);
+- skattetabellen för huvudinkomst (X4);
+- dröjsmålsränta, verkställt återkrav, KU och AGI;
+- agentuppdrag för `payout_request`-ärenden (§13);
+- flytten av sidan till operatörscentralen.
+
 ## 11. Verifieringsfall
 
 Beloppen följer produktreglernas kontrollfall och 2026 års parametrar (avgift 0,20 %,
@@ -1124,7 +1477,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 5 | Månadsrätt och skuld (steg 5) samt bolagskonto och bolagsstöd. *Byggt 2026-11-22 (§5.5, val W1–W12, B-053), verifierat lokalt och mot `svc_test`, med slutavräkningen (W6); körskript i `scripts/simulation/paket_b_steg5/`. Mergat till main 2026-11-23. Inte infört i Lakebase; migrationen efter steg 4:s* | 1, 5, 6, 14, 32, 33, 35 |
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida. *Valen X1–X13 godkända 2026-11-24 (§8.3); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg6/`. Mergat till main 2026-11-24. Inte infört i Lakebase; migrationen efter steg 5:s* | 18–25, 34 |
 | 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 godkända 2026-11-24 (§9.1, B-055); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg7/`. Mergat till main 2026-11-25. Inte infört i Lakebase; migrationen efter steg 6:s* | 26–31 |
-| 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll | – |
+| 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll. *Valen Z1–Z14 föreslagna 2026-11-25 (§10.1); de väntar på Karls svar, och ingenting är byggt* | – |
 | 9 | Lakebase enligt ovan, med separat OK för varje ingrepp | – |
 
 Postgres-prov körs där ändringen kräver det (B-040). Steg 1–2 delar datamodell med allt
