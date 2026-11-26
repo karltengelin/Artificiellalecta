@@ -1391,7 +1391,7 @@ eller namn.
 - agentuppdrag för `payout_request`-ärenden (§13);
 - flytten av sidan till operatörscentralen.
 
-**Byggt i steg 8 (2026-11-25 på branchen `claude/nifty-lovelace-d19817`; inte mergat, rör inte Lakebase):**
+**Byggt i steg 8 (2026-11-25, mergat till main 2026-11-26; rör inte Lakebase):**
 
 - **Var det finns:**
   - sidan i `src/web/routes/pensions.py` och mallarna `src/web/templates/pensions*.html` ([handläggar-UI §4](../../02_system/handläggar-ui.md#4-sidor));

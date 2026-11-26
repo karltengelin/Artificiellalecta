@@ -1,7 +1,7 @@
 # Paket B steg 8 – handläggarsidan Pensioner och utbetalningar: rapport och webbkontroll
 
 > **Design:** [P1-PENSION-001 §10.1](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md), Karls val Z1–Z14 (2026-11-25, ”Godkänn alla”). Loggade som **B-056** samma dag efter Karls OK (”Logga och bygg”).
-> **Status 2026-11-25:** byggt och verifierat lokalt på branchen `claude/nifty-lovelace-d19817`. **Inte mergat till main.** Steg 8 är bara webb och läsningar och rör inte Lakebase – ingen migration och ingen skarp körning (Z13).
+> **Status:** byggt och verifierat lokalt 2026-11-25 på branchen `claude/nifty-lovelace-d19817`. **Mergat till main 2026-11-26** efter Karls OK. Steg 8 är bara webb och läsningar och rör inte Lakebase – ingen migration och ingen skarp körning (Z13).
 
 ## Vad som är byggt
 
@@ -102,5 +102,4 @@ python scripts/simulation/paket_b_steg8/web_check.py facit logs/simulation/paket
 
 ## Kvar
 
-- Merge till main efter Karls OK.
 - Sidan blir användbar mot Lakebase först när steg 4–7 är införda. Migrationerna körs tidigast efter novembers stängning (2026-12-01), i ordningen steg 4, 5, 6 och 7, var och en med Karls OK.
