@@ -26,6 +26,12 @@ Handläggaren kan i v1:
 - registrera löneunderlag, sätta fribrev och rätta premier;
 - godkänna eller avslå agentförslag och läsa händelseloggen.
 - registrera ärenden om inrapporterat löneunderlag och låta handläggaragenten pröva dem (Fas 5, B-033; tabellen och agentrollens rättigheter finns i Lakebase sedan 2026-10-24).
+- följa premieflödet på sidan *Premier och betalningar* (`/premier`, paket A steg 7, B-046): ta emot och godkänna
+  löneunderlagsfiler, fakturera, läsa in bankfiler och fördela inbetalningar. Tabellerna finns i Lakebase sedan 2026-11-08;
+- följa uttagsflödet på sidan *Pensioner och utbetalningar* (`/pensioner`, paket B steg 8, B-056, mergad 2026-11-26):
+  översikt, pensionsakt, månadsrätter och bolagskonto, bankfiler, dödsfall och månadsstängning. Bankfil, bolagskonto och
+  stängning kräver operatörsinloggning, och i Lakebase bokas stängningen bara med skriptet. Sidan visar en notis för
+  steg 4–7 tills deras migrationer är körda i Lakebase (tidigast efter 2026-12-01).
 
 Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.md`.
 
@@ -37,6 +43,8 @@ Allt går via tjänstelagret och loggas. Beskrivning: `02_system/handläggar-ui.
 | S4 | Designstopp: nya operationer, se [OPERATIONER_BESLUTSFORSLAG.md](OPERATIONER_BESLUTSFORSLAG.md) | ✅ Godkänt, B-032 |
 | S5 | Anslutning, aktuell lön, kontaktuppgifter, arbetsgivare | ✅ |
 | S6 | Skarp verifiering i Lakebase | ✅ Backup `20261012T193537Z`. Verifieringsposten AL-000499 anslöts, fick ändrad lön och löneunderlag och sattes i fribrev. Rader och händelselogg stämmer (ATT_GORA) |
+| Paket A steg 7 | Sidan *Premier och betalningar*, se [designstoppet P1-PREMIE-001](PREMIEFLODE_DESIGNSTOPP.md) §8 | ✅ B-046, tabellerna i Lakebase 2026-11-08 |
+| Paket B steg 8 | Sidan *Pensioner och utbetalningar*, se [designstoppet P1-PENSION-001](PENSIONSAVRAKNING_DESIGNSTOPP.md) §10.1 | ✅ B-056, mergad 2026-11-26; steg 4–7 ännu inte i Lakebase |
 
 ## Beroenden
 
