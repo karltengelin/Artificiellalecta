@@ -39,10 +39,12 @@ Delprojekten har egna projektplaner. Kod och tester ligger i gemensamma träd.
 
 ### Repo per område
 
-Utred vilka delar som vinner på eget ägarskap och egen utgivning. Pröva gränsen
-mellan produktmotor och webb eller en framtida kundportal. Kartlägg först dagens
-importer och gemensamma datamodeller. Om delar flyttas isär behöver de versionssatta
-kontrakt för sina anrop och en plan för hur ändringar samordnas över repogränserna.
+Bolaget kan ha flera repon för olika delar av verksamheten. Produktmotor, intern
+webb och en framtida kundportal är exempel på möjliga områden. Utred vilka delar
+som vinner på eget ägarskap och egen utgivning. Låt ansvar och tekniska beroenden
+avgöra antalet repon och var gränserna dras. Kartlägg först dagens importer och
+gemensamma datamodeller. Om delar flyttas isär behöver de versionssatta kontrakt
+för sina anrop och en plan för hur ändringar samordnas över repogränserna.
 
 ### Egna tester och agentinstruktioner
 
