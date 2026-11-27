@@ -89,7 +89,8 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
 - [x] **Valen Y1–Y14** *2026-11-24* godkända av Karl ([designstoppet §9.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#91-val-för-steg-7-dödsfall-och-arvsvinst)).
 - [x] **B-055** *2026-11-24* loggad efter Karls OK (”Logga och bygg”).
 - [x] **Bygget** *2026-11-24* på branchen `claude/paket-b-steg-7-design-c61002` ([rapport](scripts/simulation/paket_b_steg7/RAPPORT.md)). Jämförelsen mot main `df93ea2` är identisk i alla sju lägen (Y13, B-052).
-- [ ] **Merge till main** efter Karls OK; jämförelsen körs om mot den main som gäller då.
+- [x] **Merge till main** *2026-11-25* efter Karls OK, efter synken med paket C (`70bba89`). Jämförelsen var
+  identisk också efter synken (main `4c95a8d`).
 - [ ] **Migrationen i Lakebase** (`migrate_death_reports.py`) efter steg 6:s, med backup, torrkörning och Karls separata OK (Y12).
 
 **Därefter, paket B steg 8** (handläggarsidan *Pensioner och utbetalningar* med webbkontroll, rör inte Lakebase):
