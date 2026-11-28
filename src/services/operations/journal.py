@@ -19,7 +19,14 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 
-from models import ApprovalRequestRecord, InsuredPerson, OperationEventRecord, Policy, PolicyBenefit, PremiumTransaction
+from models import (
+    ApprovalRequestRecord,
+    InsuredPerson,
+    OperationEventRecord,
+    Policy,
+    PolicyBenefit,
+    PremiumTransaction,
+)
 from services.contract import OperationContext, OperationKind, operation
 from services.errors import NotFoundError
 
@@ -34,7 +41,11 @@ def _iso(value: datetime | None) -> str | None:
 # --- godkännandekön -----------------------------------------------------------------------------
 
 
-class ApprovalQuery(BaseModel):
+class ApprovalScope(BaseModel):
+    operations: tuple[str, ...] | None = Field(default=None, max_length=100, description="Urval på operationer")
+
+
+class ApprovalQuery(ApprovalScope):
     status: ApprovalStatus | None = Field(default="pending", description="Urval på status; None = alla")
     approval_id: str | None = Field(default=None, max_length=32, description="Ett enskilt förslag")
     case_id: str | None = Field(default=None, max_length=100, description="Bara förslag i ett ärende (CASE-NNNNNN)")
@@ -80,6 +91,8 @@ def list_approval_requests(ctx: OperationContext, data: ApprovalQuery) -> Approv
         query = query.where(ApprovalRequestRecord.case_id == data.case_id)
     if data.status is not None:
         query = query.where(ApprovalRequestRecord.status == data.status)
+    if data.operations is not None:
+        query = query.where(ApprovalRequestRecord.operation.in_(data.operations))
     if data.status == "pending":
         query = query.order_by(ApprovalRequestRecord.created_at)
     else:
@@ -101,10 +114,6 @@ def list_approval_requests(ctx: OperationContext, data: ApprovalQuery) -> Approv
     return ApprovalList(requests=items, count=len(items))
 
 
-class Empty(BaseModel):
-    pass
-
-
 class ApprovalCounts(BaseModel):
     pending: int
     approved: int
@@ -116,13 +125,12 @@ class ApprovalCounts(BaseModel):
     description="Räknar ärendena i godkännandekön per status. Inga personuppgifter.",
     kind=OperationKind.READ,
 )
-def count_approval_requests(ctx: OperationContext, data: Empty) -> ApprovalCounts:
+def count_approval_requests(ctx: OperationContext, data: ApprovalScope) -> ApprovalCounts:
     session = ctx.require_session()
-    rows = dict(
-        session.execute(
-            select(ApprovalRequestRecord.status, func.count()).group_by(ApprovalRequestRecord.status)
-        ).all()
-    )
+    query = select(ApprovalRequestRecord.status, func.count()).group_by(ApprovalRequestRecord.status)
+    if data.operations is not None:
+        query = query.where(ApprovalRequestRecord.operation.in_(data.operations))
+    rows = dict(session.execute(query).all())
     return ApprovalCounts(
         pending=rows.get("pending", 0), approved=rows.get("approved", 0), rejected=rows.get("rejected", 0)
     )

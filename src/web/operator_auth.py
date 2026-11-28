@@ -1,7 +1,6 @@
-"""Lokal operatörssession för bolagsfrågor, OC-3a val H–I.
+"""Lokal inloggning och sessionsskydd för handläggare och operatör.
 
-Inga databasrättigheter eller policy_admin följer av sessionen. Äldre
-handläggarvägar använder fortsatt sin befintliga kontext och processtoken.
+Webbens roller ger inga nya databasrättigheter eller policy_admin.
 """
 
 from __future__ import annotations
@@ -12,6 +11,7 @@ import time
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from enum import StrEnum
 from threading import Lock
 from urllib.parse import urlsplit
 
@@ -29,22 +29,32 @@ MAX_SESSIONS = 256
 MAX_PASSWORD_LENGTH = 1024
 
 
-def validate_password_hash(encoded: str | None) -> None:
+def validate_password_hash(encoded: str | None, *, variable: str = "OPERATOR_PASSWORD_HASH") -> None:
     if encoded is None:
         return
     try:
         if extract_parameters(encoded).type != Type.ID:
             raise ValueError
     except (InvalidHashError, ValueError, TypeError):
-        raise ValueError("OPERATOR_PASSWORD_HASH måste vara en giltig Argon2id-hash från provisioneringsskriptet") from None
+        raise ValueError(f"{variable} måste vara en giltig Argon2id-hash från provisioneringsskriptet") from None
+
+
+class Role(StrEnum):
+    HANDLER = "handlaggare"
+    OPERATOR = "operator"
 
 
 @dataclass(frozen=True)
 class OperatorSession:
-    operator_id: str | None
+    user_id: str | None
     csrf_token: str = field(repr=False)
     created_at: float
     last_seen: float
+    role: Role | None = None
+
+    @property
+    def operator_id(self) -> str | None:
+        return self.user_id if self.role == Role.OPERATOR else None
 
 
 class LoginRejected(Exception):
@@ -55,10 +65,21 @@ class LoginRejected(Exception):
 
 
 class OperatorAuth:
-    def __init__(self, operator_id: str, password_hash: str | None, *, clock: Callable[[], float] = time.monotonic):
+    def __init__(
+        self, operator_id: str, password_hash: str | None, *,
+        handler_id: str = "handlaggare", handler_password_hash: str | None = None,
+        clock: Callable[[], float] = time.monotonic,
+    ):
         validate_password_hash(password_hash)
+        validate_password_hash(handler_password_hash, variable="HANDLAGGARE_PASSWORD_HASH")
+        if handler_password_hash and operator_id == handler_id:
+            raise ValueError("Handläggare och operatör måste ha olika inloggningsnamn")
         self.operator_id = operator_id
-        self._password_hash = password_hash
+        self._accounts: dict[str, tuple[Role, str]] = {}
+        if password_hash is not None:
+            self._accounts[operator_id] = (Role.OPERATOR, password_hash)
+        if handler_password_hash is not None:
+            self._accounts[handler_id] = (Role.HANDLER, handler_password_hash)
         self._clock = clock
         self._hasher = PasswordHasher()
         self._sessions: dict[str, OperatorSession] = {}
@@ -68,7 +89,7 @@ class OperatorAuth:
 
     @property
     def enabled(self) -> bool:
-        return self._password_hash is not None
+        return bool(self._accounts)
 
     @staticmethod
     def _key(token: str) -> str:
@@ -79,15 +100,15 @@ class OperatorAuth:
             if now - item.last_seen >= IDLE_SECONDS or now - item.created_at >= LIFETIME_SECONDS:
                 del self._sessions[key]
 
-    def _create(self, operator_id: str | None, now: float) -> tuple[str, OperatorSession]:
+    def _create(self, user_id: str | None, now: float, role: Role | None = None) -> tuple[str, OperatorSession]:
         self._prune(now)
         if len(self._sessions) >= MAX_SESSIONS:
-            anonymous = next((key for key, item in self._sessions.items() if item.operator_id is None), None)
+            anonymous = next((key for key, item in self._sessions.items() if item.user_id is None), None)
             if anonymous is None:
                 raise LoginRejected(503)
             del self._sessions[anonymous]
         token = secrets.token_urlsafe(32)
-        item = OperatorSession(operator_id, secrets.token_urlsafe(32), now, now)
+        item = OperatorSession(user_id, secrets.token_urlsafe(32), now, now, role)
         self._sessions[self._key(token)] = item
         return token, item
 
@@ -114,7 +135,7 @@ class OperatorAuth:
                 self._sessions.pop(self._key(token), None)
 
     def authenticate(self, token: str, username: str, password: str) -> tuple[str, OperatorSession]:
-        # En gemensam gräns för den enda operatören; namn, IP och X-Forwarded-For
+        # En gemensam gräns för den lokala appen; namn, IP och X-Forwarded-For
         # kan inte kringgå den. Låset omfattar verifieringen även vid samtidiga anrop.
         with self._lock:
             now = self._clock()
@@ -127,15 +148,16 @@ class OperatorAuth:
                 raise LoginRejected(403)
             while self._failures and self._failures[0] <= now - ATTEMPT_WINDOW_SECONDS:
                 self._failures.popleft()
+            account = self._accounts.get(username)
             valid = False
             if 0 < len(password) <= MAX_PASSWORD_LENGTH and len(username) <= 100:
                 try:
-                    # Samma lösenordsarbete även för ett felaktigt operatörsnamn.
-                    valid = self._hasher.verify(self._password_hash, password)
+                    # Gör ett lösenordstest även för okända namn.
+                    encoded = (account or next(iter(self._accounts.values())))[1]
+                    valid = self._hasher.verify(encoded, password) and account is not None
                 except (VerificationError, InvalidHashError):
                     pass
-                valid = secrets.compare_digest(username.encode(), self.operator_id.encode()) and valid
-            if not valid:
+            if not valid or account is None:
                 self._failures.append(now)
                 if len(self._failures) >= MAX_FAILURES:
                     self._blocked_until = now + ATTEMPT_WINDOW_SECONDS
@@ -144,7 +166,7 @@ class OperatorAuth:
                 raise LoginRejected(401)
             self._failures.clear()
             self._sessions.pop(self._key(token), None)
-            return self._create(self.operator_id, self._clock())
+            return self._create(username, self._clock(), account[0])
 
 
 def cookie_name(request: Request) -> str:
@@ -196,12 +218,19 @@ def check_session_csrf(request: Request, form: dict) -> OperatorSession:
     return item
 
 
-def operator_actor(request: Request) -> Actor:
-    """Identitet för nya bolagsfrågor, aldrig ur formulär eller HANDLAGGARE_ID."""
+def signed_in_session(request: Request) -> OperatorSession:
     check_transport(request)
     item = current_session(request)
-    if item is None or item.operator_id is None:
-        raise HTTPException(401, "Logga in som operatör för att fortsätta")
+    if item is None or item.user_id is None:
+        raise HTTPException(401, "Logga in för att fortsätta")
+    return item
+
+
+def operator_actor(request: Request) -> Actor:
+    """Bolagsåtgärder använder den inloggade operatörens identitet."""
+    item = signed_in_session(request)
+    if item.operator_id is None:
+        raise HTTPException(403, "Åtgärden kräver operatörens behörighet")
     return Actor.human(item.operator_id)
 
 

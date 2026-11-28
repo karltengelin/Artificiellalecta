@@ -71,7 +71,7 @@ ytor återstår enligt ATT_GORA.
 - Python ≥ 3.11
 - Databricks Lakebase (serverless Postgres) via SQLAlchemy (B-018)
 - Modellagnostisk AI-arkitektur (OpenAI + Anthropic) via eget abstraktionslager i `src/ai/`
-- Handläggar-UI: FastAPI + Jinja2 + HTMX ovanpå tjänstelagret, bara lokalt. Vanlig skrivbordsgenväg använder Lakebase (8765); separat DEMO-genväg och `python scripts/web/start_ui.py` använder lokal övningsdata (8767). Installera genvägarna med `python scripts/web/install_desktop_shortcut.py`. Ingen synkning mellan miljöerna; se [handläggar-ui.md](02_system/handläggar-ui.md)
+- Lokal webbplattform med Certa som entré. FastAPI + Jinja2 + HTMX ovanpå tjänstelagret. Vanlig skrivbordsgenväg använder Lakebase (8765). DEMO-genvägen och `python scripts/web/start_ui.py` använder lokal övningsdata (8767). Se [start och miljöval](02_system/handläggar-ui.md#3-starta).
 - Markdown som primärt informationsformat
 - Git + GitHub för versionskontroll
 
@@ -97,10 +97,8 @@ team, agentkostnader och underlag. Saknade värderingsmotorer och loggkällor
 visas uttryckligt som luckor. [Drift och begränsningar](02_system/operatörscentral_drift.md).
 Ingen modell-/budgetstyrning eller driftsatt Databricks-integration ingår.
 
-[Operatörsinloggning för bolagsfrågor](02_system/operator_inloggning.md) finns
-som lokal grund enligt godkända OC-3a val H–I (2026-10-27): Argon2id,
-serverlagrad session, sessionsbundet formulärskydd och utloggning. Operatören
-sätter själv lösenfrasen med `python scripts/web/set_operator_password.py`.
-Inloggningen krävs för att beställa och granska fria uppdrag i
-[Fråga bolaget](02_system/bolagsorkestrator_pilot.md) i centralen. Äldre
-bolagsuppdrag går att läsa i uppdragsarkivet.
+[Certa-inloggningen](02_system/operator_inloggning.md) tar handläggaren till
+Försäkring och operatören till Centralen. Den bygger på OC-3a:s befintliga
+Argon2id-lösenfraser och serverlagrade sessioner. Arbetsytorna i Centralen visar
+vad som är tillgängligt i den valda miljön, bland annat
+[Fråga bolaget i Demo](02_system/bolagsorkestrator_pilot.md) och uppdragsarkivet.

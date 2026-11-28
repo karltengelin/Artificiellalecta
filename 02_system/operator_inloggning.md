@@ -1,40 +1,59 @@
-# Operatörsinloggning för bolagsfrågor
+# Certa och bolagets lokala inloggning
 
-> **Datum:** 2026-10-27. **Omfattning:** OC-3a val H–I, godkända av operatören
-> tillsammans med A–L i chatten. Lokal inloggningsgrund; uppdragsvy, rapportering
-> och koppling till uppdragsadaptern är separata byggdelar.
+Den lokala webbstarten öppnar Certa på `/`. Klicka på märket i kokongen för
+att skriva användarnamn och lösenfras. Operatören öppnar Centralen och når
+Försäkring samt de arbetsytor som finns i den valda miljön. Handläggaren öppnar
+Försäkring med bestånd, ärenden, premier, pensioner och handläggningens godkännanden.
+
+Genvägen avgör vilken server och databas som startas. Kontot avgör vilka
+sidor och åtgärder som tillåts på den servern. Servern prövar också direktlänkar
+och använder den verifierade användarens id i tjänstelagrets händelselogg.
+Bankfilsgodkännande, månadsstängning och andra redan skyddade bolagsåtgärder
+kräver operatörens session.
 
 ## Kom igång
 
-Installera projektets beroenden i din Pythonmiljö. Operatören sätter sedan
-själv sin lösenfras i en interaktiv terminal:
+Operatören använder sitt befintliga lokala konto. Vid första provisionering
+eller byte av lösenfras använder operatören en interaktiv terminal från
+huvudcheckouten:
 
 ```powershell
-python -m pip install -e .
 python scripts/web/set_operator_password.py
-python scripts/web/start_ui.py --db demo
+python scripts/web/set_operator_password.py --handlaggare <namn>
 ```
 
-Öppna `/logga-in` på den lokala servern eller välj **Logga in** i sidhuvudet.
-Operatörsnamnet är som standard `karl`. Skriptet frågar efter lösenfrasen två
+Det andra kommandot används när ett handläggarkonto behövs. Operatörsnamnet
+är som standard `karl`. Skriptet frågar efter lösenfrasen två
 gånger med dold inmatning och skriver bara dess Argon2id-hash till `.env`.
 Lösenfrasen ska vara 12–1 024 tecken. Ingen lösenfras eller hash skrivs till
 terminalen. Skriptet vägrar utan interaktiv terminal eller om målfilen heter
 något annat än `.env`; det bevarar övriga miljövariabler.
 
-`--operator <namn>` väljer lokal operatör och `--env-file <sökväg-till-.env>`
-väljer konfigurationsfil. Lösenfrasen tas aldrig som kommandoradsargument.
-Starta om respektive miljös webbserver efter provisionering eller byte.
-Agenter skapar eller väljer inte operatörens lösenfras.
+`--operator <namn>` väljer ett annat operatörsnamn. `--env-file <sökväg-till-.env>`
+väljer konfigurationsfil. Starta om respektive miljös webbserver efter
+provisionering eller byte. Använd sedan den vanliga skrivbordsgenvägen eller
+DEMO-genvägen. [Start och datakällor](handläggar-ui.md#3-starta).
 
 | Variabel | Betydelse |
 |---|---|
-| `OPERATOR_ID` | Namngiven operatör; standard `karl`. Separat från handläggarens konfigurerade aktör |
-| `OPERATOR_PASSWORD_HASH` | Argon2id-hash skapad av skriptet. Tomt värde stänger inloggningen |
+| `OPERATOR_ID` | Namngiven lokal operatör. Standard `karl` |
+| `OPERATOR_PASSWORD_HASH` | Operatörens Argon2id-hash |
+| `HANDLAGGARE_LOGIN_ID` | Namngiven lokal handläggare med annat användarnamn än operatören |
+| `HANDLAGGARE_PASSWORD_HASH` | Handläggarens Argon2id-hash |
 
 Faktiska värden hör endast hemma i gitignorerad `.env`. `.env.example`
-dokumenterar variablerna utan värden. En felaktig hash stoppar konfigurationen
-med ett sanerat fel. Ingen standardlösenfras eller automatisk demoinloggning finns.
+dokumenterar variablerna utan värden. En tom hash lämnar motsvarande konto
+avstängt. En felaktig hash stoppar konfigurationen med ett sanerat fel.
+
+### Moduler vid start
+
+Samma lokala `.env` används av skrivbordsgenvägen, miljöbytaren och en vanlig
+kommandostart. `WEB_ACTUARY_WORKSPACE=true` ansluter aktuariedialogen med
+befintlig AI-konfiguration, lokala DM Sans-filer och aktuarierollen i Lakebase.
+`WEB_COMPANY_ORCHESTRATOR=true` aktiverar nya bolagsuppdrag i Demo med
+konfigurerad operatör och modell. Sätt värdena en gång och starta om servern.
+Centralens avsnitt **Arbetsytor** visar vilka funktioner som är anslutna i
+miljön. Modellkörningar startas genom respektive arbetsyta.
 
 ## Session, rättigheter och livslängd
 
@@ -50,9 +69,9 @@ GET loggar inte ut. Serveromstart återkallar samtliga sessioner.
   `Domain`. Namnet `__Host-al-operator-<miljö>` skiljer miljöerna åt på samma
   värd; serverlagret är separat per process. Miljöbyte överför ingen session.
 - Fem felaktiga försök inom fem minuter ger fem minuters väntan. Gränsen
-  delas av den enda operatörens alla namn-/IP-försök och sessioner, även vid
+  delas av den lokala appens alla namn-/IP-försök och sessioner, även vid
   samtidiga anrop. Den ligger också i processminnet och återställs vid omstart.
-- Identiteten i bolagsfrågornas åtgärder kommer från den verifierade
+- Identiteten i tjänstelagrets läsningar och åtgärder kommer från den verifierade
   sessionen. `HANDLAGGARE_ID`, formulärfält och proxyhuvuden är inga
   inloggningsbevis. Sessionen ger inte `policy_admin`, nya poddar,
   personuppgiftsmandat eller databasrättigheter.
@@ -87,9 +106,9 @@ actor = operator_action(request, form)
 Den gemensamma renderingen tillhandahåller `operator_user` och `operator_csrf`.
 Bolagsfrågornas formulär använder `operator_csrf`; den gamla `csrf_token`
 är handläggningens processtoken och godtas inte av den nya hjälparen.
-`operator_actor(request)` finns för läsvägar som behöver verifierad identitet.
-Inga produktionsvägar till bolagsuppdrag byggs genom denna inloggningsleverans;
-hjälparna verifieras genom avgränsade testvägar som inte finns i appen.
+`operator_actor(request)` finns för läsvägar som behöver verifierad operatör.
+Försäkringsvägar använder `handler_ctx` och `check_csrf` för aktör och
+formulärskydd. Bolagets godkännanden och försäkringens förslag skiljs åt på servern.
 
 **Referer och ursprung:** inloggningssidan och sidor med aktiv operatörssession
 använder `Referrer-Policy: same-origin` i både svarshuvud och HTML-meta.
@@ -100,13 +119,13 @@ se [MDN:s Origin-dokumentation](https://developer.mozilla.org/en-US/docs/Web/HTT
 Utloggade äldre sidor behåller `no-referrer`. Resurslänkar med uttrycklig
 `referrerpolicy="no-referrer"` behåller detta, exempelvis typsnittslänken.
 
-## Förhållande till befintlig handläggning
+## Förhållande till tidigare lokal inloggning
 
-Handläggarvägarna, `/floden` och `/parametrar` behåller sina befintliga
-aktörer och processtoken enligt B-036. Inloggningen gör inte hela webben
-autentiserad och aktiverar inte OC-5. Centralens läsvyer är fortfarande
-tillgängliga utan operatörssession. Denna gräns ska bevaras när nya
-bolagsfrågor kopplas in.
+OC-3a val H–I införde den lokala operatörssession som Certa återanvänder.
+Den tidigare avgränsade formen finns för uttryckligt skapade instanser med
+`WebSettings(portal_login=False)`, till exempel äldre automatiserade prov.
+Normala webbstarter använder Certa och kräver verifierad session. OC-5:s
+modell- och budgetstyrning har egna beslutade identitets- och transportkrav.
 
 ## Kontroller och kvarstående verifiering
 
@@ -116,10 +135,9 @@ ursprung och Host, anonym/utgången/återspelad session, miljö- och processbyte
 samtidiga felaktiga försök, formulärgränser, provisionering och sanerad utmatning.
 Inloggningssidan kan visas utan verksamhetsdatabas och dess svar cachas inte.
 
-Visuell kontroll och in-/utloggning har gjorts mot isolerad SQLite-demo med
-syntetisk testlösenfras; operatörens `.env` har inte provisionerats. Inga
-Lakebase-, Postgres- eller riktiga modellanrop har gjorts. Hela fråge-/rapport-
-kedjan och faktisk användning av hjälparen i dess kommande skrivvägar återstår.
+Det lokala Certa-provet använder separata syntetiska konton och SQLite-demo.
+Proven kontrollerar rollstyrda startsidor, direkta anrop, sessionsbunden
+formulärtoken och vem som står som aktör i händelseloggen.
 Sessionen är lokal för en process: flera webbprocesser eller ett gemensamt
 sessionslager ingår inte.
 
@@ -128,7 +146,7 @@ Argon2id använder det etablerade biblioteket
 med slumpmässigt salt och bibliotekets standardparametrar. Ingen egen
 kryptografisk implementation används.
 
-### Leveranskontroll 2026-10-27
+### Historisk leveranskontroll för OC-3a 2026-10-27
 
 | Kontroll via `scripts/testing/run_tests.py` | Resultat |
 |---|---|

@@ -45,6 +45,11 @@ den tidigare begränsningen i Anthropics samlade strikta verktygsgrammatik.
 Installera projektberoendena, inklusive SciPy, i den Pythonmiljö som startar webben.
 Ingen ny extern tjänst eller konto behövs.
 
+Sätt `WEB_ACTUARY_WORKSPACE=true` i den lokala `.env` för att starta
+dialogen via skrivbordsgenvägen eller miljöbytaren. `WEB_REPORT_FONT_DIR`
+anger platsen för DM Sans om filerna ligger utanför `tmp/pdfs/fonts`.
+Vid en enstaka manuell start finns motsvarande flaggor:
+
 ```powershell
 python scripts/web/start_ui.py --db demo --actuary-workspace --report-font-dir <mapp-med-DM-Sans>
 ```
@@ -143,8 +148,8 @@ tomma. Alla 22 befintliga tabellers radantal var oförändrade, bland annat 501
 försäkrade, 499 försäkringar och 15 097 premietransaktioner. En efterföljande
 torrkörning rapporterade att tabellerna finns.
 
-Webben startas mot Lakebase med `--actuary-workspace`. Skrivbordsgenvägen gör inte
-det; den startar grundläget utan aktuariedialog. `--report-font-dir` behövs bara
+Vid införandeprovet startades webben mot Lakebase med `--actuary-workspace`.
+`--report-font-dir` behövdes bara
 om DM Sans inte ligger i `tmp/pdfs/fonts`. Dialogsidan efter migrationen och en
 första riktig dialogkörning mot Lakebase är inte verifierade i detta steg.
 Lakebase har ännu inga sparade värderingar (`valuation_runs` och

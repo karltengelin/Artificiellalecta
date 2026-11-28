@@ -13,14 +13,20 @@ from argon2 import PasswordHasher
 from dotenv import dotenv_values
 from fastapi import Request
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
+from models import OperationEventRecord
+from services.approvals import ApprovalRequest
+from web.app import create_app
 from web.config import WebConfigError, WebSettings
 from web.operator_auth import LoginRejected, OperatorAuth, operator_action
-from web.provision_operator import configure_operator
+from web.provision_operator import configure_handler, configure_operator
 
 PASSWORD = "endast-en-syntetisk-testlosenfras"
 COOKIE = "__Host-al-operator-demo"
 ORIGIN = {"Origin": "https://testserver"}
+HANDLER = "provhandlaggare"
+HANDLER_PASSWORD = "separat-syntetisk-losenfras"
 
 
 @pytest.fixture(scope="module")
@@ -61,6 +67,116 @@ def login(client, *, username="karl", password=PASSWORD, token=None, headers=Non
 
 def session_csrf(client):
     return client.get("/central").context["operator_csrf"]
+
+
+@pytest.fixture
+def portal(web, password_hash):
+    config = replace(
+        web.app.state.settings, portal_login=True, handler_id="legacy-handler",
+        operator_password_hash=password_hash, handler_login_id=HANDLER,
+        handler_password_hash=PasswordHasher().hash(HANDLER_PASSWORD),
+    )
+    app = create_app(service=web.service, settings=config)
+    with TestClient(app, base_url="https://testserver") as client:
+        yield SimpleNamespace(app=app, client=client, service=web.service, session_factory=web.session_factory)
+
+
+def test_certa_is_the_logged_out_landing_and_guards_all_workspaces(portal, monkeypatch):
+    def fail(*args, **kwargs):
+        pytest.fail("En oinloggad besökare får inte läsa verksamhetsdata")
+
+    monkeypatch.setattr(portal.service, "execute", fail)
+    client = portal.client
+    landing = client.get("/")
+    assert landing.status_code == 200
+    assert landing.template.name == "portal_login.html"
+    assert "Certa · Tjänstepension" in landing.text and " open data-open" not in landing.text
+    assert landing.headers["cache-control"] == "no-store"
+    assert "script-src 'self'" in landing.headers["content-security-policy"]
+    assert client.get("/static/portal_login.js").status_code == 200
+    assert client.get("/logga-in").context["open_dialog"] is True
+    for path in ("/central", "/sok", "/forsakrade", "/team/aktuarie", "/central/uppdragsarkiv"):
+        response = client.get(path, follow_redirects=False)
+        assert response.status_code == 303 and response.headers["location"] == "/logga-in"
+    assert client.get("/arenden", headers={"HX-Request": "true"}).headers["HX-Redirect"] == "/logga-in"
+    assert client.post("/arenden", headers=ORIGIN).status_code == 401
+    assert client.get("/_instance").json()["portal_login"] is True
+
+
+def test_portal_roles_control_landing_navigation_and_direct_addresses(portal):
+    handler = portal.client
+    assert login(handler, username=HANDLER, password=HANDLER_PASSWORD).headers["location"] == "/sok"
+    page = handler.get("/")
+    assert page.url.path == "/sok" and page.context["web_user"] == HANDLER
+    assert page.headers["cache-control"] == "no-store"
+    assert page.context["operator_user"] is None and page.context["csrf_token"] == page.context["web_csrf"]
+    assert 'href="/arenden"' in page.text and 'href="/central"' not in page.text
+    for path in ("/central", "/team/aktuarie", "/central/fragor", "/central/bolagsuppdrag",
+                 "/central/utveckling", "/handelselogg", "/parametrar", "/floden"):
+        assert handler.get(path).status_code == 403
+    with TestClient(portal.app, base_url="https://testserver") as operator:
+        assert login(operator).headers["location"] == "/central"
+        central = operator.get("/")
+        assert central.url.path == "/central" and central.context["operator_user"] == "karl"
+        assert "Arbetsytor" in central.text and 'href="/team/aktuarie"' in central.text
+        assert operator.get("/sok").status_code == 200
+    csrf = page.context["web_csrf"]
+    assert handler.post("/logga-ut", data={"csrf_token": csrf}, headers=ORIGIN,
+                        follow_redirects=False).headers["location"] == "/"
+    assert handler.get("/sok", follow_redirects=False).status_code == 303
+
+
+def test_portal_handler_writes_use_verified_actor_and_sessions_csrf(portal):
+    client = portal.client
+    assert login(client, username=HANDLER, password=HANDLER_PASSWORD).status_code == 303
+    csrf = client.get("/arenden/ny").context["web_csrf"]
+    form = {
+        "personal_id_number": "198505151236", "employer_org_number": "5560000001",
+        "kind": "new", "period_month": "2026-10", "pensionable_salary_sek": "47000",
+        "source": "employer", "received_date": "2026-10-10", "reason": "Syntetiskt underlag",
+        "actor_id": "karl", "csrf_token": csrf,
+    }
+    assert client.post("/arenden", data=form, headers={"Origin": "https://elsewhere.invalid"}).status_code == 403
+    assert client.post("/arenden", data={**form, "csrf_token": portal.app.state.csrf_token},
+                       headers=ORIGIN).status_code == 403
+    response = client.post("/arenden", data=form, headers=ORIGIN)
+    assert response.status_code == 200 and "CASE-000002" in response.text
+    with portal.session_factory() as db:
+        assert db.scalars(select(OperationEventRecord.actor_id).where(
+            OperationEventRecord.operation == "create_case"
+        )).all() == [HANDLER]
+    assert client.post("/pensioner/bankfiler/godkann", data={"csrf_token": csrf}, headers=ORIGIN).status_code == 403
+
+
+def test_portal_handler_cannot_see_or_decide_company_proposals(portal):
+    request = ApprovalRequest(operation="schedule_product_parameter_change", input={},
+                              proposed_by="compliance-test", reason="Prov för bolagsbeslutet")
+    portal.service.approvals.add(request)
+    client = portal.client
+    assert login(client, username=HANDLER, password=HANDLER_PASSWORD).status_code == 303
+    queue = client.get("/godkannanden")
+    assert "register_salary_report" in queue.text and request.id not in queue.text
+    assert queue.context["counts"].pending == 2
+    response = client.post(f"/godkannanden/{request.id}/avsla",
+                           data={"note": "Ska nekas", "csrf_token": queue.context["web_csrf"]}, headers=ORIGIN)
+    assert response.status_code == 403 and portal.service.approvals.get(request.id).status == "pending"
+
+
+def test_handler_provisioning_preserves_operator_and_rejects_duplicate_username(tmp_path):
+    path = tmp_path / ".env"
+    configure_operator(path, "karl", PASSWORD)
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="Användarnamnet"):
+        configure_handler(path, "", HANDLER_PASSWORD)
+    with pytest.raises(WebConfigError, match="olika inloggningsnamn"):
+        configure_handler(path, "karl", HANDLER_PASSWORD)
+    assert path.read_bytes() == before
+    configure_handler(path, HANDLER, HANDLER_PASSWORD)
+    values = dotenv_values(path)
+    assert values["OPERATOR_ID"] == "karl"
+    assert values["HANDLAGGARE_LOGIN_ID"] == HANDLER
+    assert PasswordHasher().verify(values["HANDLAGGARE_PASSWORD_HASH"], HANDLER_PASSWORD)
+    assert HANDLER_PASSWORD not in path.read_text(encoding="utf-8")
 
 
 def test_unconfigured_login_is_closed_but_legacy_views_remain_available(web):

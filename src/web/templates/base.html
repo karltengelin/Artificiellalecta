@@ -19,32 +19,44 @@
   {% set path = request.url.path %}
   {% set insurance_area = not operator_page %}
   {% set environment_name = {'demo': 'Demo', 'svc_test': 'Test', 'lakebase': 'Lakebase'}[settings.database] %}
+  {% set insurance_home = '/sok' if settings.portal_login else '/' %}
+  {% set management_access = not settings.portal_login or operator_user %}
   {% macro nav(href, label, active, compact=none) %}
     <a href="{{ href }}"{% if active %} aria-current="page"{% endif %}{% if compact %} aria-label="{{ label }}"{% endif %}>
       {%- if compact %}<span class="nav__full">{{ label }}</span><span class="nav__compact">{{ compact }}</span>{% else %}{{ label }}{% endif %}
       {{- caller() if caller }}</a>
   {% endmacro %}
   {% macro platform_links() %}
-    {{ nav('/central', 'Centralen', path.startswith('/central') and not path.startswith(('/central/fragor', '/central/utveckling'))) }}
-    {{ nav('/', 'Försäkring', insurance_area) }}
-    {{ nav('/team/aktuarie', 'Aktuarieteamet', path.startswith('/team/aktuarie')) }}
-    {{ nav('/central/fragor', 'Fråga bolaget', path.startswith('/central/fragor')) }}
-    {% if settings.database == 'demo' %}{{ nav('/central/utveckling', 'Utveckling', path.startswith('/central/utveckling')) }}{% endif %}
+    {% if management_access %}{{ nav('/central', 'Centralen', path.startswith('/central') and not path.startswith(('/central/fragor', '/central/utveckling'))) }}{% endif %}
+    {{ nav(insurance_home, 'Försäkring', insurance_area) }}
+    {% if management_access %}
+      {{ nav('/team/aktuarie', 'Aktuarieteamet', path.startswith('/team/aktuarie')) }}
+      {% if not settings.portal_login or settings.database == 'demo' %}{{ nav('/central/fragor', 'Fråga bolaget', path.startswith('/central/fragor')) }}{% endif %}
+      {% if settings.database == 'demo' %}{{ nav('/central/utveckling', 'Utveckling', path.startswith('/central/utveckling')) }}{% endif %}
+    {% endif %}
   {% endmacro %}
   {% macro stock_links() %}
-    {{ nav('/', 'Sök', path in ('/', '/sok')) }}
+    {{ nav(insurance_home, 'Sök', path in ('/', '/sok')) }}
     {{ nav('/forsakrade', 'Bestånd', path.startswith(('/forsakrade', '/forsakringar'))) }}
   {% endmacro %}
   <header class="topbar{% if settings.is_production %} topbar--prod{% endif %}">
     <div class="topbar__bar">
-      <a class="brand" href="{{ '/central' if operator_page else '/' }}"><span class="brand__mark" aria-hidden="true"></span>Artificiellalecta</a>
+      <a class="brand" href="{{ '/central' if operator_page else insurance_home }}"><span class="brand__mark" aria-hidden="true"></span>Artificiellalecta</a>
       <nav class="mainnav mainnav--desktop" aria-label="Plattformen">{{ platform_links() }}</nav>
       <details class="nav-disclosure topbar__environment">
         <summary class="db db--{{ settings.database }}" aria-label="Miljö och konto, {{ settings.database_label }}">{{ environment_name }}</summary>
         <div class="nav-disclosure__panel environment-panel">
           <p><strong>{{ settings.database_label }}</strong></p>
           {% if not settings.is_production %}<p class="muted">Uppgifterna är separata från Lakebase och synkas inte dit.</p>{% endif %}
-          {% if insurance_area or operator_user or operator_auth_enabled %}
+          {% if settings.portal_login and web_user %}
+          <div class="account-panel">
+            <p>{{ 'Operatör' if operator_user else 'Handläggare' }} <strong>{{ web_user }}</strong></p>
+            <form method="post" action="/logga-ut" hx-boost="false">
+              <input type="hidden" name="csrf_token" value="{{ web_csrf }}">
+              <button type="submit" class="secondary">Logga ut</button>
+            </form>
+          </div>
+          {% elif not settings.portal_login and (insurance_area or operator_user or operator_auth_enabled) %}
           <div class="account-panel">
             {% if insurance_area %}<p>Handläggare: <strong>{{ settings.handler_id }}</strong></p>{% endif %}
             {% if operator_user %}
@@ -90,8 +102,10 @@
           <div class="nav-disclosure__panel">
             <div class="nav__compact nav__stock">{{ stock_links() }}</div>
             {{ nav('/arbetsgivare', 'Arbetsgivare', path.startswith('/arbetsgivare')) }}
-            {{ nav('/handelselogg', 'Händelselogg', path.startswith('/handelselogg')) }}
-            {{ nav('/parametrar', 'Parametrar', path.startswith('/parametrar')) }}
+            {% if management_access %}
+              {{ nav('/handelselogg', 'Händelselogg', path.startswith('/handelselogg')) }}
+              {{ nav('/parametrar', 'Parametrar', path.startswith('/parametrar')) }}
+            {% endif %}
           </div>
         </details>
       </nav>

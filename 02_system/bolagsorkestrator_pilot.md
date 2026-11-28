@@ -1,8 +1,10 @@
 # Bolagsorkestratör i lokal demo
 
 Öppna **Operatörscentral → Fråga bolaget** på `/central/fragor`.
-Starta en lokal demo med `python scripts/web/start_ui.py --db demo --company-orchestrator`
-och konfigurera [operatörsinloggningen](operator_inloggning.md). Modellklienten
+Sätt `WEB_COMPANY_ORCHESTRATOR=true` i lokal `.env` och använd DEMO-genvägen.
+Vid en enstaka provstart går det att använda
+`python scripts/web/start_ui.py --db demo --company-orchestrator`. Logga in
+med [operatörskontot](operator_inloggning.md). Modellklienten
 väljs av den befintliga AI-konfigurationen. För skriptad modell och isolerad
 demo kör `python scripts/testing/run_tests.py --suite orchestration --run`.
 
@@ -26,7 +28,7 @@ demo kör `python scripts/testing/run_tests.py --suite orchestration --run`.
    avgränsad demokandidat. Uppdraget läser in kvittot efter verifieringen.
    Om en premieanalys kräver den nya koden är utfallet en uppföljningspunkt
    knuten till den testade versionen.
-4. Stäng av pilotflaggan vid omstart för att pausa nya starter och
+4. Stäng av pilotens startval vid omstart för att pausa nya starter och
    fortsättningar. Inloggad operatör kan öppna tidigare uppdrag, utkast,
    körspår och domänlänkar. Domänytorna har egna beslutsvägar. Vid avbrott
    som lämnat ett aktivt anspråk ska operatören först stoppa den tidigare

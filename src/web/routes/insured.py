@@ -15,8 +15,9 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
 
 from services import ServiceError
-from web.handler import read, render, render_error
+from web.handler import read, render, render_error, settings
 from web.presenters import PAYOUT_STATES, POLICY_STATES, ErrorView, clean_month
+from web.routes.auth import entry
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -47,6 +48,8 @@ def parse_query(query: str) -> tuple[str, str]:
 
 @router.get("/")
 def start(request: Request):
+    if settings(request).portal_login:
+        return entry(request, open_dialog=False)
     return render(request, "search.html", {"query": ""})
 
 

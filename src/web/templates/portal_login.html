@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="same-origin">
+  <title>Certa · Tjänstepension</title>
+  <link rel="stylesheet" href="/static/portal_login.css?v={{ static_version }}">
+  <script src="/static/portal_login.js?v={{ static_version }}" defer></script>
+</head>
+<body>
+  <main class="stage" id="stage">
+    <canvas class="neural-field" id="neural-bg" aria-hidden="true"></canvas>
+    <button class="brand-trigger" id="open-login" type="button" aria-label="Öppna inloggning för Certa" aria-haspopup="dialog" aria-controls="login" disabled>
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true"><g id="certa-mark">
+          <path d="M23.5 11.5C20.2 7.7 14.3 7.6 10.1 11.1C5.4 15.0 4.6 22.3 8.4 27.1C11.8 31.4 17.8 32.3 22.4 29.3C24.8 27.7 26.8 25.1 28.5 22.2L35.4 10.2C36.0 9.1 37.5 9.2 37.9 10.4C38.1 11.1 38.0 11.9 37.6 12.6L28.6 26.6C24.6 32.9 17.1 36.1 10.3 33.7C3.2 31.2 -0.8 23.4 1.1 16.0C3.1 8.4 10.7 3.7 18.4 5.3C21.6 6.0 24.4 7.7 26.5 10.0C27.1 10.7 26.6 11.8 25.7 11.8C24.9 11.8 24.1 11.7 23.5 11.5Z" fill="#D2C5FF"/>
+          <path d="M16.2 29.8C19.6 29.6 22.7 27.6 24.9 24.4L31.4 14.5C31.9 13.7 31.1 12.8 30.3 13.3C27.2 15.3 24.8 18.5 22.6 21.8C20.4 25.1 18.2 27.8 14.5 29.2C15.0 29.6 15.6 29.8 16.2 29.8Z" fill="#8D75E6"/>
+        </g></svg>
+      <span>
+        <span class="brand-name">Certa</span>
+        <span class="brand-sub">Tjänstepension</span>
+      </span>
+    </button>
+    <canvas class="neural-field" id="neural-fg" aria-hidden="true"></canvas>
+    <dialog class="login-card" id="login" aria-label="Logga in – {{ database_label }}"{% if open_dialog %} open data-open{% endif %}>
+      <div class="dialog-top">
+        <div class="dialog-brand" aria-hidden="true">
+          <svg class="brand-mark" viewBox="0 0 40 40"><use href="#certa-mark"></use></svg>
+          Certa
+        </div>
+        <button class="close-login" id="close-login" type="button" aria-label="Stäng inloggningen">×</button>
+      </div>
+      {% if message %}<p class="login-message" role="alert">{{ message }}</p>{% endif %}
+      {% if session_csrf %}
+      <form method="post" action="/logga-in" id="login-form">
+        <input type="hidden" name="csrf_token" value="{{ session_csrf }}">
+        <div class="field">
+          <label for="username">Användarnamn</label>
+          <div class="control">
+            <input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="100" required autofocus>
+          </div>
+        </div>
+        <div class="field">
+          <label for="password">Lösenord</label>
+          <div class="control">
+            <input id="password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
+            <button class="visibility-toggle" type="button" id="toggle-password" aria-controls="password" hidden>Visa<span class="password-label"> lösenord</span></button>
+          </div>
+        </div>
+        <button class="submit" type="submit">Logga in</button>
+      </form>
+      {% elif auth_enabled %}
+      <a href="/logga-in" hx-boost="false">Öppna inloggningen igen</a>
+      {% endif %}
+    </dialog>
+    {% if not open_dialog %}<noscript><a class="no-script-login" href="/logga-in" hx-boost="false">Öppna inloggningen</a></noscript>{% endif %}
+  </main>
+</body>
+</html>

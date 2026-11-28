@@ -24,7 +24,7 @@
     {% if w.status == 'waiting_approval' %}<p><a href="/godkannanden">Granska åtgärdsförslaget</a>. Ärendet avslutas efter verifierat beslut när hela handläggningen lämnats över.</p>{% endif %}
     {% if w.status in ['waiting_info', 'needs_human'] and not w.cancel_requested %}
     <form method="post" action="/arenden/{{ case.case_number }}/uppdrag/{{ w.id }}/continue" hx-boost="false">
-      <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+      <input type="hidden" name="csrf_token" value="{{ web_csrf }}">
       <input type="hidden" name="revision" value="{{ w.revision }}">
       <label for="reply-{{ w.id }}">Komplettering eller förtydligande</label>
       <textarea id="reply-{{ w.id }}" name="message" required maxlength="4000" rows="3"></textarea>
@@ -34,14 +34,14 @@
     {% endif %}
     {% if w.status in ['queued','running','waiting_info','waiting_approval','needs_human','reconciliation_required'] and not w.cancel_requested %}
     <form method="post" action="/arenden/{{ case.case_number }}/uppdrag/{{ w.id }}/takeover" hx-boost="false">
-      <input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="revision" value="{{ w.revision }}">
+      <input type="hidden" name="csrf_token" value="{{ web_csrf }}"><input type="hidden" name="revision" value="{{ w.revision }}">
       <button type="submit" class="secondary">Pausa agenten och ta över</button>
     </form>
     {% endif %}
     {% if w.status == 'running' %}
     <details><summary>Körningen verkar avbruten</summary>
       <form method="post" action="/arenden/{{ case.case_number }}/uppdrag/{{ w.id }}/interrupted" hx-boost="false">
-        <input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="revision" value="{{ w.revision }}">
+        <input type="hidden" name="csrf_token" value="{{ web_csrf }}"><input type="hidden" name="revision" value="{{ w.revision }}">
         <label><input type="checkbox" name="worker_stopped" value="yes" required> Jag har kontrollerat att tidigare arbetare har stoppats.</label>
         <button type="submit" class="secondary">Markera för avstämning</button>
       </form>
@@ -49,7 +49,7 @@
     {% endif %}
     {% if w.status == 'reconciliation_required' %}
     <form method="post" action="/arenden/{{ case.case_number }}/uppdrag/{{ w.id }}/reconcile" hx-boost="false">
-      <input type="hidden" name="csrf_token" value="{{ operator_csrf }}"><input type="hidden" name="revision" value="{{ w.revision }}">
+      <input type="hidden" name="csrf_token" value="{{ web_csrf }}"><input type="hidden" name="revision" value="{{ w.revision }}">
       <label for="reconcile-{{ w.id }}">Kontroll av förslag och historik</label>
       <textarea id="reconcile-{{ w.id }}" name="message" required maxlength="4000"></textarea>
       <button type="submit">Spara avstämning</button>
@@ -60,7 +60,7 @@
   {% if case.status != 'closed' %}
   <details><summary>Komplettera ärendets löneunderlag</summary>
     <form method="post" action="/arenden/{{ case.case_number }}/komplettera" hx-boost="false">
-      <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+      <input type="hidden" name="csrf_token" value="{{ web_csrf }}">
       <input type="hidden" name="expected_digest" value="{{ assistant.case_digest }}">
       <input type="hidden" name="kind" value="{{ case.details.kind }}">
       <input type="hidden" name="corrects_version" value="{{ case.details.corrects_version or '' }}">
@@ -74,7 +74,7 @@
     </form>
   </details>
   <form method="post" action="/arenden/{{ case.case_number }}/uppdrag" hx-boost="false">
-    <input type="hidden" name="csrf_token" value="{{ operator_csrf }}">
+    <input type="hidden" name="csrf_token" value="{{ web_csrf }}">
     <input type="hidden" name="submission_key" value="{{ submission_key }}">
     <label for="case-instruction">Vad vill du ha hjälp med?</label>
     <textarea id="case-instruction" name="instruction" rows="4" required maxlength="4000" placeholder="Undersök vad som saknas i underlaget och hur det påverkar handläggningen."></textarea>

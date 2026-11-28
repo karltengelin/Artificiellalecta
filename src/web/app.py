@@ -6,7 +6,7 @@
 Bara lokalt: servern binds till 127.0.0.1 (`python -m web`), Host-huvudet
 måste vara en lokal adress (skydd mot DNS-rebinding) och varje skrivformulär
 bär en token per process (skydd mot att en annan webbplats postar hit).
-Bolagsfrågornas operatörssession är separat från v1-handläggarens konfigurerade aktör.
+Normala webbstarter använder verifierade plattformssessioner för båda rollerna.
 """
 
 from __future__ import annotations
@@ -33,6 +33,7 @@ from web.development_github import GitHubReader
 from web.handler import STATIC_DIR, new_csrf_token, render
 from web.operator_auth import OperatorAuth
 from web.operator_forms import HEADERS, Submissions
+from web.portal import authorize
 from web.presenters import ErrorView
 from web.routes import (
     actuarial_dialogue,
@@ -106,8 +107,13 @@ def create_app(
     app.state.settings = settings
     app.state.premium_deliveries = PremiumDeliveries(REPO_ROOT / "logs" / "simulation" / "paket-c")
     app.state.csrf_token = new_csrf_token()
-    app.state.operator_auth = OperatorAuth(settings.operator_id, settings.operator_password_hash)
+    app.state.operator_auth = OperatorAuth(
+        settings.operator_id, settings.operator_password_hash,
+        handler_id=settings.handler_login_id,
+        handler_password_hash=settings.handler_password_hash if settings.portal_login else None,
+    )
 
+    app.middleware("http")(authorize)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.allowed_hosts))
     if settings.business_day is not None:  # bara demodatabasen (WebSettings), paket B steg 8 Z13
         from simulation.business_day import BusinessDayMiddleware
@@ -139,7 +145,7 @@ def create_app(
         """Startskriptets miljökontroll; inga databasfrågor eller anslutningsuppgifter."""
         return JSONResponse(
             {"application": "artificiellalecta-handlaggare", "database": request.app.state.settings.database,
-             "environment_switching": True},
+             "environment_switching": True, "portal_login": request.app.state.settings.portal_login},
             headers={"Cache-Control": "no-store"},
         )
 

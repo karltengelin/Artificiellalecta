@@ -2,7 +2,7 @@
 
 Allt som rör data går genom `ServiceLayer`: läsoperationer med `read()`,
 ändringar med `ServiceLayer.execute/approve/reject` i respektive sida. Aktören
-är alltid handläggaren ur konfigurationen (`Actor.human(HANDLAGGARE_ID)`).
+är den inloggade användaren när plattformens inloggningskrav gäller.
 """
 
 from __future__ import annotations
@@ -21,7 +21,13 @@ from starlette.concurrency import run_in_threadpool
 from services import Actor, OperationContext, ServiceLayer
 from web import presenters
 from web.config import SWITCHABLE_DATABASES, WebSettings
-from web.operator_auth import current_session
+from web.operator_auth import (
+    Role,
+    check_session_csrf,
+    current_session,
+    signed_in_session,
+)
+from web.portal import HANDLER_APPROVALS
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -63,11 +69,23 @@ def handler_ctx(request: Request, reason: str | None = None, case_id: str | None
 
     case_id: ärendet ändringen görs i (Fas 5), så att den syns i ärendets historik.
     """
-    return OperationContext(actor=Actor.human(settings(request).handler_id), reason=reason, case_id=case_id)
+    config = settings(request)
+    user_id = signed_in_session(request).user_id if config.portal_login else config.handler_id
+    return OperationContext(actor=Actor.human(user_id), reason=reason, case_id=case_id)
+
+
+def handler_approval_scope(request: Request) -> tuple[str, ...] | None:
+    if settings(request).portal_login and signed_in_session(request).role == Role.HANDLER:
+        return HANDLER_APPROVALS
+    return None
 
 
 def read(request: Request, operation: str, data: dict[str, Any]) -> BaseModel:
     """En läsoperation (synkront – anropas från sidor som körs i trådpoolen)."""
+    if operation in {"list_approval_requests", "count_approval_requests"}:
+        scope = handler_approval_scope(request)
+        if scope is not None:
+            data = {**data, "operations": scope}
     return service(request).execute(operation, handler_ctx(request), data).output
 
 
@@ -80,7 +98,11 @@ def new_csrf_token() -> str:
 
 
 def check_csrf(request: Request, form: Any) -> None:
-    """Skrivformulär bär processens token – en annan webbplats kan inte posta hit i handläggarens namn."""
+    """Skrivformulär använder den verifierade sessionens token i plattformen."""
+    if settings(request).portal_login:
+        signed_in_session(request)
+        check_session_csrf(request, form)
+        return
     token = form.get("csrf_token", "")
     if not secrets.compare_digest(str(token), request.app.state.csrf_token):
         raise HTTPException(status_code=403, detail="Ogiltig eller saknad formulärtoken – ladda om sidan")
@@ -92,18 +114,24 @@ def render(
 ):
     """push_url: adressen HTMX lägger i historiken – en sida som går att ladda om, inte formulärets POST-adress."""
     pending = pending_approvals(request) if check_database else None
-    operator = current_session(request)
+    session = current_session(request)
+    user_id = session.user_id if session else None
+    session_csrf = session.csrf_token if user_id else None
+    config = settings(request)
     base = {
-        "settings": settings(request),
-        "csrf_token": request.app.state.csrf_token,
+        "settings": config,
+        "csrf_token": session_csrf if config.portal_login else request.app.state.csrf_token,
         "rules": service(request).rules,
         "pending_approvals": pending,
         "database_available": not check_database or pending is not None,
         "environment_choices": SWITCHABLE_DATABASES,
         "operator_auth_enabled": request.app.state.operator_auth.enabled,
-        "operator_user": operator.operator_id if operator else None,
-        "operator_csrf": operator.csrf_token if operator and operator.operator_id else None,
-        "page_referrer_policy": "same-origin" if operator and operator.operator_id else "no-referrer",
+        "web_user": user_id,
+        "web_csrf": session_csrf,
+        "handler_user": user_id if config.portal_login else config.handler_id,
+        "operator_user": session.operator_id if session else None,
+        "operator_csrf": session_csrf if session and session.operator_id else None,
+        "page_referrer_policy": "same-origin" if user_id else "no-referrer",
     }
     response = templates.TemplateResponse(request, template, {**base, **(context or {})}, status_code=status_code)
     response.headers["Referrer-Policy"] = base["page_referrer_policy"]
@@ -115,7 +143,7 @@ def render(
 def pending_approvals(request: Request) -> int | None:
     """Antal väntande förslag i menyn (count_approval_requests – inga personuppgifter, loggas inte)."""
     try:
-        return service(request).execute("count_approval_requests", handler_ctx(request), {}).output.pending
+        return read(request, "count_approval_requests", {}).pending
     except Exception:  # noqa: BLE001 – menyn ska visas även om databasen inte svarar
         return None
 

@@ -22,7 +22,7 @@ Lakebase-tabellerna och i händelseloggen. UI:t är tjänstelagrets första klie
 (Fas 3b/5) använder senare samma operationer, med samma spår i loggen (B-017).
 
 **Försäkringsteamets område (B-036).** På bolagets gemensamma plattform är handläggar-UI:t försäkringsteamets
-område, och operatörscentralen är startsidan ([projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md),
+område. Operatörscentralen är operatörens startsida efter inloggning ([projekt 10](../projekt/10_operatörscentral/PROJEKTPLAN.md),
 OC-8). Här nås bara försäkringsteamets agent, handläggaragenten. Flöden över flera team och andra teams
 agenter hör hemma i centralen respektive i teamens egna områden.
 
@@ -59,14 +59,14 @@ agenter hör hemma i centralen respektive i teamens egna områden.
   Med [U5:s testdubblar](../projekt/11_utveckling_och_andringshantering/PROJEKTPLAN.md#prova-u5-i-demo)
   godkänner operatören exakt kodversion och testbevis på ärendet. Boarden visar
   Mergat, Infört och Verifierat var för sig. Detaljen och ett eventuellt ursprungsflöde visar kvittona.
-- **Bara lokalt; v1-handläggningen kräver ingen inloggning.**
+- **Lokal webb med gemensam inloggning.**
   - Servern binds till `127.0.0.1`, och Host-huvudet måste vara `127.0.0.1` eller `localhost`
     (skydd mot DNS-rebinding).
-  - Skrivformulär bär en token per process (skydd mot att en annan webbplats postar hit).
-  - Aktören är `Actor.human(HANDLAGGARE_ID)`, med standardvärdet `karl`.
-  - Bolagsfrågornas separata [operatörsinloggning](operator_inloggning.md)
-    finns som lokal grund från OC-3a val H–I. Den ändrar inte v1-handläggningens
-    mandat eller B-036:s befintliga vägar via `/floden` och `/parametrar`.
+  - [Certa](operator_inloggning.md) kräver en verifierad session för arbetsytorna,
+    med sessionsbunden token på skrivformulär och användarens id som aktör i loggen.
+    Försäkringsteamets handläggare når sina arbetsvyer och operationer.
+    Operatören når också centralen, bolagsåtgärder och teamytorna.
+  - Äldre avgränsade operatörsvyer byggdes genom OC-3a val H–I.
     [OC-3a:s uppdragsvyer](fragekedja_webb.md) finns på `/central/fragor` och
     `/team/aktuarie/uppdrag`, med uttryckligt ansluten `QuestionConsole` och verifierad
     operatör för alla skrivande handlingar.
@@ -78,9 +78,12 @@ agenter hör hemma i centralen respektive i teamens egna områden.
 - **Personuppgifter i webbläsaren.**
   - Adresserna innehåller personnummer, så serverns accesslogg är avstängd.
   - HTMX sparar ingen sidhistorik i webbläsarens lagring (`historyCacheSize: 0`).
-  - När handläggningen autentiseras eller kundportalen byggs bör adresserna byta personnummer mot interna id:n.
+  - Ett framtida byte från personnummer i adresserna till interna id:n kvarstår.
 
 ## 3. Starta
+
+Konfigurera ett lokalt konto enligt [Certa-inloggningen](operator_inloggning.md)
+första gången. Öppna sedan skrivbordsgenvägen för vald miljö.
 
 ```powershell
 python scripts/web/start_ui.py --db lakebase      # gemensamt bestånd, http://127.0.0.1:8765
@@ -100,16 +103,18 @@ Märket används som ikon (`src/design/icon.py`). `--db` installerar bara den va
 kan finnas kvar; den vanliga genvägen är nu ingången till beståndet.
 
 Genvägarna kör `scripts/web/open_ui.ps1`, som startar servern dolt om den inte redan kör.
+I webbläsaren öppnas Certa. Den [lokala startkonfigurationen](operator_inloggning.md#moduler-vid-start)
+avgör om aktuariedialogen och Demo-piloten ansluts.
 Standard är Lakebase på **8765**, separat testbestånd på **8766** och demo på **8767**.
 En egen port kan anges med `-Port` (eller `--port` i Pythonkommandona).
 Startskriptet kontrollerar `/_instance` innan webbläsaren öppnas. En körande app med fel databas,
-en okänd app eller en äldre version utan miljökontroll blockeras med ett tydligt fel.
+en okänd app eller en äldre version utan Certa-inloggning blockeras med ett tydligt fel.
 Den gamla servern måste då stoppas, eller en annan port väljas; skriptet stoppar inga processer.
 För att kunna stoppa en server i terminalen kan den i stället startas med `start_ui.py` ovan.
 
 | Variabel / flagga | Standard | Innehåll |
 |---|---|---|
-| `HANDLAGGARE_ID` | `karl` | Handläggarens id i händelseloggen |
+| `HANDLAGGARE_LOGIN_ID` | `handlaggare` | Namn på det lokalt provisionerade handläggarkontot |
 | `HANDLAGGARE_DB` / `--db` | `demo` | `demo`, `svc_test` eller `lakebase` |
 
 | Databas | Var | Tabeller |
@@ -123,7 +128,7 @@ uttryckligen med `--db lakebase`. `DATABASE_URL` i `.env` räcker alltså inte f
 utvecklingskommandots databasval. Sidhuvudet visar **Lakebase – gemensamt bestånd**,
 **DEMO – lokal övningsdata** eller **TEST – separat testbestånd**. Mot Lakebase finns även en röd varning.
 Ett läsfel i menyn visas som ett anslutningsfel på sidan; appen byter aldrig automatiskt till demo.
-`/_instance` visar bara appens identitet och valda databasläge, inga anslutningsuppgifter,
+`/_instance` visar appens identitet, databasläge och stöd för Certa och miljöbyte,
 och är ingen kontroll av databasanslutningen.
 
 **Ingen synkning finns mellan miljöerna.** Sökningar och ändringar går via tjänstelagret direkt
@@ -139,7 +144,8 @@ under **Datakälla** och klicka **Byt miljö**. Bytet går till målmiljöns sta
 och gäller bara den aktuella fliken. Andra flikar, öppna ärenden och deras servrar behåller
 sina databasanslutningar. Inga formulär-, person- eller ärendeuppgifter följer med bytet.
 
-Målmiljön kontrolleras via `/_instance` (app, databasläge och stöd för miljöväljaren).
+Målmiljön kontrolleras via `/_instance` (app, databasläge, Certa och miljöväljare).
+Varje miljö har en egen session och en utloggad flik visar inloggningsframsidan.
 Om porten är ledig startas en separat lokal server från samma checkout och Pythonmiljö;
 på Windows körs den dolt. Om porten används av fel eller en äldre app visas ett fel.
 En påbörjad start återanvänds vid nytt försök; inga befintliga processer stoppas automatiskt.
@@ -179,7 +185,7 @@ Agentförslagen prövas mot regelpaketet som om det redan gällde, men bara i de
 
 | Adress | Innehåll | Operationer |
 |---|---|---|
-| `/` och `/sok?q=` | Personnummer (ÅÅÅÅMMDD-NNNN) och försäkringsnummer (AL-…) öppnar översikten; namnsökning öppnar beståndsurvalet | – |
+| `/sok` och `/sok?q=` | Personnummer (ÅÅÅÅMMDD-NNNN) och försäkringsnummer (AL-…) öppnar översikten; namnsökning öppnar beståndsurvalet | – |
 | `/forsakrade` | Bestånd: namnsökning, person-/försäkringsnummer, arbetsgivare, nuvarande försäkringsläge, antal och sidindelning | `list_insured_persons`, `list_employers` |
 | `/forsakrade/{pnr}` | Översikt: person, anställning, aktuell lön, försäkringar med läge och kapital | `get_insured_overview` |
 | `/forsakringar/{nr}` | Samma översikt, med försäkringen markerad | `get_insured_overview` |

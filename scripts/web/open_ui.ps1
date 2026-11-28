@@ -32,6 +32,9 @@ function Get-UiDatabase {
     if ($response.database -ne $Db) {
         Show-Error "Fel databas på port ${Port}: appen använder '$($response.database)', men du valde '$Db'.`nStäng den gamla servern och starta igen, eller välj en annan port (-Port). Ingen databas har bytts."
     }
+    if ($response.portal_login -ne $true) {
+        Show-Error "Port $Port kör en äldre webbversion. Stäng den gamla servern och öppna genvägen igen."
+    }
     return $response.database
 }
 
@@ -57,10 +60,10 @@ $server = Start-Process -FilePath $python -ArgumentList @('scripts\web\start_ui.
 $deadline = (Get-Date).AddSeconds(30)
 while (-not (Get-UiDatabase)) {
     if ($server.HasExited) {
-        Show-Error "Handläggar-UI:t kunde inte starta i läget '$Db'. Kontrollera .env och Pythonmiljön. Starta scripts/web/start_ui.py --db $Db --port $Port i en terminal för detaljer. Ingen annan databas används."
+        Show-Error "Bolagets webb kunde inte starta i läget '$Db'. Kontrollera .env och Pythonmiljön. Starta scripts/web/start_ui.py --db $Db --port $Port i en terminal för detaljer. Ingen annan databas används."
     }
     if ((Get-Date) -gt $deadline) {
-        Show-Error "Handläggar-UI:t svarade inte på $url inom 30 sekunder. Kontrollera servern innan du försöker igen."
+        Show-Error "Bolagets webb svarade inte på $url inom 30 sekunder. Kontrollera servern innan du försöker igen."
     }
     Start-Sleep -Milliseconds 500
 }

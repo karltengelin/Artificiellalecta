@@ -6,6 +6,7 @@ from starlette.concurrency import run_in_threadpool
 
 from agents.errors import HarnessError
 from services.errors import ServiceError
+from web.handler import check_csrf, handler_ctx, settings
 from web.operator_auth import operator_action
 
 router = APIRouter()
@@ -20,7 +21,11 @@ def workspace(request):
 
 async def checked(request, fields):
     form = dict(await request.form())
-    actor = operator_action(request, form)
+    if settings(request).portal_login:
+        check_csrf(request, form)
+        actor = handler_ctx(request).actor
+    else:
+        actor = operator_action(request, form)
     if set(form) - (set(fields) | {"csrf_token"}):
         raise HTTPException(422, "Formuläret innehåller okända uppgifter")
     return form, actor
