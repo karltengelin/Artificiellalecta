@@ -1499,6 +1499,147 @@ Inget i detta designstopp skriver till Lakebase. När ett steg är verifierat lo
 
 Agentrollerna får inga rättigheter på de nya tabellerna i första versionen. Undantag: uttagsdelarna i steg 1, där `agent_forsakring` och `agent_aktuarie` får SELECT (B-048).
 
+### 12.1 Val för steg 9: nytt startläge med pensionärer
+
+**Förslag till Karl 2026-11-28. Inte godkända och inte loggade.** Valen preciserar §12 punkt 3–4 och steg 9 i
+byggordningen. De ändrar inga produktregler. Varje val har ett förslag, ett alternativ, en motivering och en grund.
+
+**Utgångsläge.**
+- Lakebase har ingen som har passerat 66 eller fyller 66 de närmaste åren. Pensionsflödet i steg 4–8 har därför
+  inget att arbeta med där.
+- Journalens ingående läge per 2026-10-31 är bokat sedan 2026-11-15: 492 försäkringar och 15 097 garantidelar ur
+  S-04 med den frysta utdragshashen `023946…3fefa`. Ingen månad är stängd efter det, så ingenting i journalen
+  bygger ännu på startläget.
+- S-04 räknar inte fram påbörjade uttag. Försäkringar i utbetalning blir *ej beräknade*
+  (`valuation_extract.NOT_CALCULATED`), och journalen tar emot ett enda ingående läge. En ändring blir en länkad
+  rättelse, inte en ny övergång (`capital_ledger.apply_opening`).
+- Demobeståndet har redan en äldre kohort (B-035 val K): 31 personer födda 1959–1962 (`OLDER_COHORT`), och en
+  pensionär, David Dahl, med uttag sedan 2024-05. Ingen av dem finns i Lakebase.
+- Karl 2026-11-28: bolaget är i byggfas, och bokföringen behöver stämma först när bolaget går live. Historiken
+  behöver inte rekonstrueras, men startläget ska hänga ihop.
+
+- **Q1 Vilka som läggs till**
+  - *Förslag:*
+    - Den äldre kohorten enligt `OLDER_COHORT`, 31 personer:
+      - de 7 födda 1959–1960 fyllde 66 mellan maj 2025 och juli 2026 utan registrerat val och ger var sitt ärende
+        `payout_review` (V6). Handläggaren registrerar deras begäran och plan;
+      - de 24 födda 1961–1962 får standardstart (V4) i 66-årsmånaden, från februari 2027.
+    - Dessutom 4 pensionärer med pågående uttag sedan 2024–2026, varav en är demobeståndets David Dahl.
+      Planerna blandas: livsvarig och tidsbegränsad, en med delning på två delar.
+  - *Alternativ:* bara kohorten. Då uppstår de första pensionerna när handläggaren beslutar planer för de sju
+    som passerat 66, och genom standardstarter från februari 2027.
+  - *Motivering:* pågående uttag visar en löpande utbetalningsmånad redan i december. Kohorten visar flödet in i
+    pension, med ärenden, planer och standardstarter.
+  - *Grund:* B-035 val K och §12 punkt 4.
+
+- **Q2 Anställning och premier**
+  - *Förslag:* alla som läggs till har fribrev från en tidigare anställning med registrerat anställningsslut, och
+    ingen betalar premie efter 2026-10-31. Det gäller även kohorten.
+  - *Alternativ:* kohorten födda 1961–1962 som aktiva och premiebetalande, enligt val K.
+  - *Motivering:*
+    - Aktiva personer måste finnas i arbetsgivarnas löneunderlagsfiler för november. Annars ger paket A ärenden
+      om saknade rader.
+    - Fribrev håller paket A:s period 2026-11 oförändrad.
+    - Kohortens premieanalys (3c-B) körs fortsatt i demobeståndet. I Lakebase visar den att ingen berörs på flera år.
+  - *Grund:* B-046 och PA-flödet; val K gäller demobeståndet.
+
+- **Q3 Kapital och garantier utan historik**
+  - *Förslag:*
+    - Startvärdena för de nya försäkringarna deklareras i stället för att rekonstrueras ur premiehistorik:
+      - kapital C per 2026-10-31;
+      - garantidelar på SIM-G med deklarerat belopp och grund;
+      - för pågående uttag beslutad plan, startmånad och redan utbetalt.
+    - Värdena väljs så att pensionerna blir realistiska: kapital 300 000–1 500 000 kr, ungefär 1 500–7 000 kr
+      i månaden.
+    - Källan märks `declared_opening` i verifikationens innehåll, med hänvisning till beslutet.
+    - De 492 befintliga försäkringarna behåller exakt sina värden ur S-04.
+  - *Alternativ:* generera premiehistorik från anställningsstart och låta S-04 rekonstruera. Det kräver
+    PR-009-rekonstruktion av utbetalt kapital för pågående uttag, ett eget och större bygge.
+  - *Motivering:* Karls besked om byggfasen. Deklarerade startvärden är ett vanligt sätt att flytta in ett
+    bestånd, och de går att granska som en lista.
+  - *Grund:* B-047 punkt 2 (S-04 som märkt ingående läge). Valet utvidgar den punkten och behöver loggas.
+
+- **Q4 Hur det nya startläget kommer in**
+  - *Förslag:*
+    - Journalens ingående läge ersätts i Lakebase innan någon månad har stängts: backup, töm journalens
+      tabeller (steg 2) och boka ett nytt ingående läge med S-04-delen och den deklarerade delen.
+    - Den första verifikationen bevaras i backupen och i en körlogg, inte i journalen.
+  - *Alternativ:* en länkad rättelseverifikation som lägger till de nya försäkringarna och bevarar den första
+    verifikationen i journalen.
+  - *Motivering:* ingen stängning bygger på startläget än. En ren omstart blir enklare att granska, och journalen
+    börjar med ett enda sammanhängande läge.
+  - *Grund:* §6.2 och Karls besked om byggfasen. Valet är ett avsteg från idempotensregeln för startläget och
+    gäller bara före första stängningen.
+
+- **Q5 Ordningen i Lakebase**
+  - *Förslag:*
+    1. backup;
+    2. migrationerna för steg 4, 5, 6 och 7;
+    3. de nya personerna, försäkringarna, uttagsdelarna och planerna;
+    4. det nya ingående läget;
+    5. novembers AVK och novembers stängning;
+    6. bolagsinsättningen (Q6) och decembers AVK;
+    7. decembers stängning i början av januari, med de första månadsrätterna, och bankfilen.
+
+    Varje punkt kräver Karls separata OK.
+  - *Alternativ:* novembers stängning först, sedan migrationerna och därefter startläget som en länkad rättelse
+    per 2026-11-30.
+  - *Motivering:*
+    - Pensionärernas planer kräver steg 4:s tabeller.
+    - Startläget bör vara på plats innan novembers stängning bygger på det.
+    - Jämförelsen med main (B-052) visar redan att stängningen blir densamma med steg 4–7:s tabeller.
+  - *Grund:* ersätter spärren ”migrationerna tidigast efter novembers stängning” (B-052, Y12). Påminnelsen
+    2026-12-01 kör bara granskningar och påverkas inte.
+
+- **Q6 Bolagskapital före första utbetalningen**
+  - *Förslag:*
+    - En provisorisk insättning före decembers stängning: 24 gånger summan av decembers månadsbelopp, avrundat
+      uppåt till hela 10 000 kr.
+    - Dokumentreferensen anger byggfas och att E_min enligt PR-028 räknas av aktuarien (A8) före live.
+  - *Alternativ:* bygg aktuariens beräkning av E_min först och sätt in minst E_min.
+  - *Motivering:*
+    - Likviditetsdelen av E_min är 12 × ΣM.
+    - Stressgapet kan inte räknas förrän A8 finns. Dubbel likviditetsdel ger marginal utan att vänta på A8.
+  - *Grund:* PR-028. Valet är ett uttalat avsteg under byggfasen.
+
+- **Q7 Skatt för de första utbetalningarna**
+  - *Förslag:*
+    - Pensionärerna i Lakebase får skattestatus sidoinkomst 30 % eller ett individuellt beslut. Fördelningen är
+      blandad, så att båda vägarna syns.
+    - Huvudinkomst med tabell byggs som ett eget steg med Skatteverkets textfil för 2026 och tabellerna för
+      2027, inklusive den nya kolumnen för personer födda 1960.
+  - *Alternativ:* vänta med de första utbetalningarna tills tabellsteget är byggt.
+  - *Motivering:* decembers pension betalas 2027-01-04 och kräver 2027 års tabeller. De är inte publicerade
+    2026-11-28.
+  - *Grund:* X4 och PR-026.
+
+- **Q8 Dödsbo**
+  - *Förslag:* ingen pensionär i startläget är avliden. Dödsfallsflödet provas i paket C:s simulering och, efter
+    eget OK, med en simulerad avisering för en pensionär i Lakebase.
+  - *Alternativ:* en avliden pensionär redan i startläget.
+  - *Motivering:* ett dödsfall i Lakebase bör vara en egen, granskad händelse.
+  - *Grund:* Y12.
+
+- **Q9 Agenter**
+  - *Förslag:* oförändrat. Agentrollerna får inga nya rättigheter, och agenten startas inte i pensionsärenden
+    (Z11).
+  - *Alternativ:* låt handläggaragenten förbereda `payout_review`-ärendena för de tre födda 1959.
+  - *Motivering:* det kräver en egen ärendepolicy, som B-043.
+  - *Grund:* §13.
+
+- **Q10 Verifiering före Lakebase**
+  - *Förslag:*
+    - Steget byggs och provas lokalt och i `svc_test` med samma ordning som Q5.
+    - Kontrollerna är fyra:
+      - de 492 försäkringarnas startvärden är oförändrade, per försäkring;
+      - de nya försäkringarna stämmer mot den deklarerade listan;
+      - novembers stängning går igenom;
+      - decembers stängning och bankfil ger ett facit räknat oberoende av koden.
+    - Skript och rapport läggs i `scripts/simulation/paket_b_steg9/`.
+  - *Alternativ:* prova bara på en kopia av Lakebase-backupen.
+  - *Motivering:* samma verifieringsordning som steg 1–7.
+  - *Grund:* B-040 och AGENTS.md §4.5.
+
 ### Föreslagen byggordning (PB13)
 
 Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
@@ -1514,7 +1655,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida. *Valen X1–X13 godkända 2026-11-24 (§8.3); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg6/`. Mergat till main 2026-11-24. Inte infört i Lakebase; migrationen efter steg 5:s* | 18–25, 34 |
 | 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 godkända 2026-11-24 (§9.1, B-055); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg7/`. Mergat till main 2026-11-25. Inte infört i Lakebase; migrationen efter steg 6:s* | 26–31 |
 | 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll. *Valen Z1–Z14 godkända 2026-11-25 (§10.1, B-056); byggt samma dag med webbkontroll mot paket C, körskript i `scripts/simulation/paket_b_steg8/`. Mergat till main 2026-11-26. Rör inte Lakebase; sidan visar notiser för steg 4–7 tills deras migrationer är körda* | – |
-| 9 | Lakebase enligt ovan, med separat OK för varje ingrepp | – |
+| 9 | Lakebase enligt ovan, med separat OK för varje ingrepp. *Förslag 2026-11-28: nytt startläge med pensionärer, valen Q1–Q10 i §12.1, inte godkända* | – |
 
 Postgres-prov körs där ändringen kräver det (B-040). Steg 1–2 delar datamodell med allt
 som följer och får inte delas mellan Claude och Codex utan avstämning (AGENTS.md §4.2).

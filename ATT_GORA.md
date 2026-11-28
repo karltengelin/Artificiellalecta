@@ -108,6 +108,14 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
 - [ ] **Användning mot Lakebase** först när migrationerna för steg 4–7 är körda: tidigast efter novembers stängning
   (2026-12-01), i ordningen 4, 5, 6 och 7, var och en med Karls OK.
 
+**Därefter, paket B steg 9** (nytt startläge med pensionärer i Lakebase):
+
+- [ ] **Valen Q1–Q10** *föreslagna 2026-11-28* ([designstoppet §12.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#121-val-för-steg-9-nytt-startläge-med-pensionärer)):
+  kohorten och fyra pensionärer med deklarerade startvärden, ett nytt ingående läge före novembers stängning och
+  migrationerna för steg 4–7 före stängningen. Väntar på Karl.
+- [ ] **Skattetabeller:** Skatteverkets textfil för 2026 (`allmanna-tabeller-manad.txt`) och engångstabellen;
+  2027 års tabeller med den nya kolumnen för födda 1960 när de publiceras.
+
 ### Paket A steg 8: period 2026-10 – kvar att följa upp
 
 Första operativa perioden 2026-10 är körd i Lakebase med verklig kalender: filintag och fakturering 2026-11-08,
