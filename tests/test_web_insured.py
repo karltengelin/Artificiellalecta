@@ -184,11 +184,15 @@ def test_demolaget_visar_att_uppgifterna_inte_synkas(web):
 
 
 @pytest.mark.parametrize("database", ["demo", "svc_test", "lakebase"])
-def test_startkontrollen_visar_miljon_utan_att_lasa_databasen(web, monkeypatch, database):
-    web.app.state.settings = WebSettings(database=database, allowed_hosts=("testserver",))
+@pytest.mark.parametrize("portal_login", [False, True])
+def test_startkontrollen_visar_miljon_utan_att_lasa_databasen(web, monkeypatch, database, portal_login):
+    web.app.state.settings = WebSettings(database=database, allowed_hosts=("testserver",), portal_login=portal_login)
     monkeypatch.setattr(web.service, "execute", lambda *a, **kw: pytest.fail("Ingen databasfråga i miljökontrollen"))
     response = web.client.get("/_instance")
-    assert response.json() == {"application": "artificiellalecta-handlaggare", "database": database, "environment_switching": True}
+    assert response.json() == {
+        "application": "artificiellalecta-handlaggare", "database": database,
+        "environment_switching": True, "portal_login": portal_login,
+    }
     assert response.headers["cache-control"] == "no-store"
 
 

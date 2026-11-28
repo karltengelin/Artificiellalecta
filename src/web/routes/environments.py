@@ -24,7 +24,8 @@ async def switch_environment(request: Request):
         status, message = 422, "Välj Lakebase eller Demo."
     elif database != settings(request).database:
         try:
-            url = await run_in_threadpool(ensure_environment, database)
+            options = {"require_portal": True} if settings(request).portal_login else {}
+            url = await run_in_threadpool(ensure_environment, database, **options)
         except EnvironmentUnavailable as exc:
             status, message = 503, str(exc)
     headers = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}

@@ -12,19 +12,21 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
 from services import ServiceError
 from web.handler import (
     check_csrf,
+    handler_approval_scope,
     handler_ctx,
     read,
     read_async,
     render,
     render_error,
     service,
+    settings,
 )
 from web.operator_auth import current_session, operator_action
 from web.presenters import ErrorView, clean_text, describe_error
@@ -36,20 +38,28 @@ QUEUE_FILTERS = {"vantar": "pending", "godkanda": "approved", "avslagna": "rejec
 
 
 def decision_context(request, form, approval_id):
+    portal = settings(request).portal_login
+    if portal:
+        check_csrf(request, form)
+    scope = handler_approval_scope(request)
+    company_pilot = getattr(request.app.state, "company_missions", None) is not None
+    proposal = service(request).approvals.get(approval_id) if scope is not None or company_pilot else None
+    if scope is not None and proposal is not None and proposal.operation not in scope:
+        raise HTTPException(403, "Förslaget kräver operatörens behörighet")
     console = getattr(request.app.state, "case_workspace", None)
     work_id = console.work_for_approval(approval_id) if console else None
     session = current_session(request)
     pilot_proposal = False
-    if getattr(request.app.state, "company_missions", None) is not None:
+    if company_pilot and proposal is not None:
         from agents.company_decisions import is_pilot_activation
 
-        proposal = service(request).approvals.get(approval_id)
-        pilot_proposal = proposal is not None and is_pilot_activation(proposal.operation, proposal.input)
-    if work_id or pilot_proposal or (session and form.get("csrf_token") == session.csrf_token):
+        pilot_proposal = is_pilot_activation(proposal.operation, proposal.input)
+    if pilot_proposal or (not portal and (work_id or (session and form.get("csrf_token") == session.csrf_token))):
         actor = operator_action(request, dict(form))
         return replace(handler_ctx(request), actor=actor), work_id
-    check_csrf(request, form)
-    return handler_ctx(request), None
+    if not portal:
+        check_csrf(request, form)
+    return handler_ctx(request), work_id
 
 
 # --- godkännandekön -------------------------------------------------------------------------------

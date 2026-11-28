@@ -26,6 +26,22 @@
 </details>
 {% if source_failed %}<div class="alert alert--error" role="alert">Bolagsunderlaget kunde inte läsas. Måtten visar saknas; ingen annan datakälla används.</div>{% endif %}
 {% if active_view == 'central' %}
+{% if settings.portal_login %}
+<section class="panel" aria-labelledby="workspaces-title">
+  <div class="panel__head"><h2 id="workspaces-title">Arbetsytor</h2><span class="muted">{{ settings.database_label }}</span></div>
+  <ul class="record-list">
+    <li><a href="{{ insurance_home }}">Försäkring</a><span>Bestånd, ärenden, premier och pensioner</span></li>
+    <li><a href="/team/aktuarie">Aktuarieteamet</a><span>{{ 'Dialogen är ansluten' if actuary_ready else 'Dialogen är inte aktiverad' }}</span></li>
+    {% if settings.database == 'demo' %}
+    <li><a href="/central/fragor">Fråga bolaget</a><span>{{ 'Nya uppdrag kan startas' if company_ready else 'Nya AI-körningar är avstängda' }}</span></li>
+    <li><a href="/central/utveckling">Utveckling</a><span>Lokal pilot för ändringsärenden</span></li>
+    {% else %}
+    <li><span>Fråga bolaget och Utveckling</span><span>Tillgängliga i Demo</span></li>
+    {% endif %}
+    <li><a href="/central/team?month={{ selected_month }}">Övriga team</a><span>Se vilka team som har en arbetsyta</span></li>
+  </ul>
+</section>
+{% endif %}
 <section class="panel" aria-labelledby="company-status-title">
 <div class="panel__head"><h2 id="company-status-title">Bolagsläge</h2><span class="muted small">Utfall för öppna månadsperioder är preliminära</span></div>
 <div class="oc-metrics oc-metrics--overview">
@@ -70,7 +86,7 @@
   {% if team.states %}<ul>{% for state, count in team.states.items() %}<li>{{ state }}: {{ count }} segment</li>{% endfor %}</ul>
   {% else %}<p>Körläge okänt – inga avstämda körsegment i periodens underlag.</p>{% endif %}
   <p class="muted">Leveranser: ej uppmätt · Kvalitet: ej uppmätt</p>
-  {% if team.id == 'forsakring' %}<a href="/">Öppna försäkringsteamets arbetsyta</a>
+  {% if team.id == 'forsakring' %}<a href="{{ insurance_home }}">Öppna försäkringsteamets arbetsyta</a>
   {% elif team.id == 'aktuarie' %}<a href="/team/aktuarie">Öppna aktuarieteamets arbetsyta</a>
   {% elif team.id == 'utveckling' and settings.database == 'demo' %}<a href="/central/utveckling">Öppna Utveckling</a>
   {% else %}<p class="muted">Ingen arbetsyta tillgänglig här.</p>{% endif %}

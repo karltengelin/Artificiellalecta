@@ -58,6 +58,13 @@ class WebSettings:
     operator_dataset_id: str | None = None
     operator_id: str = "karl"
     operator_password_hash: str | None = field(default=None, repr=False)
+    handler_login_id: str = "handlaggare"
+    handler_password_hash: str | None = field(default=None, repr=False)
+    # Webbstarter från miljön använder plattformsinloggning. Explicita äldre
+    # appinstanser kan fortfarande använda den avgränsade operatörsinloggningen.
+    portal_login: bool = False
+    actuary_workspace: bool = False
+    company_orchestrator: bool = False
     development_github_repository: str = DEFAULT_REPOSITORY
     development_github_token: str | None = field(default=None, repr=False)
     #: Simulerad affärsdag för en lokal provkörning (paket B steg 8, Z13): visas i sidhuvudet och sätts per
@@ -81,12 +88,17 @@ class WebSettings:
             raise WebConfigError("OPERATOR_DATASET_ID ska vara en kort datasetreferens utan personuppgifter")
         if not _HANDLER_ID.fullmatch(self.operator_id):
             raise WebConfigError("Ogiltigt OPERATOR_ID – små bokstäver, siffror, _ . -, högst 100 tecken")
+        if not _HANDLER_ID.fullmatch(self.handler_login_id):
+            raise WebConfigError("Ogiltigt HANDLAGGARE_LOGIN_ID – små bokstäver, siffror, _ . -, högst 100 tecken")
+        if self.handler_password_hash and self.handler_login_id == self.operator_id:
+            raise WebConfigError("Handläggare och operatör måste ha olika inloggningsnamn")
         if not re.fullmatch(REPOSITORY_PATTERN, self.development_github_repository):
             raise WebConfigError("DEVELOPMENT_GITHUB_REPOSITORY ska anges som ägare/repo")
         from web.operator_auth import validate_password_hash
 
         try:
             validate_password_hash(self.operator_password_hash)
+            validate_password_hash(self.handler_password_hash, variable="HANDLAGGARE_PASSWORD_HASH")
         except ValueError as exc:
             raise WebConfigError(str(exc)) from None
 
@@ -114,6 +126,18 @@ class WebSettings:
             operator_dataset_id=os.environ.get("OPERATOR_DATASET_ID") or None,
             operator_id=os.environ.get("OPERATOR_ID", "karl").strip() or "karl",
             operator_password_hash=os.environ.get("OPERATOR_PASSWORD_HASH") or None,
+            handler_login_id=os.environ.get("HANDLAGGARE_LOGIN_ID", "handlaggare").strip() or "handlaggare",
+            handler_password_hash=os.environ.get("HANDLAGGARE_PASSWORD_HASH") or None,
+            portal_login=True,
+            actuary_workspace=_enabled("WEB_ACTUARY_WORKSPACE"),
+            company_orchestrator=_enabled("WEB_COMPANY_ORCHESTRATOR"),
             development_github_repository=os.environ.get("DEVELOPMENT_GITHUB_REPOSITORY", DEFAULT_REPOSITORY).strip(),
             development_github_token=(os.environ.get("DEVELOPMENT_GITHUB_TOKEN") or "").strip() or None,
         )
+
+
+def _enabled(variable: str) -> bool:
+    value = (os.environ.get(variable) or "").strip().lower()
+    if value not in {"", "0", "1", "false", "true"}:
+        raise WebConfigError(f"{variable} måste vara true eller false")
+    return value in {"1", "true"}

@@ -1,0 +1,290 @@
+:root {
+  color-scheme: dark;
+  --ink: #f6f3ff;
+  --muted: #c4bdd8;
+  --accent: #d7c9ff;
+  --base: #141326;
+  --surface: #101021;
+  --border: #655983;
+  --font: "DM Sans", system-ui, "Segoe UI", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--base);
+  color: var(--ink);
+  font: 1rem/1.5 var(--font);
+}
+
+.stage {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 5vh, 4rem) clamp(1rem, 5vw, 4rem);
+  background: radial-gradient(ellipse at 50% 46%, #302954 0%, #1e1b36 47%, var(--base) 83%);
+}
+
+.stage::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background-image: radial-gradient(circle, #b8a6fa 0.65px, transparent 0.9px);
+  background-size: 25px 25px;
+  background-position: center;
+  opacity: 0.13;
+  mask-image: radial-gradient(ellipse at center, #000 5%, transparent 72%);
+  pointer-events: none;
+}
+
+.neural-field {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#neural-bg {
+  z-index: 0;
+  opacity: 0.84;
+}
+
+#neural-fg {
+  z-index: 2;
+  mask-image: radial-gradient(
+    ellipse clamp(8.5rem, 20vw, 11rem) clamp(3.75rem, 7vw, 5rem) at center,
+    transparent 58%, #0004 79%, #000 112%
+  );
+}
+
+.brand-trigger {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.125rem);
+  padding: clamp(0.875rem, 2vw, 1.25rem) clamp(1.125rem, 4vw, 2rem);
+  border-radius: 999px;
+  background: radial-gradient(ellipse at center, #1c1a36b3 0%, #1c1a3666 48%, transparent 78%);
+  color: var(--ink);
+  text-align: start;
+}
+
+.brand-trigger::before {
+  position: absolute;
+  inset: -0.75rem -1.5rem;
+  z-index: -1;
+  content: "";
+  background: radial-gradient(ellipse at center, #a78df658 0%, #8d75e637 38%, #8d75e614 58%, transparent 77%);
+  opacity: 0;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+
+.brand-trigger:focus-visible::before { opacity: 1; }
+
+@media (hover: hover) {
+  .brand-trigger:hover::before { opacity: 1; }
+}
+
+.brand-mark {
+  display: block;
+  width: clamp(3.125rem, 7vw, 4.5rem);
+  height: auto;
+  flex: none;
+  filter: drop-shadow(0 0 0.75rem #9a7cf06b);
+}
+
+.brand-name,
+.brand-sub {
+  display: block;
+  line-height: 1.1;
+}
+
+.brand-name {
+  font-size: clamp(2.125rem, 5vw, 3.375rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+
+.brand-sub {
+  margin-top: 0.3125rem;
+  color: var(--muted);
+  font-size: clamp(0.875rem, 2vw, 1.0625rem);
+}
+
+.login-card {
+  width: min(calc(100% - 2rem), 21rem);
+  max-height: calc(100% - 2rem);
+  padding: 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 1.375rem;
+  background:
+    linear-gradient(155deg, #26213d, #181628 54%, #1b182e) padding-box,
+    linear-gradient(155deg, #9b87c5, #51436e 46%, #514468) border-box;
+  box-shadow: 0 1.75rem 5rem #0a081bcc, 0 0 3rem #8573e323, inset 0 1px #ffffff0b;
+  color: var(--ink);
+}
+
+.login-card[open] { animation: show-login 180ms ease-out both; }
+
+.login-card::backdrop { background: #0e0b21a8; }
+
+@keyframes show-login {
+  from { opacity: 0; transform: translateY(0.375rem) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.dialog-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+}
+
+.dialog-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.dialog-brand .brand-mark { width: 2rem; }
+
+.close-login {
+  width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border-radius: 0.625rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.625rem;
+  line-height: 1;
+}
+
+.close-login:hover { background: #30274b; color: var(--ink); }
+
+form, .field {
+  display: grid;
+  min-width: 0;
+}
+
+form { gap: 0.75rem; }
+.field { gap: 0.3125rem; }
+
+label {
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+input, button { font: inherit; }
+
+.control {
+  display: flex;
+  align-items: stretch;
+  min-height: 2.875rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.control:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px #d7c9ff35;
+}
+
+input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 0.625rem 0.875rem;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--ink);
+}
+
+input:focus { outline: 0; }
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+button:focus-visible {
+  position: relative;
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.visibility-toggle {
+  flex: none;
+  min-width: 3.875rem;
+  margin: 0.1875rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.password-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.visibility-toggle:hover { background: #30274b; }
+
+.submit {
+  min-height: 2.875rem;
+  margin-top: 0.25rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(104deg, #dfd3ff, #c8b3ff);
+  box-shadow: 0 0.375rem 1.25rem #9375ec33, inset 0 1px #ffffff73;
+  color: #1b1231;
+  font-weight: 750;
+}
+
+.submit:hover:enabled { background: #eee5ff; }
+.submit:active:enabled { background: #c5b1f6; }
+.submit:disabled { opacity: 0.65; cursor: default; }
+
+.login-message {
+  margin: 0 0 0.875rem;
+  color: #f4cdec;
+  font-size: 0.875rem;
+}
+
+.no-script-login {
+  position: relative;
+  z-index: 1;
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-trigger::before { transition: none; }
+  .login-card[open] { animation: none; }
+}
+
+@media (forced-colors: active) {
+  .brand-trigger, .login-card, .submit, .visibility-toggle, .close-login { border: 1px solid; }
+  .control:focus-within { outline: 2px solid Highlight; }
+}

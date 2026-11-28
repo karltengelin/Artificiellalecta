@@ -20,7 +20,7 @@ ROOT = "/team/aktuarie/dialog"
 def workspace(request):
     value = getattr(request.app.state, "actuarial_dialogue", None)
     if value is None:
-        raise HTTPException(503, "Aktuariedialogen är inte ansluten. Starta arbetsytan med --actuary-workspace.")
+        raise HTTPException(503, "Aktuariedialogen är inte ansluten. Aktivera WEB_ACTUARY_WORKSPACE och starta om webben.")
     settings = request.app.state.settings
     if ((value.environment_id is not None and value.environment_id != settings.database)
             or (value.dataset_ref is not None and value.dataset_ref != settings.dataset_ref)):

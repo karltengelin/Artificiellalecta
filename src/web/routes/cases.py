@@ -162,7 +162,7 @@ async def case_run_agent(request: Request, case_number: str):
         return await run_in_threadpool(_case_page, request, case_number, error=error)
     try:
         run = await run_in_threadpool(
-            agent.run, service(request), case_number, assigned_by=settings(request).handler_id
+            agent.run, service(request), case_number, assigned_by=handler_ctx(request).actor.id
         )
     except (ServiceError, HarnessError) as exc:
         error = (describe_error(exc, service(request).rules, write=True) if isinstance(exc, ServiceError)
@@ -235,11 +235,12 @@ def _case_page(request: Request, case_number: str, *, error: ErrorView | None = 
     assistant_error = None
     console = getattr(request.app.state, "case_workspace", None)
     session = current_session(request)
-    if console is not None and session and session.operator_id:
+    user_id = (session.user_id if settings(request).portal_login else session.operator_id) if session else None
+    if console is not None and user_id:
         try:
             from services import Actor
 
-            assistant = console.view(case_number, Actor.human(session.operator_id))
+            assistant = console.view(case_number, Actor.human(user_id))
         except Exception:  # noqa: BLE001 – arbetsytans fel får inte exponera ärendedialog/databasuppgifter
             assistant_error = "Ärendeassistenten kan inte läsas. Kontrollera anslutning och ärendeuppdragens migration."
     response = render(request, "case.html", {

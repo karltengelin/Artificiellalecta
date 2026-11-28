@@ -72,12 +72,15 @@ def operator_overview(request: Request, month: str = "", matt: str = ""):
     ) for key, value in (("agent_cost_known_usd", telemetry.known), ("agent_unknown_attempts_count", telemetry.unknown))]
     teams = [{"id": key, "name": name, "configured": key in configured,
                   "lead": configured.get(key), "states": telemetry.runs.get(key, {})} for key, name in TEAM_NAMES.items()]
+    pilot = request.app.state.company_missions
     response = render(request, "operator.html", {
         "operator_page": True, "active_view": request.url.path.rsplit("/", 1)[-1],
         "metrics": metrics, "cost_metrics": cost_metrics, "definitions": DEFINITIONS, "telemetry": telemetry, "teams": teams,
         "months": choices, "selected_month": selected.strftime("%Y-%m"), "selected_metric": matt, "period": period,
         "now": now, "source_failed": source_failed, "profile_error": profile_error, "profile_ref": profile_ref,
         "dataset_ref": config.dataset_ref,
+        "actuary_ready": request.app.state.actuarial_dialogue is not None,
+        "company_ready": pilot is not None and pilot.ai is not None,
     })
     response.headers["Cache-Control"] = "no-store"
     return response

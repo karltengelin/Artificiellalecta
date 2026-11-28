@@ -6,12 +6,12 @@
   {% if approval is defined and approval %}
   <div class="alert alert--success" role="status">
     <strong class="alert__title">Förslaget är godkänt och utfört</strong>
-    <p class="alert__message">Föreslaget av <code>{{ approval.proposed_by }}</code>{% if approval.proposed_by_team %} ({{ approval.proposed_by_team }}){% endif %}, godkänt av {{ settings.handler_id }}. Händelseloggen anger båda.</p>
+    <p class="alert__message">Föreslaget av <code>{{ approval.proposed_by }}</code>{% if approval.proposed_by_team %} ({{ approval.proposed_by_team }}){% endif %}, godkänt av {{ handler_user }}. Händelseloggen anger båda.</p>
   </div>
   {% else %}
   <div class="alert alert--success" role="status">
     <strong class="alert__title">Utfört</strong>
-    <p class="alert__message">Ändringen är sparad och loggad i händelseloggen med {{ settings.handler_id }} som handläggare.</p>
+    <p class="alert__message">Ändringen är sparad och loggad i händelseloggen med {{ handler_user }} som handläggare.</p>
   </div>
   {% endif %}
 
@@ -100,6 +100,6 @@
   {% endif %}
 
   {% if reason %}<p class="muted small">Motivering: {{ reason }}</p>{% endif %}
-  <p class="small"><a href="/forsakrade/{{ o.personal_id_number }}/handelser">Händelser för {{ o.first_name }} {{ o.last_name }}</a> · <a href="/handelselogg">Hela händelseloggen</a></p>
+  <p class="small"><a href="/forsakrade/{{ o.personal_id_number }}/handelser">Händelser för {{ o.first_name }} {{ o.last_name }}</a>{% if management_access %} · <a href="/handelselogg">Hela händelseloggen</a>{% endif %}</p>
 </section>
 {% endblock %}

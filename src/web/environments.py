@@ -19,7 +19,7 @@ class EnvironmentUnavailable(Exception):
     """Målmiljön kunde inte startas eller verifieras."""
 
 
-def _probe(database: str) -> bool:
+def _probe(database: str, *, require_portal: bool = False) -> bool:
     """Bara connection refused betyder ledig port; andra svar måste kunna verifieras."""
     # Windows kan behöva cirka två sekunder för att rapportera en ledig port
     # som connection refused. En sekund förväxlar det med en server som hängt.
@@ -39,6 +39,8 @@ def _probe(database: str) -> bool:
             raise EnvironmentUnavailable("Appen på målporten använder fel databas. Stäng den gamla servern och försök igen.")
         if identity.get("environment_switching") is not True:
             raise EnvironmentUnavailable("Målmiljön kör en äldre version utan miljöväljare. Starta om den servern.")
+        if require_portal and identity.get("portal_login") is not True:
+            raise EnvironmentUnavailable("Målmiljön kör en äldre version utan Certa-inloggning. Starta om den servern.")
         return True
     except ConnectionRefusedError:
         return False
@@ -48,13 +50,13 @@ def _probe(database: str) -> bool:
         connection.close()
 
 
-def ensure_environment(database: str) -> str:
+def ensure_environment(database: str, *, require_portal: bool = False) -> str:
     """Starta vid behov och verifiera före navigering. Inga godtyckliga URL:er eller kommandon."""
     if database not in SWITCHABLE_DATABASES:
         raise ValueError("Välj Lakebase eller Demo.")
     url = f"http://127.0.0.1:{DEFAULT_PORTS[database]}/"
     with _startup_lock:
-        if _probe(database):
+        if _probe(database, require_portal=require_portal):
             return url
         process = _started.get(database)
         if process is None or process.poll() is not None:
@@ -70,7 +72,7 @@ def ensure_environment(database: str) -> str:
             _started[database] = process
         deadline = time.monotonic() + 10
         while True:
-            if _probe(database):
+            if _probe(database, require_portal=require_portal):
                 return url
             if process.poll() is not None:
                 raise EnvironmentUnavailable("Målmiljön kunde inte starta. Kontrollera databasinställningarna i .env.")

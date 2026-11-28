@@ -192,6 +192,7 @@ POWERSHELL = shutil.which("powershell")
         ("existing", ["-Db", "svc_test"], "svc_test", 0, "http://127.0.0.1:8766/", 0),
         ("existing", ["-Db", "demo", "-Port", "8899"], "demo", 0, "http://127.0.0.1:8899/", 0),
         ("existing", [], "demo", 1, None, 0),
+        ("old_version", [], "lakebase", 1, None, 0),
         ("unknown", [], "lakebase", 1, None, 0),
         ("occupied", [], "lakebase", 1, None, 0),
         ("start", [], "lakebase", 0, "http://127.0.0.1:8765/", 1),
@@ -214,7 +215,8 @@ function Invoke-RestMethod {
     if ($env:UI_SCENARIO -in @('occupied', 'exited') -or
         ($env:UI_SCENARIO -eq 'start' -and $script:probes -eq 1)) { throw 'not ready' }
     $app = if ($env:UI_SCENARIO -eq 'unknown') { 'other-app' } else { 'artificiellalecta-handlaggare' }
-    return [pscustomobject]@{ application = $app; database = $env:UI_DATABASE }
+    $portal = $env:UI_SCENARIO -ne 'old_version'
+    return [pscustomobject]@{ application = $app; database = $env:UI_DATABASE; portal_login = $portal }
 }
 function Get-NetTCPConnection {
     param($LocalPort, $State, $ErrorAction)
