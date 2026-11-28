@@ -1501,7 +1501,7 @@ Agentrollerna får inga rättigheter på de nya tabellerna i första versionen. 
 
 ### 12.1 Val för steg 9: nytt startläge med pensionärer
 
-**Förslag till Karl 2026-11-28. Inte godkända och inte loggade.** Valen preciserar §12 punkt 3–4 och steg 9 i
+**Godkända av Karl i chatten 2026-11-28 (”Godkänn alla”) enligt förslagen. Inte loggade än; posten föreslås som B-057.** Valen preciserar §12 punkt 3–4 och steg 9 i
 byggordningen. De ändrar inga produktregler. Varje val har ett förslag, ett alternativ, en motivering och en grund.
 
 **Utgångsläge.**
@@ -1655,7 +1655,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida. *Valen X1–X13 godkända 2026-11-24 (§8.3); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg6/`. Mergat till main 2026-11-24. Inte infört i Lakebase; migrationen efter steg 5:s* | 18–25, 34 |
 | 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 godkända 2026-11-24 (§9.1, B-055); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg7/`. Mergat till main 2026-11-25. Inte infört i Lakebase; migrationen efter steg 6:s* | 26–31 |
 | 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll. *Valen Z1–Z14 godkända 2026-11-25 (§10.1, B-056); byggt samma dag med webbkontroll mot paket C, körskript i `scripts/simulation/paket_b_steg8/`. Mergat till main 2026-11-26. Rör inte Lakebase; sidan visar notiser för steg 4–7 tills deras migrationer är körda* | – |
-| 9 | Lakebase enligt ovan, med separat OK för varje ingrepp. *Förslag 2026-11-28: nytt startläge med pensionärer, valen Q1–Q10 i §12.1, inte godkända* | – |
+| 9 | Lakebase enligt ovan, med separat OK för varje ingrepp. *Nytt startläge med pensionärer: valen Q1–Q10 i §12.1 godkända 2026-11-28; bygget inte påbörjat* | – |
 
 Postgres-prov körs där ändringen kräver det (B-040). Steg 1–2 delar datamodell med allt
 som följer och får inte delas mellan Claude och Codex utan avstämning (AGENTS.md §4.2).

@@ -110,9 +110,11 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
 
 **Därefter, paket B steg 9** (nytt startläge med pensionärer i Lakebase):
 
-- [ ] **Valen Q1–Q10** *föreslagna 2026-11-28* ([designstoppet §12.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#121-val-för-steg-9-nytt-startläge-med-pensionärer)):
+- [x] **Valen Q1–Q10** *2026-11-28* godkända av Karl (”Godkänn alla”) ([designstoppet §12.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#121-val-för-steg-9-nytt-startläge-med-pensionärer)):
   kohorten och fyra pensionärer med deklarerade startvärden, ett nytt ingående läge före novembers stängning och
-  migrationerna för steg 4–7 före stängningen. Väntar på Karl.
+  migrationerna för steg 4–7 före stängningen.
+- [ ] **B-057** loggas efter Karls OK.
+- [ ] **Bygget** lokalt och i `svc_test` (Q10), därefter Lakebase i Q5:s ordning med Karls OK för varje punkt.
 - [ ] **Skattetabeller:** Skatteverkets textfil för 2026 (`allmanna-tabeller-manad.txt`) och engångstabellen;
   2027 års tabeller med den nya kolumnen för födda 1960 när de publiceras.
 
