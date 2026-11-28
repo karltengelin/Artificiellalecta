@@ -1640,6 +1640,33 @@ byggordningen. De ändrar inga produktregler. Varje val har ett förslag, ett al
   - *Motivering:* samma verifieringsordning som steg 1–7.
   - *Grund:* B-040 och AGENTS.md §4.5.
 
+**Karls justeringar 2026-11-28 (”Ja, bygg så”).** Två val ändrades efter loggningen och är inte införda i B-057:
+
+- **Q1:** pensionärerna har inga uttag före startläget. Alla fyra begär start i december 2026. Begäran togs
+  emot 2026-11-16, före fristen 2026-11-30, och planerna beslutas efter novembers stängning. Karin Sjöberg
+  delar först sin uttagsdel från november: 40 % till del 2, som tas ut på 60 månader, och del 1 livsvarigt.
+  Ingen behöver därmed rekonstruerat utbetalt kapital (PR-009).
+- **Q3:** startvärdena anges inte som C och G i verifikationen. Varje ny försäkring får en enda syntetisk premie,
+  märkt `declared_opening` i `calculation_basis`, och S-04 räknar fram C och G som för övrigt bestånd. Premien
+  betalas 2026-10-30 och tillförs vid oktobers slut. Den deltar därför inte i någon avkastningsfördelning före
+  startläget. En tidigare betalning skulle flytta enstaka ören hos befintliga försäkringar, eftersom
+  kollektivets avkastning fördelas i ören efter största rest.
+
+**Byggt 2026-11-28** på branchen `claude/nifty-lovelace-d19817`
+([rapport](../../scripts/simulation/paket_b_steg9/RAPPORT.md)):
+
+- `src/simulation/pension_population.py`: beståndet (kohorten och fyra pensionärer, 35 personer), tillägget
+  med granskningssumma och underlaget för pensionärernas operationer;
+- `src/services/ledger_reopening.py`: granskningen och ersättningen av det ingående läget. Ersättningen stoppas
+  om journalen har någon annan verifikation, om en befintlig försäkring får annat C eller G och om en
+  försäkring faller bort;
+- körskript i `scripts/simulation/paket_b_steg9/`;
+- inga nya tabeller, operationer eller agentbefogenheter.
+
+Verifierat lokalt och mot `svc_test` med Q10:s fyra kontroller. De befintliga försäkringarna har exakt samma C
+och G. De nya har C lika med startpremien och G större än noll. Novembers stängning går igenom med 11 ärenden
+`payout_review`. Decembers stängning och bankfil stämmer mot facit på öret.
+
 ### Föreslagen byggordning (PB13)
 
 Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
@@ -1655,7 +1682,7 @@ Ett bygge i taget. Varje steg ska vara testat och fungera innan nästa börjar.
 | 6 | Skattestatus, konto, bankuppdrag, godkännande, kvitton och simulatorns utbetalningssida. *Valen X1–X13 godkända 2026-11-24 (§8.3); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg6/`. Mergat till main 2026-11-24. Inte infört i Lakebase; migrationen efter steg 5:s* | 18–25, 34 |
 | 7 | Dödsfall och arvsvinst (steg 6–7); slutavräkningen byggs i steg 5 (W6) och fall 34 i steg 6. *Valen Y1–Y14 godkända 2026-11-24 (§9.1, B-055); byggt samma dag, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg7/`. Mergat till main 2026-11-25. Inte infört i Lakebase; migrationen efter steg 6:s* | 26–31 |
 | 8 | Handläggarsidan *Pensioner och utbetalningar* med webbkontroll. *Valen Z1–Z14 godkända 2026-11-25 (§10.1, B-056); byggt samma dag med webbkontroll mot paket C, körskript i `scripts/simulation/paket_b_steg8/`. Mergat till main 2026-11-26. Rör inte Lakebase; sidan visar notiser för steg 4–7 tills deras migrationer är körda* | – |
-| 9 | Lakebase enligt ovan, med separat OK för varje ingrepp. *Nytt startläge med pensionärer: valen Q1–Q10 i §12.1 godkända 2026-11-28; bygget inte påbörjat* | – |
+| 9 | Lakebase enligt ovan, med separat OK för varje ingrepp. *Nytt startläge med pensionärer: valen Q1–Q10 i §12.1 godkända 2026-11-28 (B-057), Q1 och Q3 justerade samma dag. Byggt 2026-11-28, verifierat lokalt och mot `svc_test`; körskript i `scripts/simulation/paket_b_steg9/`. Inte mergat; inget gjort i Lakebase* | – |
 
 Postgres-prov körs där ändringen kräver det (B-040). Steg 1–2 delar datamodell med allt
 som följer och får inte delas mellan Claude och Codex utan avstämning (AGENTS.md §4.2).

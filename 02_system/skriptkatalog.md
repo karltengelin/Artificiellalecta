@@ -155,6 +155,15 @@ skrivande skript körs inte om. Utdata, simulerade filer och facit skrivs till h
 | [survey.py](../scripts/simulation/paket_b_steg7/survey.py) | Översikt före steg 7:s migration och nästa stängning: personer med status `deceased` och deras delar och anspråk; efter migrationen besked per läge, avräknade delar, återföringar och öppna ärenden; med `--month` stängningens avräkningar, poolen och kontrollerna | Bara läsning (`READ ONLY`); skriver inga personuppgifter. Inte körd i Lakebase |
 | [compare_main.py](../scripts/simulation/paket_b_steg7/compare_main.py) | B-052 (Y13): novembers stängning med main:s och branchens kod på samma databas utan steg 7:s tabeller, i steg 6:s fem lägen och `steg6` och `steg6-avliden`; `--write-shape` skriver main:s form till `main_shape.json`, som regressionstestet låser | Bara lokal SQLite i en tillfällig mapp; `--main` är en utpackad kopia av main. Rör ingen delad databas |
 
+| Skript i `scripts/simulation/paket_b_steg9/` | Syfte | Sidoeffekt/beroende |
+|---|---|---|
+| [common.py](../scripts/simulation/paket_b_steg9/common.py) | Sökvägar, datum och ordningen i Lakebase (B-057 Q5) | Ingen |
+| [add_population.py](../scripts/simulation/paket_b_steg9/add_population.py) | De 35 nya personerna med fribrev och syntetisk startpremie (`simulation.pension_population`) | Bara läsning (`READ ONLY`) utan `--apply`; `--apply` kräver `--backup` och granskningssumman. Inte körd i Lakebase |
+| [reopen_ledger.py](../scripts/simulation/paket_b_steg9/reopen_ledger.py) | Journalens nya ingående läge per 2026-10-31 (`services.ledger_reopening`); det gamla lägets sammanställning sparas i körloggen | Som ovan. Stoppar om någon månad är stängd. Inte körd i Lakebase |
+| [pensioners.py](../scripts/simulation/paket_b_steg9/pensioners.py) | Pensionärernas delning, begäran och planer, skatt och konto samt bolagsinsättningen, i faserna `split`, `start`, `inputs` och `capital` | Som ovan; `split` före novembers stängning, övriga efter. Inte körd i Lakebase |
+| [adopt_avk_december.py](../scripts/simulation/paket_b_steg9/adopt_avk_december.py) | AVK-SIM-2026-03 för december med syntetisk sats (`--rate`) | Som ovan; `--apply` tidigast 2027-01-01. Inte körd i Lakebase |
+| [verify.py](../scripts/simulation/paket_b_steg9/verify.py) | Q10:s kontroller efter varje punkt: beståndet, startläget, novembers stängning, planerna, insättningen och decembers månadsrätter med skattefacit | Bara läsning |
+
 ## Aktuariedialogens körverktyg, tillbyggnad 2026-11-02
 
 | Skript | Syfte och gräns |

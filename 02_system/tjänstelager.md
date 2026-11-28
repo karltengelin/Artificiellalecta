@@ -665,6 +665,7 @@ Beslutat i **B-047** punkt 4 och [P1-PENSION-001](../projekt/01_ärendehantering
 - **Tabeller och migration:** se [databasschema §7c och §12](databasschema.md#7c-tabeller-ledger_batches-ledger_guarantee_parts-ledger_capital_entries-och-ledger_controls--kapital--och-garantijournalen).
 - **Befogenheter:** tre nya operationer, alla `HUMAN_ONLY`, och inga nya agentbefogenheter.
 - **Avgränsning:** månadsstängningen finns i steg 3 (§9.16); plan och utbetalning byggs senare.
+- **Nytt ingående läge under byggfasen (B-057 Q4, steg 9):** `src/services/ledger_reopening.py` ersätter det ingående läget så länge journalen inte har någon annan verifikation. Befintliga försäkringar ska ha exakt samma C och G, och läget får bara tillföra försäkringar. Det är ingen operation: ersättningen körs bara med `scripts/simulation/paket_b_steg9/reopen_ledger.py`, med backup och Karls OK.
 
 | Operation | Typ | PII | Register | Vad den gör |
 |---|---|---|---|---|

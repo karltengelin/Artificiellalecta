@@ -114,7 +114,13 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
   kohorten och fyra pensionärer med deklarerade startvärden, ett nytt ingående läge före novembers stängning och
   migrationerna för steg 4–7 före stängningen.
 - [x] **B-057** *2026-11-28* loggad efter Karls OK (”Logga och bygg”).
-- [ ] **Bygget** lokalt och i `svc_test` (Q10), därefter Lakebase i Q5:s ordning med Karls OK för varje punkt.
+- [x] **Bygget** *2026-11-28* på branchen `claude/nifty-lovelace-d19817` ([rapport](scripts/simulation/paket_b_steg9/RAPPORT.md)), med Karls justeringar av Q1 och Q3 (”Ja, bygg så”).
+  Verifierat lokalt och mot `svc_test`: befintliga försäkringar oförändrade, 35 nya, 11 ärenden `payout_review`
+  och decembers utbetalning på öret.
+- [ ] **Tillägg till B-057** för justeringarna av Q1 och Q3 – föreslås, loggas efter Karls OK.
+- [ ] **Merge till main** efter Karls OK.
+- [ ] **Lakebase** i Q5:s ordning, var punkt med backup och Karls OK. Novembers AVK och stängning tidigast
+  2026-12-01, decembers tidigast 2027-01-01.
 - [ ] **Skattetabeller:** Skatteverkets textfil för 2026 (`allmanna-tabeller-manad.txt`) och engångstabellen;
   2027 års tabeller med den nya kolumnen för födda 1960 när de publiceras.
 
