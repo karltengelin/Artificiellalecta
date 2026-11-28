@@ -1,7 +1,7 @@
 # Paket B steg 9 – nytt startläge med pensionärer: rapport och körordning
 
 > **Design:** [P1-PENSION-001 §12.1](../../../projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#121-val-för-steg-9-nytt-startläge-med-pensionärer), Karls val Q1–Q10 (2026-11-28, ”Godkänn alla”), loggade som **B-057** samma dag (”Logga och bygg”). Q1 och Q3 justerades efter loggningen (”Ja, bygg så”); justeringarna står i §12.1 och är loggade som tillägg till B-057 (”Logga tillägget”).
-> **Status 2026-11-28:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/nifty-lovelace-d19817`. **Inte mergat och inte kört i Lakebase.** Novembers AVK och stängning kan göras tidigast 2026-12-01, decembers tidigast 2027-01-01, och varje skrivande punkt kräver backup och Karls separata OK.
+> **Status 2026-11-28:** byggt och verifierat lokalt och mot `svc_test` på branchen `claude/nifty-lovelace-d19817`. **Mergat till main 2026-11-28** efter Karls OK, efter synk med main `f4f1e96`; **inte kört i Lakebase.** Novembers AVK och stängning kan göras tidigast 2026-12-01, decembers tidigast 2027-01-01, och varje skrivande punkt kräver backup och Karls separata OK.
 
 ## Vad som är byggt
 

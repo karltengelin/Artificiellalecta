@@ -118,7 +118,7 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
   Verifierat lokalt och mot `svc_test`: befintliga försäkringar oförändrade, 35 nya, 11 ärenden `payout_review`
   och decembers utbetalning på öret.
 - [x] **Tillägg till B-057** *2026-11-28* för justeringarna av Q1 och Q3, loggat efter Karls OK (”Logga tillägget”).
-- [ ] **Merge till main** efter Karls OK.
+- [x] **Merge till main** *2026-11-28* efter Karls OK (”Mergea det”), efter synk med main `f4f1e96` (Certa-inloggningen).
 - [ ] **Lakebase** i Q5:s ordning, var punkt med backup och Karls OK. Novembers AVK och stängning tidigast
   2026-12-01, decembers tidigast 2027-01-01.
 - [ ] **Skattetabeller:** Skatteverkets textfil för 2026 (`allmanna-tabeller-manad.txt`) och engångstabellen;
