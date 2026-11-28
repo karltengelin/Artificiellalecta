@@ -53,6 +53,16 @@ första startläget.
 efter novembers stängning) och PR-028 (minst E_min, provisoriskt under byggfas). **Bygger på** B-035
 val K och B-050–B-056.
 
+**Tillägg 2026-11-28:** Karl justerade Q1 och Q3 i chatten (”Ja, bygg så”), och tillägget loggades efter
+Karls OK (”Logga tillägget”).
+
+- **Q1.** Pensionärerna har inga uttag före startläget. Alla fyra begär start i december 2026, och begäran
+  togs emot 2026-11-16. Planerna beslutas efter novembers stängning. Karin Sjöberg delar sin del från
+  november, med 40 % till del 2 och uttag under 60 månader.
+- **Q3.** Startvärdena kommer från en syntetisk premie per försäkring, märkt `declared_opening` och betald
+  2026-10-30. S-04 räknar sedan fram C och G. Deklarerade C och G i verifikationen används inte, så
+  startläget kommer fortfarande ur S-04.
+
 ---
 
 ### B-056 | 2026-11-25 | Paket B steg 8: handläggarsidan Pensioner och utbetalningar

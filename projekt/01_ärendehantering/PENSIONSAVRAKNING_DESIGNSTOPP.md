@@ -1640,7 +1640,7 @@ byggordningen. De ändrar inga produktregler. Varje val har ett förslag, ett al
   - *Motivering:* samma verifieringsordning som steg 1–7.
   - *Grund:* B-040 och AGENTS.md §4.5.
 
-**Karls justeringar 2026-11-28 (”Ja, bygg så”).** Två val ändrades efter loggningen och är inte införda i B-057:
+**Karls justeringar 2026-11-28 (”Ja, bygg så”).** Två val ändrades efter loggningen. De är loggade som tillägg till **B-057** samma dag (”Logga tillägget”):
 
 - **Q1:** pensionärerna har inga uttag före startläget. Alla fyra begär start i december 2026. Begäran togs
   emot 2026-11-16, före fristen 2026-11-30, och planerna beslutas efter novembers stängning. Karin Sjöberg

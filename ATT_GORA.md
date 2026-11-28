@@ -117,7 +117,7 @@ Körordning och väntade värden: [rapporten](scripts/simulation/paket_b_steg3/R
 - [x] **Bygget** *2026-11-28* på branchen `claude/nifty-lovelace-d19817` ([rapport](scripts/simulation/paket_b_steg9/RAPPORT.md)), med Karls justeringar av Q1 och Q3 (”Ja, bygg så”).
   Verifierat lokalt och mot `svc_test`: befintliga försäkringar oförändrade, 35 nya, 11 ärenden `payout_review`
   och decembers utbetalning på öret.
-- [ ] **Tillägg till B-057** för justeringarna av Q1 och Q3 – föreslås, loggas efter Karls OK.
+- [x] **Tillägg till B-057** *2026-11-28* för justeringarna av Q1 och Q3, loggat efter Karls OK (”Logga tillägget”).
 - [ ] **Merge till main** efter Karls OK.
 - [ ] **Lakebase** i Q5:s ordning, var punkt med backup och Karls OK. Novembers AVK och stängning tidigast
   2026-12-01, decembers tidigast 2027-01-01.
