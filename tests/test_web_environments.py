@@ -110,6 +110,17 @@ def test_ledig_port_skils_fran_en_server_som_inte_svarar(monkeypatch):
         environments._probe("demo")
 
 
+def test_miljobyte_fran_certa_kraver_certa_pa_malet(monkeypatch):
+    identity = {"application": "artificiellalecta-handlaggare", "database": "demo", "environment_switching": True}
+    connection = Mock()
+    connection.getresponse.return_value = SimpleNamespace(status=200, read=lambda size: json.dumps(identity).encode())
+    monkeypatch.setattr(environments, "HTTPConnection", Mock(return_value=connection))
+    with pytest.raises(EnvironmentUnavailable, match="utan Certa"):
+        environments._probe("demo", require_portal=True)
+    identity["portal_login"] = True
+    assert environments._probe("demo", require_portal=True)
+
+
 def test_ledig_loopbackport_upptacks_aven_med_windows_fordrojning(monkeypatch):
     """Riktig lokal TCP: Windows rapporterar connection refused först efter cirka 2 s."""
     with socket.socket() as listener:
