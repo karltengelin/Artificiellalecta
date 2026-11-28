@@ -1501,7 +1501,7 @@ Agentrollerna får inga rättigheter på de nya tabellerna i första versionen. 
 
 ### 12.1 Val för steg 9: nytt startläge med pensionärer
 
-**Godkända av Karl i chatten 2026-11-28 (”Godkänn alla”) enligt förslagen. Inte loggade än; posten föreslås som B-057.** Valen preciserar §12 punkt 3–4 och steg 9 i
+**Godkända av Karl i chatten 2026-11-28 (”Godkänn alla”) enligt förslagen. Loggade som **B-057** samma dag efter Karls OK (”Logga och bygg”).** Valen preciserar §12 punkt 3–4 och steg 9 i
 byggordningen. De ändrar inga produktregler. Varje val har ett förslag, ett alternativ, en motivering och en grund.
 
 **Utgångsläge.**

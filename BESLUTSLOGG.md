@@ -8,6 +8,53 @@
 
 ## Beslut
 
+### B-057 | 2026-11-28 | Paket B steg 9: nytt startläge med pensionärer
+
+**Beslut:** Operatören godkände valen Q1–Q10 för byggsteg 9 i paket B
+([P1-PENSION-001 §12.1](projekt/01_ärendehantering/PENSIONSAVRAKNING_DESIGNSTOPP.md#121-val-för-steg-9-nytt-startläge-med-pensionärer))
+enligt förslagen i chatten 2026-11-28: ”Godkänn alla”. Loggningen och byggstarten godkändes
+samma dag: ”Logga och bygg”.
+
+1. **Bestånd (Q1–Q2).**
+   - Den äldre kohorten (B-035 val K, 31 personer) och 4 pensionärer med pågående uttag, varav en är
+     David Dahl, läggs till i Lakebase.
+   - Alla nya har fribrev, och ingen betalar premie efter 2026-10-31.
+   - De 7 födda 1959–1960 har passerat 66 utan val och får var sitt ärende `payout_review`.
+2. **Startvärden (Q3).** De nya försäkringarnas kapital, garantier och planer per 2026-10-31 anges
+   direkt (`declared_opening`), utan rekonstruerad historik. De 492 befintliga försäkringarna behåller
+   sina värden ur S-04.
+3. **Nytt ingående läge (Q4).** Journalens ingående läge ersätts innan någon månad har stängts. Den
+   första verifikationen bevaras i backup och körlogg.
+4. **Ordning i Lakebase (Q5).** Ordningen är:
+   1. backup;
+   2. migrationerna för steg 4–7;
+   3. nya personer och planer;
+   4. nytt ingående läge;
+   5. novembers AVK och stängning;
+   6. bolagsinsättning och decembers AVK;
+   7. decembers stängning och bankfil.
+
+   Varje punkt kräver ett separat OK.
+5. **Bolagskapital (Q6).** En provisorisk insättning på 24 × decembers månadsbelopp, avrundat uppåt
+   till hela 10 000 kr och märkt byggfas. E_min räknas av aktuarien (A8) före live.
+6. **Skatt (Q7).** De första utbetalningarna görs med sidoinkomst 30 % eller ett individuellt beslut.
+   Huvudinkomst med tabell byggs som ett eget steg med 2026 och 2027 års tabeller, inklusive kolumnen
+   för födda 1960.
+7. **Dödsbo, agenter och verifiering (Q8–Q10).**
+   - Ingen pensionär i startläget är avliden.
+   - Agentrollerna får inga nya rättigheter.
+   - Steget provas lokalt och i `svc_test` med fyra kontroller innan något görs i Lakebase.
+
+**Motivering:** Bolaget är i byggfas, och bokföringen behöver stämma först vid live. Pensionsflödet i
+steg 4–8 behöver pensionärer i Lakebase för att visa konceptet. Ingen stängning bygger ännu på det
+första startläget.
+
+**Avviker från** B-047 punkt 2 (S-04 som enda källa till startläget), B-052 och Y12 (migrationerna
+efter novembers stängning) och PR-028 (minst E_min, provisoriskt under byggfas). **Bygger på** B-035
+val K och B-050–B-056.
+
+---
+
 ### B-056 | 2026-11-25 | Paket B steg 8: handläggarsidan Pensioner och utbetalningar
 
 **Beslut:** Operatören godkände valen Z1–Z14 för byggsteg 8 i paket B
